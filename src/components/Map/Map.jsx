@@ -39,8 +39,11 @@ const Map = ({
   onPolygonCreate,
   onPolygonUpdate,
   onPolygonDelete,
+  onPolygonSelect,
   onMapClick,
   onWaypointClick,
+  onWaypointDelete,
+  onWaypointMove,
   selectedPolygonId,
   drawMode = false
 }) => {
@@ -50,6 +53,7 @@ const Map = ({
     longitude: center.lng,
     zoom: zoom
   })
+  const [draggingWaypoint, setDraggingWaypoint] = useState(null)
 
   // Update view when center changes
   useEffect(() => {
@@ -71,13 +75,38 @@ const Map = ({
 
   // Handle map click
   const handleClick = useCallback((e) => {
-    if (onMapClick) {
+    // Check if clicked on a polygon
+    const features = e.features || []
+    const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
+
+    if (polygonFeature) {
+      // Single click on polygon - select it
+      onPolygonSelect?.(polygonFeature.properties.id)
+      return
+    }
+
+    if (onMapClick && !drawMode) {
       onMapClick({
         lat: e.lngLat.lat,
         lng: e.lngLat.lng
       })
     }
-  }, [onMapClick])
+  }, [onMapClick, onPolygonSelect, drawMode])
+
+  // Handle double click on polygon - delete
+  const handleDoubleClick = useCallback((e) => {
+    const features = e.features || []
+    const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
+
+    if (polygonFeature && onPolygonDelete) {
+      e.preventDefault()
+      const polygonId = polygonFeature.properties.id
+      const polygon = polygons.find(p => p.id === polygonId)
+      if (polygon && confirm(`「${polygon.name}」を削除しますか?`)) {
+        onPolygonDelete(polygonId)
+      }
+    }
+  }, [polygons, onPolygonDelete])
 
   // Handle polygon creation from draw control
   const handleCreate = useCallback((features) => {
@@ -101,12 +130,39 @@ const Map = ({
     }
   }, [onPolygonUpdate])
 
-  // Handle polygon delete
+  // Handle polygon delete from draw control
   const handleDelete = useCallback((features) => {
     if (onPolygonDelete && features.length > 0) {
       onPolygonDelete(features[0].id)
     }
   }, [onPolygonDelete])
+
+  // Handle waypoint double click - delete
+  const handleWaypointDoubleClick = useCallback((e, wp) => {
+    e.stopPropagation()
+    if (onWaypointDelete && confirm(`Waypoint #${wp.index} を削除しますか?`)) {
+      onWaypointDelete(wp.id)
+    }
+  }, [onWaypointDelete])
+
+  // Handle waypoint drag
+  const handleWaypointDragStart = useCallback((wp) => {
+    setDraggingWaypoint(wp.id)
+  }, [])
+
+  const handleWaypointDrag = useCallback((e, wp) => {
+    // Update position during drag (visual feedback)
+  }, [])
+
+  const handleWaypointDragEnd = useCallback((e, wp) => {
+    setDraggingWaypoint(null)
+    if (onWaypointMove) {
+      onWaypointMove(wp.id, {
+        lat: e.lngLat.lat,
+        lng: e.lngLat.lng
+      })
+    }
+  }, [onWaypointMove])
 
   // Convert polygons to GeoJSON for display
   const polygonsGeoJSON = {
@@ -124,6 +180,9 @@ const Map = ({
     }))
   }
 
+  // Interactive layer IDs for click events
+  const interactiveLayerIds = ['polygon-fill']
+
   return (
     <div className={styles.mapContainer}>
       <MapGL
@@ -131,8 +190,11 @@ const Map = ({
         {...viewState}
         onMove={e => setViewState(e.viewState)}
         onClick={handleClick}
+        onDblClick={handleDoubleClick}
+        interactiveLayerIds={interactiveLayerIds}
         mapStyle={MAP_STYLE}
         style={{ width: '100%', height: '100%' }}
+        doubleClickZoom={false}
       >
         <NavigationControl position="top-right" />
         <ScaleControl position="bottom-left" unit="metric" />
@@ -176,12 +238,16 @@ const Map = ({
           />
         </Source>
 
-        {/* Display waypoints as markers */}
+        {/* Display waypoints as draggable markers */}
         {waypoints.map((wp) => (
           <Marker
             key={wp.id}
             latitude={wp.lat}
             longitude={wp.lng}
+            draggable={true}
+            onDragStart={() => handleWaypointDragStart(wp)}
+            onDrag={(e) => handleWaypointDrag(e, wp)}
+            onDragEnd={(e) => handleWaypointDragEnd(e, wp)}
             onClick={(e) => {
               e.originalEvent.stopPropagation()
               onWaypointClick?.(wp)
@@ -189,14 +255,21 @@ const Map = ({
             }}
           >
             <div
-              className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''}`}
-              title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}`}
+              className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${draggingWaypoint === wp.id ? styles.dragging : ''}`}
+              title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}\nダブルクリックで削除\nドラッグで移動`}
+              onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
             >
               {wp.index}
             </div>
           </Marker>
         ))}
       </MapGL>
+
+      {/* Instructions overlay */}
+      <div className={styles.instructions}>
+        <span>ポリゴン: クリックで選択 / ダブルクリックで削除</span>
+        <span>Waypoint: ドラッグで移動 / ダブルクリックで削除</span>
+      </div>
     </div>
   )
 }

@@ -160,7 +160,31 @@ function App() {
   // Handle waypoint delete
   const handleWaypointDelete = useCallback((id) => {
     setWaypoints(prev => prev.filter(w => w.id !== id))
+    showNotification('Waypointを削除しました')
+  }, [showNotification])
+
+  // Handle waypoint move (drag)
+  const handleWaypointMove = useCallback((id, newPosition) => {
+    setWaypoints(prev => prev.map(w =>
+      w.id === id ? { ...w, lat: newPosition.lat, lng: newPosition.lng } : w
+    ))
   }, [])
+
+  // Handle polygon select from map
+  const handlePolygonSelectFromMap = useCallback((polygonId) => {
+    setSelectedPolygonId(polygonId)
+    const polygon = polygons.find(p => p.id === polygonId)
+    if (polygon) {
+      const coords = polygon.geometry.coordinates[0]
+      // Calculate center of polygon
+      const lats = coords.map(c => c[1])
+      const lngs = coords.map(c => c[0])
+      const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2
+      const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2
+      setCenter({ lat: centerLat, lng: centerLng })
+      setZoom(17)
+    }
+  }, [polygons])
 
   // Handle waypoint clear
   const handleWaypointClear = useCallback(() => {
@@ -281,8 +305,11 @@ function App() {
             onPolygonCreate={handlePolygonCreate}
             onPolygonUpdate={handlePolygonUpdate}
             onPolygonDelete={handlePolygonDelete}
+            onPolygonSelect={handlePolygonSelectFromMap}
             onMapClick={handleMapClick}
             onWaypointClick={handleWaypointSelect}
+            onWaypointDelete={handleWaypointDelete}
+            onWaypointMove={handleWaypointMove}
             selectedPolygonId={selectedPolygonId}
             drawMode={drawMode}
           />
