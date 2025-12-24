@@ -118,9 +118,19 @@ const PolygonList = ({
                     e.stopPropagation()
                     onGenerateWaypoints?.(polygon)
                   }}
-                  title="Waypoint生成"
+                  title="頂点Waypoint生成"
                 >
-                  📍
+                  <span className={styles.waypointIcon} />
+                </button>
+                <button
+                  className={styles.actionButton}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onGenerateWaypoints?.(polygon, { includeGrid: true })
+                  }}
+                  title="グリッドWaypoint生成"
+                >
+                  <span className={styles.gridIcon} />
                 </button>
                 <button
                   className={styles.actionButton}
@@ -130,7 +140,7 @@ const PolygonList = ({
                   }}
                   title="名前を編集"
                 >
-                  ✏️
+                  <span className={styles.editIcon} />
                 </button>
                 <button
                   className={`${styles.actionButton} ${styles.deleteButton}`}
@@ -142,7 +152,7 @@ const PolygonList = ({
                   }}
                   title="削除"
                 >
-                  🗑️
+                  <span className={styles.deleteIcon} />
                 </button>
               </div>
             </li>

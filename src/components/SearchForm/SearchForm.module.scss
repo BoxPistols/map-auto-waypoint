@@ -161,6 +161,69 @@
   text-overflow: ellipsis;
 }
 
+.optionsRow {
+  margin-bottom: 12px;
+}
+
+.shapeSelector {
+  label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+  }
+}
+
+.shapeButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.shapeButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #555;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #45B7D1;
+    color: #45B7D1;
+  }
+
+  &.active {
+    background: #45B7D1;
+    border-color: #45B7D1;
+    color: white;
+
+    .shapeIcon {
+      border-color: white;
+    }
+  }
+}
+
+.shapeIcon {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #555;
+
+  &.rectangle {
+    border-radius: 2px;
+  }
+
+  &.circle {
+    border-radius: 50%;
+  }
+}
+
 .sizeSelector {
   margin-bottom: 12px;
 

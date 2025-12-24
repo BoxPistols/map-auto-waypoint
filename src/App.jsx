@@ -131,8 +131,16 @@ function App() {
   }, [])
 
   // Generate waypoints from single polygon
-  const handleGenerateWaypoints = useCallback((polygon) => {
-    const newWaypoints = polygonToWaypoints(polygon)
+  const handleGenerateWaypoints = useCallback((polygon, options = {}) => {
+    const { includeGrid = false, gridSpacing = 30 } = options
+    let newWaypoints = polygonToWaypoints(polygon)
+
+    // Include grid waypoints if requested
+    if (includeGrid) {
+      const gridWaypoints = generateAllWaypoints([polygon], { includeGrid: true, gridSpacing })
+      newWaypoints = gridWaypoints
+    }
+
     // Remove existing waypoints for this polygon
     setWaypoints(prev => [
       ...prev.filter(w => w.polygonId !== polygon.id),

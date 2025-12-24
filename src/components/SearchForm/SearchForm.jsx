@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { searchAddress, debounce } from '../../services/geocoding'
-import { POLYGON_SIZE_OPTIONS } from '../../services/polygonGenerator'
+import { POLYGON_SIZE_OPTIONS, POLYGON_SHAPE_OPTIONS } from '../../services/polygonGenerator'
 import styles from './SearchForm.module.scss'
 
 const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
@@ -11,6 +11,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const [isComposing, setIsComposing] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const [selectedSize, setSelectedSize] = useState('medium')
+  const [selectedShape, setSelectedShape] = useState('rectangle')
   const [customRadius, setCustomRadius] = useState(100) // meters
   const [useCustomSize, setUseCustomSize] = useState(false)
   const [lastSearchResult, setLastSearchResult] = useState(null)
@@ -101,8 +102,8 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const handleGeneratePolygon = () => {
     if (lastSearchResult && onGeneratePolygon) {
       const options = useCustomSize
-        ? { customRadius }
-        : { size: selectedSize }
+        ? { customRadius, shape: selectedShape }
+        : { size: selectedSize, shape: selectedShape }
       onGeneratePolygon(lastSearchResult, options)
     }
   }
@@ -208,6 +209,25 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
             <span className={styles.locationName}>
               {lastSearchResult.displayName.split(',')[0]}
             </span>
+          </div>
+
+          <div className={styles.optionsRow}>
+            <div className={styles.shapeSelector}>
+              <label>形状:</label>
+              <div className={styles.shapeButtons}>
+                {POLYGON_SHAPE_OPTIONS.map(option => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`${styles.shapeButton} ${selectedShape === option.value ? styles.active : ''}`}
+                    onClick={() => setSelectedShape(option.value)}
+                  >
+                    <span className={`${styles.shapeIcon} ${styles[option.value]}`} />
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className={styles.sizeSelector}>
