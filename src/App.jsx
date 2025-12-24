@@ -7,7 +7,7 @@ import FileImport from './components/FileImport/FileImport'
 import ExportPanel from './components/ExportPanel/ExportPanel'
 import { loadPolygons, savePolygons, loadWaypoints, saveWaypoints, saveSearchHistory } from './utils/storage'
 import { searchAddress } from './services/geocoding'
-import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints } from './services/waypointGenerator'
+import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints } from './services/waypointGenerator'
 import { addElevationToWaypoints } from './services/elevation'
 import { createPolygonFromSearchResult } from './services/polygonGenerator'
 import './App.scss'
@@ -75,6 +75,7 @@ function App() {
 
   // Generate polygon from search result (auto-generation)
   const handleGeneratePolygon = useCallback((searchResult, options = {}) => {
+    const { waypointCount = 8 } = options
     const polygon = createPolygonFromSearchResult(searchResult, options)
     setPolygons(prev => [...prev, polygon])
 
@@ -85,8 +86,8 @@ function App() {
 
     showNotification(`「${polygon.name}」エリアを生成しました`)
 
-    // Auto-generate waypoints from the polygon
-    const newWaypoints = polygonToWaypoints(polygon)
+    // Auto-generate waypoints along perimeter with specified count
+    const newWaypoints = generatePerimeterWaypoints(polygon, waypointCount)
     setWaypoints(prev => [...prev, ...newWaypoints])
     showNotification(`${newWaypoints.length} Waypointを自動生成しました`, 'success')
   }, [showNotification])

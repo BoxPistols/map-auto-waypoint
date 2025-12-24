@@ -140,7 +140,7 @@ const WaypointList = ({
                     )}
                   </div>
                   <span className={styles.type}>
-                    {wp.type === 'grid' ? 'グリッド' : wp.type === 'manual' ? '手動' : '頂点'}
+                    {wp.type === 'grid' ? 'グリッド' : wp.type === 'manual' ? '手動' : wp.type === 'perimeter' ? '外周' : '頂点'}
                   </span>
                   <button
                     className={styles.deleteButton}

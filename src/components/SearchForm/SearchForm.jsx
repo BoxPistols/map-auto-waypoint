@@ -15,6 +15,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const [selectedShape, setSelectedShape] = useState('rectangle')
   const [customRadius, setCustomRadius] = useState(100) // meters
   const [useCustomSize, setUseCustomSize] = useState(false)
+  const [waypointCount, setWaypointCount] = useState(8)
   const [lastSearchResult, setLastSearchResult] = useState(null)
   const inputRef = useRef(null)
   const suggestionsRef = useRef(null)
@@ -103,8 +104,8 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const handleGeneratePolygon = () => {
     if (lastSearchResult && onGeneratePolygon) {
       const options = useCustomSize
-        ? { customRadius, shape: selectedShape }
-        : { size: selectedSize, shape: selectedShape }
+        ? { customRadius, shape: selectedShape, waypointCount }
+        : { size: selectedSize, shape: selectedShape, waypointCount }
       onGeneratePolygon(lastSearchResult, options)
     }
   }
@@ -259,6 +260,22 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
               <span className={`${styles.sliderValue} ${useCustomSize ? styles.active : ''}`}>
                 {customRadius}m
               </span>
+            </div>
+          </div>
+
+          <div className={styles.waypointSelector}>
+            <label>Waypoint数:</label>
+            <div className={styles.sliderWrapper}>
+              <input
+                type="range"
+                min="4"
+                max="32"
+                step="1"
+                value={waypointCount}
+                onChange={(e) => setWaypointCount(Number(e.target.value))}
+                className={styles.slider}
+              />
+              <span className={styles.sliderValue}>{waypointCount}</span>
             </div>
           </div>
 

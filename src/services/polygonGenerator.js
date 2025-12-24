@@ -100,7 +100,7 @@ export const createPolygonFromSearchResult = (searchResult, options = {}) => {
     size = 'medium',
     customRadius = null, // Custom radius in meters (takes priority)
     shape = 'rectangle', // 'rectangle' or 'circle'
-    useBoundingBox = true,
+    useBoundingBox = false, // Default to false - use size presets by default
     padding = 10
   } = options
 
@@ -114,13 +114,8 @@ export const createPolygonFromSearchResult = (searchResult, options = {}) => {
       geometry = generateRectanglePolygon(searchResult.lat, searchResult.lng, customRadius)
     }
   }
-  // Try to use bounding box if available and enabled
-  else if (useBoundingBox && searchResult.boundingBox && searchResult.boundingBox.length === 4) {
-    geometry = generateFromBoundingBox(searchResult.boundingBox, padding)
-  }
-
-  // Fall back to generated shape if no bounding box or disabled
-  if (!geometry) {
+  // Use size preset to generate shape
+  else {
     if (shape === 'circle') {
       geometry = generateCirclePolygon(searchResult.lat, searchResult.lng, size)
     } else {

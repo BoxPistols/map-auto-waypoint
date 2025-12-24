@@ -20,6 +20,46 @@ export const polygonToWaypoints = (polygon) => {
   }))
 }
 
+/**
+ * Generate waypoints along polygon perimeter at regular intervals
+ * @param {object} polygon - Polygon object
+ * @param {number} count - Number of waypoints to generate
+ * @returns {Array} Array of waypoint objects
+ */
+export const generatePerimeterWaypoints = (polygon, count = 8) => {
+  if (!polygon.geometry || polygon.geometry.type !== 'Polygon') {
+    return []
+  }
+
+  try {
+    const turfPolygon = turf.polygon(polygon.geometry.coordinates)
+    const line = turf.polygonToLine(turfPolygon)
+    const length = turf.length(line, { units: 'meters' })
+    const spacing = length / count
+
+    const waypoints = []
+    for (let i = 0; i < count; i++) {
+      const distance = spacing * i
+      const point = turf.along(line, distance, { units: 'meters' })
+
+      waypoints.push({
+        id: crypto.randomUUID(),
+        lat: point.geometry.coordinates[1],
+        lng: point.geometry.coordinates[0],
+        index: i + 1,
+        polygonId: polygon.id,
+        polygonName: polygon.name,
+        type: 'perimeter'
+      })
+    }
+
+    return waypoints
+  } catch (error) {
+    console.error('Perimeter waypoint generation error:', error)
+    return polygonToWaypoints(polygon) // Fallback to vertices
+  }
+}
+
 // Generate grid waypoints inside polygon for thorough inspection
 export const generateGridWaypoints = (polygon, spacingMeters = 50) => {
   if (!polygon.geometry || polygon.geometry.type !== 'Polygon') {
