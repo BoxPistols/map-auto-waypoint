@@ -7,7 +7,8 @@ import FileImport from './components/FileImport/FileImport'
 import ExportPanel from './components/ExportPanel/ExportPanel'
 import { loadPolygons, savePolygons, loadWaypoints, saveWaypoints, saveSearchHistory } from './utils/storage'
 import { searchAddress } from './services/geocoding'
-import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter } from './services/waypointGenerator'
+import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints } from './services/waypointGenerator'
+import { addElevationToWaypoints } from './services/elevation'
 import { createPolygonFromSearchResult } from './services/polygonGenerator'
 import './App.scss'
 
@@ -30,6 +31,11 @@ function App() {
   const [showImport, setShowImport] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [notification, setNotification] = useState(null)
+
+  // Waypoint settings
+  const [gridSpacing, setGridSpacing] = useState(30)
+  const [isLoadingElevation, setIsLoadingElevation] = useState(false)
+  const [elevationProgress, setElevationProgress] = useState(null)
 
   // Auto-save polygons
   useEffect(() => {
@@ -200,6 +206,56 @@ function App() {
     showNotification('すべてのWaypointを削除しました')
   }, [showNotification])
 
+  // Handle elevation fetch
+  const handleFetchElevation = useCallback(async () => {
+    if (waypoints.length === 0) return
+
+    setIsLoadingElevation(true)
+    setElevationProgress({ current: 0, total: waypoints.length })
+
+    try {
+      const waypointsWithElevation = await addElevationToWaypoints(
+        waypoints,
+        (current, total) => setElevationProgress({ current, total })
+      )
+      setWaypoints(waypointsWithElevation)
+      showNotification(`${waypoints.length} 地点の標高を取得しました`)
+    } catch (error) {
+      console.error('Elevation fetch error:', error)
+      showNotification('標高取得中にエラーが発生しました', 'error')
+    } finally {
+      setIsLoadingElevation(false)
+      setElevationProgress(null)
+    }
+  }, [waypoints, showNotification])
+
+  // Handle grid regeneration with new spacing
+  const handleRegenerateGrid = useCallback(() => {
+    // Find polygons that have grid waypoints
+    const polygonIds = [...new Set(
+      waypoints.filter(wp => wp.type === 'grid').map(wp => wp.polygonId)
+    )]
+
+    if (polygonIds.length === 0) return
+
+    let newWaypoints = waypoints.filter(wp => wp.type !== 'grid')
+    let globalIndex = newWaypoints.length + 1
+
+    polygonIds.forEach(polygonId => {
+      const polygon = polygons.find(p => p.id === polygonId)
+      if (polygon) {
+        const gridWaypoints = generateGridWaypoints(polygon, gridSpacing)
+        gridWaypoints.forEach(wp => {
+          wp.index = globalIndex++
+          newWaypoints.push(wp)
+        })
+      }
+    })
+
+    setWaypoints(newWaypoints)
+    showNotification(`グリッドを ${gridSpacing}m 間隔で再生成しました`)
+  }, [waypoints, polygons, gridSpacing, showNotification])
+
   // Handle file import
   const handleImport = useCallback((importedPolygons) => {
     setPolygons(prev => [...prev, ...importedPolygons])
@@ -298,6 +354,12 @@ function App() {
                 onSelect={handleWaypointSelect}
                 onDelete={handleWaypointDelete}
                 onClear={handleWaypointClear}
+                onFetchElevation={handleFetchElevation}
+                onRegenerateGrid={handleRegenerateGrid}
+                gridSpacing={gridSpacing}
+                onGridSpacingChange={setGridSpacing}
+                isLoadingElevation={isLoadingElevation}
+                elevationProgress={elevationProgress}
               />
             )}
           </div>

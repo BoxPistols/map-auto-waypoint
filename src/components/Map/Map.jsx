@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
+import { Box, Rotate3D } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import styles from './Map.module.scss'
@@ -266,7 +267,7 @@ const Map = ({
         onClick={toggle3D}
         title={is3D ? '2D表示に切替' : '3D表示に切替'}
       >
-        {is3D ? '2D' : '3D'}
+        {is3D ? <Box size={18} /> : <Rotate3D size={18} />}
       </button>
 
       {/* Instructions overlay */}

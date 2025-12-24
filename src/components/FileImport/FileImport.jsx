@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react'
+import { FolderOpen, AlertTriangle, X } from 'lucide-react'
 import { parseFile } from '../../utils/fileParser'
 import styles from './FileImport.module.scss'
 
@@ -72,7 +73,9 @@ const FileImport = ({ onImport, onClose }) => {
     <div className={styles.fileImport}>
       <div className={styles.header}>
         <h3>ファイルインポート</h3>
-        <button className={styles.closeButton} onClick={handleCancel}>×</button>
+        <button className={styles.closeButton} onClick={handleCancel}>
+          <X size={18} />
+        </button>
       </div>
 
       {!preview ? (
@@ -85,7 +88,7 @@ const FileImport = ({ onImport, onClose }) => {
             onClick={() => fileInputRef.current?.click()}
           >
             <div className={styles.dropContent}>
-              <span className={styles.folderIcon} />
+              <FolderOpen size={48} className={styles.folderIcon} />
               <p>ファイルをドロップ</p>
               <p className={styles.hint}>または クリックして選択</p>
               <p className={styles.formats}>対応形式: GeoJSON, KML</p>
@@ -109,7 +112,7 @@ const FileImport = ({ onImport, onClose }) => {
 
           {error && (
             <div className={styles.error}>
-              <span className={styles.warningIcon} /> {error}
+              <AlertTriangle size={16} /> {error}
             </div>
           )}
         </>

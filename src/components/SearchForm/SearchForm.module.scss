@@ -134,22 +134,8 @@
 }
 
 .locationIcon {
-  width: 16px;
-  height: 16px;
-  background: #45B7D1;
-  border-radius: 50%;
-  position: relative;
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-top: 6px solid #45B7D1;
-  }
+  color: #45B7D1;
+  flex-shrink: 0;
 }
 
 .locationName {
@@ -210,19 +196,6 @@
   }
 }
 
-.shapeIcon {
-  width: 14px;
-  height: 14px;
-  border: 2px solid #555;
-
-  &.rectangle {
-    border-radius: 2px;
-  }
-
-  &.circle {
-    border-radius: 50%;
-  }
-}
 
 .sizeSelector {
   margin-bottom: 12px;
@@ -344,39 +317,3 @@
   }
 }
 
-.droneIcon {
-  width: 20px;
-  height: 20px;
-  position: relative;
-
-  // Drone body
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 10px;
-    height: 6px;
-    background: white;
-    border-radius: 2px;
-  }
-
-  // Propeller arms
-  &::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 18px;
-    height: 2px;
-    background: white;
-    box-shadow:
-      -7px -4px 0 0 white,
-      7px -4px 0 0 white,
-      -7px 4px 0 0 white,
-      7px 4px 0 0 white;
-    border-radius: 1px;
-  }
-}

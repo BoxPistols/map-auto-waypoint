@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { MapPin, Plane, X, Square, Circle } from 'lucide-react'
 import { searchAddress, debounce } from '../../services/geocoding'
 import { POLYGON_SIZE_OPTIONS, POLYGON_SHAPE_OPTIONS } from '../../services/polygonGenerator'
 import styles from './SearchForm.module.scss'
@@ -175,7 +176,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
               onClick={handleClear}
               aria-label="クリア"
             >
-              ×
+              <X size={14} />
             </button>
           )}
         </div>
@@ -205,7 +206,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
       {lastSearchResult && (
         <div className={styles.generatePanel}>
           <div className={styles.selectedLocation}>
-            <span className={styles.locationIcon} aria-hidden="true" />
+            <MapPin size={16} className={styles.locationIcon} />
             <span className={styles.locationName}>
               {lastSearchResult.displayName.split(',')[0]}
             </span>
@@ -222,7 +223,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
                     className={`${styles.shapeButton} ${selectedShape === option.value ? styles.active : ''}`}
                     onClick={() => setSelectedShape(option.value)}
                   >
-                    <span className={`${styles.shapeIcon} ${styles[option.value]}`} />
+                    {option.value === 'rectangle' ? <Square size={14} /> : <Circle size={14} />}
                     {option.label}
                   </button>
                 ))}
@@ -266,7 +267,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
             className={styles.generateButton}
             onClick={handleGeneratePolygon}
           >
-            <span className={styles.droneIcon} aria-hidden="true" />
+            <Plane size={18} />
             この周辺にエリア生成
           </button>
         </div>

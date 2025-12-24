@@ -1,3 +1,4 @@
+import { FileJson, FileSpreadsheet, Map, Download, X } from 'lucide-react'
 import { exportToJSON, exportToCSV, exportPolygonsToGeoJSON, exportFullBackup } from '../../utils/exporters'
 import { exportAllData } from '../../utils/storage'
 import styles from './ExportPanel.module.scss'
@@ -36,7 +37,9 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
     <div className={styles.exportPanel}>
       <div className={styles.header}>
         <h3>エクスポート</h3>
-        <button className={styles.closeButton} onClick={onClose}>×</button>
+        <button className={styles.closeButton} onClick={onClose}>
+          <X size={18} />
+        </button>
       </div>
 
       <div className={styles.content}>
@@ -53,7 +56,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               onClick={handleExportWaypointsJSON}
               disabled={waypoints.length === 0}
             >
-              <span className={`${styles.icon} ${styles.jsonIcon}`} />
+              <FileJson size={16} />
               JSON形式
             </button>
             <button
@@ -61,7 +64,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               onClick={handleExportWaypointsCSV}
               disabled={waypoints.length === 0}
             >
-              <span className={`${styles.icon} ${styles.csvIcon}`} />
+              <FileSpreadsheet size={16} />
               CSV形式
             </button>
           </div>
@@ -80,7 +83,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               onClick={handleExportPolygonsGeoJSON}
               disabled={polygons.length === 0}
             >
-              <span className={`${styles.icon} ${styles.geoIcon}`} />
+              <Map size={16} />
               GeoJSON形式
             </button>
           </div>
@@ -97,7 +100,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               className={`${styles.exportButton} ${styles.backupButton}`}
               onClick={handleExportBackup}
             >
-              <span className={`${styles.icon} ${styles.backupIcon}`} />
+              <Download size={16} />
               バックアップを作成
             </button>
           </div>

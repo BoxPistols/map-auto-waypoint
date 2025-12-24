@@ -34,9 +34,45 @@
   color: #666;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.iconButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: #666;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #f0f0f0;
+    border-color: #ccc;
+    color: #45B7D1;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 .clearButton {
-  padding: 6px 12px;
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
   color: #FF6B6B;
   background: transparent;
   border: 1px solid #FF6B6B;
@@ -48,6 +84,95 @@
     background: #FF6B6B;
     color: white;
   }
+}
+
+.progress {
+  position: relative;
+  padding: 8px 16px;
+  font-size: 11px;
+  color: #666;
+  background: #f9f9f9;
+  text-align: center;
+}
+
+.progressBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(69, 183, 209, 0.2);
+  transition: width 0.3s;
+}
+
+.settings {
+  padding: 12px 16px;
+  background: #f5f9fa;
+  border-bottom: 1px solid #e0e8ea;
+}
+
+.settingRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  label {
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+  }
+}
+
+.slider {
+  flex: 1;
+  height: 4px;
+  appearance: none;
+  background: #ddd;
+  border-radius: 2px;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #45B7D1;
+    border-radius: 50%;
+    cursor: grab;
+  }
+}
+
+.sliderValue {
+  min-width: 40px;
+  font-size: 12px;
+  color: #45B7D1;
+  font-weight: 500;
+  text-align: right;
+}
+
+.regenerateButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  font-size: 12px;
+  color: #45B7D1;
+  background: white;
+  border: 1px solid #45B7D1;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #45B7D1;
+    color: white;
+  }
+}
+
+.elevation {
+  color: #4ECDC4;
+  font-weight: 500;
 }
 
 .groups {
