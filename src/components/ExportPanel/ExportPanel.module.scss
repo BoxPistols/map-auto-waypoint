@@ -1,0 +1,123 @@
+.exportPanel {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 360px;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 20px;
+  color: #999;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background: #f0f0f0;
+    color: #666;
+  }
+}
+
+.content {
+  padding: 20px;
+}
+
+.section {
+  margin-bottom: 24px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  h4 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.count {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #666;
+}
+
+.hint {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: #888;
+  line-height: 1.5;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.exportButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #45B7D1;
+  background: #f0f9fb;
+  border: 1px solid #d0ebf1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #e0f3f7;
+    border-color: #b0dce6;
+  }
+
+  &:disabled {
+    color: #aaa;
+    background: #f5f5f5;
+    border-color: #ddd;
+    cursor: not-allowed;
+  }
+
+  &.backupButton {
+    color: #96CEB4;
+    background: #f0f9f5;
+    border-color: #d0e9dc;
+
+    &:hover {
+      background: #e0f3ea;
+      border-color: #b0d9c6;
+    }
+  }
+}
+
+.icon {
+  font-size: 16px;
+}

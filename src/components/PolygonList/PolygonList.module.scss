@@ -1,0 +1,162 @@
+.polygonList {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.emptyState {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+
+  p {
+    margin: 0 0 8px;
+  }
+
+  .hint {
+    font-size: 12px;
+    color: #999;
+    line-height: 1.6;
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.count {
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+}
+
+.generateAllButton {
+  padding: 6px 12px;
+  font-size: 12px;
+  color: white;
+  background: #45B7D1;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #3aa4bd;
+  }
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background: #f9f9f9;
+  }
+
+  &.selected {
+    background: #e8f4f8;
+    border-left: 3px solid #45B7D1;
+    padding-left: 13px;
+  }
+}
+
+.colorIndicator {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-top: 4px;
+  margin-right: 12px;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.index {
+  font-size: 12px;
+  color: #999;
+}
+
+.name {
+  font-weight: 500;
+  color: #333;
+  cursor: text;
+
+  &:hover {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+  }
+}
+
+.nameInput {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 14px;
+  border: 1px solid #45B7D1;
+  border-radius: 4px;
+  outline: none;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: #777;
+}
+
+.actions {
+  display: flex;
+  gap: 4px;
+  margin-left: 12px;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 14px;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: #f0f0f0;
+    border-color: #ccc;
+  }
+
+  &.deleteButton:hover {
+    background: #fee;
+    border-color: #fcc;
+  }
+}

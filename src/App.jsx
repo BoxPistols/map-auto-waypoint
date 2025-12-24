@@ -1,0 +1,316 @@
+import { useState, useEffect, useCallback } from 'react'
+import Map from './components/Map/Map'
+import SearchForm from './components/SearchForm/SearchForm'
+import PolygonList from './components/PolygonList/PolygonList'
+import WaypointList from './components/WaypointList/WaypointList'
+import FileImport from './components/FileImport/FileImport'
+import ExportPanel from './components/ExportPanel/ExportPanel'
+import { loadPolygons, savePolygons, loadWaypoints, saveWaypoints, saveSearchHistory } from './utils/storage'
+import { searchAddress } from './services/geocoding'
+import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter } from './services/waypointGenerator'
+import './App.scss'
+
+// Default center: Tokyo Tower
+const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
+
+function App() {
+  // Map state
+  const [center, setCenter] = useState(DEFAULT_CENTER)
+  const [zoom, setZoom] = useState(12)
+
+  // Data state
+  const [polygons, setPolygons] = useState(() => loadPolygons())
+  const [waypoints, setWaypoints] = useState(() => loadWaypoints())
+  const [selectedPolygonId, setSelectedPolygonId] = useState(null)
+
+  // UI state
+  const [drawMode, setDrawMode] = useState(false)
+  const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
+  const [showImport, setShowImport] = useState(false)
+  const [showExport, setShowExport] = useState(false)
+  const [notification, setNotification] = useState(null)
+
+  // Auto-save polygons
+  useEffect(() => {
+    savePolygons(polygons)
+  }, [polygons])
+
+  // Auto-save waypoints
+  useEffect(() => {
+    saveWaypoints(waypoints)
+  }, [waypoints])
+
+  // Show notification
+  const showNotification = useCallback((message, type = 'info') => {
+    setNotification({ message, type })
+    setTimeout(() => setNotification(null), 2500)
+  }, [])
+
+  // Handle search
+  const handleSearch = useCallback(async (query) => {
+    const results = await searchAddress(query)
+    if (results.length > 0) {
+      const first = results[0]
+      setCenter({ lat: first.lat, lng: first.lng })
+      setZoom(15)
+      saveSearchHistory(query, results)
+      showNotification(`「${first.displayName.split(',')[0]}」に移動しました`)
+    } else {
+      showNotification('検索結果が見つかりませんでした', 'error')
+    }
+  }, [showNotification])
+
+  // Handle search select
+  const handleSearchSelect = useCallback((result) => {
+    setCenter({ lat: result.lat, lng: result.lng })
+    setZoom(15)
+  }, [])
+
+  // Handle polygon create
+  const handlePolygonCreate = useCallback((polygon) => {
+    setPolygons(prev => [...prev, polygon])
+    setDrawMode(false)
+    showNotification('ポリゴンを作成しました')
+  }, [showNotification])
+
+  // Handle polygon update
+  const handlePolygonUpdate = useCallback((feature) => {
+    setPolygons(prev => prev.map(p =>
+      p.id === feature.id ? { ...p, geometry: feature.geometry } : p
+    ))
+  }, [])
+
+  // Handle polygon delete
+  const handlePolygonDelete = useCallback((id) => {
+    setPolygons(prev => prev.filter(p => p.id !== id))
+    setWaypoints(prev => prev.filter(w => w.polygonId !== id))
+    if (selectedPolygonId === id) {
+      setSelectedPolygonId(null)
+    }
+    showNotification('ポリゴンを削除しました')
+  }, [selectedPolygonId, showNotification])
+
+  // Handle polygon rename
+  const handlePolygonRename = useCallback((id, name) => {
+    setPolygons(prev => prev.map(p =>
+      p.id === id ? { ...p, name } : p
+    ))
+    // Update waypoint polygon names
+    setWaypoints(prev => prev.map(w =>
+      w.polygonId === id ? { ...w, polygonName: name } : w
+    ))
+  }, [])
+
+  // Handle polygon select
+  const handlePolygonSelect = useCallback((polygon) => {
+    setSelectedPolygonId(polygon.id)
+    const center = getPolygonCenter(polygon)
+    if (center) {
+      setCenter(center)
+      setZoom(16)
+    }
+  }, [])
+
+  // Generate waypoints from single polygon
+  const handleGenerateWaypoints = useCallback((polygon) => {
+    const newWaypoints = polygonToWaypoints(polygon)
+    // Remove existing waypoints for this polygon
+    setWaypoints(prev => [
+      ...prev.filter(w => w.polygonId !== polygon.id),
+      ...newWaypoints
+    ])
+    showNotification(`${newWaypoints.length} Waypointを生成しました`)
+    setActivePanel('waypoints')
+  }, [showNotification])
+
+  // Generate waypoints from all polygons
+  const handleGenerateAllWaypoints = useCallback(() => {
+    if (polygons.length === 0) return
+    const newWaypoints = generateAllWaypoints(polygons)
+    setWaypoints(newWaypoints)
+    showNotification(`${newWaypoints.length} Waypointを生成しました`)
+    setActivePanel('waypoints')
+  }, [polygons, showNotification])
+
+  // Handle waypoint select
+  const handleWaypointSelect = useCallback((waypoint) => {
+    setCenter({ lat: waypoint.lat, lng: waypoint.lng })
+    setZoom(18)
+  }, [])
+
+  // Handle waypoint delete
+  const handleWaypointDelete = useCallback((id) => {
+    setWaypoints(prev => prev.filter(w => w.id !== id))
+  }, [])
+
+  // Handle waypoint clear
+  const handleWaypointClear = useCallback(() => {
+    setWaypoints([])
+    showNotification('すべてのWaypointを削除しました')
+  }, [showNotification])
+
+  // Handle file import
+  const handleImport = useCallback((importedPolygons) => {
+    setPolygons(prev => [...prev, ...importedPolygons])
+    showNotification(`${importedPolygons.length} ポリゴンをインポートしました`)
+  }, [showNotification])
+
+  // Handle map click (add manual waypoint)
+  const handleMapClick = useCallback((latlng) => {
+    if (!drawMode) {
+      // Add manual waypoint
+      const newWaypoint = {
+        id: crypto.randomUUID(),
+        lat: latlng.lat,
+        lng: latlng.lng,
+        index: waypoints.length + 1,
+        polygonId: null,
+        polygonName: '手動追加',
+        type: 'manual'
+      }
+      setWaypoints(prev => [...prev, newWaypoint])
+      showNotification('Waypointを追加しました')
+    }
+  }, [drawMode, waypoints.length, showNotification])
+
+  // Mobile detection
+  const isMobile = () => window.innerWidth <= 768
+
+  return (
+    <div className="app">
+      {/* Header */}
+      <header className="app-header">
+        <h1 className="app-title">Drone Waypoint</h1>
+        <div className="header-actions">
+          <button
+            className={`mode-toggle ${drawMode ? 'active' : ''}`}
+            onClick={() => setDrawMode(!drawMode)}
+          >
+            {drawMode ? '描画中' : '描画モード'}
+          </button>
+          <button
+            className="action-button"
+            onClick={() => setShowImport(true)}
+          >
+            インポート
+          </button>
+          <button
+            className="action-button"
+            onClick={() => setShowExport(true)}
+          >
+            エクスポート
+          </button>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="app-main">
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div className="search-section">
+            <SearchForm
+              onSearch={handleSearch}
+              onSelect={handleSearchSelect}
+            />
+          </div>
+
+          <div className="panel-tabs">
+            <button
+              className={`tab ${activePanel === 'polygons' ? 'active' : ''}`}
+              onClick={() => setActivePanel('polygons')}
+            >
+              ポリゴン ({polygons.length})
+            </button>
+            <button
+              className={`tab ${activePanel === 'waypoints' ? 'active' : ''}`}
+              onClick={() => setActivePanel('waypoints')}
+            >
+              Waypoint ({waypoints.length})
+            </button>
+          </div>
+
+          <div className="panel-content">
+            {activePanel === 'polygons' ? (
+              <PolygonList
+                polygons={polygons}
+                selectedPolygonId={selectedPolygonId}
+                onSelect={handlePolygonSelect}
+                onDelete={handlePolygonDelete}
+                onRename={handlePolygonRename}
+                onGenerateWaypoints={handleGenerateWaypoints}
+                onGenerateAllWaypoints={handleGenerateAllWaypoints}
+              />
+            ) : (
+              <WaypointList
+                waypoints={waypoints}
+                onSelect={handleWaypointSelect}
+                onDelete={handleWaypointDelete}
+                onClear={handleWaypointClear}
+              />
+            )}
+          </div>
+        </aside>
+
+        {/* Map */}
+        <div className="map-section">
+          <Map
+            center={center}
+            zoom={zoom}
+            polygons={polygons}
+            waypoints={waypoints}
+            onPolygonCreate={handlePolygonCreate}
+            onPolygonUpdate={handlePolygonUpdate}
+            onPolygonDelete={handlePolygonDelete}
+            onMapClick={handleMapClick}
+            onWaypointClick={handleWaypointSelect}
+            selectedPolygonId={selectedPolygonId}
+            drawMode={drawMode}
+          />
+
+          {/* Draw mode hint */}
+          {drawMode && (
+            <div className="draw-hint">
+              地図をクリックしてポリゴンを描画
+              <br />
+              最後の点をダブルクリックで完了
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Import Modal */}
+      {showImport && (
+        <div className="modal-overlay" onClick={() => setShowImport(false)}>
+          <div onClick={e => e.stopPropagation()}>
+            <FileImport
+              onImport={handleImport}
+              onClose={() => setShowImport(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Export Modal */}
+      {showExport && (
+        <div className="modal-overlay" onClick={() => setShowExport(false)}>
+          <div onClick={e => e.stopPropagation()}>
+            <ExportPanel
+              waypoints={waypoints}
+              polygons={polygons}
+              onClose={() => setShowExport(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Notification */}
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default App

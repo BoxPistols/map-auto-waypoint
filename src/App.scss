@@ -1,0 +1,244 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+// Header
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #2c3e50;
+  color: white;
+  z-index: 100;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.mode-toggle {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: white;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  &.active {
+    background: #45B7D1;
+    border-color: #45B7D1;
+  }
+}
+
+.action-button {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: white;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+// Main content
+.app-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+// Sidebar
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 340px;
+  background: white;
+  border-right: 1px solid #e0e0e0;
+  z-index: 10;
+}
+
+.search-section {
+  padding: 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.panel-tabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tab {
+  flex: 1;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  background: #f9f9f9;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: #f0f0f0;
+  }
+
+  &.active {
+    color: #45B7D1;
+    background: white;
+    border-bottom-color: #45B7D1;
+  }
+}
+
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+// Map section
+.map-section {
+  flex: 1;
+  position: relative;
+}
+
+.draw-hint {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  font-size: 13px;
+  color: white;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 8px;
+  text-align: center;
+  line-height: 1.5;
+  z-index: 100;
+  pointer-events: none;
+}
+
+// Modal overlay
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+}
+
+// Notification
+.notification {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  font-size: 14px;
+  color: white;
+  background: #2c3e50;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1100;
+  animation: slideUp 0.3s ease;
+
+  &.error {
+    background: #e74c3c;
+  }
+
+  &.success {
+    background: #27ae60;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+// Mobile styles
+@media (max-width: 768px) {
+  .app-header {
+    padding: 10px 16px;
+  }
+
+  .app-title {
+    font-size: 16px;
+  }
+
+  .header-actions {
+    gap: 6px;
+  }
+
+  .mode-toggle,
+  .action-button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .app-main {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: 40%;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .map-section {
+    height: 60%;
+  }
+
+  .draw-hint {
+    top: 10px;
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+}

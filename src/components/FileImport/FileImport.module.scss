@@ -1,0 +1,233 @@
+.fileImport {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 20px;
+  color: #999;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background: #f0f0f0;
+    color: #666;
+  }
+}
+
+.dropZone {
+  margin: 20px;
+  padding: 40px 20px;
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+
+  &:hover,
+  &.dragging {
+    border-color: #45B7D1;
+    background: #f8fcfd;
+  }
+}
+
+.dropContent {
+  text-align: center;
+  color: #666;
+
+  p {
+    margin: 8px 0 0;
+  }
+}
+
+.icon {
+  font-size: 48px;
+}
+
+.hint {
+  font-size: 13px;
+  color: #999;
+}
+
+.formats {
+  margin-top: 16px !important;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.fileInput {
+  display: none;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px;
+  color: #666;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ddd;
+  border-top-color: #45B7D1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 20px 20px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #d63031;
+  background: #fee;
+  border-radius: 6px;
+}
+
+.preview {
+  padding: 20px;
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.filename {
+  font-weight: 500;
+  color: #333;
+}
+
+.polygonCount {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #e8f4f8;
+  border-radius: 12px;
+  color: #45B7D1;
+}
+
+.previewList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 6px;
+}
+
+.previewItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f5f5f5;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.colorDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.polygonName {
+  flex: 1;
+  font-size: 13px;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vertexCount {
+  font-size: 11px;
+  color: #999;
+}
+
+.moreItems {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: #999;
+  text-align: center;
+  background: #fafafa;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.cancelButton {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  color: #666;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #e8e8e8;
+  }
+}
+
+.importButton {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  color: white;
+  background: #45B7D1;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #3aa4bd;
+  }
+}
