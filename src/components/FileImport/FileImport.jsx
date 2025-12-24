@@ -85,7 +85,7 @@ const FileImport = ({ onImport, onClose }) => {
             onClick={() => fileInputRef.current?.click()}
           >
             <div className={styles.dropContent}>
-              <span className={styles.icon}>📁</span>
+              <span className={styles.folderIcon} />
               <p>ファイルをドロップ</p>
               <p className={styles.hint}>または クリックして選択</p>
               <p className={styles.formats}>対応形式: GeoJSON, KML</p>
@@ -109,7 +109,7 @@ const FileImport = ({ onImport, onClose }) => {
 
           {error && (
             <div className={styles.error}>
-              <span>⚠️</span> {error}
+              <span className={styles.warningIcon} /> {error}
             </div>
           )}
         </>

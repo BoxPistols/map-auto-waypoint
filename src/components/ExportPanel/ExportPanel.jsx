@@ -53,7 +53,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               onClick={handleExportWaypointsJSON}
               disabled={waypoints.length === 0}
             >
-              <span className={styles.icon}>📄</span>
+              <span className={`${styles.icon} ${styles.jsonIcon}`} />
               JSON形式
             </button>
             <button
@@ -61,7 +61,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               onClick={handleExportWaypointsCSV}
               disabled={waypoints.length === 0}
             >
-              <span className={styles.icon}>📊</span>
+              <span className={`${styles.icon} ${styles.csvIcon}`} />
               CSV形式
             </button>
           </div>
@@ -80,7 +80,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               onClick={handleExportPolygonsGeoJSON}
               disabled={polygons.length === 0}
             >
-              <span className={styles.icon}>🗺️</span>
+              <span className={`${styles.icon} ${styles.geoIcon}`} />
               GeoJSON形式
             </button>
           </div>
@@ -97,7 +97,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               className={`${styles.exportButton} ${styles.backupButton}`}
               onClick={handleExportBackup}
             >
-              <span className={styles.icon}>💾</span>
+              <span className={`${styles.icon} ${styles.backupIcon}`} />
               バックアップを作成
             </button>
           </div>
