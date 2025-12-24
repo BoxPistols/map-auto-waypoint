@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Grid3X3, Pencil, Trash2 } from 'lucide-react'
+import { MapPin, Grid3X3, Pencil, Trash2, PenTool } from 'lucide-react'
 import { calculatePolygonArea, calculatePolygonPerimeter, formatArea, formatDistance } from '../../services/waypointGenerator'
 import styles from './PolygonList.module.scss'
 
@@ -9,6 +9,7 @@ const PolygonList = ({
   onSelect,
   onDelete,
   onRename,
+  onEditShape,
   onGenerateWaypoints,
   onGenerateAllWaypoints
 }) => {
@@ -132,6 +133,16 @@ const PolygonList = ({
                   title="グリッドWaypoint生成"
                 >
                   <Grid3X3 size={14} />
+                </button>
+                <button
+                  className={styles.actionButton}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEditShape?.(polygon)
+                  }}
+                  title="形状を編集"
+                >
+                  <PenTool size={14} />
                 </button>
                 <button
                   className={styles.actionButton}

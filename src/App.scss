@@ -69,9 +69,14 @@ body {
   cursor: pointer;
   transition: background-color 0.2s, border-color 0.2s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 
@@ -150,6 +155,10 @@ body {
   line-height: 1.5;
   z-index: 100;
   pointer-events: none;
+
+  &.editing {
+    background: rgba(69, 183, 209, 0.9);
+  }
 }
 
 // Modal overlay

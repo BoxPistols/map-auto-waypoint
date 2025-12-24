@@ -31,6 +31,7 @@ function App() {
   const [showImport, setShowImport] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [notification, setNotification] = useState(null)
+  const [editingPolygon, setEditingPolygon] = useState(null)
 
   // Waypoint settings
   const [gridSpacing, setGridSpacing] = useState(30)
@@ -125,6 +126,32 @@ function App() {
     setWaypoints(prev => prev.map(w =>
       w.polygonId === id ? { ...w, polygonName: name } : w
     ))
+  }, [])
+
+  // Handle polygon shape edit start
+  const handleEditPolygonShape = useCallback((polygon) => {
+    setEditingPolygon(polygon)
+    setSelectedPolygonId(polygon.id)
+    setDrawMode(false) // Disable draw mode when editing
+    const center = getPolygonCenter(polygon)
+    if (center) {
+      setCenter(center)
+      setZoom(17)
+    }
+    showNotification('ポリゴンを編集中です。頂点をドラッグして変更してください。')
+  }, [showNotification])
+
+  // Handle polygon shape edit complete
+  const handlePolygonEditComplete = useCallback((updatedFeature) => {
+    setPolygons(prev => prev.map(p =>
+      p.id === updatedFeature.id ? { ...p, geometry: updatedFeature.geometry } : p
+    ))
+    showNotification('ポリゴンを更新しました')
+  }, [showNotification])
+
+  // Handle finish editing
+  const handleFinishEditing = useCallback(() => {
+    setEditingPolygon(null)
   }, [])
 
   // Handle polygon select
@@ -290,21 +317,32 @@ function App() {
       <header className="app-header">
         <h1 className="app-title">Drone Waypoint</h1>
         <div className="header-actions">
-          <button
-            className={`mode-toggle ${drawMode ? 'active' : ''}`}
-            onClick={() => setDrawMode(!drawMode)}
-          >
-            {drawMode ? '描画中' : '描画モード'}
-          </button>
+          {editingPolygon ? (
+            <button
+              className="mode-toggle active"
+              onClick={handleFinishEditing}
+            >
+              編集完了
+            </button>
+          ) : (
+            <button
+              className={`mode-toggle ${drawMode ? 'active' : ''}`}
+              onClick={() => setDrawMode(!drawMode)}
+            >
+              {drawMode ? '描画中' : '描画モード'}
+            </button>
+          )}
           <button
             className="action-button"
             onClick={() => setShowImport(true)}
+            disabled={!!editingPolygon}
           >
             インポート
           </button>
           <button
             className="action-button"
             onClick={() => setShowExport(true)}
+            disabled={!!editingPolygon}
           >
             エクスポート
           </button>
@@ -346,6 +384,7 @@ function App() {
                 onSelect={handlePolygonSelect}
                 onDelete={handlePolygonDelete}
                 onRename={handlePolygonRename}
+                onEditShape={handleEditPolygonShape}
                 onGenerateWaypoints={handleGenerateWaypoints}
                 onGenerateAllWaypoints={handleGenerateAllWaypoints}
               />
@@ -377,11 +416,13 @@ function App() {
             onPolygonUpdate={handlePolygonUpdate}
             onPolygonDelete={handlePolygonDelete}
             onPolygonSelect={handlePolygonSelectFromMap}
+            onPolygonEditComplete={handlePolygonEditComplete}
             onMapClick={handleMapClick}
             onWaypointClick={handleWaypointSelect}
             onWaypointDelete={handleWaypointDelete}
             onWaypointMove={handleWaypointMove}
             selectedPolygonId={selectedPolygonId}
+            editingPolygon={editingPolygon}
             drawMode={drawMode}
           />
 
@@ -391,6 +432,15 @@ function App() {
               地図をクリックしてポリゴンを描画
               <br />
               最後の点をダブルクリックで完了
+            </div>
+          )}
+
+          {/* Edit mode hint */}
+          {editingPolygon && (
+            <div className="draw-hint editing">
+              「{editingPolygon.name}」を編集中
+              <br />
+              頂点をドラッグして変更 / 中点クリックで頂点追加
             </div>
           )}
         </div>

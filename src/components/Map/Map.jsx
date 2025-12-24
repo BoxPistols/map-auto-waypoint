@@ -41,11 +41,13 @@ const Map = ({
   onPolygonUpdate,
   onPolygonDelete,
   onPolygonSelect,
+  onPolygonEditComplete,
   onMapClick,
   onWaypointClick,
   onWaypointDelete,
   onWaypointMove,
   selectedPolygonId,
+  editingPolygon = null,
   drawMode = false
 }) => {
   const mapRef = useRef(null)
@@ -163,20 +165,22 @@ const Map = ({
     }
   }, [onWaypointMove])
 
-  // Convert polygons to GeoJSON for display
+  // Convert polygons to GeoJSON for display (exclude polygon being edited)
   const polygonsGeoJSON = {
     type: 'FeatureCollection',
-    features: polygons.map(p => ({
-      type: 'Feature',
-      id: p.id,
-      properties: {
+    features: polygons
+      .filter(p => !editingPolygon || p.id !== editingPolygon.id)
+      .map(p => ({
+        type: 'Feature',
         id: p.id,
-        name: p.name,
-        color: p.color,
-        selected: p.id === selectedPolygonId
-      },
-      geometry: p.geometry
-    }))
+        properties: {
+          id: p.id,
+          name: p.name,
+          color: p.color,
+          selected: p.id === selectedPolygonId
+        },
+        geometry: p.geometry
+      }))
   }
 
   const interactiveLayerIds = ['polygon-fill']
@@ -203,7 +207,9 @@ const Map = ({
           onCreate={handleCreate}
           onUpdate={handleUpdate}
           onDelete={handleDelete}
+          onEditComplete={onPolygonEditComplete}
           active={drawMode}
+          editingPolygon={editingPolygon}
         />
 
         {/* Display saved polygons */}
@@ -272,8 +278,14 @@ const Map = ({
 
       {/* Instructions overlay */}
       <div className={styles.instructions}>
-        <span>ポリゴン: クリック=選択 / ダブルクリック=削除</span>
-        <span>Waypoint: ドラッグ=移動 / ダブルクリック=削除</span>
+        {editingPolygon ? (
+          <span>編集中: 頂点をドラッグ / 完了ボタンで保存</span>
+        ) : (
+          <>
+            <span>ポリゴン: クリック=選択 / ダブルクリック=削除</span>
+            <span>Waypoint: ドラッグ=移動 / ダブルクリック=削除</span>
+          </>
+        )}
       </div>
     </div>
   )

@@ -8,10 +8,13 @@ const DrawControl = forwardRef(({
   onCreate,
   onUpdate,
   onDelete,
-  active = false
+  onEditComplete,
+  active = false,
+  editingPolygon = null
 }, ref) => {
   const { current: map } = useMap()
   const drawRef = useRef(null)
+  const editingIdRef = useRef(null)
 
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
@@ -28,6 +31,34 @@ const DrawControl = forwardRef(({
     deleteAll: () => {
       if (drawRef.current) {
         drawRef.current.deleteAll()
+      }
+    },
+    loadPolygon: (polygon) => {
+      if (drawRef.current && polygon) {
+        drawRef.current.deleteAll()
+        const feature = {
+          id: polygon.id,
+          type: 'Feature',
+          properties: {},
+          geometry: polygon.geometry
+        }
+        drawRef.current.add(feature)
+        drawRef.current.changeMode('direct_select', { featureId: polygon.id })
+        editingIdRef.current = polygon.id
+      }
+    },
+    finishEditing: () => {
+      if (drawRef.current && editingIdRef.current) {
+        const features = drawRef.current.getAll()
+        const editedFeature = features.features.find(f => f.id === editingIdRef.current)
+        if (editedFeature) {
+          onEditComplete?.({
+            id: editingIdRef.current,
+            geometry: editedFeature.geometry
+          })
+        }
+        drawRef.current.deleteAll()
+        editingIdRef.current = null
       }
     }
   }))
@@ -164,7 +195,18 @@ const DrawControl = forwardRef(({
     }
 
     const handleUpdate = (e) => {
-      onUpdate?.(e.features)
+      // If we're editing an existing polygon, use onEditComplete
+      if (editingIdRef.current && e.features.length > 0) {
+        const editedFeature = e.features.find(f => f.id === editingIdRef.current)
+        if (editedFeature) {
+          onEditComplete?.({
+            id: editingIdRef.current,
+            geometry: editedFeature.geometry
+          })
+        }
+      } else {
+        onUpdate?.(e.features)
+      }
     }
 
     const handleDelete = (e) => {
@@ -192,11 +234,32 @@ const DrawControl = forwardRef(({
 
     if (active) {
       drawRef.current.changeMode('draw_polygon')
-    } else {
+    } else if (!editingPolygon) {
       drawRef.current.changeMode('simple_select')
       drawRef.current.deleteAll()
     }
-  }, [active])
+  }, [active, editingPolygon])
+
+  // Handle editing polygon changes
+  useEffect(() => {
+    if (!drawRef.current || !map) return
+
+    if (editingPolygon) {
+      drawRef.current.deleteAll()
+      const feature = {
+        id: editingPolygon.id,
+        type: 'Feature',
+        properties: {},
+        geometry: editingPolygon.geometry
+      }
+      drawRef.current.add(feature)
+      drawRef.current.changeMode('direct_select', { featureId: editingPolygon.id })
+      editingIdRef.current = editingPolygon.id
+    } else if (editingIdRef.current) {
+      drawRef.current.deleteAll()
+      editingIdRef.current = null
+    }
+  }, [editingPolygon, map])
 
   return null
 })
