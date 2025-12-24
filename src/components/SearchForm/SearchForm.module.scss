@@ -114,3 +114,95 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+// Polygon generation panel
+.generatePanel {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8fcfd;
+  border: 1px solid #d0ebf1;
+  border-radius: 8px;
+}
+
+.selectedLocation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.locationIcon {
+  font-size: 18px;
+}
+
+.locationName {
+  font-weight: 500;
+  color: #333;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sizeSelector {
+  margin-bottom: 12px;
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 6px;
+  }
+}
+
+.sizeButtons {
+  display: flex;
+  gap: 6px;
+}
+
+.sizeButton {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: #555;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #45B7D1;
+    color: #45B7D1;
+  }
+
+  &.active {
+    background: #45B7D1;
+    border-color: #45B7D1;
+    color: white;
+  }
+}
+
+.generateButton {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background: linear-gradient(135deg, #45B7D1, #4ECDC4);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(69, 183, 209, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}

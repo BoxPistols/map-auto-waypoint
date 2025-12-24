@@ -8,6 +8,7 @@ import ExportPanel from './components/ExportPanel/ExportPanel'
 import { loadPolygons, savePolygons, loadWaypoints, saveWaypoints, saveSearchHistory } from './utils/storage'
 import { searchAddress } from './services/geocoding'
 import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter } from './services/waypointGenerator'
+import { createPolygonFromSearchResult } from './services/polygonGenerator'
 import './App.scss'
 
 // Default center: Tokyo Tower
@@ -63,8 +64,26 @@ function App() {
   // Handle search select
   const handleSearchSelect = useCallback((result) => {
     setCenter({ lat: result.lat, lng: result.lng })
-    setZoom(15)
+    setZoom(16)
   }, [])
+
+  // Generate polygon from search result (auto-generation)
+  const handleGeneratePolygon = useCallback((searchResult, options = {}) => {
+    const polygon = createPolygonFromSearchResult(searchResult, options)
+    setPolygons(prev => [...prev, polygon])
+
+    // Focus on the new polygon
+    setCenter({ lat: searchResult.lat, lng: searchResult.lng })
+    setZoom(17)
+    setSelectedPolygonId(polygon.id)
+
+    showNotification(`「${polygon.name}」エリアを生成しました`)
+
+    // Auto-generate waypoints from the polygon
+    const newWaypoints = polygonToWaypoints(polygon)
+    setWaypoints(prev => [...prev, ...newWaypoints])
+    showNotification(`${newWaypoints.length} Waypointを自動生成しました`, 'success')
+  }, [showNotification])
 
   // Handle polygon create
   const handlePolygonCreate = useCallback((polygon) => {
@@ -211,6 +230,7 @@ function App() {
             <SearchForm
               onSearch={handleSearch}
               onSelect={handleSearchSelect}
+              onGeneratePolygon={handleGeneratePolygon}
             />
           </div>
 

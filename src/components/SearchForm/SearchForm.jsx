@@ -1,14 +1,17 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { searchAddress, debounce } from '../../services/geocoding'
+import { POLYGON_SIZE_OPTIONS } from '../../services/polygonGenerator'
 import styles from './SearchForm.module.scss'
 
-const SearchForm = ({ onSearch, onSelect }) => {
+const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [isComposing, setIsComposing] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
+  const [selectedSize, setSelectedSize] = useState('medium')
+  const [lastSearchResult, setLastSearchResult] = useState(null)
   const inputRef = useRef(null)
   const suggestionsRef = useRef(null)
 
@@ -34,6 +37,7 @@ const SearchForm = ({ onSearch, onSelect }) => {
   const handleChange = (e) => {
     const value = e.target.value
     setQuery(value)
+    setLastSearchResult(null)
     debouncedSearch(value)
   }
 
@@ -42,6 +46,7 @@ const SearchForm = ({ onSearch, onSelect }) => {
     setQuery(suggestion.displayName)
     setShowSuggestions(false)
     setSuggestions([])
+    setLastSearchResult(suggestion)
     onSelect?.(suggestion)
   }
 
@@ -86,7 +91,15 @@ const SearchForm = ({ onSearch, onSelect }) => {
     setQuery('')
     setSuggestions([])
     setShowSuggestions(false)
+    setLastSearchResult(null)
     inputRef.current?.focus()
+  }
+
+  // Generate polygon from last search result
+  const handleGeneratePolygon = () => {
+    if (lastSearchResult && onGeneratePolygon) {
+      onGeneratePolygon(lastSearchResult, { size: selectedSize })
+    }
   }
 
   // Keyboard shortcut (Cmd+K / Ctrl+K)
@@ -132,7 +145,7 @@ const SearchForm = ({ onSearch, onSelect }) => {
             onCompositionStart={() => setIsComposing(true)}
             onCompositionEnd={() => setIsComposing(false)}
             onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-            placeholder="住所・地名を検索 (Ctrl+K)"
+            placeholder="住所・建物名を検索 (Ctrl+K)"
             className={styles.input}
             autoComplete="off"
           />
@@ -168,6 +181,43 @@ const SearchForm = ({ onSearch, onSelect }) => {
             </li>
           ))}
         </ul>
+      )}
+
+      {/* Polygon generation panel - shown after selecting a location */}
+      {lastSearchResult && (
+        <div className={styles.generatePanel}>
+          <div className={styles.selectedLocation}>
+            <span className={styles.locationIcon}>📍</span>
+            <span className={styles.locationName}>
+              {lastSearchResult.displayName.split(',')[0]}
+            </span>
+          </div>
+
+          <div className={styles.sizeSelector}>
+            <label>エリアサイズ:</label>
+            <div className={styles.sizeButtons}>
+              {POLYGON_SIZE_OPTIONS.map(option => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`${styles.sizeButton} ${selectedSize === option.value ? styles.active : ''}`}
+                  onClick={() => setSelectedSize(option.value)}
+                  title={option.description}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className={styles.generateButton}
+            onClick={handleGeneratePolygon}
+          >
+            🛸 この周辺にエリア生成
+          </button>
+        </div>
       )}
     </div>
   )
