@@ -11,6 +11,8 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const [isComposing, setIsComposing] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const [selectedSize, setSelectedSize] = useState('medium')
+  const [customRadius, setCustomRadius] = useState(100) // meters
+  const [useCustomSize, setUseCustomSize] = useState(false)
   const [lastSearchResult, setLastSearchResult] = useState(null)
   const inputRef = useRef(null)
   const suggestionsRef = useRef(null)
@@ -98,8 +100,23 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   // Generate polygon from last search result
   const handleGeneratePolygon = () => {
     if (lastSearchResult && onGeneratePolygon) {
-      onGeneratePolygon(lastSearchResult, { size: selectedSize })
+      const options = useCustomSize
+        ? { customRadius }
+        : { size: selectedSize }
+      onGeneratePolygon(lastSearchResult, options)
     }
+  }
+
+  // Handle slider change
+  const handleRadiusChange = (e) => {
+    setCustomRadius(Number(e.target.value))
+    setUseCustomSize(true)
+  }
+
+  // Handle size button click
+  const handleSizeButtonClick = (size) => {
+    setSelectedSize(size)
+    setUseCustomSize(false)
   }
 
   // Keyboard shortcut (Cmd+K / Ctrl+K)
@@ -187,7 +204,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
       {lastSearchResult && (
         <div className={styles.generatePanel}>
           <div className={styles.selectedLocation}>
-            <span className={styles.locationIcon}>📍</span>
+            <span className={styles.locationIcon} aria-hidden="true" />
             <span className={styles.locationName}>
               {lastSearchResult.displayName.split(',')[0]}
             </span>
@@ -200,13 +217,27 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
                 <button
                   key={option.value}
                   type="button"
-                  className={`${styles.sizeButton} ${selectedSize === option.value ? styles.active : ''}`}
-                  onClick={() => setSelectedSize(option.value)}
+                  className={`${styles.sizeButton} ${!useCustomSize && selectedSize === option.value ? styles.active : ''}`}
+                  onClick={() => handleSizeButtonClick(option.value)}
                   title={option.description}
                 >
                   {option.label}
                 </button>
               ))}
+            </div>
+            <div className={styles.sliderWrapper}>
+              <input
+                type="range"
+                min="20"
+                max="1000"
+                step="10"
+                value={customRadius}
+                onChange={handleRadiusChange}
+                className={styles.slider}
+              />
+              <span className={`${styles.sliderValue} ${useCustomSize ? styles.active : ''}`}>
+                {customRadius}m
+              </span>
             </div>
           </div>
 
@@ -215,7 +246,8 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
             className={styles.generateButton}
             onClick={handleGeneratePolygon}
           >
-            🛸 この周辺にエリア生成
+            <span className={styles.droneIcon} aria-hidden="true" />
+            この周辺にエリア生成
           </button>
         </div>
       )}

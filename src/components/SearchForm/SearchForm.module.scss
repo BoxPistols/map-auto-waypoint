@@ -134,7 +134,22 @@
 }
 
 .locationIcon {
-  font-size: 18px;
+  width: 16px;
+  height: 16px;
+  background: #45B7D1;
+  border-radius: 50%;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 6px solid #45B7D1;
+  }
 }
 
 .locationName {
@@ -185,7 +200,66 @@
   }
 }
 
+.sliderWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.slider {
+  flex: 1;
+  height: 4px;
+  appearance: none;
+  background: #ddd;
+  border-radius: 2px;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #45B7D1;
+    border-radius: 50%;
+    cursor: grab;
+    transition: transform 0.15s;
+
+    &:hover {
+      transform: scale(1.2);
+    }
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  &::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #45B7D1;
+    border: none;
+    border-radius: 50%;
+    cursor: grab;
+  }
+}
+
+.sliderValue {
+  min-width: 50px;
+  font-size: 12px;
+  color: #999;
+  text-align: right;
+
+  &.active {
+    color: #45B7D1;
+    font-weight: 500;
+  }
+}
+
 .generateButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   width: 100%;
   padding: 12px;
   font-size: 14px;
@@ -204,5 +278,42 @@
 
   &:active {
     transform: translateY(0);
+  }
+}
+
+.droneIcon {
+  width: 20px;
+  height: 20px;
+  position: relative;
+
+  // Drone body
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 6px;
+    background: white;
+    border-radius: 2px;
+  }
+
+  // Propeller arms
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 2px;
+    background: white;
+    box-shadow:
+      -7px -4px 0 0 white,
+      7px -4px 0 0 white,
+      -7px 4px 0 0 white,
+      7px 4px 0 0 white;
+    border-radius: 1px;
   }
 }

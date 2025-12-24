@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import styles from './Map.module.scss'
 
-// OpenStreetMap style
+// OpenStreetMap style with higher maxzoom
 const MAP_STYLE = {
   version: 8,
   sources: {
@@ -12,7 +12,8 @@ const MAP_STYLE = {
       type: 'raster',
       tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
       tileSize: 256,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      attribution: '&copy; OpenStreetMap contributors',
+      maxzoom: 19
     }
   },
   layers: [
@@ -21,7 +22,7 @@ const MAP_STYLE = {
       type: 'raster',
       source: 'osm',
       minzoom: 0,
-      maxzoom: 19
+      maxzoom: 22
     }
   ]
 }
@@ -29,7 +30,6 @@ const MAP_STYLE = {
 // Default center: Tokyo Tower
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
 const DEFAULT_ZOOM = 12
-const WAYPOINT_ZOOM = 16
 
 const Map = ({
   center = DEFAULT_CENTER,
@@ -51,9 +51,12 @@ const Map = ({
   const [viewState, setViewState] = useState({
     latitude: center.lat,
     longitude: center.lng,
-    zoom: zoom
+    zoom: zoom,
+    pitch: 0,
+    bearing: 0
   })
   const [draggingWaypoint, setDraggingWaypoint] = useState(null)
+  const [is3D, setIs3D] = useState(false)
 
   // Update view when center changes
   useEffect(() => {
@@ -64,23 +67,24 @@ const Map = ({
     }))
   }, [center.lat, center.lng])
 
-  // Fly to location
-  const flyTo = useCallback((lat, lng, targetZoom = WAYPOINT_ZOOM) => {
-    mapRef.current?.flyTo({
-      center: [lng, lat],
-      zoom: targetZoom,
-      duration: 1000
+  // Toggle 3D mode
+  const toggle3D = useCallback(() => {
+    setIs3D(prev => {
+      const newIs3D = !prev
+      setViewState(v => ({
+        ...v,
+        pitch: newIs3D ? 60 : 0
+      }))
+      return newIs3D
     })
   }, [])
 
   // Handle map click
   const handleClick = useCallback((e) => {
-    // Check if clicked on a polygon
     const features = e.features || []
     const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
 
     if (polygonFeature) {
-      // Single click on polygon - select it
       onPolygonSelect?.(polygonFeature.properties.id)
       return
     }
@@ -123,14 +127,12 @@ const Map = ({
     }
   }, [onPolygonCreate])
 
-  // Handle polygon update
   const handleUpdate = useCallback((features) => {
     if (onPolygonUpdate && features.length > 0) {
       onPolygonUpdate(features[0])
     }
   }, [onPolygonUpdate])
 
-  // Handle polygon delete from draw control
   const handleDelete = useCallback((features) => {
     if (onPolygonDelete && features.length > 0) {
       onPolygonDelete(features[0].id)
@@ -148,10 +150,6 @@ const Map = ({
   // Handle waypoint drag
   const handleWaypointDragStart = useCallback((wp) => {
     setDraggingWaypoint(wp.id)
-  }, [])
-
-  const handleWaypointDrag = useCallback((e, wp) => {
-    // Update position during drag (visual feedback)
   }, [])
 
   const handleWaypointDragEnd = useCallback((e, wp) => {
@@ -180,7 +178,6 @@ const Map = ({
     }))
   }
 
-  // Interactive layer IDs for click events
   const interactiveLayerIds = ['polygon-fill']
 
   return (
@@ -195,11 +192,11 @@ const Map = ({
         mapStyle={MAP_STYLE}
         style={{ width: '100%', height: '100%' }}
         doubleClickZoom={false}
+        maxZoom={20}
       >
-        <NavigationControl position="top-right" />
+        <NavigationControl position="top-right" visualizePitch={true} />
         <ScaleControl position="bottom-left" unit="metric" />
 
-        {/* Draw control for polygon drawing - always mounted, controlled by active prop */}
         <DrawControl
           position="top-left"
           onCreate={handleCreate}
@@ -246,17 +243,15 @@ const Map = ({
             longitude={wp.lng}
             draggable={true}
             onDragStart={() => handleWaypointDragStart(wp)}
-            onDrag={(e) => handleWaypointDrag(e, wp)}
             onDragEnd={(e) => handleWaypointDragEnd(e, wp)}
             onClick={(e) => {
               e.originalEvent.stopPropagation()
               onWaypointClick?.(wp)
-              flyTo(wp.lat, wp.lng)
             }}
           >
             <div
               className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${draggingWaypoint === wp.id ? styles.dragging : ''}`}
-              title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}\nダブルクリックで削除\nドラッグで移動`}
+              title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}`}
               onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
             >
               {wp.index}
@@ -265,10 +260,19 @@ const Map = ({
         ))}
       </MapGL>
 
+      {/* 3D Toggle Button */}
+      <button
+        className={`${styles.toggleButton} ${is3D ? styles.active : ''}`}
+        onClick={toggle3D}
+        title={is3D ? '2D表示に切替' : '3D表示に切替'}
+      >
+        {is3D ? '2D' : '3D'}
+      </button>
+
       {/* Instructions overlay */}
       <div className={styles.instructions}>
-        <span>ポリゴン: クリックで選択 / ダブルクリックで削除</span>
-        <span>Waypoint: ドラッグで移動 / ダブルクリックで削除</span>
+        <span>ポリゴン: クリック=選択 / ダブルクリック=削除</span>
+        <span>Waypoint: ドラッグ=移動 / ダブルクリック=削除</span>
       </div>
     </div>
   )
