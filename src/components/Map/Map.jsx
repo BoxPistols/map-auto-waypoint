@@ -3,7 +3,7 @@ import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'r
 import { Box, Rotate3D, Plane, ShieldAlert, Users } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
-import { getAirportZonesGeoJSON, getNoFlyZonesGeoJSON, DID_TILE_URL } from '../../services/airspace'
+import { getAirportZonesGeoJSON, getNoFlyZonesGeoJSON } from '../../services/airspace'
 import styles from './Map.module.scss'
 
 // OpenStreetMap style with higher maxzoom
@@ -61,7 +61,6 @@ const Map = ({
   })
   const [draggingWaypoint, setDraggingWaypoint] = useState(null)
   const [is3D, setIs3D] = useState(false)
-  const [showDID, setShowDID] = useState(false)
   const [showAirportZones, setShowAirportZones] = useState(false)
   const [showNoFlyZones, setShowNoFlyZones] = useState(false)
 
@@ -78,88 +77,15 @@ const Map = ({
     }))
   }, [center.lat, center.lng])
 
-  // State for DID data
-  const [didData, setDidData] = useState({ type: 'FeatureCollection', features: [] })
-  const [isLoadingDID, setIsLoadingDID] = useState(false)
-
-  // Load DID tiles when map moves or DID is toggled
-  useEffect(() => {
-    if (!showDID) {
-      setDidData({ type: 'FeatureCollection', features: [] })
-      return
-    }
-
-    const map = mapRef.current?.getMap()
-    if (!map) return
-
-    const loadDIDTiles = async () => {
-      if (isLoadingDID) return
-      setIsLoadingDID(true)
-
-      try {
-        const bounds = map.getBounds()
-        const zoom = Math.min(Math.max(Math.floor(map.getZoom()), 10), 16)
-
-        // Calculate tile coordinates
-        const n = Math.pow(2, zoom)
-        const lng2tile = (lng) => Math.floor((lng + 180) / 360 * n)
-        const lat2tile = (lat) => Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n)
-
-        const minX = lng2tile(bounds.getWest())
-        const maxX = lng2tile(bounds.getEast())
-        const minY = lat2tile(bounds.getNorth())
-        const maxY = lat2tile(bounds.getSouth())
-
-        const tiles = []
-        for (let x = minX; x <= maxX; x++) {
-          for (let y = minY; y <= maxY; y++) {
-            tiles.push({ x, y, z: zoom })
-          }
-        }
-
-        // Fetch GeoJSON for each tile (limit to 16 tiles)
-        const features = []
-        const fetchPromises = tiles.slice(0, 16).map(async ({ x, y, z }) => {
-          try {
-            const url = `https://cyberjapandata.gsi.go.jp/xyz/did2015/${z}/${x}/${y}.geojson`
-            const response = await fetch(url)
-            if (response.ok) {
-              const geojson = await response.json()
-              if (geojson.features) {
-                return geojson.features
-              }
-            }
-          } catch (e) {
-            // Tile might not exist
-          }
-          return []
-        })
-
-        const results = await Promise.all(fetchPromises)
-        results.forEach(f => features.push(...f))
-
-        setDidData({ type: 'FeatureCollection', features })
-      } catch (error) {
-        console.error('DID load error:', error)
-      } finally {
-        setIsLoadingDID(false)
-      }
-    }
-
-    // Initial load
-    if (map.isStyleLoaded()) {
-      loadDIDTiles()
-    } else {
-      map.once('load', loadDIDTiles)
-    }
-
-    // Load on map move
-    map.on('moveend', loadDIDTiles)
-
-    return () => {
-      map.off('moveend', loadDIDTiles)
-    }
-  }, [showDID])
+  // Open GSI map with DID layer
+  const openDIDMap = useCallback(() => {
+    const lat = viewState.latitude.toFixed(6)
+    const lng = viewState.longitude.toFixed(6)
+    const zoom = Math.max(Math.round(viewState.zoom), 12)
+    // GSI map URL with DID layer enabled
+    const gsiUrl = `https://maps.gsi.go.jp/#${zoom}/${lat}/${lng}/&base=pale&ls=pale%7Cdid2015&disp=11&lcd=did2015&vs=c1g1j0h0k0l0u0t0z0r0s0m0f1`
+    window.open(gsiUrl, '_blank', 'noopener,noreferrer')
+  }, [viewState])
 
   // Toggle 3D mode
   const toggle3D = useCallback(() => {
@@ -303,28 +229,6 @@ const Map = ({
           editingPolygon={editingPolygon}
         />
 
-        {/* DID (人口集中地区) layer */}
-        {showDID && didData.features.length > 0 && (
-          <Source id="did-layer" type="geojson" data={didData}>
-            <Layer
-              id="did-fill"
-              type="fill"
-              paint={{
-                'fill-color': '#9c27b0',
-                'fill-opacity': 0.3
-              }}
-            />
-            <Layer
-              id="did-outline"
-              type="line"
-              paint={{
-                'line-color': '#7b1fa2',
-                'line-width': 1.5
-              }}
-            />
-          </Source>
-        )}
-
         {/* Airport restriction zones */}
         {showAirportZones && (
           <Source id="airport-zones" type="geojson" data={airportZonesGeoJSON}>
@@ -456,9 +360,9 @@ const Map = ({
       {/* Map control buttons */}
       <div className={styles.mapControls}>
         <button
-          className={`${styles.toggleButton} ${showDID ? styles.activeDID : ''} ${isLoadingDID ? styles.loading : ''}`}
-          onClick={() => setShowDID(!showDID)}
-          title={showDID ? 'DID（人口集中地区）を非表示' : 'DID（人口集中地区）を表示'}
+          className={styles.toggleButton}
+          onClick={openDIDMap}
+          title="DID（人口集中地区）を国土地理院地図で確認"
         >
           <Users size={18} />
         </button>
