@@ -266,6 +266,11 @@
       font-weight: 500;
       color: #333;
       white-space: nowrap;
+      word-break: keep-all;
+    }
+    
+    &:nth-child(3) {
+      word-break: keep-all;
     }
   }
 
@@ -287,6 +292,11 @@
     &:first-child {
       width: 150px;
       white-space: nowrap;
+      word-break: keep-all;
+    }
+    
+    &:nth-child(2) {
+      word-break: keep-all;
     }
   }
 
@@ -302,6 +312,7 @@
     border-radius: 4px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     margin-right: 4px;
+    white-space: nowrap;
   }
 
   tbody tr:hover {

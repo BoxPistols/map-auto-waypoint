@@ -106,9 +106,21 @@ function App() {
     }
   }, [])
 
-  // Keyboard shortcuts for Undo/Redo
+  // Keyboard shortcuts for Undo/Redo and Help
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Ignore shortcuts when typing in input fields
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return
+      }
+
+      // Cmd+K (Mac) or Ctrl+K (Win) for Help
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setShowHelp(true)
+        return
+      }
+
       // Cmd+Z (Mac) or Ctrl+Z (Win) for Undo
       // Cmd+Shift+Z (Mac) or Ctrl+Shift+Z (Win) for Redo
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
@@ -510,7 +522,8 @@ function App() {
           <button
             className="help-button"
             onClick={() => setShowHelp(true)}
-            data-tooltip="ヘルプ"
+            data-tooltip="ヘルプ (⌘K)"
+            data-tooltip-pos="left"
           >
             ?
           </button>
