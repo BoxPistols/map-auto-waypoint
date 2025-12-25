@@ -127,7 +127,8 @@ const WaypointList = ({
           <button
             className={styles.iconButton}
             onClick={() => setShowSettings(!showSettings)}
-            title="設定"
+            data-tooltip="グリッド設定"
+            data-tooltip-pos="bottom"
           >
             <Settings2 size={16} />
           </button>
@@ -135,7 +136,8 @@ const WaypointList = ({
             className={styles.iconButton}
             onClick={onFetchElevation}
             disabled={isLoadingElevation || waypoints.length === 0}
-            title="標高取得"
+            data-tooltip="標高を取得（国土地理院API）"
+            data-tooltip-pos="bottom"
           >
             <Mountain size={16} />
           </button>
@@ -146,6 +148,8 @@ const WaypointList = ({
                 onClear?.()
               }
             }}
+            data-tooltip="全て削除"
+            data-tooltip-pos="bottom"
           >
             <Trash2 size={14} />
           </button>
