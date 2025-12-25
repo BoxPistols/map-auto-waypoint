@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
 import PolygonList from './components/PolygonList/PolygonList'
@@ -38,21 +38,100 @@ function App() {
   const [isLoadingElevation, setIsLoadingElevation] = useState(false)
   const [elevationProgress, setElevationProgress] = useState(null)
 
-  // Auto-save polygons
-  useEffect(() => {
-    savePolygons(polygons)
-  }, [polygons])
-
-  // Auto-save waypoints
-  useEffect(() => {
-    saveWaypoints(waypoints)
-  }, [waypoints])
-
-  // Show notification
+  // Show notification (defined early for use in undo/redo)
   const showNotification = useCallback((message, type = 'info') => {
     setNotification({ message, type })
     setTimeout(() => setNotification(null), 2500)
   }, [])
+
+  // Undo/Redo history management
+  const MAX_HISTORY = 20
+  const historyRef = useRef([{ polygons: loadPolygons(), waypoints: loadWaypoints() }])
+  const historyIndexRef = useRef(0)
+  const isUndoRedoRef = useRef(false)
+
+  // Push current state to history
+  const pushToHistory = useCallback(() => {
+    if (isUndoRedoRef.current) {
+      isUndoRedoRef.current = false
+      return
+    }
+
+    const currentState = { polygons, waypoints }
+    const history = historyRef.current
+    const index = historyIndexRef.current
+
+    // Remove future states
+    const newHistory = history.slice(0, index + 1)
+    newHistory.push(currentState)
+
+    // Limit history size
+    if (newHistory.length > MAX_HISTORY) {
+      newHistory.shift()
+    } else {
+      historyIndexRef.current = newHistory.length - 1
+    }
+
+    historyRef.current = newHistory
+  }, [polygons, waypoints])
+
+  // Undo function
+  const handleUndo = useCallback(() => {
+    const index = historyIndexRef.current
+    if (index > 0) {
+      isUndoRedoRef.current = true
+      historyIndexRef.current = index - 1
+      const prevState = historyRef.current[index - 1]
+      setPolygons(prevState.polygons)
+      setWaypoints(prevState.waypoints)
+      showNotification('元に戻しました (Undo)')
+    }
+  }, [])
+
+  // Redo function
+  const handleRedo = useCallback(() => {
+    const index = historyIndexRef.current
+    const history = historyRef.current
+    if (index < history.length - 1) {
+      isUndoRedoRef.current = true
+      historyIndexRef.current = index + 1
+      const nextState = history[index + 1]
+      setPolygons(nextState.polygons)
+      setWaypoints(nextState.waypoints)
+      showNotification('やり直しました (Redo)')
+    }
+  }, [])
+
+  // Keyboard shortcuts for Undo/Redo
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Cmd+Z (Mac) or Ctrl+Z (Win) for Undo
+      // Cmd+Shift+Z (Mac) or Ctrl+Shift+Z (Win) for Redo
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) {
+          handleRedo()
+        } else {
+          handleUndo()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleUndo, handleRedo])
+
+  // Auto-save polygons and push to history
+  useEffect(() => {
+    savePolygons(polygons)
+    pushToHistory()
+  }, [polygons])
+
+  // Auto-save waypoints and push to history
+  useEffect(() => {
+    saveWaypoints(waypoints)
+    pushToHistory()
+  }, [waypoints])
 
   // Handle search
   const handleSearch = useCallback(async (query) => {
