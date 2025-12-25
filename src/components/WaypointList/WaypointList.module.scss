@@ -286,3 +286,82 @@
     color: #e55;
   }
 }
+
+.editButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: #999;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background: #e8f4f8;
+    color: #45B7D1;
+  }
+}
+
+// Editing state
+.item.editing {
+  background: #fffbea;
+  border-color: #f5c518;
+}
+
+.coordValue {
+  cursor: text;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background: #e8f4f8;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+  }
+}
+
+.coordInput {
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-family: monospace;
+  border: 1px solid #45B7D1;
+  border-radius: 4px;
+  outline: none;
+  background: white;
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba(69, 183, 209, 0.2);
+  }
+}
+
+.indexInput {
+  width: 32px;
+  height: 24px;
+  padding: 2px 4px;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+  border: 1px solid #45B7D1;
+  border-radius: 50%;
+  outline: none;
+  background: white;
+
+  // Hide spin buttons
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  -moz-appearance: textfield;
+
+  &:focus {
+    box-shadow: 0 0 0 2px rgba(69, 183, 209, 0.2);
+  }
+}

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Trash2, Mountain, RefreshCw, Settings2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Trash2, Mountain, RefreshCw, Settings2, Pencil, Check, X } from 'lucide-react'
 import { formatElevation } from '../../services/elevation'
 import styles from './WaypointList.module.scss'
 
@@ -8,6 +8,7 @@ const WaypointList = ({
   onSelect,
   onDelete,
   onClear,
+  onUpdate,
   onFetchElevation,
   onRegenerateGrid,
   gridSpacing = 30,
@@ -16,6 +17,84 @@ const WaypointList = ({
   elevationProgress = null
 }) => {
   const [showSettings, setShowSettings] = useState(false)
+  const [editingId, setEditingId] = useState(null)
+  const [editingField, setEditingField] = useState(null) // 'name' | 'lat' | 'lng' | 'index'
+  const [editValue, setEditValue] = useState('')
+  const inputRef = useRef(null)
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (editingId && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [editingId, editingField])
+
+  const startEdit = (wp, field) => {
+    setEditingId(wp.id)
+    setEditingField(field)
+    if (field === 'name') {
+      setEditValue(wp.polygonName || '')
+    } else if (field === 'lat') {
+      setEditValue(wp.lat.toFixed(6))
+    } else if (field === 'lng') {
+      setEditValue(wp.lng.toFixed(6))
+    } else if (field === 'index') {
+      setEditValue(String(wp.index))
+    }
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditingField(null)
+    setEditValue('')
+  }
+
+  const saveEdit = () => {
+    if (!editingId || !editingField) return
+
+    const wp = waypoints.find(w => w.id === editingId)
+    if (!wp) return
+
+    let updatedValue = editValue.trim()
+    let updateData = {}
+
+    if (editingField === 'name') {
+      updateData = { polygonName: updatedValue || '名称なし' }
+    } else if (editingField === 'lat') {
+      const lat = parseFloat(updatedValue)
+      if (isNaN(lat) || lat < -90 || lat > 90) {
+        cancelEdit()
+        return
+      }
+      updateData = { lat }
+    } else if (editingField === 'lng') {
+      const lng = parseFloat(updatedValue)
+      if (isNaN(lng) || lng < -180 || lng > 180) {
+        cancelEdit()
+        return
+      }
+      updateData = { lng }
+    } else if (editingField === 'index') {
+      const index = parseInt(updatedValue)
+      if (isNaN(index) || index < 1) {
+        cancelEdit()
+        return
+      }
+      updateData = { index }
+    }
+
+    onUpdate?.(editingId, updateData)
+    cancelEdit()
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      saveEdit()
+    } else if (e.key === 'Escape') {
+      cancelEdit()
+    }
+  }
   if (waypoints.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -121,39 +200,127 @@ const WaypointList = ({
             </div>
 
             <ul className={styles.list}>
-              {groupWaypoints.map((wp) => (
-                <li
-                  key={wp.id}
-                  className={styles.item}
-                  onClick={() => onSelect?.(wp)}
-                >
-                  <span className={`${styles.marker} ${wp.type === 'grid' ? styles.gridMarker : ''}`}>
-                    {wp.index}
-                  </span>
-                  <div className={styles.coords}>
-                    <span>{wp.lat.toFixed(6)}</span>
-                    <span>{wp.lng.toFixed(6)}</span>
-                    {wp.elevation !== undefined && (
-                      <span className={styles.elevation}>
-                        {formatElevation(wp.elevation)}
+              {groupWaypoints.map((wp) => {
+                const isEditing = editingId === wp.id
+
+                return (
+                  <li
+                    key={wp.id}
+                    className={`${styles.item} ${isEditing ? styles.editing : ''}`}
+                    onClick={() => !isEditing && onSelect?.(wp)}
+                  >
+                    {/* Index marker - editable */}
+                    {isEditing && editingField === 'index' ? (
+                      <input
+                        ref={inputRef}
+                        type="number"
+                        min="1"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        onBlur={saveEdit}
+                        className={styles.indexInput}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <span
+                        className={`${styles.marker} ${wp.type === 'grid' ? styles.gridMarker : ''}`}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation()
+                          startEdit(wp, 'index')
+                        }}
+                        title="ダブルクリックで編集"
+                      >
+                        {wp.index}
                       </span>
                     )}
-                  </div>
-                  <span className={styles.type}>
-                    {wp.type === 'grid' ? 'グリッド' : wp.type === 'manual' ? '手動' : wp.type === 'perimeter' ? '外周' : '頂点'}
-                  </span>
-                  <button
-                    className={styles.deleteButton}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDelete?.(wp.id)
-                    }}
-                    title="削除"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </li>
-              ))}
+
+                    {/* Coordinates - editable */}
+                    <div className={styles.coords}>
+                      {isEditing && editingField === 'lat' ? (
+                        <input
+                          ref={inputRef}
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          onBlur={saveEdit}
+                          className={styles.coordInput}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <span
+                          className={styles.coordValue}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation()
+                            startEdit(wp, 'lat')
+                          }}
+                          title="緯度 (ダブルクリックで編集)"
+                        >
+                          {wp.lat.toFixed(6)}
+                        </span>
+                      )}
+
+                      {isEditing && editingField === 'lng' ? (
+                        <input
+                          ref={inputRef}
+                          type="text"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          onBlur={saveEdit}
+                          className={styles.coordInput}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <span
+                          className={styles.coordValue}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation()
+                            startEdit(wp, 'lng')
+                          }}
+                          title="経度 (ダブルクリックで編集)"
+                        >
+                          {wp.lng.toFixed(6)}
+                        </span>
+                      )}
+
+                      {wp.elevation !== undefined && (
+                        <span className={styles.elevation}>
+                          {formatElevation(wp.elevation)}
+                        </span>
+                      )}
+                    </div>
+
+                    <span className={styles.type}>
+                      {wp.type === 'grid' ? 'グリッド' : wp.type === 'manual' ? '手動' : wp.type === 'perimeter' ? '外周' : '頂点'}
+                    </span>
+
+                    {/* Edit button */}
+                    <button
+                      className={styles.editButton}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        startEdit(wp, 'lat')
+                      }}
+                      title="座標を編集"
+                    >
+                      <Pencil size={12} />
+                    </button>
+
+                    <button
+                      className={styles.deleteButton}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDelete?.(wp.id)
+                      }}
+                      title="削除"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           </div>
         ))}

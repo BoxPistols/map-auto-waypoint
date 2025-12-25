@@ -363,6 +363,14 @@ function App() {
     ))
   }, [])
 
+  // Handle waypoint update (edit name, coords, etc.)
+  const handleWaypointUpdate = useCallback((id, updateData) => {
+    setWaypoints(prev => prev.map(w =>
+      w.id === id ? { ...w, ...updateData } : w
+    ))
+    showNotification('Waypointを更新しました')
+  }, [showNotification])
+
   // Handle polygon select from map
   const handlePolygonSelectFromMap = useCallback((polygonId) => {
     setSelectedPolygonId(polygonId)
@@ -545,6 +553,7 @@ function App() {
                 waypoints={waypoints}
                 onSelect={handleWaypointSelect}
                 onDelete={handleWaypointDelete}
+                onUpdate={handleWaypointUpdate}
                 onClear={handleWaypointClear}
                 onFetchElevation={handleFetchElevation}
                 onRegenerateGrid={handleRegenerateGrid}
