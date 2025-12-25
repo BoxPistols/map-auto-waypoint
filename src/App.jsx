@@ -128,6 +128,13 @@ function App() {
     ))
   }, [])
 
+  // Handle waypoint link toggle
+  const handleToggleWaypointLink = useCallback((id) => {
+    setPolygons(prev => prev.map(p =>
+      p.id === id ? { ...p, waypointLinked: p.waypointLinked === false ? true : false } : p
+    ))
+  }, [])
+
   // Handle polygon shape edit start
   const handleEditPolygonShape = useCallback((polygon) => {
     setEditingPolygon(polygon)
@@ -143,10 +150,34 @@ function App() {
 
   // Handle polygon shape edit complete
   const handlePolygonEditComplete = useCallback((updatedFeature) => {
-    setPolygons(prev => prev.map(p =>
-      p.id === updatedFeature.id ? { ...p, geometry: updatedFeature.geometry } : p
-    ))
-    showNotification('ポリゴンを更新しました')
+    // Update polygon geometry
+    setPolygons(prev => {
+      const updated = prev.map(p =>
+        p.id === updatedFeature.id ? { ...p, geometry: updatedFeature.geometry } : p
+      )
+
+      // Find the updated polygon
+      const polygon = updated.find(p => p.id === updatedFeature.id)
+
+      // If waypoint is linked, regenerate waypoints
+      if (polygon && polygon.waypointLinked !== false) {
+        // Regenerate waypoints for this polygon
+        const newWaypoints = polygonToWaypoints({ ...polygon, geometry: updatedFeature.geometry })
+        setWaypoints(prevWaypoints => {
+          // Remove old waypoints for this polygon and add new ones
+          const otherWaypoints = prevWaypoints.filter(w => w.polygonId !== polygon.id)
+          // Recalculate indices
+          let index = otherWaypoints.length + 1
+          const reindexedNew = newWaypoints.map(wp => ({ ...wp, index: index++ }))
+          return [...otherWaypoints, ...reindexedNew]
+        })
+        showNotification(`ポリゴンを更新し、${newWaypoints.length} Waypointを再生成しました`)
+      } else {
+        showNotification('ポリゴンを更新しました')
+      }
+
+      return updated
+    })
   }, [showNotification])
 
   // Handle finish editing
@@ -385,6 +416,7 @@ function App() {
                 onDelete={handlePolygonDelete}
                 onRename={handlePolygonRename}
                 onEditShape={handleEditPolygonShape}
+                onToggleWaypointLink={handleToggleWaypointLink}
                 onGenerateWaypoints={handleGenerateWaypoints}
                 onGenerateAllWaypoints={handleGenerateAllWaypoints}
               />

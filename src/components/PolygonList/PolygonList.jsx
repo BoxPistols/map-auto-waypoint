@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Grid3X3, Pencil, Trash2, PenTool } from 'lucide-react'
+import { MapPin, Grid3X3, Pencil, Trash2, PenTool, Link2, Unlink2 } from 'lucide-react'
 import { calculatePolygonArea, calculatePolygonPerimeter, formatArea, formatDistance } from '../../services/waypointGenerator'
 import styles from './PolygonList.module.scss'
 
@@ -10,6 +10,7 @@ const PolygonList = ({
   onDelete,
   onRename,
   onEditShape,
+  onToggleWaypointLink,
   onGenerateWaypoints,
   onGenerateAllWaypoints
 }) => {
@@ -115,12 +116,22 @@ const PolygonList = ({
 
               <div className={styles.actions}>
                 <button
+                  className={`${styles.actionButton} ${polygon.waypointLinked !== false ? styles.linkedButton : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onToggleWaypointLink?.(polygon.id)
+                  }}
+                  data-tooltip={polygon.waypointLinked !== false ? 'Waypoint同期: ON' : 'Waypoint同期: OFF'}
+                >
+                  {polygon.waypointLinked !== false ? <Link2 size={14} /> : <Unlink2 size={14} />}
+                </button>
+                <button
                   className={styles.actionButton}
                   onClick={(e) => {
                     e.stopPropagation()
                     onGenerateWaypoints?.(polygon)
                   }}
-                  title="頂点Waypoint生成"
+                  data-tooltip="頂点Waypoint生成"
                 >
                   <MapPin size={14} />
                 </button>
@@ -130,7 +141,7 @@ const PolygonList = ({
                     e.stopPropagation()
                     onGenerateWaypoints?.(polygon, { includeGrid: true })
                   }}
-                  title="グリッドWaypoint生成"
+                  data-tooltip="グリッドWaypoint生成"
                 >
                   <Grid3X3 size={14} />
                 </button>
@@ -140,7 +151,7 @@ const PolygonList = ({
                     e.stopPropagation()
                     onEditShape?.(polygon)
                   }}
-                  title="形状を編集"
+                  data-tooltip="形状を編集"
                 >
                   <PenTool size={14} />
                 </button>
@@ -150,7 +161,7 @@ const PolygonList = ({
                     e.stopPropagation()
                     handleStartEdit(polygon)
                   }}
-                  title="名前を編集"
+                  data-tooltip="名前を編集"
                 >
                   <Pencil size={14} />
                 </button>
@@ -162,7 +173,7 @@ const PolygonList = ({
                       onDelete?.(polygon.id)
                     }
                   }}
-                  title="削除"
+                  data-tooltip="削除"
                 >
                   <Trash2 size={14} />
                 </button>

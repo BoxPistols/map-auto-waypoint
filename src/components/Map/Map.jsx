@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo, useLayoutEffect } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
 import { Box, Rotate3D, Plane, ShieldAlert, Users } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -74,6 +74,45 @@ const Map = ({
   useEffect(() => {
     saveMapSettings({ is3D, showAirportZones, showNoFlyZones, showDID })
   }, [is3D, showAirportZones, showNoFlyZones, showDID])
+
+  // Keyboard shortcuts for map controls
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if user is typing in an input field
+      const activeElement = document.activeElement
+      const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.isContentEditable
+      )
+      if (isInputFocused) return
+
+      // Ignore if modifier keys are pressed (except for shortcuts that need them)
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+
+      switch (e.key.toLowerCase()) {
+        case 'd': // DID toggle
+          e.preventDefault()
+          setShowDID(prev => !prev)
+          break
+        case 'a': // Airport zones toggle
+          e.preventDefault()
+          setShowAirportZones(prev => !prev)
+          break
+        case 'n': // No-fly zones toggle
+          e.preventDefault()
+          setShowNoFlyZones(prev => !prev)
+          break
+        case '3': // 3D toggle
+          e.preventDefault()
+          toggle3D()
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [toggle3D])
 
   // Memoize airspace GeoJSON data
   const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
@@ -386,28 +425,32 @@ const Map = ({
         <button
           className={`${styles.toggleButton} ${showDID ? styles.activeDID : ''}`}
           onClick={() => setShowDID(!showDID)}
-          title={showDID ? 'DID（人口集中地区）を非表示' : 'DID（人口集中地区）を表示'}
+          data-tooltip={`DID 人口集中地区 [D]`}
+          data-tooltip-pos="left"
         >
           <Users size={18} />
         </button>
         <button
           className={`${styles.toggleButton} ${showAirportZones ? styles.activeAirport : ''}`}
           onClick={() => setShowAirportZones(!showAirportZones)}
-          title={showAirportZones ? '空港制限区域を非表示' : '空港制限区域を表示'}
+          data-tooltip={`空港制限区域 [A]`}
+          data-tooltip-pos="left"
         >
           <Plane size={18} />
         </button>
         <button
           className={`${styles.toggleButton} ${showNoFlyZones ? styles.activeNoFly : ''}`}
           onClick={() => setShowNoFlyZones(!showNoFlyZones)}
-          title={showNoFlyZones ? '飛行禁止区域を非表示' : '飛行禁止区域を表示'}
+          data-tooltip={`飛行禁止区域 [N]`}
+          data-tooltip-pos="left"
         >
           <ShieldAlert size={18} />
         </button>
         <button
           className={`${styles.toggleButton} ${is3D ? styles.active : ''}`}
           onClick={toggle3D}
-          title={is3D ? '2D表示に切替' : '3D表示に切替'}
+          data-tooltip={is3D ? '2D表示 [3]' : '3D表示 [3]'}
+          data-tooltip-pos="left"
         >
           {is3D ? <Box size={18} /> : <Rotate3D size={18} />}
         </button>
