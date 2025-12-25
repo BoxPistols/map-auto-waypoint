@@ -232,6 +232,107 @@
 }
 
 .notamPreview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.altitudeInputSection {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+
+    svg {
+      color: #e67e22;
+    }
+  }
+}
+
+.altitudeInputs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.altitudeRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.altitudeColorDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.altitudeLabel {
+  flex: 1;
+  font-size: 13px;
+  color: #333;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.altitudeInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.altitudeInput {
+  width: 80px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: right;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: #e67e22;
+  }
+
+  &::placeholder {
+    color: #bbb;
+    font-weight: normal;
+  }
+
+  // Hide spin buttons
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  -moz-appearance: textfield;
+}
+
+.altitudeUnit {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.notamContent {
   pre {
     margin: 0;
     padding: 16px 20px;

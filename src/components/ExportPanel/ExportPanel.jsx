@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
-import { FileJson, FileSpreadsheet, Map, Download, X, Eye, ChevronLeft, Plane } from 'lucide-react'
-import { exportToJSON, exportToCSV, exportPolygonsToGeoJSON, exportFullBackup, exportToNOTAM, generateNOTAMPreview } from '../../utils/exporters'
+import { useState, useMemo, useEffect } from 'react'
+import { FileJson, FileSpreadsheet, Map, Download, X, Eye, ChevronLeft, Plane, Mountain } from 'lucide-react'
+import { exportToJSON, exportToCSV, exportPolygonsToGeoJSON, exportFullBackup, exportToNOTAM, generateNOTAMPreview, getPolygonOrderFromWaypoints } from '../../utils/exporters'
 import { exportAllData } from '../../utils/storage'
 import styles from './ExportPanel.module.scss'
 
@@ -47,6 +47,33 @@ const generatePolygonGeoJSONPreview = (polygons) => {
 
 const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
   const [previewMode, setPreviewMode] = useState(null) // null | 'waypoint-json' | 'waypoint-csv' | 'waypoint-notam' | 'polygon-geojson' | 'backup'
+  const [notamAltitudes, setNotamAltitudes] = useState({}) // { [polygonId]: number }
+
+  // Get polygon list for NOTAM altitude input
+  const notamPolygons = useMemo(() => {
+    return getPolygonOrderFromWaypoints(waypoints, polygons)
+  }, [waypoints, polygons])
+
+  // Initialize altitudes when entering NOTAM mode
+  useEffect(() => {
+    if (previewMode === 'waypoint-notam') {
+      const initialAltitudes = {}
+      notamPolygons.forEach(p => {
+        if (notamAltitudes[p.id] === undefined) {
+          initialAltitudes[p.id] = ''
+        }
+      })
+      if (Object.keys(initialAltitudes).length > 0) {
+        setNotamAltitudes(prev => ({ ...prev, ...initialAltitudes }))
+      }
+    }
+  }, [previewMode, notamPolygons])
+
+  // Update altitude for a polygon
+  const handleAltitudeChange = (polygonId, value) => {
+    const numValue = value === '' ? '' : parseInt(value) || ''
+    setNotamAltitudes(prev => ({ ...prev, [polygonId]: numValue }))
+  }
 
   // Generate preview data based on mode
   const previewData = useMemo(() => {
@@ -56,7 +83,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
       case 'waypoint-csv':
         return generateWaypointCSVPreview(waypoints)
       case 'waypoint-notam':
-        return generateNOTAMPreview(waypoints, polygons)
+        return generateNOTAMPreview(waypoints, polygons, notamAltitudes)
       case 'polygon-geojson':
         return JSON.stringify(generatePolygonGeoJSONPreview(polygons), null, 2)
       case 'backup':
@@ -64,7 +91,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
       default:
         return null
     }
-  }, [previewMode, waypoints, polygons])
+  }, [previewMode, waypoints, polygons, notamAltitudes])
 
   const handleExportWaypointsJSON = () => {
     if (waypoints.length === 0) return
@@ -88,7 +115,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
 
   const handleExportNOTAM = () => {
     if (waypoints.length === 0) return
-    exportToNOTAM(waypoints, polygons)
+    exportToNOTAM(waypoints, polygons, notamAltitudes)
   }
 
   // Preview mode title
@@ -132,11 +159,47 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
       )
     }
 
-    // NOTAM format - plain text with DMS coordinates
+    // NOTAM format - plain text with DMS coordinates and altitude input
     if (previewMode === 'waypoint-notam' && previewData) {
       return (
         <div className={styles.notamPreview}>
-          <pre>{previewData}</pre>
+          {/* Altitude input section */}
+          <div className={styles.altitudeInputSection}>
+            <h4>
+              <Mountain size={16} />
+              各範囲の海抜高度を入力
+            </h4>
+            <div className={styles.altitudeInputs}>
+              {notamPolygons.map((polygon, index) => (
+                <div key={polygon.id} className={styles.altitudeRow}>
+                  <div
+                    className={styles.altitudeColorDot}
+                    style={{ backgroundColor: polygon.color }}
+                  />
+                  <span className={styles.altitudeLabel}>
+                    範囲{index + 1}: {polygon.name}
+                  </span>
+                  <div className={styles.altitudeInputWrapper}>
+                    <input
+                      type="number"
+                      min="0"
+                      max="9999"
+                      placeholder="高度"
+                      value={notamAltitudes[polygon.id] || ''}
+                      onChange={(e) => handleAltitudeChange(polygon.id, e.target.value)}
+                      className={styles.altitudeInput}
+                    />
+                    <span className={styles.altitudeUnit}>m</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Preview */}
+          <div className={styles.notamContent}>
+            <pre>{previewData}</pre>
+          </div>
         </div>
       )
     }

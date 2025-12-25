@@ -118,7 +118,8 @@ export const exportPolygonsToGeoJSON = (polygons, filename = null) => {
 
 // Export to NOTAM format (度分秒/DMS for aviation)
 // Groups waypoints by polygon with DMS coordinates
-export const exportToNOTAM = (waypoints, polygons = [], filename = null) => {
+// altitudes: { [polygonId]: number } - altitude for each polygon
+export const exportToNOTAM = (waypoints, polygons = [], altitudes = {}, filename = null) => {
   const date = new Date().toISOString().split('T')[0]
   const BOM = '\uFEFF' // UTF-8 BOM for Excel
 
@@ -152,13 +153,16 @@ export const exportToNOTAM = (waypoints, polygons = [], filename = null) => {
     content += '\n'
   })
 
-  // Add altitude section template
+  // Add altitude section with values
   content += '\n■ 飛行高度\n\n'
   polygonOrder.forEach((polygonId, index) => {
     const polygon = polygons.find(p => p.id === polygonId)
     const polygonName = polygon?.name || `範囲${index + 1}`
+    const altitude = altitudes[polygonId]
+    const altitudeStr = altitude ? `${altitude}` : '　　　　'
+
     content += `【範囲${index + 1}　${polygonName}】\n`
-    content += '下限：地表面、上限：海抜高度　　　　m\n\n'
+    content += `下限：地表面、上限：海抜高度 ${altitudeStr} m\n\n`
   })
 
   const blob = new Blob([BOM + content], { type: 'text/plain;charset=utf-8' })
@@ -173,8 +177,29 @@ export const exportToNOTAM = (waypoints, polygons = [], filename = null) => {
   URL.revokeObjectURL(url)
 }
 
+// Get polygon order from waypoints (for altitude input UI)
+export const getPolygonOrderFromWaypoints = (waypoints, polygons) => {
+  const seen = new Set()
+  const result = []
+
+  waypoints.forEach(wp => {
+    const polygonId = wp.polygonId || 'unknown'
+    if (!seen.has(polygonId)) {
+      seen.add(polygonId)
+      const polygon = polygons.find(p => p.id === polygonId)
+      result.push({
+        id: polygonId,
+        name: polygon?.name || wp.polygonName || `範囲${result.length + 1}`,
+        color: polygon?.color || '#888'
+      })
+    }
+  })
+
+  return result
+}
+
 // Generate NOTAM preview data (for ExportPanel)
-export const generateNOTAMPreview = (waypoints, polygons = []) => {
+export const generateNOTAMPreview = (waypoints, polygons = [], altitudes = {}) => {
   // Group waypoints by polygon
   const waypointsByPolygon = {}
   const polygonOrder = []
@@ -209,8 +234,11 @@ export const generateNOTAMPreview = (waypoints, polygons = []) => {
   polygonOrder.forEach((polygonId, index) => {
     const polygon = polygons.find(p => p.id === polygonId)
     const polygonName = polygon?.name || `範囲${index + 1}`
+    const altitude = altitudes[polygonId]
+    const altitudeStr = altitude ? `${altitude}` : '____'
+
     content += `【範囲${index + 1}　${polygonName}】\n`
-    content += '下限：地表面、上限：海抜高度　　　　m\n\n'
+    content += `下限：地表面、上限：海抜高度 ${altitudeStr} m\n\n`
   })
 
   return content
