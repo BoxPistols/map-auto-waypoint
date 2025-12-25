@@ -293,6 +293,19 @@ const HelpModal = ({ onClose }) => {
         return (
           <div className={styles.section}>
             <h2>キーボードショートカット</h2>
+            <p className={styles.hint}>
+              ※ macOS: <kbd>⌘</kbd> (Command), <kbd>⇧</kbd> (Shift) / Windows: <kbd>Ctrl</kbd>, <kbd>Shift</kbd>
+            </p>
+
+            <h3>ヘルプ</h3>
+            <table className={styles.shortcutTable}>
+              <tbody>
+                <tr>
+                  <td><kbd>?</kbd></td>
+                  <td>ヘルプを開く / 閉じる</td>
+                </tr>
+              </tbody>
+            </table>
 
             <h3>マップ操作</h3>
             <table className={styles.shortcutTable}>
