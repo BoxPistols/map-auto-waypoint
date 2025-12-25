@@ -136,7 +136,7 @@ export const exportToNOTAM = (waypoints, polygons = [], filename = null) => {
   })
 
   // Build text content
-  let content = '(2)飛行範囲\n\n'
+  let content = '■ 飛行範囲\n\n'
 
   polygonOrder.forEach((polygonId, index) => {
     const wps = waypointsByPolygon[polygonId]
@@ -153,12 +153,12 @@ export const exportToNOTAM = (waypoints, polygons = [], filename = null) => {
   })
 
   // Add altitude section template
-  content += '(3)飛行高度\n\n'
+  content += '\n■ 飛行高度\n\n'
   polygonOrder.forEach((polygonId, index) => {
     const polygon = polygons.find(p => p.id === polygonId)
     const polygonName = polygon?.name || `範囲${index + 1}`
     content += `【範囲${index + 1}　${polygonName}】\n`
-    content += '下限：地表面、上限：海抜高度　　　m\n\n'
+    content += '下限：地表面、上限：海抜高度　　　　m\n\n'
   })
 
   const blob = new Blob([BOM + content], { type: 'text/plain;charset=utf-8' })
@@ -189,7 +189,7 @@ export const generateNOTAMPreview = (waypoints, polygons = []) => {
   })
 
   // Build preview content
-  let content = '(2)飛行範囲\n\n'
+  let content = '■ 飛行範囲\n\n'
 
   polygonOrder.forEach((polygonId, index) => {
     const wps = waypointsByPolygon[polygonId]
@@ -205,12 +205,12 @@ export const generateNOTAMPreview = (waypoints, polygons = []) => {
     content += '\n'
   })
 
-  content += '(3)飛行高度\n\n'
+  content += '\n■ 飛行高度\n\n'
   polygonOrder.forEach((polygonId, index) => {
     const polygon = polygons.find(p => p.id === polygonId)
     const polygonName = polygon?.name || `範囲${index + 1}`
     content += `【範囲${index + 1}　${polygonName}】\n`
-    content += '下限：地表面、上限：海抜高度　　　m\n\n'
+    content += '下限：地表面、上限：海抜高度　　　　m\n\n'
   })
 
   return content
