@@ -60,21 +60,30 @@ export const NO_FLY_ZONES = [
   { name: '柏崎刈羽原発', lat: 37.4286, lng: 138.5978, radius: 300, type: 'prohibited' },
 ]
 
-// 国土地理院 DID タイルURL（存在する場合）
-// 注: 実際のDIDタイルサービスは国土地理院では提供されていない場合がある
-// 代替として国土数値情報のGeoJSONを使用するか、外部サービスを利用
+// 国土地理院 DID (人口集中地区) タイルレイヤー
+// 参照: https://www.gsi.go.jp/chizujoho/h27did.html
+export const DID_TILE_URL = 'https://cyberjapandata.gsi.go.jp/xyz/did2015/{z}/{x}/{y}.geojson'
 
-// DID区域の概要情報（主要都市部の中心座標とおおよその範囲）
-// 実際のDID境界は複雑なため、詳細は国土数値情報からGeoJSONを取得する必要がある
+// DID区域の情報
 export const DID_INFO = {
   description: '人口集中地区（DID）は国勢調査に基づく人口密度4,000人/km²以上の地域',
-  source: '総務省統計局 国勢調査',
-  note: '詳細なDID境界データは国土数値情報からダウンロード可能',
+  source: '総務省統計局 平成27年国勢調査',
+  tileUrl: DID_TILE_URL,
+  attribution: '国土地理院',
   externalLinks: {
+    gsi: 'https://www.gsi.go.jp/chizujoho/h27did.html',
     kokudo: 'https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-A16-v2_3.html',
     dips: 'https://www.ossportal.dips-reg.mlit.go.jp/portal/top'
   }
 }
+
+// DIDタイルソース設定（MapLibre用）
+export const getDIDSourceConfig = () => ({
+  type: 'vector',
+  tiles: ['https://cyberjapandata.gsi.go.jp/xyz/did2015/{z}/{x}/{y}.pbf'],
+  minzoom: 8,
+  maxzoom: 16
+})
 
 // 空港制限区域をGeoJSON Feature Collectionに変換
 export const getAirportZonesGeoJSON = () => {

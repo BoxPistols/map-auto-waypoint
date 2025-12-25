@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Layers } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
-import { getAirportZonesGeoJSON, getNoFlyZonesGeoJSON } from '../../services/airspace'
+import { getAirportZonesGeoJSON, getNoFlyZonesGeoJSON, DID_TILE_URL } from '../../services/airspace'
 import styles from './Map.module.scss'
 
 // OpenStreetMap style with higher maxzoom
@@ -61,6 +61,7 @@ const Map = ({
   })
   const [draggingWaypoint, setDraggingWaypoint] = useState(null)
   const [is3D, setIs3D] = useState(false)
+  const [showDID, setShowDID] = useState(false)
   const [showAirportZones, setShowAirportZones] = useState(false)
   const [showNoFlyZones, setShowNoFlyZones] = useState(false)
 
@@ -76,6 +77,21 @@ const Map = ({
       longitude: center.lng
     }))
   }, [center.lat, center.lng])
+
+  // Handle DID layer toggle
+  const handleDIDToggle = useCallback(() => {
+    const newShowDID = !showDID
+    setShowDID(newShowDID)
+
+    if (newShowDID) {
+      // Open GSI map with DID layer in new tab
+      const lat = viewState.latitude.toFixed(6)
+      const lng = viewState.longitude.toFixed(6)
+      const zoom = Math.round(viewState.zoom)
+      const gsiUrl = `https://maps.gsi.go.jp/#${zoom}/${lat}/${lng}/&base=pale&ls=pale%7Cdid2015&disp=11&lcd=did2015&vs=c1g1j0h0k0l0u0t0z0r0s0m0f1`
+      window.open(gsiUrl, '_blank', 'noopener,noreferrer')
+    }
+  }, [showDID, viewState])
 
   // Toggle 3D mode
   const toggle3D = useCallback(() => {
@@ -219,6 +235,7 @@ const Map = ({
           editingPolygon={editingPolygon}
         />
 
+
         {/* Airport restriction zones */}
         {showAirportZones && (
           <Source id="airport-zones" type="geojson" data={airportZonesGeoJSON}>
@@ -350,14 +367,21 @@ const Map = ({
       {/* Map control buttons */}
       <div className={styles.mapControls}>
         <button
-          className={`${styles.toggleButton} ${showAirportZones ? styles.active : ''}`}
+          className={styles.toggleButton}
+          onClick={handleDIDToggle}
+          title="DID（人口集中地区）を国土地理院で確認"
+        >
+          <Users size={18} />
+        </button>
+        <button
+          className={`${styles.toggleButton} ${showAirportZones ? styles.activeAirport : ''}`}
           onClick={() => setShowAirportZones(!showAirportZones)}
           title={showAirportZones ? '空港制限区域を非表示' : '空港制限区域を表示'}
         >
           <Plane size={18} />
         </button>
         <button
-          className={`${styles.toggleButton} ${showNoFlyZones ? styles.active : ''}`}
+          className={`${styles.toggleButton} ${showNoFlyZones ? styles.activeNoFly : ''}`}
           onClick={() => setShowNoFlyZones(!showNoFlyZones)}
           title={showNoFlyZones ? '飛行禁止区域を非表示' : '飛行禁止区域を表示'}
         >

@@ -116,10 +116,12 @@
 }
 
 // Airspace zone specific button colors when active
-.toggleButton.active:nth-child(1) {
+.toggleButton.activeAirport {
   background: #ff9800;
+  color: white;
 }
 
-.toggleButton.active:nth-child(2) {
+.toggleButton.activeNoFly {
   background: #f44336;
+  color: white;
 }
