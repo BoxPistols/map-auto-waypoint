@@ -149,6 +149,17 @@
       border-color: #b0d9c6;
     }
   }
+
+  &.notamButton {
+    color: #e67e22;
+    background: #fef9f3;
+    border-color: #f5d9b8;
+
+    &:hover:not(:disabled) {
+      background: #fdf3e6;
+      border-color: #f0c896;
+    }
+  }
 }
 
 // Preview styles
@@ -217,6 +228,22 @@
 
   tr:last-child td {
     border-bottom: none;
+  }
+}
+
+.notamPreview {
+  pre {
+    margin: 0;
+    padding: 16px 20px;
+    background: #fffef8;
+    color: #333;
+    border: 1px solid #e8e4d4;
+    border-radius: 6px;
+    font-family: 'Yu Gothic', 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+    font-size: 13px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: keep-all;
   }
 }
 

@@ -1,3 +1,35 @@
+// Convert decimal degrees to DMS (度分秒) format
+// Example: 35.658580 -> "35°39'31""
+const decimalToDMS = (decimal, isLatitude = true) => {
+  const absolute = Math.abs(decimal)
+  const degrees = Math.floor(absolute)
+  const minutesDecimal = (absolute - degrees) * 60
+  const minutes = Math.floor(minutesDecimal)
+  const seconds = Math.round((minutesDecimal - minutes) * 60)
+
+  // Handle 60 seconds rollover
+  let finalSeconds = seconds
+  let finalMinutes = minutes
+  let finalDegrees = degrees
+
+  if (finalSeconds === 60) {
+    finalSeconds = 0
+    finalMinutes += 1
+  }
+  if (finalMinutes === 60) {
+    finalMinutes = 0
+    finalDegrees += 1
+  }
+
+  const prefix = isLatitude ? '北緯' : '東経'
+  return `${prefix}${finalDegrees}°${finalMinutes}'${finalSeconds}"`
+}
+
+// Format coordinate pair in NOTAM style
+const formatCoordinateNOTAM = (lat, lng) => {
+  return `${decimalToDMS(lat, true)}　${decimalToDMS(lng, false)}`
+}
+
 // Export waypoints to JSON
 export const exportToJSON = (waypoints, filename = null) => {
   const date = new Date().toISOString().split('T')[0]
@@ -82,6 +114,106 @@ export const exportPolygonsToGeoJSON = (polygons, filename = null) => {
   link.click()
   document.body.removeChild(link)
   URL.revokeObjectURL(url)
+}
+
+// Export to NOTAM format (度分秒/DMS for aviation)
+// Groups waypoints by polygon with DMS coordinates
+export const exportToNOTAM = (waypoints, polygons = [], filename = null) => {
+  const date = new Date().toISOString().split('T')[0]
+  const BOM = '\uFEFF' // UTF-8 BOM for Excel
+
+  // Group waypoints by polygon
+  const waypointsByPolygon = {}
+  const polygonOrder = []
+
+  waypoints.forEach(wp => {
+    const polygonId = wp.polygonId || 'unknown'
+    if (!waypointsByPolygon[polygonId]) {
+      waypointsByPolygon[polygonId] = []
+      polygonOrder.push(polygonId)
+    }
+    waypointsByPolygon[polygonId].push(wp)
+  })
+
+  // Build text content
+  let content = '(2)飛行範囲\n\n'
+
+  polygonOrder.forEach((polygonId, index) => {
+    const wps = waypointsByPolygon[polygonId]
+    const polygon = polygons.find(p => p.id === polygonId)
+    const polygonName = polygon?.name || wps[0]?.polygonName || `範囲${index + 1}`
+
+    content += `【範囲${index + 1}　${polygonName}】\n`
+
+    wps.forEach(wp => {
+      content += formatCoordinateNOTAM(wp.lat, wp.lng) + '\n'
+    })
+
+    content += '\n'
+  })
+
+  // Add altitude section template
+  content += '(3)飛行高度\n\n'
+  polygonOrder.forEach((polygonId, index) => {
+    const polygon = polygons.find(p => p.id === polygonId)
+    const polygonName = polygon?.name || `範囲${index + 1}`
+    content += `【範囲${index + 1}　${polygonName}】\n`
+    content += '下限：地表面、上限：海抜高度　　　m\n\n'
+  })
+
+  const blob = new Blob([BOM + content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename || `notam_${date}.txt`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+// Generate NOTAM preview data (for ExportPanel)
+export const generateNOTAMPreview = (waypoints, polygons = []) => {
+  // Group waypoints by polygon
+  const waypointsByPolygon = {}
+  const polygonOrder = []
+
+  waypoints.forEach(wp => {
+    const polygonId = wp.polygonId || 'unknown'
+    if (!waypointsByPolygon[polygonId]) {
+      waypointsByPolygon[polygonId] = []
+      polygonOrder.push(polygonId)
+    }
+    waypointsByPolygon[polygonId].push(wp)
+  })
+
+  // Build preview content
+  let content = '(2)飛行範囲\n\n'
+
+  polygonOrder.forEach((polygonId, index) => {
+    const wps = waypointsByPolygon[polygonId]
+    const polygon = polygons.find(p => p.id === polygonId)
+    const polygonName = polygon?.name || wps[0]?.polygonName || `範囲${index + 1}`
+
+    content += `【範囲${index + 1}　${polygonName}】\n`
+
+    wps.forEach(wp => {
+      content += formatCoordinateNOTAM(wp.lat, wp.lng) + '\n'
+    })
+
+    content += '\n'
+  })
+
+  content += '(3)飛行高度\n\n'
+  polygonOrder.forEach((polygonId, index) => {
+    const polygon = polygons.find(p => p.id === polygonId)
+    const polygonName = polygon?.name || `範囲${index + 1}`
+    content += `【範囲${index + 1}　${polygonName}】\n`
+    content += '下限：地表面、上限：海抜高度　　　m\n\n'
+  })
+
+  return content
 }
 
 // Export full backup

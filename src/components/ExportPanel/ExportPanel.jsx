@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
-import { FileJson, FileSpreadsheet, Map, Download, X, Eye, ChevronLeft } from 'lucide-react'
-import { exportToJSON, exportToCSV, exportPolygonsToGeoJSON, exportFullBackup } from '../../utils/exporters'
+import { FileJson, FileSpreadsheet, Map, Download, X, Eye, ChevronLeft, Plane } from 'lucide-react'
+import { exportToJSON, exportToCSV, exportPolygonsToGeoJSON, exportFullBackup, exportToNOTAM, generateNOTAMPreview } from '../../utils/exporters'
 import { exportAllData } from '../../utils/storage'
 import styles from './ExportPanel.module.scss'
 
@@ -46,7 +46,7 @@ const generatePolygonGeoJSONPreview = (polygons) => {
 }
 
 const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
-  const [previewMode, setPreviewMode] = useState(null) // null | 'waypoint-json' | 'waypoint-csv' | 'polygon-geojson' | 'backup'
+  const [previewMode, setPreviewMode] = useState(null) // null | 'waypoint-json' | 'waypoint-csv' | 'waypoint-notam' | 'polygon-geojson' | 'backup'
 
   // Generate preview data based on mode
   const previewData = useMemo(() => {
@@ -55,6 +55,8 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
         return JSON.stringify(generateWaypointJSONPreview(waypoints), null, 2)
       case 'waypoint-csv':
         return generateWaypointCSVPreview(waypoints)
+      case 'waypoint-notam':
+        return generateNOTAMPreview(waypoints, polygons)
       case 'polygon-geojson':
         return JSON.stringify(generatePolygonGeoJSONPreview(polygons), null, 2)
       case 'backup':
@@ -84,11 +86,17 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
     exportFullBackup(data)
   }
 
+  const handleExportNOTAM = () => {
+    if (waypoints.length === 0) return
+    exportToNOTAM(waypoints, polygons)
+  }
+
   // Preview mode title
   const getPreviewTitle = () => {
     switch (previewMode) {
       case 'waypoint-json': return 'Waypoint JSON プレビュー'
       case 'waypoint-csv': return 'Waypoint CSV プレビュー'
+      case 'waypoint-notam': return 'NOTAM形式 プレビュー（度分秒）'
       case 'polygon-geojson': return 'ポリゴン GeoJSON プレビュー'
       case 'backup': return 'バックアップ プレビュー'
       default: return ''
@@ -120,6 +128,15 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               ... 他 {rows.length - 50} 件（プレビューは最初の50件のみ表示）
             </p>
           )}
+        </div>
+      )
+    }
+
+    // NOTAM format - plain text with DMS coordinates
+    if (previewMode === 'waypoint-notam' && previewData) {
+      return (
+        <div className={styles.notamPreview}>
+          <pre>{previewData}</pre>
         </div>
       )
     }
@@ -156,6 +173,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               switch (previewMode) {
                 case 'waypoint-json': handleExportWaypointsJSON(); break
                 case 'waypoint-csv': handleExportWaypointsCSV(); break
+                case 'waypoint-notam': handleExportNOTAM(); break
                 case 'polygon-geojson': handleExportPolygonsGeoJSON(); break
                 case 'backup': handleExportBackup(); break
               }
@@ -205,6 +223,16 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               <Eye size={16} />
               <FileSpreadsheet size={16} />
               CSV
+            </button>
+            <button
+              className={`${styles.exportButton} ${styles.notamButton}`}
+              onClick={() => setPreviewMode('waypoint-notam')}
+              disabled={waypoints.length === 0}
+              data-tooltip="NOTAM通知用（度分秒形式）"
+            >
+              <Eye size={16} />
+              <Plane size={16} />
+              NOTAM
             </button>
           </div>
         </div>
