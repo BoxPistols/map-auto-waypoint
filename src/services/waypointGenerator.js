@@ -91,6 +91,29 @@ export const generateGridWaypoints = (polygon, spacingMeters = 50) => {
   }
 }
 
+// Estimate grid waypoint count without generating
+export const estimateGridWaypointCount = (polygon, spacingMeters = 50) => {
+  if (!polygon.geometry || polygon.geometry.type !== 'Polygon') {
+    return 0
+  }
+
+  try {
+    const turfPolygon = turf.polygon(polygon.geometry.coordinates)
+    const bbox = turf.bbox(turfPolygon)
+
+    // Create point grid
+    const grid = turf.pointGrid(bbox, spacingMeters, {
+      units: 'meters',
+      mask: turfPolygon
+    })
+
+    return grid.features.length
+  } catch (error) {
+    console.error('Grid estimation error:', error)
+    return 0
+  }
+}
+
 // Generate all waypoints from multiple polygons
 export const generateAllWaypoints = (polygons, options = {}) => {
   const { includeGrid = false, gridSpacing = 50 } = options

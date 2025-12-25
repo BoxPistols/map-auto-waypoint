@@ -5,6 +5,7 @@ import PolygonList from './components/PolygonList/PolygonList'
 import WaypointList from './components/WaypointList/WaypointList'
 import FileImport from './components/FileImport/FileImport'
 import ExportPanel from './components/ExportPanel/ExportPanel'
+import GridSettingsDialog from './components/GridSettingsDialog/GridSettingsDialog'
 import { loadPolygons, savePolygons, loadWaypoints, saveWaypoints, saveSearchHistory } from './utils/storage'
 import { searchAddress } from './services/geocoding'
 import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints } from './services/waypointGenerator'
@@ -30,6 +31,7 @@ function App() {
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
   const [showImport, setShowImport] = useState(false)
   const [showExport, setShowExport] = useState(false)
+  const [showGridSettings, setShowGridSettings] = useState(null) // polygon for grid generation
   const [notification, setNotification] = useState(null)
   const [editingPolygon, setEditingPolygon] = useState(null)
 
@@ -276,14 +278,16 @@ function App() {
 
   // Generate waypoints from single polygon
   const handleGenerateWaypoints = useCallback((polygon, options = {}) => {
-    const { includeGrid = false, gridSpacing = 30 } = options
-    let newWaypoints = polygonToWaypoints(polygon)
+    const { includeGrid = false } = options
 
-    // Include grid waypoints if requested
+    // If grid is requested, show settings dialog
     if (includeGrid) {
-      const gridWaypoints = generateAllWaypoints([polygon], { includeGrid: true, gridSpacing })
-      newWaypoints = gridWaypoints
+      setShowGridSettings(polygon)
+      return
     }
+
+    // Vertex-only generation
+    const newWaypoints = polygonToWaypoints(polygon)
 
     // Remove existing waypoints for this polygon
     setWaypoints(prev => [
@@ -293,6 +297,43 @@ function App() {
     showNotification(`${newWaypoints.length} Waypointを生成しました`)
     setActivePanel('waypoints')
   }, [showNotification])
+
+  // Handle grid settings confirm
+  const handleGridSettingsConfirm = useCallback((settings) => {
+    const polygon = showGridSettings
+    if (!polygon) return
+
+    const { spacing, includeVertices } = settings
+
+    let newWaypoints = []
+    let globalIndex = 1
+
+    // Add vertex waypoints if requested
+    if (includeVertices) {
+      const vertexWaypoints = polygonToWaypoints(polygon)
+      vertexWaypoints.forEach(wp => {
+        wp.index = globalIndex++
+        newWaypoints.push(wp)
+      })
+    }
+
+    // Add grid waypoints
+    const gridWaypoints = generateGridWaypoints(polygon, spacing)
+    gridWaypoints.forEach(wp => {
+      wp.index = globalIndex++
+      newWaypoints.push(wp)
+    })
+
+    // Remove existing waypoints for this polygon and add new ones
+    setWaypoints(prev => [
+      ...prev.filter(w => w.polygonId !== polygon.id),
+      ...newWaypoints
+    ])
+
+    setShowGridSettings(null)
+    showNotification(`${newWaypoints.length} Waypointを生成しました（${spacing}m間隔）`)
+    setActivePanel('waypoints')
+  }, [showGridSettings, showNotification])
 
   // Generate waypoints from all polygons
   const handleGenerateAllWaypoints = useCallback(() => {
@@ -577,6 +618,19 @@ function App() {
               waypoints={waypoints}
               polygons={polygons}
               onClose={() => setShowExport(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Grid Settings Modal */}
+      {showGridSettings && (
+        <div className="modal-overlay" onClick={() => setShowGridSettings(null)}>
+          <div onClick={e => e.stopPropagation()}>
+            <GridSettingsDialog
+              polygon={showGridSettings}
+              onConfirm={handleGridSettingsConfirm}
+              onCancel={() => setShowGridSettings(null)}
             />
           </div>
         </div>

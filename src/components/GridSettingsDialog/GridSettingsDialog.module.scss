@@ -1,0 +1,367 @@
+.dialog {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 90vw;
+  max-width: 420px;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+  background: #f8f9fa;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  svg {
+    color: #45B7D1;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+  }
+}
+
+.closeButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: #999;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+
+  &:hover {
+    background: #e0e0e0;
+    color: #666;
+  }
+}
+
+.content {
+  padding: 20px;
+}
+
+.polygonInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.colorDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.polygonName {
+  font-weight: 500;
+  color: #333;
+}
+
+.polygonArea {
+  font-size: 13px;
+  color: #888;
+}
+
+.settingGroup {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.unit {
+  font-weight: normal;
+  color: #888;
+  margin-left: 4px;
+}
+
+.spacingInput {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.numberInput {
+  width: 100px;
+  padding: 10px 12px;
+  font-size: 18px;
+  font-weight: 500;
+  text-align: center;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: #45B7D1;
+  }
+
+  // Hide spin buttons
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  -moz-appearance: textfield;
+}
+
+.inputUnit {
+  font-size: 16px;
+  color: #666;
+}
+
+.spacingPresets {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.presetButton {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #666;
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #e8e8e8;
+    border-color: #ccc;
+  }
+
+  &.active {
+    color: white;
+    background: #45B7D1;
+    border-color: #45B7D1;
+  }
+}
+
+.slider {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #ddd;
+  border-radius: 3px;
+  outline: none;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #45B7D1;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  &::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #45B7D1;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.sliderLabels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #999;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  span {
+    font-size: 14px;
+    color: #333;
+  }
+}
+
+.preview {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #eee;
+
+  h4 {
+    margin: 0 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+  }
+}
+
+.countGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.countItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #eee;
+
+  &.total {
+    background: #e8f4f8;
+    border-color: #d0ebf1;
+  }
+}
+
+.countLabel {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.countValue {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+
+  &.warning {
+    color: #f39c12;
+  }
+
+  &.danger {
+    color: #e74c3c;
+  }
+}
+
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  &.warning {
+    background: #fef9e7;
+    color: #9a7b4f;
+    border: 1px solid #f7dc6f;
+
+    svg {
+      color: #f39c12;
+    }
+  }
+
+  &.danger {
+    background: #fdedec;
+    color: #943126;
+    border: 1px solid #f1948a;
+
+    svg {
+      color: #e74c3c;
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #eee;
+  background: #f8f9fa;
+}
+
+.cancelButton {
+  flex: 1;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f5f5f5;
+    border-color: #ccc;
+  }
+}
+
+.confirmButton {
+  flex: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  background: #45B7D1;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover:not(:disabled) {
+    background: #3aa3bc;
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+}
