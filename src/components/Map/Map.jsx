@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo, useLayoutEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
 import { Box, Rotate3D, Plane, ShieldAlert, Users } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -75,45 +75,6 @@ const Map = ({
     saveMapSettings({ is3D, showAirportZones, showNoFlyZones, showDID })
   }, [is3D, showAirportZones, showNoFlyZones, showDID])
 
-  // Keyboard shortcuts for map controls
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Ignore if user is typing in an input field
-      const activeElement = document.activeElement
-      const isInputFocused = activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        activeElement.isContentEditable
-      )
-      if (isInputFocused) return
-
-      // Ignore if modifier keys are pressed (except for shortcuts that need them)
-      if (e.ctrlKey || e.metaKey || e.altKey) return
-
-      switch (e.key.toLowerCase()) {
-        case 'd': // DID toggle
-          e.preventDefault()
-          setShowDID(prev => !prev)
-          break
-        case 'a': // Airport zones toggle
-          e.preventDefault()
-          setShowAirportZones(prev => !prev)
-          break
-        case 'n': // No-fly zones toggle
-          e.preventDefault()
-          setShowNoFlyZones(prev => !prev)
-          break
-        case '3': // 3D toggle
-          e.preventDefault()
-          toggle3D()
-          break
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggle3D])
-
   // Memoize airspace GeoJSON data
   const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
   const noFlyZonesGeoJSON = useMemo(() => getNoFlyZonesGeoJSON(), [])
@@ -148,6 +109,45 @@ const Map = ({
       return newIs3D
     })
   }, [])
+
+  // Keyboard shortcuts for map controls
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore if user is typing in an input field
+      const activeElement = document.activeElement
+      const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.isContentEditable
+      )
+      if (isInputFocused) return
+
+      // Ignore if modifier keys are pressed
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+
+      switch (e.key.toLowerCase()) {
+        case 'd': // DID toggle
+          e.preventDefault()
+          setShowDID(prev => !prev)
+          break
+        case 'a': // Airport zones toggle
+          e.preventDefault()
+          setShowAirportZones(prev => !prev)
+          break
+        case 'n': // No-fly zones toggle
+          e.preventDefault()
+          setShowNoFlyZones(prev => !prev)
+          break
+        case '3': // 3D toggle
+          e.preventDefault()
+          toggle3D()
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [toggle3D])
 
   // Handle map click
   const handleClick = useCallback((e) => {
