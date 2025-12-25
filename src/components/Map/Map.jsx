@@ -78,20 +78,107 @@ const Map = ({
     }))
   }, [center.lat, center.lng])
 
-  // Handle DID layer toggle
-  const handleDIDToggle = useCallback(() => {
-    const newShowDID = !showDID
-    setShowDID(newShowDID)
+  // Handle DID layer with dynamic GeoJSON tile loading
+  useEffect(() => {
+    const map = mapRef.current?.getMap()
+    if (!map) return
 
-    if (newShowDID) {
-      // Open GSI map with DID layer in new tab
-      const lat = viewState.latitude.toFixed(6)
-      const lng = viewState.longitude.toFixed(6)
-      const zoom = Math.round(viewState.zoom)
-      const gsiUrl = `https://maps.gsi.go.jp/#${zoom}/${lat}/${lng}/&base=pale&ls=pale%7Cdid2015&disp=11&lcd=did2015&vs=c1g1j0h0k0l0u0t0z0r0s0m0f1`
-      window.open(gsiUrl, '_blank', 'noopener,noreferrer')
+    const sourceId = 'did-geojson'
+    const fillLayerId = 'did-fill'
+    const outlineLayerId = 'did-outline'
+
+    const loadDIDTiles = async () => {
+      if (!showDID) return
+
+      const bounds = map.getBounds()
+      const zoom = Math.min(Math.max(Math.floor(map.getZoom()), 10), 16)
+
+      // Calculate tile coordinates for current viewport
+      const tiles = getTileCoords(bounds, zoom)
+
+      // Fetch GeoJSON for each tile
+      const features = []
+      for (const { x, y, z } of tiles.slice(0, 20)) { // Limit to 20 tiles
+        try {
+          const url = `https://cyberjapandata.gsi.go.jp/xyz/did2015/${z}/${x}/${y}.geojson`
+          const response = await fetch(url)
+          if (response.ok) {
+            const geojson = await response.json()
+            if (geojson.features) {
+              features.push(...geojson.features)
+            }
+          }
+        } catch (e) {
+          // Tile might not exist at this location
+        }
+      }
+
+      // Update or create source
+      const source = map.getSource(sourceId)
+      const data = { type: 'FeatureCollection', features }
+
+      if (source) {
+        source.setData(data)
+      } else {
+        map.addSource(sourceId, { type: 'geojson', data })
+
+        map.addLayer({
+          id: fillLayerId,
+          type: 'fill',
+          source: sourceId,
+          paint: {
+            'fill-color': '#9c27b0',
+            'fill-opacity': 0.25
+          }
+        })
+
+        map.addLayer({
+          id: outlineLayerId,
+          type: 'line',
+          source: sourceId,
+          paint: {
+            'line-color': '#7b1fa2',
+            'line-width': 1.5
+          }
+        })
+      }
     }
-  }, [showDID, viewState])
+
+    if (showDID) {
+      loadDIDTiles()
+      map.on('moveend', loadDIDTiles)
+    } else {
+      map.off('moveend', loadDIDTiles)
+      if (map.getLayer(outlineLayerId)) map.removeLayer(outlineLayerId)
+      if (map.getLayer(fillLayerId)) map.removeLayer(fillLayerId)
+      if (map.getSource(sourceId)) map.removeSource(sourceId)
+    }
+
+    return () => {
+      map.off('moveend', loadDIDTiles)
+    }
+  }, [showDID])
+
+  // Helper: Calculate tile coordinates from bounds
+  const getTileCoords = (bounds, zoom) => {
+    const tiles = []
+    const n = Math.pow(2, zoom)
+
+    const lng2tile = (lng) => Math.floor((lng + 180) / 360 * n)
+    const lat2tile = (lat) => Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n)
+
+    const minX = lng2tile(bounds.getWest())
+    const maxX = lng2tile(bounds.getEast())
+    const minY = lat2tile(bounds.getNorth())
+    const maxY = lat2tile(bounds.getSouth())
+
+    for (let x = minX; x <= maxX; x++) {
+      for (let y = minY; y <= maxY; y++) {
+        tiles.push({ x, y, z: zoom })
+      }
+    }
+    return tiles
+  }
 
   // Toggle 3D mode
   const toggle3D = useCallback(() => {
@@ -367,9 +454,9 @@ const Map = ({
       {/* Map control buttons */}
       <div className={styles.mapControls}>
         <button
-          className={styles.toggleButton}
-          onClick={handleDIDToggle}
-          title="DID（人口集中地区）を国土地理院で確認"
+          className={`${styles.toggleButton} ${showDID ? styles.activeDID : ''}`}
+          onClick={() => setShowDID(!showDID)}
+          title={showDID ? 'DID（人口集中地区）を非表示' : 'DID（人口集中地区）を表示'}
         >
           <Users size={18} />
         </button>

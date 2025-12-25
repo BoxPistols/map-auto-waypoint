@@ -116,6 +116,11 @@
 }
 
 // Airspace zone specific button colors when active
+.toggleButton.activeDID {
+  background: #9c27b0;
+  color: white;
+}
+
 .toggleButton.activeAirport {
   background: #ff9800;
   color: white;
