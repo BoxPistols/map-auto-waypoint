@@ -78,8 +78,82 @@ const PolygonList = ({
               className={`${styles.item} ${isSelected ? styles.selected : ''}`}
               onClick={() => !isEditing && onSelect?.(polygon)}
             >
-              <div className={styles.colorIndicator} style={{ backgroundColor: polygon.color }} />
+              {/* Top row: color indicator + action buttons */}
+              <div className={styles.topRow}>
+                <div className={styles.colorIndicator} style={{ backgroundColor: polygon.color }} />
+                <div className={styles.actions}>
+                  <button
+                    className={`${styles.actionButton} ${polygon.waypointLinked !== false ? styles.linkedButton : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onToggleWaypointLink?.(polygon.id)
+                    }}
+                    data-tooltip={polygon.waypointLinked !== false ? 'Waypoint同期: ON' : 'Waypoint同期: OFF'}
+                    data-tooltip-pos="bottom"
+                  >
+                    {polygon.waypointLinked !== false ? <Link2 size={14} /> : <Unlink2 size={14} />}
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onGenerateWaypoints?.(polygon)
+                    }}
+                    data-tooltip="頂点Waypoint生成"
+                    data-tooltip-pos="bottom"
+                  >
+                    <MapPin size={14} />
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onGenerateWaypoints?.(polygon, { includeGrid: true })
+                    }}
+                    data-tooltip="グリッドWaypoint生成"
+                    data-tooltip-pos="bottom"
+                  >
+                    <Grid3X3 size={14} />
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onEditShape?.(polygon)
+                    }}
+                    data-tooltip="形状を編集"
+                    data-tooltip-pos="bottom"
+                  >
+                    <PenTool size={14} />
+                  </button>
+                  <button
+                    className={styles.actionButton}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleStartEdit(polygon)
+                    }}
+                    data-tooltip="名前を編集"
+                    data-tooltip-pos="bottom"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    className={`${styles.actionButton} ${styles.deleteButton}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm(`「${polygon.name}」を削除しますか？`)) {
+                        onDelete?.(polygon.id)
+                      }
+                    }}
+                    data-tooltip="削除"
+                    data-tooltip-pos="bottom"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
 
+              {/* Content: name + stats */}
               <div className={styles.content}>
                 <div className={styles.nameRow}>
                   <span className={styles.index}>{index + 1}.</span>
@@ -112,71 +186,6 @@ const PolygonList = ({
                   <span>周長: {formatDistance(perimeter)}</span>
                   <span>頂点: {polygon.geometry.coordinates[0].length - 1}</span>
                 </div>
-              </div>
-
-              <div className={styles.actions}>
-                <button
-                  className={`${styles.actionButton} ${polygon.waypointLinked !== false ? styles.linkedButton : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onToggleWaypointLink?.(polygon.id)
-                  }}
-                  data-tooltip={polygon.waypointLinked !== false ? 'Waypoint同期: ON' : 'Waypoint同期: OFF'}
-                >
-                  {polygon.waypointLinked !== false ? <Link2 size={14} /> : <Unlink2 size={14} />}
-                </button>
-                <button
-                  className={styles.actionButton}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onGenerateWaypoints?.(polygon)
-                  }}
-                  data-tooltip="頂点Waypoint生成"
-                >
-                  <MapPin size={14} />
-                </button>
-                <button
-                  className={styles.actionButton}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onGenerateWaypoints?.(polygon, { includeGrid: true })
-                  }}
-                  data-tooltip="グリッドWaypoint生成"
-                >
-                  <Grid3X3 size={14} />
-                </button>
-                <button
-                  className={styles.actionButton}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onEditShape?.(polygon)
-                  }}
-                  data-tooltip="形状を編集"
-                >
-                  <PenTool size={14} />
-                </button>
-                <button
-                  className={styles.actionButton}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleStartEdit(polygon)
-                  }}
-                  data-tooltip="名前を編集"
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  className={`${styles.actionButton} ${styles.deleteButton}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (confirm(`「${polygon.name}」を削除しますか？`)) {
-                      onDelete?.(polygon.id)
-                    }
-                  }}
-                  data-tooltip="削除"
-                >
-                  <Trash2 size={14} />
-                </button>
               </div>
             </li>
           )
