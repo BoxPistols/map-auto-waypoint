@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   X, Map, PenTool, MapPin, Grid3X3, FileUp, Download,
   Search, Mountain, Trash2, Link2, Pencil, Keyboard,
@@ -17,6 +17,20 @@ const sections = [
 
 const HelpModal = ({ onClose }) => {
   const [activeSection, setActiveSection] = useState('overview')
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -189,19 +203,19 @@ const HelpModal = ({ onClose }) => {
             <table className={styles.table}>
               <tbody>
                 <tr>
-                  <td>移動</td>
+                  <td className={styles.labelCell}>移動</td>
                   <td>ドラッグ</td>
                 </tr>
                 <tr>
-                  <td>ズーム</td>
+                  <td className={styles.labelCell}>ズーム</td>
                   <td>スクロール / ピンチ / +- ボタン</td>
                 </tr>
                 <tr>
-                  <td>回転</td>
+                  <td className={styles.labelCell}>回転</td>
                   <td>右ドラッグ / 2本指回転</td>
                 </tr>
                 <tr>
-                  <td>傾斜</td>
+                  <td className={styles.labelCell}>傾斜</td>
                   <td>Ctrl + ドラッグ / 2本指上下</td>
                 </tr>
               </tbody>
@@ -293,16 +307,17 @@ const HelpModal = ({ onClose }) => {
         return (
           <div className={styles.section}>
             <h2>キーボードショートカット</h2>
-            <p className={styles.hint}>
-              ※ macOS: <kbd>⌘</kbd> (Command), <kbd>⇧</kbd> (Shift) / Windows: <kbd>Ctrl</kbd>, <kbd>Shift</kbd>
-            </p>
-
-            <h3>ヘルプ</h3>
+            
+            <h3>一般</h3>
             <table className={styles.shortcutTable}>
               <tbody>
                 <tr>
-                  <td><kbd>?</kbd></td>
+                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>K</kbd> または <kbd>?</kbd></td>
                   <td>ヘルプを開く / 閉じる</td>
+                </tr>
+                <tr>
+                  <td><kbd>Escape</kbd></td>
+                  <td>モーダルを閉じる</td>
                 </tr>
               </tbody>
             </table>
@@ -333,11 +348,11 @@ const HelpModal = ({ onClose }) => {
             <table className={styles.shortcutTable}>
               <tbody>
                 <tr>
-                  <td><kbd>⌘</kbd> + <kbd>Z</kbd></td>
+                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>Z</kbd></td>
                   <td>元に戻す (Undo)</td>
                 </tr>
                 <tr>
-                  <td><kbd>⌘</kbd> + <kbd>⇧</kbd> + <kbd>Z</kbd></td>
+                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></td>
                   <td>やり直す (Redo)</td>
                 </tr>
               </tbody>

@@ -375,3 +375,11 @@
     grid-template-columns: 1fr;
   }
 }
+
+.labelCell {
+  width: auto !important;
+  text-align: left !important;
+  font-weight: 500 !important;
+  color: #333 !important;
+  white-space: nowrap;
+}
