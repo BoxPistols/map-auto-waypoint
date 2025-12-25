@@ -1,8 +1,9 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Layers } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
+import { getAirportZonesGeoJSON, getNoFlyZonesGeoJSON } from '../../services/airspace'
 import styles from './Map.module.scss'
 
 // OpenStreetMap style with higher maxzoom
@@ -60,6 +61,12 @@ const Map = ({
   })
   const [draggingWaypoint, setDraggingWaypoint] = useState(null)
   const [is3D, setIs3D] = useState(false)
+  const [showAirportZones, setShowAirportZones] = useState(false)
+  const [showNoFlyZones, setShowNoFlyZones] = useState(false)
+
+  // Memoize airspace GeoJSON data
+  const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
+  const noFlyZonesGeoJSON = useMemo(() => getNoFlyZonesGeoJSON(), [])
 
   // Update view when center changes
   useEffect(() => {
@@ -212,6 +219,79 @@ const Map = ({
           editingPolygon={editingPolygon}
         />
 
+        {/* Airport restriction zones */}
+        {showAirportZones && (
+          <Source id="airport-zones" type="geojson" data={airportZonesGeoJSON}>
+            <Layer
+              id="airport-zones-fill"
+              type="fill"
+              paint={{
+                'fill-color': '#ff9800',
+                'fill-opacity': 0.15
+              }}
+            />
+            <Layer
+              id="airport-zones-outline"
+              type="line"
+              paint={{
+                'line-color': '#ff9800',
+                'line-width': 2,
+                'line-dasharray': [4, 2]
+              }}
+            />
+            <Layer
+              id="airport-zones-label"
+              type="symbol"
+              layout={{
+                'text-field': ['get', 'name'],
+                'text-size': 11,
+                'text-anchor': 'center'
+              }}
+              paint={{
+                'text-color': '#e65100',
+                'text-halo-color': '#fff',
+                'text-halo-width': 1
+              }}
+            />
+          </Source>
+        )}
+
+        {/* No-fly zones */}
+        {showNoFlyZones && (
+          <Source id="nofly-zones" type="geojson" data={noFlyZonesGeoJSON}>
+            <Layer
+              id="nofly-zones-fill"
+              type="fill"
+              paint={{
+                'fill-color': '#f44336',
+                'fill-opacity': 0.25
+              }}
+            />
+            <Layer
+              id="nofly-zones-outline"
+              type="line"
+              paint={{
+                'line-color': '#f44336',
+                'line-width': 2
+              }}
+            />
+            <Layer
+              id="nofly-zones-label"
+              type="symbol"
+              layout={{
+                'text-field': ['get', 'name'],
+                'text-size': 10,
+                'text-anchor': 'center'
+              }}
+              paint={{
+                'text-color': '#c62828',
+                'text-halo-color': '#fff',
+                'text-halo-width': 1
+              }}
+            />
+          </Source>
+        )}
+
         {/* Display saved polygons */}
         <Source id="polygons" type="geojson" data={polygonsGeoJSON}>
           <Layer
@@ -267,14 +347,30 @@ const Map = ({
         ))}
       </MapGL>
 
-      {/* 3D Toggle Button */}
-      <button
-        className={`${styles.toggleButton} ${is3D ? styles.active : ''}`}
-        onClick={toggle3D}
-        title={is3D ? '2D表示に切替' : '3D表示に切替'}
-      >
-        {is3D ? <Box size={18} /> : <Rotate3D size={18} />}
-      </button>
+      {/* Map control buttons */}
+      <div className={styles.mapControls}>
+        <button
+          className={`${styles.toggleButton} ${showAirportZones ? styles.active : ''}`}
+          onClick={() => setShowAirportZones(!showAirportZones)}
+          title={showAirportZones ? '空港制限区域を非表示' : '空港制限区域を表示'}
+        >
+          <Plane size={18} />
+        </button>
+        <button
+          className={`${styles.toggleButton} ${showNoFlyZones ? styles.active : ''}`}
+          onClick={() => setShowNoFlyZones(!showNoFlyZones)}
+          title={showNoFlyZones ? '飛行禁止区域を非表示' : '飛行禁止区域を表示'}
+        >
+          <ShieldAlert size={18} />
+        </button>
+        <button
+          className={`${styles.toggleButton} ${is3D ? styles.active : ''}`}
+          onClick={toggle3D}
+          title={is3D ? '2D表示に切替' : '3D表示に切替'}
+        >
+          {is3D ? <Box size={18} /> : <Rotate3D size={18} />}
+        </button>
+      </div>
 
       {/* Instructions overlay */}
       <div className={styles.instructions}>

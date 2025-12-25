@@ -79,10 +79,19 @@
   }
 }
 
-.toggleButton {
+.mapControls {
   position: absolute;
   top: 100px;
   right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toggleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 36px;
   height: 36px;
   padding: 0;
@@ -94,7 +103,7 @@
   border-radius: 4px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.2s;
 
   &:hover {
     background: #f0f0f0;
@@ -104,4 +113,13 @@
     background: #45B7D1;
     color: white;
   }
+}
+
+// Airspace zone specific button colors when active
+.toggleButton.active:nth-child(1) {
+  background: #ff9800;
+}
+
+.toggleButton.active:nth-child(2) {
+  background: #f44336;
 }
