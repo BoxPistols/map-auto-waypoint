@@ -78,107 +78,88 @@ const Map = ({
     }))
   }, [center.lat, center.lng])
 
-  // Handle DID layer with dynamic GeoJSON tile loading
+  // State for DID data
+  const [didData, setDidData] = useState({ type: 'FeatureCollection', features: [] })
+  const [isLoadingDID, setIsLoadingDID] = useState(false)
+
+  // Load DID tiles when map moves or DID is toggled
   useEffect(() => {
+    if (!showDID) {
+      setDidData({ type: 'FeatureCollection', features: [] })
+      return
+    }
+
     const map = mapRef.current?.getMap()
     if (!map) return
 
-    const sourceId = 'did-geojson'
-    const fillLayerId = 'did-fill'
-    const outlineLayerId = 'did-outline'
-
     const loadDIDTiles = async () => {
-      if (!showDID) return
+      if (isLoadingDID) return
+      setIsLoadingDID(true)
 
-      const bounds = map.getBounds()
-      const zoom = Math.min(Math.max(Math.floor(map.getZoom()), 10), 16)
+      try {
+        const bounds = map.getBounds()
+        const zoom = Math.min(Math.max(Math.floor(map.getZoom()), 10), 16)
 
-      // Calculate tile coordinates for current viewport
-      const tiles = getTileCoords(bounds, zoom)
+        // Calculate tile coordinates
+        const n = Math.pow(2, zoom)
+        const lng2tile = (lng) => Math.floor((lng + 180) / 360 * n)
+        const lat2tile = (lat) => Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n)
 
-      // Fetch GeoJSON for each tile
-      const features = []
-      for (const { x, y, z } of tiles.slice(0, 20)) { // Limit to 20 tiles
-        try {
-          const url = `https://cyberjapandata.gsi.go.jp/xyz/did2015/${z}/${x}/${y}.geojson`
-          const response = await fetch(url)
-          if (response.ok) {
-            const geojson = await response.json()
-            if (geojson.features) {
-              features.push(...geojson.features)
-            }
+        const minX = lng2tile(bounds.getWest())
+        const maxX = lng2tile(bounds.getEast())
+        const minY = lat2tile(bounds.getNorth())
+        const maxY = lat2tile(bounds.getSouth())
+
+        const tiles = []
+        for (let x = minX; x <= maxX; x++) {
+          for (let y = minY; y <= maxY; y++) {
+            tiles.push({ x, y, z: zoom })
           }
-        } catch (e) {
-          // Tile might not exist at this location
         }
-      }
 
-      // Update or create source
-      const source = map.getSource(sourceId)
-      const data = { type: 'FeatureCollection', features }
-
-      if (source) {
-        source.setData(data)
-      } else {
-        map.addSource(sourceId, { type: 'geojson', data })
-
-        map.addLayer({
-          id: fillLayerId,
-          type: 'fill',
-          source: sourceId,
-          paint: {
-            'fill-color': '#9c27b0',
-            'fill-opacity': 0.25
+        // Fetch GeoJSON for each tile (limit to 16 tiles)
+        const features = []
+        const fetchPromises = tiles.slice(0, 16).map(async ({ x, y, z }) => {
+          try {
+            const url = `https://cyberjapandata.gsi.go.jp/xyz/did2015/${z}/${x}/${y}.geojson`
+            const response = await fetch(url)
+            if (response.ok) {
+              const geojson = await response.json()
+              if (geojson.features) {
+                return geojson.features
+              }
+            }
+          } catch (e) {
+            // Tile might not exist
           }
+          return []
         })
 
-        map.addLayer({
-          id: outlineLayerId,
-          type: 'line',
-          source: sourceId,
-          paint: {
-            'line-color': '#7b1fa2',
-            'line-width': 1.5
-          }
-        })
+        const results = await Promise.all(fetchPromises)
+        results.forEach(f => features.push(...f))
+
+        setDidData({ type: 'FeatureCollection', features })
+      } catch (error) {
+        console.error('DID load error:', error)
+      } finally {
+        setIsLoadingDID(false)
       }
     }
 
-    if (showDID) {
+    // Initial load
+    if (map.isStyleLoaded()) {
       loadDIDTiles()
-      map.on('moveend', loadDIDTiles)
     } else {
-      map.off('moveend', loadDIDTiles)
-      if (map.getLayer(outlineLayerId)) map.removeLayer(outlineLayerId)
-      if (map.getLayer(fillLayerId)) map.removeLayer(fillLayerId)
-      if (map.getSource(sourceId)) map.removeSource(sourceId)
+      map.once('load', loadDIDTiles)
     }
+
+    // Load on map move
+    map.on('moveend', loadDIDTiles)
 
     return () => {
       map.off('moveend', loadDIDTiles)
     }
   }, [showDID])
-
-  // Helper: Calculate tile coordinates from bounds
-  const getTileCoords = (bounds, zoom) => {
-    const tiles = []
-    const n = Math.pow(2, zoom)
-
-    const lng2tile = (lng) => Math.floor((lng + 180) / 360 * n)
-    const lat2tile = (lat) => Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * n)
-
-    const minX = lng2tile(bounds.getWest())
-    const maxX = lng2tile(bounds.getEast())
-    const minY = lat2tile(bounds.getNorth())
-    const maxY = lat2tile(bounds.getSouth())
-
-    for (let x = minX; x <= maxX; x++) {
-      for (let y = minY; y <= maxY; y++) {
-        tiles.push({ x, y, z: zoom })
-      }
-    }
-    return tiles
-  }
 
   // Toggle 3D mode
   const toggle3D = useCallback(() => {
@@ -322,6 +303,27 @@ const Map = ({
           editingPolygon={editingPolygon}
         />
 
+        {/* DID (人口集中地区) layer */}
+        {showDID && didData.features.length > 0 && (
+          <Source id="did-layer" type="geojson" data={didData}>
+            <Layer
+              id="did-fill"
+              type="fill"
+              paint={{
+                'fill-color': '#9c27b0',
+                'fill-opacity': 0.3
+              }}
+            />
+            <Layer
+              id="did-outline"
+              type="line"
+              paint={{
+                'line-color': '#7b1fa2',
+                'line-width': 1.5
+              }}
+            />
+          </Source>
+        )}
 
         {/* Airport restriction zones */}
         {showAirportZones && (
@@ -454,7 +456,7 @@ const Map = ({
       {/* Map control buttons */}
       <div className={styles.mapControls}>
         <button
-          className={`${styles.toggleButton} ${showDID ? styles.activeDID : ''}`}
+          className={`${styles.toggleButton} ${showDID ? styles.activeDID : ''} ${isLoadingDID ? styles.loading : ''}`}
           onClick={() => setShowDID(!showDID)}
           title={showDID ? 'DID（人口集中地区）を非表示' : 'DID（人口集中地区）を表示'}
         >
