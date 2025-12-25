@@ -1,30 +1,81 @@
-import { FileJson, FileSpreadsheet, Map, Download, X } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { FileJson, FileSpreadsheet, Map, Download, X, Eye, ChevronLeft } from 'lucide-react'
 import { exportToJSON, exportToCSV, exportPolygonsToGeoJSON, exportFullBackup } from '../../utils/exporters'
 import { exportAllData } from '../../utils/storage'
 import styles from './ExportPanel.module.scss'
 
+// Generate preview data for different formats
+const generateWaypointJSONPreview = (waypoints) => {
+  return waypoints.map((wp, index) => ({
+    number: index + 1,
+    latitude: wp.lat,
+    longitude: wp.lng,
+    elevation: wp.elevation || null,
+    polygonName: wp.polygonName || '',
+    type: wp.type || 'vertex'
+  }))
+}
+
+const generateWaypointCSVPreview = (waypoints) => {
+  const headers = ['番号', '緯度', '経度', '標高', 'ポリゴン名', '種別']
+  const rows = waypoints.map((wp, index) => [
+    index + 1,
+    wp.lat.toFixed(6),
+    wp.lng.toFixed(6),
+    wp.elevation ? wp.elevation.toFixed(1) : '-',
+    wp.polygonName || '',
+    wp.type === 'manual' ? '手動' : wp.type === 'grid' ? 'グリッド' : '頂点'
+  ])
+  return { headers, rows }
+}
+
+const generatePolygonGeoJSONPreview = (polygons) => {
+  return {
+    type: 'FeatureCollection',
+    features: polygons.map(polygon => ({
+      type: 'Feature',
+      id: polygon.id,
+      properties: {
+        name: polygon.name,
+        color: polygon.color,
+        createdAt: polygon.createdAt
+      },
+      geometry: polygon.geometry
+    }))
+  }
+}
+
 const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
-  const handleExportWaypointsJSON = () => {
-    if (waypoints.length === 0) {
-      alert('エクスポートするWaypointがありません')
-      return
+  const [previewMode, setPreviewMode] = useState(null) // null | 'waypoint-json' | 'waypoint-csv' | 'polygon-geojson' | 'backup'
+
+  // Generate preview data based on mode
+  const previewData = useMemo(() => {
+    switch (previewMode) {
+      case 'waypoint-json':
+        return JSON.stringify(generateWaypointJSONPreview(waypoints), null, 2)
+      case 'waypoint-csv':
+        return generateWaypointCSVPreview(waypoints)
+      case 'polygon-geojson':
+        return JSON.stringify(generatePolygonGeoJSONPreview(polygons), null, 2)
+      case 'backup':
+        return JSON.stringify(exportAllData(), null, 2)
+      default:
+        return null
     }
+  }, [previewMode, waypoints, polygons])
+
+  const handleExportWaypointsJSON = () => {
+    if (waypoints.length === 0) return
     exportToJSON(waypoints)
   }
 
   const handleExportWaypointsCSV = () => {
-    if (waypoints.length === 0) {
-      alert('エクスポートするWaypointがありません')
-      return
-    }
+    if (waypoints.length === 0) return
     exportToCSV(waypoints)
   }
 
   const handleExportPolygonsGeoJSON = () => {
-    if (polygons.length === 0) {
-      alert('エクスポートするポリゴンがありません')
-      return
-    }
+    if (polygons.length === 0) return
     exportPolygonsToGeoJSON(polygons)
   }
 
@@ -33,6 +84,92 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
     exportFullBackup(data)
   }
 
+  // Preview mode title
+  const getPreviewTitle = () => {
+    switch (previewMode) {
+      case 'waypoint-json': return 'Waypoint JSON プレビュー'
+      case 'waypoint-csv': return 'Waypoint CSV プレビュー'
+      case 'polygon-geojson': return 'ポリゴン GeoJSON プレビュー'
+      case 'backup': return 'バックアップ プレビュー'
+      default: return ''
+    }
+  }
+
+  // Render preview content
+  const renderPreview = () => {
+    if (previewMode === 'waypoint-csv' && previewData) {
+      const { headers, rows } = previewData
+      return (
+        <div className={styles.csvPreview}>
+          <table>
+            <thead>
+              <tr>
+                {headers.map((h, i) => <th key={i}>{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.slice(0, 50).map((row, i) => (
+                <tr key={i}>
+                  {row.map((cell, j) => <td key={j}>{cell}</td>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {rows.length > 50 && (
+            <p className={styles.truncateNote}>
+              ... 他 {rows.length - 50} 件（プレビューは最初の50件のみ表示）
+            </p>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <div className={styles.jsonPreview}>
+        <pre>{previewData}</pre>
+      </div>
+    )
+  }
+
+  // Preview mode UI
+  if (previewMode) {
+    return (
+      <div className={styles.exportPanel}>
+        <div className={styles.header}>
+          <button className={styles.backButton} onClick={() => setPreviewMode(null)}>
+            <ChevronLeft size={18} />
+          </button>
+          <h3>{getPreviewTitle()}</h3>
+          <button className={styles.closeButton} onClick={onClose}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className={styles.previewContent}>
+          {renderPreview()}
+        </div>
+
+        <div className={styles.previewActions}>
+          <button
+            className={styles.downloadButton}
+            onClick={() => {
+              switch (previewMode) {
+                case 'waypoint-json': handleExportWaypointsJSON(); break
+                case 'waypoint-csv': handleExportWaypointsCSV(); break
+                case 'polygon-geojson': handleExportPolygonsGeoJSON(); break
+                case 'backup': handleExportBackup(); break
+              }
+            }}
+          >
+            <Download size={16} />
+            ダウンロード
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Default export selection UI
   return (
     <div className={styles.exportPanel}>
       <div className={styles.header}>
@@ -53,19 +190,21 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
           <div className={styles.buttons}>
             <button
               className={styles.exportButton}
-              onClick={handleExportWaypointsJSON}
+              onClick={() => setPreviewMode('waypoint-json')}
               disabled={waypoints.length === 0}
             >
+              <Eye size={16} />
               <FileJson size={16} />
-              JSON形式
+              JSON
             </button>
             <button
               className={styles.exportButton}
-              onClick={handleExportWaypointsCSV}
+              onClick={() => setPreviewMode('waypoint-csv')}
               disabled={waypoints.length === 0}
             >
+              <Eye size={16} />
               <FileSpreadsheet size={16} />
-              CSV形式
+              CSV
             </button>
           </div>
         </div>
@@ -80,11 +219,12 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
           <div className={styles.buttons}>
             <button
               className={styles.exportButton}
-              onClick={handleExportPolygonsGeoJSON}
+              onClick={() => setPreviewMode('polygon-geojson')}
               disabled={polygons.length === 0}
             >
+              <Eye size={16} />
               <Map size={16} />
-              GeoJSON形式
+              GeoJSON
             </button>
           </div>
         </div>
@@ -98,10 +238,11 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
           <div className={styles.buttons}>
             <button
               className={`${styles.exportButton} ${styles.backupButton}`}
-              onClick={handleExportBackup}
+              onClick={() => setPreviewMode('backup')}
             >
+              <Eye size={16} />
               <Download size={16} />
-              バックアップを作成
+              バックアップ
             </button>
           </div>
         </div>
