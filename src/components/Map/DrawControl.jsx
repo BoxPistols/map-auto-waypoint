@@ -69,8 +69,8 @@ const DrawControl = forwardRef(({
     const draw = new MapboxDraw({
       displayControlsDefault: false,
       controls: {
-        polygon: true,
-        trash: true
+        polygon: false,
+        trash: false
       },
       defaultMode: 'simple_select',
       styles: [
