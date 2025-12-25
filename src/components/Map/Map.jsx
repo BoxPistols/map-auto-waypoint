@@ -4,6 +4,7 @@ import { Box, Rotate3D, Plane, ShieldAlert, Users } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import { getAirportZonesGeoJSON, getNoFlyZonesGeoJSON } from '../../services/airspace'
+import { loadMapSettings, saveMapSettings } from '../../utils/storage'
 import styles from './Map.module.scss'
 
 // OpenStreetMap style with higher maxzoom
@@ -52,18 +53,27 @@ const Map = ({
   drawMode = false
 }) => {
   const mapRef = useRef(null)
+
+  // Load map settings from localStorage (must be before viewState init)
+  const initialSettings = useMemo(() => loadMapSettings(), [])
+
   const [viewState, setViewState] = useState({
     latitude: center.lat,
     longitude: center.lng,
     zoom: zoom,
-    pitch: 0,
+    pitch: initialSettings.is3D ? 60 : 0,
     bearing: 0
   })
   const [draggingWaypoint, setDraggingWaypoint] = useState(null)
-  const [is3D, setIs3D] = useState(false)
-  const [showAirportZones, setShowAirportZones] = useState(false)
-  const [showNoFlyZones, setShowNoFlyZones] = useState(false)
-  const [showDID, setShowDID] = useState(false)
+  const [is3D, setIs3D] = useState(initialSettings.is3D)
+  const [showAirportZones, setShowAirportZones] = useState(initialSettings.showAirportZones)
+  const [showNoFlyZones, setShowNoFlyZones] = useState(initialSettings.showNoFlyZones)
+  const [showDID, setShowDID] = useState(initialSettings.showDID)
+
+  // Save map settings when they change
+  useEffect(() => {
+    saveMapSettings({ is3D, showAirportZones, showNoFlyZones, showDID })
+  }, [is3D, showAirportZones, showNoFlyZones, showDID])
 
   // Memoize airspace GeoJSON data
   const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])

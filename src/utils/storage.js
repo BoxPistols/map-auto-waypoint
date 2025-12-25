@@ -3,7 +3,8 @@ const STORAGE_KEYS = {
   POLYGONS: 'drone_waypoint_polygons',
   WAYPOINTS: 'drone_waypoint_waypoints',
   HISTORY: 'drone_waypoint_history',
-  SEARCH_HISTORY: 'drone_waypoint_search_history'
+  SEARCH_HISTORY: 'drone_waypoint_search_history',
+  MAP_SETTINGS: 'drone_waypoint_map_settings'
 }
 
 const MAX_HISTORY_ITEMS = 50
@@ -103,6 +104,37 @@ export const loadSearchHistory = () => {
   } catch (error) {
     console.error('Failed to load search history:', error)
     return []
+  }
+}
+
+// Map settings (overlays, 3D mode, etc.)
+export const saveMapSettings = (settings) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.MAP_SETTINGS, JSON.stringify(settings))
+    return true
+  } catch (error) {
+    console.error('Failed to save map settings:', error)
+    return false
+  }
+}
+
+export const loadMapSettings = () => {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.MAP_SETTINGS)
+    return data ? JSON.parse(data) : {
+      is3D: false,
+      showDID: false,
+      showAirportZones: false,
+      showNoFlyZones: false
+    }
+  } catch (error) {
+    console.error('Failed to load map settings:', error)
+    return {
+      is3D: false,
+      showDID: false,
+      showAirportZones: false,
+      showNoFlyZones: false
+    }
   }
 }
 
