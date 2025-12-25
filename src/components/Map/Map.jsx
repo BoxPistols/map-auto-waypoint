@@ -63,6 +63,7 @@ const Map = ({
   const [is3D, setIs3D] = useState(false)
   const [showAirportZones, setShowAirportZones] = useState(false)
   const [showNoFlyZones, setShowNoFlyZones] = useState(false)
+  const [showDID, setShowDID] = useState(false)
 
   // Memoize airspace GeoJSON data
   const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
@@ -77,15 +78,15 @@ const Map = ({
     }))
   }, [center.lat, center.lng])
 
-  // Open GSI map with DID layer
-  const openDIDMap = useCallback(() => {
-    const lat = viewState.latitude.toFixed(6)
-    const lng = viewState.longitude.toFixed(6)
-    const zoom = Math.max(Math.round(viewState.zoom), 12)
-    // GSI map URL with DID layer enabled
-    const gsiUrl = `https://maps.gsi.go.jp/#${zoom}/${lat}/${lng}/&base=pale&ls=pale%7Cdid2015&disp=11&lcd=did2015&vs=c1g1j0h0k0l0u0t0z0r0s0m0f1`
-    window.open(gsiUrl, '_blank', 'noopener,noreferrer')
-  }, [viewState])
+  // DID tile source configuration
+  const didTileSource = useMemo(() => ({
+    type: 'raster',
+    tiles: ['https://cyberjapandata.gsi.go.jp/xyz/did2015/{z}/{x}/{y}.png'],
+    tileSize: 256,
+    minzoom: 8,
+    maxzoom: 16,
+    attribution: '国土地理院・総務省統計局'
+  }), [])
 
   // Toggle 3D mode
   const toggle3D = useCallback(() => {
@@ -302,6 +303,19 @@ const Map = ({
           </Source>
         )}
 
+        {/* DID (人口集中地区) raster tiles */}
+        {showDID && (
+          <Source id="did-tiles" {...didTileSource}>
+            <Layer
+              id="did-layer"
+              type="raster"
+              paint={{
+                'raster-opacity': 0.6
+              }}
+            />
+          </Source>
+        )}
+
         {/* Display saved polygons */}
         <Source id="polygons" type="geojson" data={polygonsGeoJSON}>
           <Layer
@@ -360,9 +374,9 @@ const Map = ({
       {/* Map control buttons */}
       <div className={styles.mapControls}>
         <button
-          className={styles.toggleButton}
-          onClick={openDIDMap}
-          title="DID（人口集中地区）を国土地理院地図で確認"
+          className={`${styles.toggleButton} ${showDID ? styles.activeDID : ''}`}
+          onClick={() => setShowDID(!showDID)}
+          title={showDID ? 'DID（人口集中地区）を非表示' : 'DID（人口集中地区）を表示'}
         >
           <Users size={18} />
         </button>
