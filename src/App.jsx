@@ -6,6 +6,7 @@ import WaypointList from './components/WaypointList/WaypointList'
 import FileImport from './components/FileImport/FileImport'
 import ExportPanel from './components/ExportPanel/ExportPanel'
 import GridSettingsDialog from './components/GridSettingsDialog/GridSettingsDialog'
+import HelpModal from './components/HelpModal/HelpModal'
 import { loadPolygons, savePolygons, loadWaypoints, saveWaypoints, saveSearchHistory } from './utils/storage'
 import { searchAddress } from './services/geocoding'
 import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints } from './services/waypointGenerator'
@@ -32,6 +33,7 @@ function App() {
   const [showImport, setShowImport] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [showGridSettings, setShowGridSettings] = useState(null) // polygon for grid generation
+  const [showHelp, setShowHelp] = useState(false)
   const [notification, setNotification] = useState(null)
   const [editingPolygon, setEditingPolygon] = useState(null)
 
@@ -505,6 +507,13 @@ function App() {
           >
             エクスポート
           </button>
+          <button
+            className="help-button"
+            onClick={() => setShowHelp(true)}
+            data-tooltip="ヘルプ"
+          >
+            ?
+          </button>
         </div>
       </header>
 
@@ -641,6 +650,15 @@ function App() {
               onConfirm={handleGridSettingsConfirm}
               onCancel={() => setShowGridSettings(null)}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Help Modal */}
+      {showHelp && (
+        <div className="modal-overlay" onClick={() => setShowHelp(false)}>
+          <div onClick={e => e.stopPropagation()}>
+            <HelpModal onClose={() => setShowHelp(false)} />
           </div>
         </div>
       )}
