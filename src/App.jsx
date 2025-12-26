@@ -326,6 +326,18 @@ function App() {
       return
     }
 
+    // Check if there are existing vertex waypoints for this polygon
+    const existingVertexWaypoints = waypoints.filter(
+      w => w.polygonId === polygon.id && w.type === 'vertex'
+    )
+
+    if (existingVertexWaypoints.length > 0) {
+      // Ask for confirmation before regenerating
+      if (!confirm('既存のWaypointがあります。ポリゴンの頂点位置から再生成しますか？\n（現在のWaypoint位置は失われます）')) {
+        return
+      }
+    }
+
     // Vertex-only generation
     const newWaypoints = polygonToWaypoints(polygon)
 
@@ -336,7 +348,7 @@ function App() {
     ])
     showNotification(`${newWaypoints.length} Waypointを生成しました`)
     setActivePanel('waypoints')
-  }, [showNotification])
+  }, [waypoints, showNotification])
 
   // Handle grid settings confirm
   const handleGridSettingsConfirm = useCallback((settings) => {
@@ -423,12 +435,40 @@ function App() {
     showNotification(`${ids.length} 個のWaypointを削除しました`)
   }, [showNotification])
 
-  // Handle waypoint move (drag on map)
+  // Handle waypoint move (drag on map) - also update polygon if vertex type
   const handleWaypointMove = useCallback((id, newLat, newLng) => {
+    // Find the waypoint being moved
+    const waypoint = waypoints.find(w => w.id === id)
+
+    // Update the waypoint position
     setWaypoints(prev => prev.map(w =>
       w.id === id ? { ...w, lat: newLat, lng: newLng, elevation: null } : w
     ))
-  }, [])
+
+    // If it's a vertex waypoint, also update the polygon geometry
+    if (waypoint && waypoint.type === 'vertex' && waypoint.polygonId !== undefined && waypoint.vertexIndex !== undefined) {
+      setPolygons(prev => prev.map(p => {
+        if (p.id !== waypoint.polygonId) return p
+
+        // Update the polygon coordinates
+        const newCoords = [...p.geometry.coordinates[0]]
+        newCoords[waypoint.vertexIndex] = [newLng, newLat]
+
+        // Also update the closing point if this is the first vertex
+        if (waypoint.vertexIndex === 0) {
+          newCoords[newCoords.length - 1] = [newLng, newLat]
+        }
+
+        return {
+          ...p,
+          geometry: {
+            ...p.geometry,
+            coordinates: [newCoords]
+          }
+        }
+      }))
+    }
+  }, [waypoints])
 
   // Handle waypoint update (edit name, coords, etc.)
   const handleWaypointUpdate = useCallback((id, updateData) => {

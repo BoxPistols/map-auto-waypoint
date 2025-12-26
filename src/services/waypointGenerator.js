@@ -14,6 +14,7 @@ export const polygonToWaypoints = (polygon) => {
     lat: coord[1],
     lng: coord[0],
     index: index + 1,
+    vertexIndex: index, // Index in polygon coordinates array
     polygonId: polygon.id,
     polygonName: polygon.name,
     type: 'vertex'
