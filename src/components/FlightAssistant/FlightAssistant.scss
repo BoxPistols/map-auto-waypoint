@@ -123,31 +123,15 @@ $color-border-light: rgba(255, 255, 255, 0.15);
     }
   }
 
-  .close-btn {
-    background: none;
-    border: none;
-    color: $color-text-white;
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-  }
-
   .header-actions {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
 
-    .expand-btn, .settings-btn {
-      background: none;
+    button {
+      background: transparent;
       border: none;
-      color: rgba(255, 255, 255, 0.8);
+      color: $color-text-white;
       cursor: pointer;
       padding: 6px;
       border-radius: 6px;
@@ -158,11 +142,10 @@ $color-border-light: rgba(255, 255, 255, 0.15);
 
       &:hover {
         background: rgba(255, 255, 255, 0.2);
-        color: $color-text-white;
       }
 
       &.active {
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.15);
       }
     }
   }
