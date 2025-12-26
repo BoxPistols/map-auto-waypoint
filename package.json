@@ -21,6 +21,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-map-gl": "^8.1.0",
+    "react-markdown": "^10.1.0",
     "sass": "^1.97.1"
   },
   "devDependencies": {

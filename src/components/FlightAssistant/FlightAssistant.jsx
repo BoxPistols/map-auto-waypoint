@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import {
   Send,
   X,
@@ -12,7 +13,6 @@ import {
   ChevronUp,
   Sparkles,
   Settings,
-  Key,
   Trash2,
   ExternalLink,
   Shield,
@@ -51,6 +51,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [showAssessmentDetail, setShowAssessmentDetail] = useState(false);
   const [optimizationPlan, setOptimizationPlan] = useState(null);
   const [showOptimization, setShowOptimization] = useState(false);
+  const [proposedPlan, setProposedPlan] = useState({ altitude: 50, purpose: '点検飛行' });
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -130,6 +131,14 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         // ローカル推奨パラメータを取得
         const recommendations = await getFlightRecommendations(userMessage);
 
+        // 推奨パラメータをproposedPlanに保存（判定時に使用）
+        setProposedPlan({
+          altitude: recommendations.altitude,
+          purpose: recommendations.purpose || userMessage,
+          pattern: recommendations.pattern,
+          camera: recommendations.camera
+        });
+
         let response = `**推奨パラメータ**\n\n`;
         response += `📍 **パターン**: ${recommendations.pattern === 'grid' ? 'グリッド' : '周回'}\n`;
         response += `🛫 **推奨高度**: ${recommendations.altitude}m\n`;
@@ -153,6 +162,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         setMessages(prev => [...prev, { role: 'assistant', content: response }]);
       }
     } catch (error) {
+      console.error('[FlightAssistant] handleSend error:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: `エラーが発生しました: ${error.message}`
@@ -215,10 +225,10 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     }]);
 
     try {
-      // 実データに基づく分析を実行
+      // 実データに基づく分析を実行（proposedPlanから高度・目的を取得）
       const result = await runFullAnalysis(polygons, waypoints, {
-        altitude: 50,
-        purpose: '点検飛行',
+        altitude: proposedPlan.altitude || 50,
+        purpose: proposedPlan.purpose || '点検飛行',
         useAI: hasKey
       });
 
@@ -381,6 +391,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       });
 
     } catch (error) {
+      console.error('[FlightAssistant] handleAssessment error:', error);
       setMessages(prev => {
         const filtered = prev.filter(m => m.role !== 'system');
         return [...filtered, {
@@ -577,24 +588,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               </div>
             )}
             <div className="message-content">
-              {msg.content.split('\n').map((line, i) => {
-                if (line.startsWith('## ')) {
-                  return <h3 key={i}>{line.replace('## ', '')}</h3>;
-                }
-                if (line.startsWith('### ')) {
-                  return <h4 key={i}>{line.replace('### ', '')}</h4>;
-                }
-                if (line.startsWith('**') && line.endsWith('**')) {
-                  return <strong key={i}>{line.replace(/\*\*/g, '')}</strong>;
-                }
-                if (line.startsWith('• ') || line.startsWith('- ')) {
-                  return <div key={i} className="bullet-item">{line}</div>;
-                }
-                if (line.startsWith('---')) {
-                  return <hr key={i} />;
-                }
-                return line ? <p key={i}>{line}</p> : null;
-              })}
+              <ReactMarkdown>{msg.content}</ReactMarkdown>
             </div>
           </div>
         ))}

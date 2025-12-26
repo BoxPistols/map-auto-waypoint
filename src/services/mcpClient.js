@@ -283,12 +283,16 @@ class MCPClient {
    * 申請要件を分析（モック）
    *
    * @param {Object} flightPlan - フライトプラン
+   * @param {Object} flightPlan.didInfo - DID情報 { isDID: boolean }
    * @returns {Promise<Object>} 申請要件分析結果
    */
   async analyzeRequirements(flightPlan) {
     console.log('[MCP] analyzeRequirements called:', flightPlan);
 
     await new Promise(resolve => setTimeout(resolve, 700));
+
+    // DID情報はflightPlan.didInfoから取得（didInfo.isDIDで判定）
+    const isDID = flightPlan?.didInfo?.isDID ?? false;
 
     return {
       success: true,
@@ -297,7 +301,7 @@ class MCPClient {
           {
             type: '飛行許可・承認',
             authority: '国土交通省',
-            category: flightPlan?.isDID ? 'DID飛行' : '目視外飛行',
+            category: isDID ? 'DID飛行' : '目視外飛行',
             estimatedDays: 10,
             estimatedCost: 0,
             documents: ['飛行計画書', '機体情報', '操縦者情報']

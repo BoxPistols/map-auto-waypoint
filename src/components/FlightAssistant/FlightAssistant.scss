@@ -1,3 +1,30 @@
+// Color Variables
+$color-primary: #6366f1;
+$color-primary-dark: #4f46e5;
+$color-primary-light: #8b5cf6;
+$color-primary-lighter: #a5b4fc;
+$color-primary-lightest: #c7d2fe;
+
+$color-success: #10b981;
+$color-success-dark: #059669;
+$color-success-light: #6ee7b7;
+
+$color-warning: #f59e0b;
+
+$color-danger: #ef4444;
+$color-danger-dark: #dc2626;
+$color-danger-light: #fca5a5;
+
+$color-info: #3b82f6;
+$color-info-light: #93c5fd;
+
+$color-bg-dark: #1e1e2e;
+$color-text-primary: #e2e8f0;
+$color-text-white: white;
+
+$color-border: rgba(255, 255, 255, 0.1);
+$color-border-light: rgba(255, 255, 255, 0.15);
+
 .flight-assistant-fab {
   position: fixed;
   bottom: 24px;
@@ -5,11 +32,11 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
   border: none;
-  color: white;
+  color: $color-text-white;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 20px rgba($color-primary, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -18,7 +45,7 @@
 
   &:hover {
     transform: scale(1.1);
-    box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+    box-shadow: 0 6px 24px rgba($color-primary, 0.5);
   }
 
   svg {
@@ -37,14 +64,14 @@
   right: 24px;
   width: 380px;
   max-height: 600px;
-  background: #1e1e2e;
+  background: $color-bg-dark;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
   z-index: 1000;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid $color-border;
 }
 
 .flight-assistant-header {
@@ -52,8 +79,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  color: white;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
 
   .header-title {
     display: flex;
@@ -69,20 +96,20 @@
     }
 
     .ai-badge {
-      background: rgba(16, 185, 129, 0.3);
-      color: #6ee7b7;
+      background: rgba($color-success, 0.3);
+      color: $color-success-light;
     }
 
     .mlit-badge {
-      background: rgba(59, 130, 246, 0.3);
-      color: #93c5fd;
+      background: rgba($color-info, 0.3);
+      color: $color-info-light;
     }
   }
 
   .close-btn {
     background: none;
     border: none;
-    color: white;
+    color: $color-text-white;
     cursor: pointer;
     padding: 4px;
     border-radius: 4px;
@@ -128,8 +155,8 @@
     justify-content: flex-end;
 
     .message-content {
-      background: #6366f1;
-      color: white;
+      background: $color-primary;
+      color: $color-text-white;
       border-radius: 16px 16px 4px 16px;
     }
   }
@@ -137,7 +164,7 @@
   &.assistant {
     .message-content {
       background: rgba(255, 255, 255, 0.08);
-      color: #e2e8f0;
+      color: $color-text-primary;
       border-radius: 16px 16px 16px 4px;
     }
   }
@@ -146,8 +173,8 @@
     justify-content: center;
 
     .message-content {
-      background: rgba(99, 102, 241, 0.2);
-      color: #a5b4fc;
+      background: rgba($color-primary, 0.2);
+      color: $color-primary-lighter;
       border-radius: 8px;
       font-size: 13px;
       padding: 8px 12px;
@@ -159,11 +186,11 @@
     height: 28px;
     min-width: 28px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: $color-text-white;
   }
 
   .message-content {
@@ -176,14 +203,14 @@
       font-size: 15px;
       font-weight: 600;
       margin: 8px 0 4px;
-      color: white;
+      color: $color-text-white;
     }
 
     h4 {
       font-size: 14px;
       font-weight: 600;
       margin: 8px 0 4px;
-      color: #a5b4fc;
+      color: $color-primary-lighter;
     }
 
     p {
@@ -191,7 +218,7 @@
     }
 
     strong {
-      color: #a5b4fc;
+      color: $color-primary-lighter;
     }
 
     .bullet-item {
@@ -207,7 +234,7 @@
       span {
         width: 8px;
         height: 8px;
-        background: #6366f1;
+        background: $color-primary;
         border-radius: 50%;
         animation: typing 1.4s infinite;
 
@@ -225,7 +252,7 @@
 
 .flight-assistant-actions {
   padding: 8px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid $color-border;
   display: flex;
   gap: 8px;
 
@@ -236,10 +263,10 @@
     justify-content: center;
     gap: 6px;
     padding: 10px 16px;
-    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    background: linear-gradient(135deg, $color-warning 0%, $color-danger 100%);
     border: none;
     border-radius: 8px;
-    color: white;
+    color: $color-text-white;
     font-weight: 600;
     font-size: 14px;
     cursor: pointer;
@@ -247,7 +274,7 @@
 
     &:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+      box-shadow: 0 4px 12px rgba($color-warning, 0.4);
     }
 
     &:disabled {
@@ -270,16 +297,16 @@
   display: flex;
   gap: 8px;
   padding: 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid $color-border;
   background: rgba(0, 0, 0, 0.2);
 
   textarea {
     flex: 1;
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: 1px solid $color-border-light;
     border-radius: 8px;
     padding: 10px 12px;
-    color: white;
+    color: $color-text-white;
     font-size: 14px;
     resize: none;
     font-family: inherit;
@@ -290,7 +317,7 @@
 
     &:focus {
       outline: none;
-      border-color: #6366f1;
+      border-color: $color-primary;
     }
 
     &:disabled {
@@ -301,10 +328,10 @@
   .send-btn {
     width: 40px;
     height: 40px;
-    background: #6366f1;
+    background: $color-primary;
     border: none;
     border-radius: 8px;
-    color: white;
+    color: $color-text-white;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -312,7 +339,7 @@
     transition: all 0.2s ease;
 
     &:hover:not(:disabled) {
-      background: #4f46e5;
+      background: $color-primary-dark;
     }
 
     &:disabled {
@@ -323,7 +350,7 @@
 }
 
 .assessment-summary {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid $color-border;
   background: rgba(0, 0, 0, 0.3);
 
   .summary-header {
@@ -355,13 +382,13 @@
       align-items: center;
       gap: 8px;
       font-size: 13px;
-      color: #e2e8f0;
+      color: $color-text-primary;
 
       svg {
-        color: #6366f1;
+        color: $color-primary;
 
-        &.success { color: #10b981; }
-        &.warning { color: #f59e0b; }
+        &.success { color: $color-success; }
+        &.warning { color: $color-warning; }
       }
     }
   }
@@ -377,37 +404,37 @@
   font-weight: 600;
 
   &.low {
-    background: rgba(16, 185, 129, 0.2);
-    color: #10b981;
+    background: rgba($color-success, 0.2);
+    color: $color-success;
   }
 
   &.medium {
-    background: rgba(245, 158, 11, 0.2);
-    color: #f59e0b;
+    background: rgba($color-warning, 0.2);
+    color: $color-warning;
   }
 
   &.high {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
+    background: rgba($color-danger, 0.2);
+    color: $color-danger;
   }
 
   &.critical {
-    background: rgba(220, 38, 38, 0.3);
-    color: #fca5a5;
+    background: rgba($color-danger-dark, 0.3);
+    color: $color-danger-light;
   }
 }
 
 // Settings Panel
 .settings-panel {
   background: rgba(0, 0, 0, 0.4);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid $color-border;
 
   .settings-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid $color-border;
 
     h3 {
       display: flex;
@@ -415,7 +442,7 @@
       gap: 8px;
       font-size: 14px;
       font-weight: 600;
-      color: white;
+      color: $color-text-white;
       margin: 0;
     }
 
@@ -430,7 +457,7 @@
 
       &:hover {
         background: rgba(255, 255, 255, 0.1);
-        color: white;
+        color: $color-text-white;
       }
     }
   }
@@ -443,14 +470,14 @@
     h4 {
       font-size: 13px;
       font-weight: 600;
-      color: #e2e8f0;
+      color: $color-text-primary;
       margin: 0 0 8px;
     }
   }
 
   .settings-divider {
     border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid $color-border;
     margin: 12px 0;
   }
 
@@ -484,7 +511,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba($color-success, 0.1);
     border-radius: 6px;
     margin-bottom: 8px;
 
@@ -493,10 +520,10 @@
       align-items: center;
       gap: 6px;
       font-size: 13px;
-      color: #10b981;
+      color: $color-success;
 
       .success {
-        color: #10b981;
+        color: $color-success;
       }
     }
 
@@ -505,15 +532,15 @@
       align-items: center;
       gap: 4px;
       padding: 4px 8px;
-      background: rgba(239, 68, 68, 0.2);
+      background: rgba($color-danger, 0.2);
       border: none;
       border-radius: 4px;
-      color: #ef4444;
+      color: $color-danger;
       font-size: 11px;
       cursor: pointer;
 
       &:hover {
-        background: rgba(239, 68, 68, 0.3);
+        background: rgba($color-danger, 0.3);
       }
     }
   }
@@ -527,9 +554,9 @@
       flex: 1;
       padding: 8px 10px;
       background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid $color-border-light;
       border-radius: 6px;
-      color: white;
+      color: $color-text-white;
       font-size: 13px;
 
       &::placeholder {
@@ -538,22 +565,22 @@
 
       &:focus {
         outline: none;
-        border-color: #6366f1;
+        border-color: $color-primary;
       }
     }
 
     .save-btn {
       padding: 8px 14px;
-      background: #6366f1;
+      background: $color-primary;
       border: none;
       border-radius: 6px;
-      color: white;
+      color: $color-text-white;
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
 
       &:hover:not(:disabled) {
-        background: #4f46e5;
+        background: $color-primary-dark;
       }
 
       &:disabled {
@@ -573,11 +600,11 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      color: #a5b4fc;
+      color: $color-primary-lighter;
       text-decoration: none;
 
       &:hover {
-        color: #c7d2fe;
+        color: $color-primary-lightest;
       }
     }
 
@@ -603,8 +630,8 @@
 
 // Optimization Panel
 .optimization-panel {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%);
+  border-top: 1px solid $color-border;
+  background: linear-gradient(135deg, rgba($color-warning, 0.1) 0%, rgba($color-danger, 0.1) 100%);
 
   .optimization-header {
     display: flex;
@@ -613,11 +640,11 @@
     padding: 10px 16px;
     font-size: 13px;
     font-weight: 600;
-    color: #f59e0b;
+    color: $color-warning;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
     .warning {
-      color: #f59e0b;
+      color: $color-warning;
     }
   }
 
@@ -648,10 +675,10 @@
       justify-content: center;
       gap: 6px;
       padding: 10px 16px;
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: linear-gradient(135deg, $color-success 0%, $color-success-dark 100%);
       border: none;
       border-radius: 8px;
-      color: white;
+      color: $color-text-white;
       font-weight: 600;
       font-size: 13px;
       cursor: pointer;
@@ -659,7 +686,7 @@
 
       &:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        box-shadow: 0 4px 12px rgba($color-success, 0.4);
       }
 
       &:active {
