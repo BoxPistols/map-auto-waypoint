@@ -83,6 +83,17 @@ const PolygonList = ({
                 <div className={styles.colorIndicator} style={{ backgroundColor: polygon.color }} />
                 <div className={styles.actions}>
                   <button
+                    className={styles.actionButton}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onEditShape?.(polygon)
+                    }}
+                    data-tooltip="形状を編集"
+                    data-tooltip-pos="bottom"
+                  >
+                    <PenTool size={14} />
+                  </button>
+                  <button
                     className={`${styles.actionButton} ${polygon.waypointLinked !== false ? styles.linkedButton : ''}`}
                     onClick={(e) => {
                       e.stopPropagation()
@@ -114,17 +125,6 @@ const PolygonList = ({
                     data-tooltip-pos="bottom"
                   >
                     <Grid3X3 size={14} />
-                  </button>
-                  <button
-                    className={styles.actionButton}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onEditShape?.(polygon)
-                    }}
-                    data-tooltip="形状を編集"
-                    data-tooltip-pos="bottom"
-                  >
-                    <PenTool size={14} />
                   </button>
                   <button
                     className={styles.actionButton}

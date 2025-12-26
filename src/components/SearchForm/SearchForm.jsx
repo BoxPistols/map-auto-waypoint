@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { MapPin, Plane, X, Square, Circle } from 'lucide-react'
+import { MapPin, Plane, X, Square, Circle, ChevronDown } from 'lucide-react'
 import { searchAddress, debounce } from '../../services/geocoding'
 import { POLYGON_SIZE_OPTIONS, POLYGON_SHAPE_OPTIONS } from '../../services/polygonGenerator'
 import styles from './SearchForm.module.scss'
@@ -17,6 +17,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const [useCustomSize, setUseCustomSize] = useState(false)
   const [waypointCount, setWaypointCount] = useState(8)
   const [lastSearchResult, setLastSearchResult] = useState(null)
+  const [isPanelExpanded, setIsPanelExpanded] = useState(true)
   const inputRef = useRef(null)
   const suggestionsRef = useRef(null)
 
@@ -205,88 +206,99 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
 
       {/* Polygon generation panel - shown after selecting a location */}
       {lastSearchResult && (
-        <div className={styles.generatePanel}>
-          <div className={styles.selectedLocation}>
-            <MapPin size={16} className={styles.locationIcon} />
-            <span className={styles.locationName}>
-              {lastSearchResult.displayName.split(',')[0]}
-            </span>
+        <div className={`${styles.generatePanel} ${!isPanelExpanded ? styles.collapsed : ''}`}>
+          <div
+            className={styles.panelHeader}
+            onClick={() => setIsPanelExpanded(!isPanelExpanded)}
+          >
+            <div className={styles.selectedLocation}>
+              <MapPin size={16} className={styles.locationIcon} />
+              <span className={styles.locationName}>
+                {lastSearchResult.displayName.split(',')[0]}
+              </span>
+            </div>
+            <ChevronDown
+              size={18}
+              className={`${styles.chevron} ${isPanelExpanded ? styles.expanded : ''}`}
+            />
           </div>
 
-          <div className={styles.optionsRow}>
-            <div className={styles.shapeSelector}>
-              <label>形状:</label>
-              <div className={styles.shapeButtons}>
-                {POLYGON_SHAPE_OPTIONS.map(option => (
+          <div className={styles.panelContent}>
+            <div className={styles.optionsRow}>
+              <div className={styles.shapeSelector}>
+                <label>形状:</label>
+                <div className={styles.shapeButtons}>
+                  {POLYGON_SHAPE_OPTIONS.map(option => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`${styles.shapeButton} ${selectedShape === option.value ? styles.active : ''}`}
+                      onClick={() => setSelectedShape(option.value)}
+                    >
+                      {option.value === 'rectangle' ? <Square size={14} /> : <Circle size={14} />}
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.sizeSelector}>
+              <label>エリアサイズ:</label>
+              <div className={styles.sizeButtons}>
+                {POLYGON_SIZE_OPTIONS.map(option => (
                   <button
                     key={option.value}
                     type="button"
-                    className={`${styles.shapeButton} ${selectedShape === option.value ? styles.active : ''}`}
-                    onClick={() => setSelectedShape(option.value)}
+                    className={`${styles.sizeButton} ${!useCustomSize && selectedSize === option.value ? styles.active : ''}`}
+                    onClick={() => handleSizeButtonClick(option.value)}
+                    title={option.description}
                   >
-                    {option.value === 'rectangle' ? <Square size={14} /> : <Circle size={14} />}
                     {option.label}
                   </button>
                 ))}
               </div>
+              <div className={styles.sliderWrapper}>
+                <input
+                  type="range"
+                  min="20"
+                  max="1000"
+                  step="10"
+                  value={customRadius}
+                  onChange={handleRadiusChange}
+                  className={styles.slider}
+                />
+                <span className={`${styles.sliderValue} ${useCustomSize ? styles.active : ''}`}>
+                  {customRadius}m
+                </span>
+              </div>
             </div>
-          </div>
 
-          <div className={styles.sizeSelector}>
-            <label>エリアサイズ:</label>
-            <div className={styles.sizeButtons}>
-              {POLYGON_SIZE_OPTIONS.map(option => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`${styles.sizeButton} ${!useCustomSize && selectedSize === option.value ? styles.active : ''}`}
-                  onClick={() => handleSizeButtonClick(option.value)}
-                  title={option.description}
-                >
-                  {option.label}
-                </button>
-              ))}
+            <div className={styles.waypointSelector}>
+              <label>Waypoint数:</label>
+              <div className={styles.sliderWrapper}>
+                <input
+                  type="range"
+                  min="4"
+                  max="32"
+                  step="1"
+                  value={waypointCount}
+                  onChange={(e) => setWaypointCount(Number(e.target.value))}
+                  className={styles.slider}
+                />
+                <span className={styles.sliderValue}>{waypointCount}</span>
+              </div>
             </div>
-            <div className={styles.sliderWrapper}>
-              <input
-                type="range"
-                min="20"
-                max="1000"
-                step="10"
-                value={customRadius}
-                onChange={handleRadiusChange}
-                className={styles.slider}
-              />
-              <span className={`${styles.sliderValue} ${useCustomSize ? styles.active : ''}`}>
-                {customRadius}m
-              </span>
-            </div>
-          </div>
 
-          <div className={styles.waypointSelector}>
-            <label>Waypoint数:</label>
-            <div className={styles.sliderWrapper}>
-              <input
-                type="range"
-                min="4"
-                max="32"
-                step="1"
-                value={waypointCount}
-                onChange={(e) => setWaypointCount(Number(e.target.value))}
-                className={styles.slider}
-              />
-              <span className={styles.sliderValue}>{waypointCount}</span>
-            </div>
+            <button
+              type="button"
+              className={styles.generateButton}
+              onClick={handleGeneratePolygon}
+            >
+              <Plane size={18} />
+              この周辺にエリア生成
+            </button>
           </div>
-
-          <button
-            type="button"
-            className={styles.generateButton}
-            onClick={handleGeneratePolygon}
-          >
-            <Plane size={18} />
-            この周辺にエリア生成
-          </button>
         </div>
       )}
     </div>

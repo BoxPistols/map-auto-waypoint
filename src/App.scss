@@ -156,6 +156,41 @@ body {
 .panel-content {
   flex: 1;
   overflow-y: auto;
+  position: relative;
+  min-height: 100px;
+}
+
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+  background: transparent;
+  transition: background-color 0.2s;
+  z-index: 10;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+    transition: background-color 0.2s;
+  }
+
+  &:hover {
+    background: rgba(69, 183, 209, 0.1);
+
+    &::before {
+      background: #45B7D1;
+    }
+  }
 }
 
 // Map section

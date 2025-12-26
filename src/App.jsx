@@ -30,6 +30,7 @@ function App() {
   // UI state
   const [drawMode, setDrawMode] = useState(false)
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
+  const [panelHeight, setPanelHeight] = useState(null) // null = auto
   const [showImport, setShowImport] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [showGridSettings, setShowGridSettings] = useState(null) // polygon for grid generation
@@ -484,6 +485,38 @@ function App() {
   // Mobile detection
   const isMobile = () => window.innerWidth <= 768
 
+  // Panel resize handlers
+  const panelContentRef = useRef(null)
+  const isResizingRef = useRef(false)
+
+  const handleResizeStart = useCallback((e) => {
+    e.preventDefault()
+    isResizingRef.current = true
+    document.body.style.cursor = 'ns-resize'
+    document.body.style.userSelect = 'none'
+
+    const startY = e.clientY
+    const startHeight = panelContentRef.current?.offsetHeight || 200
+
+    const handleMouseMove = (moveEvent) => {
+      if (!isResizingRef.current) return
+      const deltaY = moveEvent.clientY - startY
+      const newHeight = Math.max(100, Math.min(600, startHeight + deltaY))
+      setPanelHeight(newHeight)
+    }
+
+    const handleMouseUp = () => {
+      isResizingRef.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [])
+
   return (
     <div className="app">
       {/* Header */}
@@ -557,7 +590,12 @@ function App() {
             </button>
           </div>
 
-          <div className="panel-content">
+          <div
+            className="panel-content"
+            ref={panelContentRef}
+            style={panelHeight ? { height: panelHeight, flex: 'none' } : undefined}
+          >
+            <div className="resize-handle" onMouseDown={handleResizeStart} />
             {activePanel === 'polygons' ? (
               <PolygonList
                 polygons={polygons}

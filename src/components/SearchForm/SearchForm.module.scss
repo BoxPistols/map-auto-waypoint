@@ -118,19 +118,57 @@
 // Polygon generation panel
 .generatePanel {
   margin-top: 12px;
-  padding: 12px;
   background: #f8fcfd;
   border: 1px solid #d0ebf1;
   border-radius: 8px;
+  overflow: hidden;
+
+  &.collapsed {
+    .panelContent {
+      max-height: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      opacity: 0;
+    }
+  }
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: #eef7f9;
+  }
+}
+
+.chevron {
+  color: #666;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+
+  &.expanded {
+    transform: rotate(180deg);
+  }
+}
+
+.panelContent {
+  padding: 0 12px 12px;
+  max-height: 500px;
+  opacity: 1;
+  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
 }
 
 .selectedLocation {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e0e0e0;
+  flex: 1;
+  min-width: 0;
 }
 
 .locationIcon {
