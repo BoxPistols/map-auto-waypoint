@@ -16,7 +16,10 @@ import {
   Trash2,
   ExternalLink,
   Shield,
-  MapPin
+  MapPin,
+  Download,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { hasApiKey, setApiKey, getFlightAdvice } from '../../services/openaiService';
 import { runFullAnalysis, getFlightRecommendations, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
@@ -52,6 +55,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [optimizationPlan, setOptimizationPlan] = useState(null);
   const [showOptimization, setShowOptimization] = useState(false);
   const [proposedPlan, setProposedPlan] = useState({ altitude: 50, purpose: '点検飛行' });
+  const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -275,17 +279,24 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         response += '\n';
       }
 
-      // 用途地域情報（国土交通省API）
+      // 用途地域情報（国土交通省API）- エラーでないもののみ表示
       if (result.context?.mlitInfo?.success) {
         const mlit = result.context.mlitInfo;
-        response += `### 🏛️ 用途地域情報\n`;
-        if (mlit.useZone?.zoneName) {
-          response += `• ${mlit.useZone.zoneName}\n`;
+        const useZoneName = mlit.useZone?.success && mlit.useZone?.zoneName && mlit.useZone.zoneName !== '取得エラー'
+          ? mlit.useZone.zoneName : null;
+        const urbanAreaName = mlit.urbanArea?.success && mlit.urbanArea?.areaName && mlit.urbanArea.areaName !== '取得エラー'
+          ? mlit.urbanArea.areaName : null;
+
+        if (useZoneName || urbanAreaName) {
+          response += `### 🏛️ 用途地域情報\n`;
+          if (useZoneName) {
+            response += `• ${useZoneName}\n`;
+          }
+          if (urbanAreaName) {
+            response += `• ${urbanAreaName}\n`;
+          }
+          response += '\n';
         }
-        if (mlit.urbanArea?.areaName) {
-          response += `• ${mlit.urbanArea.areaName}\n`;
-        }
-        response += '\n';
       }
 
       // UTM干渉チェック
@@ -402,6 +413,82 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  /**
+   * 判定結果をエクスポート
+   */
+  const handleExportResult = () => {
+    if (!assessmentResult) return;
+
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 19).replace(/[T:]/g, '-');
+
+    // テキスト形式でエクスポート
+    let content = `フライト判定結果\n`;
+    content += `================\n`;
+    content += `日時: ${now.toLocaleString('ja-JP')}\n\n`;
+
+    content += `【リスクレベル】\n`;
+    content += `${assessmentResult.riskLevel} (スコア: ${assessmentResult.riskScore}/100)\n`;
+    content += `${assessmentResult.summary}\n\n`;
+
+    if (assessmentResult.risks.length > 0) {
+      content += `【検出されたリスク】\n`;
+      assessmentResult.risks.forEach(r => {
+        content += `- [${r.severity}] ${r.description}\n`;
+      });
+      content += '\n';
+    }
+
+    if (assessmentResult.context?.nearestAirport) {
+      content += `【最寄り空港】\n`;
+      content += `${assessmentResult.context.nearestAirport.name}: ${(assessmentResult.context.nearestAirport.distance / 1000).toFixed(1)}km\n\n`;
+    }
+
+    if (assessmentResult.context?.didInfo) {
+      content += `【DID情報】\n`;
+      content += `${assessmentResult.context.didInfo.description}\n\n`;
+    }
+
+    content += `【推奨事項】\n`;
+    assessmentResult.recommendations.forEach(rec => {
+      content += `- ${rec}\n`;
+    });
+    content += '\n';
+
+    if (assessmentResult.requiredPermissions.length > 0) {
+      content += `【必要な許可】\n`;
+      assessmentResult.requiredPermissions.forEach(p => {
+        content += `- ${p}\n`;
+      });
+      content += `承認取得目安: ${assessmentResult.estimatedApprovalDays}日\n\n`;
+    }
+
+    // Waypointデータ
+    if (waypoints.length > 0) {
+      content += `【Waypoint一覧】\n`;
+      waypoints.forEach((wp, i) => {
+        content += `WP${i + 1}: ${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}`;
+        if (wp.altitude) content += ` (高度: ${wp.altitude}m)`;
+        content += '\n';
+      });
+      content += '\n';
+    }
+
+    content += `================\n`;
+    content += `データソース: ${assessmentResult.aiEnhanced ? 'OpenAI + ローカル' : 'ローカル分析'}\n`;
+
+    // ダウンロード
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `flight-assessment-${dateStr}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const getRiskBadge = (level) => {
@@ -555,7 +642,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   }
 
   return (
-    <div className="flight-assistant">
+    <div className={`flight-assistant ${isExpanded ? 'expanded' : ''}`}>
       <div className="flight-assistant-header">
         <div className="header-title">
           <Sparkles size={18} />
@@ -564,6 +651,13 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           {hasKey && <span className="ai-badge">AI</span>}
         </div>
         <div className="header-actions">
+          <button
+            className="expand-btn"
+            onClick={() => setIsExpanded(!isExpanded)}
+            title={isExpanded ? '縮小' : '拡大'}
+          >
+            {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
           <button
             className={`settings-btn ${showSettings ? 'active' : ''}`}
             onClick={() => setShowSettings(!showSettings)}
@@ -693,6 +787,10 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               <div className="detail-row source">
                 {assessmentResult.aiEnhanced ? '🤖 AI分析' : '📊 ローカル分析'}
               </div>
+              <button className="export-btn" onClick={handleExportResult}>
+                <Download size={14} />
+                結果をエクスポート
+              </button>
             </div>
           )}
         </div>
