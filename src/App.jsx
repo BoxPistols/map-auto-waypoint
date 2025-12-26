@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { ChevronDown, Search } from 'lucide-react'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
 import PolygonList from './components/PolygonList/PolygonList'
@@ -31,6 +32,7 @@ function App() {
   const [drawMode, setDrawMode] = useState(false)
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
   const [panelHeight, setPanelHeight] = useState(null) // null = auto
+  const [isSearchExpanded, setIsSearchExpanded] = useState(true)
   const [showImport, setShowImport] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [showGridSettings, setShowGridSettings] = useState(null) // polygon for grid generation
@@ -567,12 +569,27 @@ function App() {
       <main className="app-main">
         {/* Sidebar */}
         <aside className="sidebar">
-          <div className="search-section">
-            <SearchForm
-              onSearch={handleSearch}
-              onSelect={handleSearchSelect}
-              onGeneratePolygon={handleGeneratePolygon}
-            />
+          <div className={`search-section ${!isSearchExpanded ? 'collapsed' : ''}`}>
+            <div
+              className="search-section-header"
+              onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+            >
+              <div className="search-section-title">
+                <Search size={16} />
+                <span>住所検索</span>
+              </div>
+              <ChevronDown
+                size={18}
+                className={`search-chevron ${isSearchExpanded ? 'expanded' : ''}`}
+              />
+            </div>
+            <div className="search-section-content">
+              <SearchForm
+                onSearch={handleSearch}
+                onSelect={handleSearchSelect}
+                onGeneratePolygon={handleGeneratePolygon}
+              />
+            </div>
           </div>
 
           <div className="panel-tabs">
