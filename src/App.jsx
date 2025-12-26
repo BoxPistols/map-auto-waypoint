@@ -384,7 +384,7 @@ function App() {
     setActivePanel('waypoints')
   }, [polygons, showNotification])
 
-  // Handle waypoint select - start editing parent polygon if exists
+  // Handle waypoint select from sidebar - start editing parent polygon
   const handleWaypointSelect = useCallback((waypoint) => {
     // Focus on waypoint location
     setCenter({ lat: waypoint.lat, lng: waypoint.lng })
@@ -401,6 +401,14 @@ function App() {
       }
     }
   }, [polygons, showNotification])
+
+  // Handle waypoint click on map - just select, don't enter edit mode (allows dragging)
+  const handleWaypointClickOnMap = useCallback((waypoint) => {
+    // Select the parent polygon but don't enter edit mode
+    if (waypoint.polygonId) {
+      setSelectedPolygonId(waypoint.polygonId)
+    }
+  }, [])
 
   // Handle waypoint delete
   const handleWaypointDelete = useCallback((id) => {
@@ -718,7 +726,7 @@ function App() {
             onPolygonSelect={handlePolygonSelectFromMap}
             onPolygonEditComplete={handlePolygonEditComplete}
             onMapClick={handleMapClick}
-            onWaypointClick={handleWaypointSelect}
+            onWaypointClick={handleWaypointClickOnMap}
             onWaypointDelete={handleWaypointDelete}
             onWaypointMove={handleWaypointMove}
             onWaypointsBulkDelete={handleWaypointsBulkDelete}
