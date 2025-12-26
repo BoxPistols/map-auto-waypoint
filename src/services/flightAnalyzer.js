@@ -96,6 +96,252 @@ const getDistanceMeters = (lat1, lng1, lat2, lng2) => {
   return R * c;
 };
 
+// getDistanceMetersをエクスポート
+export { getDistanceMeters };
+
+/**
+ * 制限区域から安全な位置を計算
+ * @param {number} lat - 現在の緯度
+ * @param {number} lng - 現在の経度
+ * @param {Object} zone - 制限区域（lat, lng, radius）
+ * @param {number} safetyMargin - 安全マージン（メートル）
+ * @returns {Object} 安全な位置 {lat, lng, distance}
+ */
+const calculateSafePosition = (lat, lng, zone, safetyMargin = 500) => {
+  const distance = getDistanceMeters(lat, lng, zone.lat, zone.lng);
+  const requiredDistance = zone.radius + safetyMargin;
+
+  if (distance >= requiredDistance) {
+    // すでに安全な位置
+    return { lat, lng, distance: 0, safe: true };
+  }
+
+  // 制限区域の中心から外側に移動するベクトルを計算
+  const bearing = Math.atan2(
+    lng - zone.lng,
+    lat - zone.lat
+  );
+
+  // 必要な移動距離
+  const moveDistance = requiredDistance - distance;
+
+  // メートルを度に変換（近似）
+  const latOffset = (moveDistance * Math.cos(bearing)) / 111320;
+  const lngOffset = (moveDistance * Math.sin(bearing)) / (111320 * Math.cos(lat * Math.PI / 180));
+
+  return {
+    lat: lat + latOffset,
+    lng: lng + lngOffset,
+    distance: Math.round(moveDistance),
+    safe: false,
+    reason: `${zone.name}から${safetyMargin}m以上離れる必要があります`
+  };
+};
+
+/**
+ * Waypointのギャップ分析と推奨位置を計算
+ * @param {Array} waypoints - 現在のWaypoint配列
+ * @returns {Object} ギャップ分析結果
+ */
+export const analyzeWaypointGaps = (waypoints) => {
+  const gaps = [];
+  const recommendedWaypoints = [];
+  let hasIssues = false;
+
+  for (const wp of waypoints) {
+    let currentWp = { ...wp };
+    let issues = [];
+    let recommendedPosition = null;
+
+    // 空港制限区域チェック
+    for (const airport of AIRPORT_ZONES) {
+      const distance = getDistanceMeters(wp.lat, wp.lng, airport.lat, airport.lng);
+      if (distance < airport.radius) {
+        hasIssues = true;
+        const safePos = calculateSafePosition(wp.lat, wp.lng, airport, 500);
+        issues.push({
+          type: 'airport',
+          zone: airport.name,
+          currentDistance: Math.round(distance),
+          requiredDistance: airport.radius + 500,
+          severity: 'high'
+        });
+        if (!recommendedPosition || safePos.distance > recommendedPosition.distance) {
+          recommendedPosition = safePos;
+        }
+      }
+    }
+
+    // 飛行禁止区域チェック
+    for (const zone of NO_FLY_ZONES) {
+      const distance = getDistanceMeters(wp.lat, wp.lng, zone.lat, zone.lng);
+      if (distance < zone.radius + 300) { // 禁止区域は300mマージン
+        hasIssues = true;
+        const safePos = calculateSafePosition(wp.lat, wp.lng, zone, 300);
+        issues.push({
+          type: 'prohibited',
+          zone: zone.name,
+          currentDistance: Math.round(distance),
+          requiredDistance: zone.radius + 300,
+          severity: 'critical'
+        });
+        if (!recommendedPosition || safePos.distance > recommendedPosition.distance) {
+          recommendedPosition = safePos;
+        }
+      }
+    }
+
+    if (issues.length > 0) {
+      gaps.push({
+        waypointId: wp.id,
+        waypointIndex: wp.index,
+        current: { lat: wp.lat, lng: wp.lng },
+        recommended: recommendedPosition ? {
+          lat: recommendedPosition.lat,
+          lng: recommendedPosition.lng
+        } : null,
+        moveDistance: recommendedPosition?.distance || 0,
+        issues
+      });
+
+      recommendedWaypoints.push({
+        ...wp,
+        lat: recommendedPosition?.lat || wp.lat,
+        lng: recommendedPosition?.lng || wp.lng,
+        modified: !!recommendedPosition
+      });
+    } else {
+      recommendedWaypoints.push({ ...wp, modified: false });
+    }
+  }
+
+  return {
+    hasIssues,
+    totalGaps: gaps.length,
+    gaps,
+    recommendedWaypoints,
+    summary: hasIssues
+      ? `${gaps.length}個のWaypointに問題があります`
+      : 'すべてのWaypointは安全な位置にあります'
+  };
+};
+
+/**
+ * ポリゴンのギャップ分析と推奨形状を計算
+ * @param {Object} polygon - 現在のポリゴン
+ * @returns {Object} ギャップ分析結果
+ */
+export const analyzePolygonGaps = (polygon) => {
+  if (!polygon?.geometry?.coordinates?.[0]) {
+    return { hasIssues: false, gaps: [], recommendedPolygon: null };
+  }
+
+  const coords = polygon.geometry.coordinates[0];
+  const gaps = [];
+  const recommendedCoords = [];
+  let hasIssues = false;
+
+  for (let i = 0; i < coords.length - 1; i++) { // 最後の座標は最初と同じなので除外
+    const [lng, lat] = coords[i];
+    let issues = [];
+    let recommendedPosition = { lat, lng };
+
+    // 空港制限区域チェック
+    for (const airport of AIRPORT_ZONES) {
+      const distance = getDistanceMeters(lat, lng, airport.lat, airport.lng);
+      if (distance < airport.radius) {
+        hasIssues = true;
+        const safePos = calculateSafePosition(lat, lng, airport, 500);
+        issues.push({
+          type: 'airport',
+          zone: airport.name,
+          currentDistance: Math.round(distance),
+          severity: 'high'
+        });
+        recommendedPosition = { lat: safePos.lat, lng: safePos.lng };
+      }
+    }
+
+    // 飛行禁止区域チェック
+    for (const zone of NO_FLY_ZONES) {
+      const distance = getDistanceMeters(lat, lng, zone.lat, zone.lng);
+      if (distance < zone.radius + 300) {
+        hasIssues = true;
+        const safePos = calculateSafePosition(lat, lng, zone, 300);
+        issues.push({
+          type: 'prohibited',
+          zone: zone.name,
+          currentDistance: Math.round(distance),
+          severity: 'critical'
+        });
+        recommendedPosition = { lat: safePos.lat, lng: safePos.lng };
+      }
+    }
+
+    if (issues.length > 0) {
+      gaps.push({
+        vertexIndex: i,
+        current: { lat, lng },
+        recommended: recommendedPosition,
+        issues
+      });
+    }
+
+    recommendedCoords.push([recommendedPosition.lng, recommendedPosition.lat]);
+  }
+
+  // ポリゴンを閉じる
+  if (recommendedCoords.length > 0) {
+    recommendedCoords.push([...recommendedCoords[0]]);
+  }
+
+  const recommendedPolygon = hasIssues ? {
+    ...polygon,
+    geometry: {
+      ...polygon.geometry,
+      coordinates: [recommendedCoords]
+    }
+  } : null;
+
+  return {
+    hasIssues,
+    totalGaps: gaps.length,
+    gaps,
+    recommendedPolygon,
+    summary: hasIssues
+      ? `${gaps.length}個の頂点に問題があります`
+      : 'ポリゴンは安全なエリア内にあります'
+  };
+};
+
+/**
+ * 総合的なプラン最適化提案を生成
+ * @param {Array} polygons - ポリゴン配列
+ * @param {Array} waypoints - Waypoint配列
+ * @returns {Object} 最適化提案
+ */
+export const generateOptimizationPlan = (polygons, waypoints) => {
+  const waypointAnalysis = analyzeWaypointGaps(waypoints);
+  const polygonAnalysis = polygons.length > 0 ? analyzePolygonGaps(polygons[0]) : null;
+
+  const hasAnyIssues = waypointAnalysis.hasIssues || polygonAnalysis?.hasIssues;
+
+  return {
+    hasIssues: hasAnyIssues,
+    waypointAnalysis,
+    polygonAnalysis,
+    recommendedWaypoints: waypointAnalysis.recommendedWaypoints,
+    recommendedPolygon: polygonAnalysis?.recommendedPolygon,
+    summary: hasAnyIssues
+      ? '安全性向上のための修正が提案されています'
+      : '現在のプランは安全基準を満たしています',
+    actions: hasAnyIssues ? [
+      waypointAnalysis.hasIssues ? `${waypointAnalysis.totalGaps}個のWaypointを移動` : null,
+      polygonAnalysis?.hasIssues ? `ポリゴンの${polygonAnalysis.totalGaps}頂点を調整` : null
+    ].filter(Boolean) : []
+  };
+};
+
 /**
  * ローカルリスク判定（OpenAI不要）
  */
@@ -428,5 +674,8 @@ export default {
   findNearestAirport,
   analyzeFlightPlanLocal,
   runFullAnalysis,
-  getFlightRecommendations
+  getFlightRecommendations,
+  analyzeWaypointGaps,
+  analyzePolygonGaps,
+  generateOptimizationPlan
 };

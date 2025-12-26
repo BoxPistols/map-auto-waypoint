@@ -854,8 +854,32 @@ function App() {
         polygons={polygons}
         waypoints={waypoints}
         onApplyPlan={(plan) => {
-          // 将来的にプランを適用する機能
-          console.log('Apply plan:', plan)
+          // 推奨プランを適用
+          if (plan.waypoints && plan.waypoints.length > 0) {
+            // 修正されたWaypointのみ更新
+            const updatedWaypoints = waypoints.map(wp => {
+              const recommended = plan.waypoints.find(rw => rw.id === wp.id)
+              if (recommended && recommended.modified) {
+                return {
+                  ...wp,
+                  lat: recommended.lat,
+                  lng: recommended.lng,
+                  elevation: null // 座標が変わったので標高はリセット
+                }
+              }
+              return wp
+            })
+            setWaypoints(updatedWaypoints)
+          }
+
+          // ポリゴンも更新（もし推奨ポリゴンがあれば）
+          if (plan.polygon) {
+            setPolygons(prev => prev.map(p =>
+              p.id === plan.polygon.id ? plan.polygon : p
+            ))
+          }
+
+          showNotification('プランを安全な位置に最適化しました', 'success')
         }}
       />
 

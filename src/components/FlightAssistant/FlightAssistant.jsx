@@ -19,7 +19,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { hasApiKey, setApiKey, getFlightAdvice } from '../../services/openaiService';
-import { runFullAnalysis, getFlightRecommendations } from '../../services/flightAnalyzer';
+import { runFullAnalysis, getFlightRecommendations, generateOptimizationPlan } from '../../services/flightAnalyzer';
 import { hasReinfolibApiKey, setReinfolibApiKey } from '../../services/reinfolibService';
 import './FlightAssistant.scss';
 
@@ -49,6 +49,8 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [assessmentResult, setAssessmentResult] = useState(null);
   const [showAssessmentDetail, setShowAssessmentDetail] = useState(false);
+  const [optimizationPlan, setOptimizationPlan] = useState(null);
+  const [showOptimization, setShowOptimization] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -168,6 +170,33 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
   };
 
   /**
+   * 推奨プランを適用
+   */
+  const handleApplyOptimization = () => {
+    if (!optimizationPlan?.hasIssues) return;
+
+    const plan = {
+      waypoints: optimizationPlan.recommendedWaypoints,
+      polygon: optimizationPlan.recommendedPolygon
+    };
+
+    // 適用前に確認
+    const modifiedCount = plan.waypoints.filter(w => w.modified).length;
+    const message = `${modifiedCount}個のWaypointを安全な位置に移動します。適用しますか？`;
+
+    if (confirm(message)) {
+      onApplyPlan(plan);
+      setOptimizationPlan(null);
+      setShowOptimization(false);
+
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: `✅ ${modifiedCount}個のWaypointを安全な位置に移動しました。`
+      }]);
+    }
+  };
+
+  /**
    * 「判定！」ボタン - 総合判定を実行
    */
   const handleAssessment = async () => {
@@ -251,6 +280,36 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
           response += `• ${p}\n`;
         });
         response += `\n承認取得目安: **${result.estimatedApprovalDays}日**\n`;
+      }
+
+      // ギャップ分析と最適化提案
+      const optimization = generateOptimizationPlan(polygons, waypoints);
+      setOptimizationPlan(optimization);
+
+      if (optimization.hasIssues) {
+        response += `### 🔧 プラン最適化の提案\n`;
+        response += `${optimization.summary}\n`;
+        optimization.actions.forEach(action => {
+          response += `• ${action}\n`;
+        });
+
+        // ギャップの詳細
+        if (optimization.waypointAnalysis.gaps.length > 0) {
+          response += `\n**Waypointの問題:**\n`;
+          optimization.waypointAnalysis.gaps.slice(0, 3).forEach(gap => {
+            response += `• WP${gap.waypointIndex}: ${gap.issues[0].zone}から${gap.moveDistance}m移動が必要\n`;
+          });
+          if (optimization.waypointAnalysis.gaps.length > 3) {
+            response += `• ...他${optimization.waypointAnalysis.gaps.length - 3}件\n`;
+          }
+        }
+
+        response += `\n⬇️ 下の「推奨プランを適用」ボタンで自動修正できます\n`;
+        setShowOptimization(true);
+      } else {
+        response += `\n### ✅ プラン検証\n`;
+        response += `すべてのWaypointは安全な位置にあります。\n`;
+        setShowOptimization(false);
       }
 
       // 連携状態
@@ -530,6 +589,31 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
           <Send size={18} />
         </button>
       </div>
+
+      {/* Optimization Panel */}
+      {showOptimization && optimizationPlan?.hasIssues && (
+        <div className="optimization-panel">
+          <div className="optimization-header">
+            <AlertTriangle size={14} className="warning" />
+            <span>プラン最適化が可能</span>
+          </div>
+          <div className="optimization-content">
+            <p className="optimization-summary">{optimizationPlan.summary}</p>
+            <ul className="optimization-actions">
+              {optimizationPlan.actions.map((action, i) => (
+                <li key={i}>{action}</li>
+              ))}
+            </ul>
+            <button
+              className="apply-optimization-btn"
+              onClick={handleApplyOptimization}
+            >
+              <Zap size={14} />
+              推奨プランを適用
+            </button>
+          </div>
+        </div>
+      )}
 
       {assessmentResult && (
         <div className="assessment-summary">
