@@ -13,6 +13,7 @@ import { searchAddress } from './services/geocoding'
 import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints } from './services/waypointGenerator'
 import { addElevationToWaypoints } from './services/elevation'
 import { createPolygonFromSearchResult } from './services/polygonGenerator'
+import FlightAssistant from './components/FlightAssistant'
 import './App.scss'
 
 // Default center: Tokyo Tower
@@ -847,6 +848,16 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Flight Assistant (AI) */}
+      <FlightAssistant
+        polygons={polygons}
+        waypoints={waypoints}
+        onApplyPlan={(plan) => {
+          // 将来的にプランを適用する機能
+          console.log('Apply plan:', plan)
+        }}
+      />
 
       {/* Notification */}
       {notification && (
