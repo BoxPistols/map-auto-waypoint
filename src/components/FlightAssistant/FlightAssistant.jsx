@@ -21,7 +21,7 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react';
-import { hasApiKey, setApiKey, getFlightAdvice } from '../../services/openaiService';
+import { hasApiKey, setApiKey, getFlightAdvice, AVAILABLE_MODELS, getSelectedModel, setSelectedModel } from '../../services/openaiService';
 import { runFullAnalysis, getFlightRecommendations, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
 import { hasReinfolibApiKey, setReinfolibApiKey } from '../../services/reinfolibService';
 import './FlightAssistant.scss';
@@ -42,6 +42,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [hasKey, setHasKey] = useState(hasApiKey());
   const [mlitKeyInput, setMlitKeyInput] = useState('');
   const [hasMlitKey, setHasMlitKey] = useState(hasReinfolibApiKey());
+  const [selectedModelId, setSelectedModelId] = useState(getSelectedModel());
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -115,6 +116,17 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         content: '国土交通省APIキーを削除しました。'
       }]);
     }
+  };
+
+  // OpenAIモデル変更
+  const handleModelChange = (modelId) => {
+    setSelectedModel(modelId);
+    setSelectedModelId(modelId);
+    const model = AVAILABLE_MODELS.find(m => m.id === modelId);
+    setMessages(prev => [...prev, {
+      role: 'system',
+      content: `✅ AIモデルを ${model?.name || modelId} に変更しました`
+    }]);
   };
 
   // メッセージ送信
@@ -609,6 +621,22 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
             </div>
           )}
 
+          {hasKey && (
+            <div className="model-selector">
+              <label>AIモデル:</label>
+              <select
+                value={selectedModelId}
+                onChange={(e) => handleModelChange(e.target.value)}
+              >
+                {AVAILABLE_MODELS.map(model => (
+                  <option key={model.id} value={model.id}>
+                    {model.name} ({model.cost}) - {model.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div className="settings-links">
             <a
               href="https://platform.openai.com/api-keys"
@@ -617,8 +645,6 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
             >
               <ExternalLink size={12} /> APIキーを取得
             </a>
-            <span className="separator">|</span>
-            <span className="model-info">gpt-4o-mini</span>
           </div>
         </div>
 

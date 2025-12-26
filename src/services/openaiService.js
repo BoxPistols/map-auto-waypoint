@@ -1,9 +1,20 @@
 /**
  * OpenAI API連携サービス
  *
- * GPT-4.1 Nano / GPT-5 Nano などを使用して
+ * GPT-4o-mini / GPT-4o などを使用して
  * ドローン経路の危険度判定・推奨を生成
  */
+
+// 利用可能なモデル一覧
+export const AVAILABLE_MODELS = [
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: '高速・低コスト', cost: '$' },
+  { id: 'gpt-4o', name: 'GPT-4o', description: '高精度・標準', cost: '$$' },
+  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', description: '高性能・高コスト', cost: '$$$' },
+  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: '最速・最低コスト', cost: '$' }
+];
+
+// デフォルトモデル
+const DEFAULT_MODEL = 'gpt-4o-mini';
 
 // 環境変数からAPIキーを取得（Vite経由）
 const getApiKey = () => {
@@ -25,6 +36,16 @@ export const hasApiKey = () => {
   return !!getApiKey();
 };
 
+// 選択中のモデルを取得
+export const getSelectedModel = () => {
+  return localStorage.getItem('openai_model') || DEFAULT_MODEL;
+};
+
+// モデルを設定
+export const setSelectedModel = (modelId) => {
+  localStorage.setItem('openai_model', modelId);
+};
+
 /**
  * OpenAI Chat Completion APIを呼び出し
  *
@@ -40,7 +61,7 @@ export const callOpenAI = async (messages, options = {}) => {
   }
 
   const {
-    model = 'gpt-4o-mini', // コスト効率の良いモデル
+    model = getSelectedModel(), // ユーザー選択モデル
     temperature = 0.3,     // 一貫性のある出力
     maxTokens = 1000
   } = options;
@@ -254,8 +275,11 @@ export const getRecommendedParameters = async (purpose) => {
 };
 
 export default {
+  AVAILABLE_MODELS,
   setApiKey,
   hasApiKey,
+  getSelectedModel,
+  setSelectedModel,
   callOpenAI,
   analyzeFlightPlan,
   getFlightAdvice,

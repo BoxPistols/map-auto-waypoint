@@ -62,7 +62,8 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 380px;
+  width: 400px;
+  min-width: 360px;
   max-height: 600px;
   background: $color-bg-dark;
   border-radius: 16px;
@@ -72,22 +73,29 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   z-index: 1000;
   overflow: hidden;
   border: 1px solid $color-border;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease;
+  resize: horizontal;
+  overflow: auto;
 
   &.expanded {
-    width: 560px;
-    max-height: 85vh;
-    bottom: 20px;
-    right: 20px;
+    width: 640px;
+    max-height: 90vh;
+    bottom: 16px;
+    right: 16px;
 
     .flight-assistant-messages {
-      max-height: calc(85vh - 220px);
-      min-height: 400px;
+      max-height: calc(90vh - 200px);
+      min-height: 450px;
     }
 
     .message-content {
-      max-width: 480px;
+      max-width: 560px;
     }
+  }
+
+  // リサイズハンドル
+  &::-webkit-resizer {
+    background: transparent;
   }
 }
 
@@ -95,21 +103,31 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 12px 16px;
   background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
   color: $color-text-white;
+  flex-shrink: 0;
 
   .header-title {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+
+    > span:first-of-type {
+      white-space: nowrap;
+    }
 
     .ai-badge, .mlit-badge {
       font-size: 9px;
       padding: 2px 5px;
       border-radius: 3px;
       font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .ai-badge {
@@ -127,6 +145,7 @@ $color-border-light: rgba(255, 255, 255, 0.15);
     display: flex;
     align-items: center;
     gap: 2px;
+    flex-shrink: 0;
 
     button {
       background: transparent;
@@ -640,6 +659,40 @@ $color-border-light: rgba(255, 255, 255, 0.15);
     }
   }
 
+  .model-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0;
+
+    label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      white-space: nowrap;
+    }
+
+    select {
+      flex: 1;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid $color-border-light;
+      border-radius: 6px;
+      color: $color-text-white;
+      font-size: 12px;
+      cursor: pointer;
+
+      &:focus {
+        outline: none;
+        border-color: $color-primary;
+      }
+
+      option {
+        background: $color-bg-dark;
+        color: $color-text-white;
+      }
+    }
+  }
+
   .settings-links {
     display: flex;
     align-items: center;
@@ -656,14 +709,6 @@ $color-border-light: rgba(255, 255, 255, 0.15);
       &:hover {
         color: $color-primary-lightest;
       }
-    }
-
-    .separator {
-      color: rgba(255, 255, 255, 0.3);
-    }
-
-    .model-info {
-      color: rgba(255, 255, 255, 0.5);
     }
   }
 }
