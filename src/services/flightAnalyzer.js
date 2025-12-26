@@ -1190,7 +1190,7 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
   const { altitude = 50, purpose = '', useAI = true, useMlit = true } = options;
 
   // まずローカル分析を実行
-  const localAnalysis = analyzeFlightPlanLocal(polygons, waypoints, { altitude, purpose });
+  const localAnalysis = await analyzeFlightPlanLocal(polygons, waypoints, { altitude, purpose });
 
   // 国土交通省APIで用途地域情報を取得
   let mlitInfo = null;
