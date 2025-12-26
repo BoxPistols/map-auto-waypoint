@@ -1,20 +1,27 @@
 /**
  * OpenAI API連携サービス
  *
- * GPT-4o-mini / GPT-4o などを使用して
+ * GPT-5 / GPT-4.1 ファミリーを使用して
  * ドローン経路の危険度判定・推奨を生成
  */
 
-// 利用可能なモデル一覧
+// 利用可能なモデル一覧（2025年最新）
 export const AVAILABLE_MODELS = [
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: '高速・低コスト', cost: '$' },
-  { id: 'gpt-4o', name: 'GPT-4o', description: '高精度・標準', cost: '$$' },
-  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', description: '高性能・高コスト', cost: '$$$' },
-  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: '最速・最低コスト', cost: '$' }
+  // GPT-5 ファミリー
+  { id: 'gpt-5-nano', name: 'GPT-5 Nano', description: '最速・最低コスト', cost: '$' },
+  { id: 'gpt-5-mini', name: 'GPT-5 Mini', description: 'バランス型', cost: '$$' },
+  { id: 'gpt-5', name: 'GPT-5', description: '最高性能', cost: '$$$' },
+  // GPT-4.1 ファミリー
+  { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', description: '高速・低コスト', cost: '$' },
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', description: 'コスパ良好', cost: '$$' },
+  { id: 'gpt-4.1', name: 'GPT-4.1', description: '高精度・長文対応', cost: '$$$' },
+  // 旧モデル（互換性用）
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: '旧世代・低コスト', cost: '$' },
+  { id: 'gpt-4o', name: 'GPT-4o', description: '旧世代・標準', cost: '$$' }
 ];
 
 // デフォルトモデル
-const DEFAULT_MODEL = 'gpt-4o-mini';
+const DEFAULT_MODEL = 'gpt-5-nano';
 
 // 環境変数からAPIキーを取得（Vite経由）
 const getApiKey = () => {
