@@ -316,7 +316,7 @@ const HelpModal = ({ onClose }) => {
                   <td>住所検索にフォーカス</td>
                 </tr>
                 <tr>
-                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>H</kbd> または <kbd>?</kbd></td>
+                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> または <kbd>?</kbd></td>
                   <td>ヘルプを開く / 閉じる</td>
                 </tr>
                 <tr>
@@ -365,20 +365,32 @@ const HelpModal = ({ onClose }) => {
               ※ 入力フォームにフォーカス中はショートカット無効
             </p>
 
-            <h3>Waypoint編集</h3>
+            <h3>Waypoint操作</h3>
             <table className={styles.shortcutTable}>
               <tbody>
+                <tr>
+                  <td><kbd>Shift</kbd> + ドラッグ</td>
+                  <td>範囲選択（複数Waypoint）</td>
+                </tr>
+                <tr>
+                  <td><kbd>Delete</kbd> / <kbd>Backspace</kbd></td>
+                  <td>選択したWaypointを一括削除</td>
+                </tr>
+                <tr>
+                  <td><kbd>Shift</kbd> + クリック</td>
+                  <td>地図上にWaypointを手動追加</td>
+                </tr>
+                <tr>
+                  <td>ダブルクリック</td>
+                  <td>座標・番号を編集開始</td>
+                </tr>
                 <tr>
                   <td><kbd>Enter</kbd></td>
                   <td>編集確定</td>
                 </tr>
                 <tr>
                   <td><kbd>Escape</kbd></td>
-                  <td>編集キャンセル</td>
-                </tr>
-                <tr>
-                  <td>ダブルクリック</td>
-                  <td>座標・番号を編集開始</td>
+                  <td>編集キャンセル / 選択解除</td>
                 </tr>
               </tbody>
             </table>

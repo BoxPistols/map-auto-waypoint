@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronDown, Search } from 'lucide-react'
+import { ChevronDown, Search, Undo2, Redo2 } from 'lucide-react'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
 import PolygonList from './components/PolygonList/PolygonList'
@@ -117,8 +117,8 @@ function App() {
         return
       }
 
-      // Cmd+H (Mac) or Ctrl+H (Win) for Help
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'h') {
+      // Cmd+Shift+H (Mac) or Ctrl+Shift+H (Win) for Help
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
         e.preventDefault()
         setShowHelp(true)
         return
@@ -384,11 +384,23 @@ function App() {
     setActivePanel('waypoints')
   }, [polygons, showNotification])
 
-  // Handle waypoint select
+  // Handle waypoint select - start editing parent polygon if exists
   const handleWaypointSelect = useCallback((waypoint) => {
+    // Focus on waypoint location
     setCenter({ lat: waypoint.lat, lng: waypoint.lng })
     setZoom(18)
-  }, [])
+
+    // If waypoint belongs to a polygon, start editing that polygon
+    if (waypoint.polygonId) {
+      const parentPolygon = polygons.find(p => p.id === waypoint.polygonId)
+      if (parentPolygon) {
+        setEditingPolygon(parentPolygon)
+        setSelectedPolygonId(parentPolygon.id)
+        setDrawMode(false)
+        showNotification(`「${parentPolygon.name}」を編集中`)
+      }
+    }
+  }, [polygons, showNotification])
 
   // Handle waypoint delete
   const handleWaypointDelete = useCallback((id) => {
@@ -396,12 +408,12 @@ function App() {
     showNotification('Waypointを削除しました')
   }, [showNotification])
 
-  // Handle waypoint move (drag)
-  const handleWaypointMove = useCallback((id, newPosition) => {
-    setWaypoints(prev => prev.map(w =>
-      w.id === id ? { ...w, lat: newPosition.lat, lng: newPosition.lng } : w
-    ))
-  }, [])
+  // Handle bulk waypoint delete
+  const handleWaypointsBulkDelete = useCallback((ids) => {
+    const idSet = new Set(ids)
+    setWaypoints(prev => prev.filter(w => !idSet.has(w.id)))
+    showNotification(`${ids.length} 個のWaypointを削除しました`)
+  }, [showNotification])
 
   // Handle waypoint update (edit name, coords, etc.)
   const handleWaypointUpdate = useCallback((id, updateData) => {
@@ -489,10 +501,11 @@ function App() {
     showNotification(`${importedPolygons.length} ポリゴンをインポートしました`)
   }, [showNotification])
 
-  // Handle map click (add manual waypoint)
-  const handleMapClick = useCallback((latlng) => {
-    if (!drawMode) {
-      // Add manual waypoint
+  // Handle map click - no auto waypoint addition
+  // Waypoints should be added explicitly via polygon generation or Shift+click
+  const handleMapClick = useCallback((latlng, e) => {
+    // Only add waypoint with Shift+click (explicit action)
+    if (!drawMode && e?.originalEvent?.shiftKey) {
       const newWaypoint = {
         id: crypto.randomUUID(),
         lat: latlng.lat,
@@ -548,6 +561,25 @@ function App() {
       <header className="app-header">
         <h1 className="app-title">Drone Waypoint</h1>
         <div className="header-actions">
+          <button
+            className="icon-button"
+            onClick={handleUndo}
+            disabled={historyIndexRef.current <= 0}
+            data-tooltip="元に戻す (⌘Z)"
+            data-tooltip-pos="bottom"
+          >
+            <Undo2 size={18} />
+          </button>
+          <button
+            className="icon-button"
+            onClick={handleRedo}
+            disabled={historyIndexRef.current >= historyRef.current.length - 1}
+            data-tooltip="やり直す (⌘⇧Z)"
+            data-tooltip-pos="bottom"
+          >
+            <Redo2 size={18} />
+          </button>
+          <div className="header-divider" />
           {editingPolygon ? (
             <button
               className="mode-toggle active"
@@ -580,7 +612,7 @@ function App() {
           <button
             className="help-button"
             onClick={() => setShowHelp(true)}
-            data-tooltip="ヘルプ (⌘H)"
+            data-tooltip="ヘルプ (⌘⇧H)"
             data-tooltip-pos="left"
           >
             ?
@@ -681,7 +713,7 @@ function App() {
             onMapClick={handleMapClick}
             onWaypointClick={handleWaypointSelect}
             onWaypointDelete={handleWaypointDelete}
-            onWaypointMove={handleWaypointMove}
+            onWaypointsBulkDelete={handleWaypointsBulkDelete}
             selectedPolygonId={selectedPolygonId}
             editingPolygon={editingPolygon}
             drawMode={drawMode}

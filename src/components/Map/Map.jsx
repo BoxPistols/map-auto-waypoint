@@ -47,12 +47,17 @@ const Map = ({
   onMapClick,
   onWaypointClick,
   onWaypointDelete,
-  onWaypointMove,
+  onWaypointsBulkDelete,
   selectedPolygonId,
   editingPolygon = null,
   drawMode = false
 }) => {
   const mapRef = useRef(null)
+
+  // Selection state for bulk operations
+  const [selectionBox, setSelectionBox] = useState(null) // {startX, startY, endX, endY}
+  const [selectedWaypointIds, setSelectedWaypointIds] = useState(new Set())
+  const isSelectingRef = useRef(false)
 
   // Load map settings from localStorage (must be before viewState init)
   const initialSettings = useMemo(() => loadMapSettings(), [])
@@ -64,7 +69,6 @@ const Map = ({
     pitch: initialSettings.is3D ? 60 : 0,
     bearing: 0
   })
-  const [draggingWaypoint, setDraggingWaypoint] = useState(null)
   const [is3D, setIs3D] = useState(initialSettings.is3D)
   const [showAirportZones, setShowAirportZones] = useState(initialSettings.showAirportZones)
   const [showNoFlyZones, setShowNoFlyZones] = useState(initialSettings.showNoFlyZones)
@@ -163,7 +167,7 @@ const Map = ({
       onMapClick({
         lat: e.lngLat.lat,
         lng: e.lngLat.lng
-      })
+      }, e)
     }
   }, [onMapClick, onPolygonSelect, drawMode])
 
@@ -217,20 +221,74 @@ const Map = ({
     }
   }, [onWaypointDelete])
 
-  // Handle waypoint drag
-  const handleWaypointDragStart = useCallback((wp) => {
-    setDraggingWaypoint(wp.id)
-  }, [])
+  // Handle selection box for bulk waypoint operations
+  const handleSelectionStart = useCallback((e) => {
+    if (!e.originalEvent.shiftKey || drawMode || editingPolygon) return
 
-  const handleWaypointDragEnd = useCallback((e, wp) => {
-    setDraggingWaypoint(null)
-    if (onWaypointMove) {
-      onWaypointMove(wp.id, {
-        lat: e.lngLat.lat,
-        lng: e.lngLat.lng
-      })
+    isSelectingRef.current = true
+    const rect = e.target.getCanvas().getBoundingClientRect()
+    const x = e.originalEvent.clientX - rect.left
+    const y = e.originalEvent.clientY - rect.top
+    setSelectionBox({ startX: x, startY: y, endX: x, endY: y })
+    setSelectedWaypointIds(new Set())
+  }, [drawMode, editingPolygon])
+
+  const handleSelectionMove = useCallback((e) => {
+    if (!isSelectingRef.current || !selectionBox) return
+
+    const rect = e.target.getCanvas().getBoundingClientRect()
+    const x = e.originalEvent.clientX - rect.left
+    const y = e.originalEvent.clientY - rect.top
+    setSelectionBox(prev => prev ? { ...prev, endX: x, endY: y } : null)
+  }, [selectionBox])
+
+  const handleSelectionEnd = useCallback(() => {
+    if (!isSelectingRef.current || !selectionBox || !mapRef.current) {
+      isSelectingRef.current = false
+      setSelectionBox(null)
+      return
     }
-  }, [onWaypointMove])
+
+    // Calculate selection bounds
+    const map = mapRef.current.getMap()
+    const minX = Math.min(selectionBox.startX, selectionBox.endX)
+    const maxX = Math.max(selectionBox.startX, selectionBox.endX)
+    const minY = Math.min(selectionBox.startY, selectionBox.endY)
+    const maxY = Math.max(selectionBox.startY, selectionBox.endY)
+
+    // Find waypoints within selection
+    const selected = new Set()
+    waypoints.forEach(wp => {
+      const point = map.project([wp.lng, wp.lat])
+      if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
+        selected.add(wp.id)
+      }
+    })
+
+    setSelectedWaypointIds(selected)
+    isSelectingRef.current = false
+    setSelectionBox(null)
+  }, [selectionBox, waypoints])
+
+  // Handle keyboard for bulk delete
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedWaypointIds.size > 0) {
+        e.preventDefault()
+        if (confirm(`選択した ${selectedWaypointIds.size} 個のWaypointを削除しますか?`)) {
+          onWaypointsBulkDelete?.(Array.from(selectedWaypointIds))
+          setSelectedWaypointIds(new Set())
+        }
+      }
+      // Escape to clear selection
+      if (e.key === 'Escape') {
+        setSelectedWaypointIds(new Set())
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedWaypointIds, onWaypointsBulkDelete])
 
   // Convert polygons to GeoJSON for display (exclude polygon being edited)
   const polygonsGeoJSON = {
@@ -260,11 +318,15 @@ const Map = ({
         onMove={e => setViewState(e.viewState)}
         onClick={handleClick}
         onDblClick={handleDoubleClick}
+        onMouseDown={handleSelectionStart}
+        onMouseMove={handleSelectionMove}
+        onMouseUp={handleSelectionEnd}
         interactiveLayerIds={interactiveLayerIds}
         mapStyle={MAP_STYLE}
         style={{ width: '100%', height: '100%' }}
         doubleClickZoom={false}
         maxZoom={20}
+        dragPan={!isSelectingRef.current}
       >
         <NavigationControl position="top-right" visualizePitch={true} />
         <ScaleControl position="bottom-left" unit="metric" />
@@ -395,22 +457,19 @@ const Map = ({
           />
         </Source>
 
-        {/* Display waypoints as draggable markers */}
+        {/* Display waypoints as markers (not draggable - use polygon edit instead) */}
         {waypoints.map((wp) => (
           <Marker
             key={wp.id}
             latitude={wp.lat}
             longitude={wp.lng}
-            draggable={true}
-            onDragStart={() => handleWaypointDragStart(wp)}
-            onDragEnd={(e) => handleWaypointDragEnd(e, wp)}
             onClick={(e) => {
               e.originalEvent.stopPropagation()
               onWaypointClick?.(wp)
             }}
           >
             <div
-              className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${draggingWaypoint === wp.id ? styles.dragging : ''}`}
+              className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${selectedWaypointIds.has(wp.id) ? styles.selected : ''}`}
               title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}`}
               onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
             >
@@ -419,6 +478,26 @@ const Map = ({
           </Marker>
         ))}
       </MapGL>
+
+      {/* Selection box overlay */}
+      {selectionBox && (
+        <div
+          className={styles.selectionBox}
+          style={{
+            left: Math.min(selectionBox.startX, selectionBox.endX),
+            top: Math.min(selectionBox.startY, selectionBox.endY),
+            width: Math.abs(selectionBox.endX - selectionBox.startX),
+            height: Math.abs(selectionBox.endY - selectionBox.startY)
+          }}
+        />
+      )}
+
+      {/* Selection info */}
+      {selectedWaypointIds.size > 0 && (
+        <div className={styles.selectionInfo}>
+          {selectedWaypointIds.size} 個選択中 - Delete/Backspaceで削除 / Escでキャンセル
+        </div>
+      )}
 
       {/* Map control buttons */}
       <div className={styles.mapControls}>
