@@ -312,7 +312,11 @@ const HelpModal = ({ onClose }) => {
             <table className={styles.shortcutTable}>
               <tbody>
                 <tr>
-                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>K</kbd> または <kbd>?</kbd></td>
+                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>K</kbd></td>
+                  <td>住所検索にフォーカス</td>
+                </tr>
+                <tr>
+                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>H</kbd> または <kbd>?</kbd></td>
                   <td>ヘルプを開く / 閉じる</td>
                 </tr>
                 <tr>

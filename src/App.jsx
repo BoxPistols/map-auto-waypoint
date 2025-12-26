@@ -117,8 +117,8 @@ function App() {
         return
       }
 
-      // Cmd+K (Mac) or Ctrl+K (Win) for Help
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      // Cmd+H (Mac) or Ctrl+H (Win) for Help
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'h') {
         e.preventDefault()
         setShowHelp(true)
         return
@@ -257,19 +257,42 @@ function App() {
       // Find the updated polygon
       const polygon = updated.find(p => p.id === updatedFeature.id)
 
-      // If waypoint is linked, regenerate waypoints
+      // If waypoint is linked, regenerate waypoints preserving type and count
       if (polygon && polygon.waypointLinked !== false) {
-        // Regenerate waypoints for this polygon
-        const newWaypoints = polygonToWaypoints({ ...polygon, geometry: updatedFeature.geometry })
         setWaypoints(prevWaypoints => {
-          // Remove old waypoints for this polygon and add new ones
+          // Get existing waypoints for this polygon
+          const existingWaypoints = prevWaypoints.filter(w => w.polygonId === polygon.id)
           const otherWaypoints = prevWaypoints.filter(w => w.polygonId !== polygon.id)
+
+          if (existingWaypoints.length === 0) {
+            return prevWaypoints // No waypoints to regenerate
+          }
+
+          // Determine waypoint type from existing waypoints
+          const waypointType = existingWaypoints[0]?.type || 'vertex'
+          const waypointCount = existingWaypoints.length
+
+          let newWaypoints = []
+          const updatedPolygon = { ...polygon, geometry: updatedFeature.geometry }
+
+          if (waypointType === 'perimeter') {
+            // Regenerate perimeter waypoints with same count
+            newWaypoints = generatePerimeterWaypoints(updatedPolygon, waypointCount)
+          } else if (waypointType === 'grid') {
+            // For grid, just regenerate vertices (grid needs manual regeneration)
+            newWaypoints = polygonToWaypoints(updatedPolygon)
+          } else {
+            // Default: vertex waypoints
+            newWaypoints = polygonToWaypoints(updatedPolygon)
+          }
+
           // Recalculate indices
           let index = otherWaypoints.length + 1
           const reindexedNew = newWaypoints.map(wp => ({ ...wp, index: index++ }))
+
+          showNotification(`ポリゴンを更新し、${reindexedNew.length} Waypointを再生成しました`)
           return [...otherWaypoints, ...reindexedNew]
         })
-        showNotification(`ポリゴンを更新し、${newWaypoints.length} Waypointを再生成しました`)
       } else {
         showNotification('ポリゴンを更新しました')
       }
@@ -557,7 +580,7 @@ function App() {
           <button
             className="help-button"
             onClick={() => setShowHelp(true)}
-            data-tooltip="ヘルプ (⌘K)"
+            data-tooltip="ヘルプ (⌘H)"
             data-tooltip-pos="left"
           >
             ?
