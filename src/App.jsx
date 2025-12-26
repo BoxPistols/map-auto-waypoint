@@ -435,57 +435,36 @@ function App() {
     showNotification(`${ids.length} 個のWaypointを削除しました`)
   }, [showNotification])
 
-  // Handle waypoint move (drag on map) - also update polygon
+  // Handle waypoint move (drag on map) - rebuild polygon from all waypoints
   const handleWaypointMove = useCallback((id, newLat, newLng) => {
     // Find the waypoint being moved
     const waypoint = waypoints.find(w => w.id === id)
 
     // Update the waypoint position
-    setWaypoints(prev => prev.map(w =>
+    const updatedWaypoints = waypoints.map(w =>
       w.id === id ? { ...w, lat: newLat, lng: newLng, elevation: null } : w
-    ))
+    )
+    setWaypoints(updatedWaypoints)
 
     // Skip polygon update for manual or grid waypoints
     if (!waypoint || !waypoint.polygonId || waypoint.type === 'manual' || waypoint.type === 'grid') {
       return
     }
 
-    // Find the polygon
-    const polygon = polygons.find(p => p.id === waypoint.polygonId)
-    if (!polygon) return
+    // Get all waypoints for this polygon (excluding grid and manual)
+    const polygonWaypoints = updatedWaypoints
+      .filter(w => w.polygonId === waypoint.polygonId && w.type !== 'grid' && w.type !== 'manual')
+      .sort((a, b) => a.index - b.index)
+
+    if (polygonWaypoints.length < 3) return
+
+    // Rebuild polygon from waypoint positions
+    const newCoords = polygonWaypoints.map(w => [w.lng, w.lat])
+    // Close the polygon
+    newCoords.push([polygonWaypoints[0].lng, polygonWaypoints[0].lat])
 
     setPolygons(prev => prev.map(p => {
       if (p.id !== waypoint.polygonId) return p
-
-      const coords = [...p.geometry.coordinates[0]]
-      let vertexIndex
-
-      if (waypoint.type === 'vertex' && waypoint.vertexIndex !== undefined) {
-        // Direct vertex mapping
-        vertexIndex = waypoint.vertexIndex
-      } else {
-        // For perimeter/other types, find the closest vertex
-        let minDist = Infinity
-        vertexIndex = 0
-        for (let i = 0; i < coords.length - 1; i++) {
-          const dx = coords[i][0] - waypoint.lng
-          const dy = coords[i][1] - waypoint.lat
-          const dist = dx * dx + dy * dy
-          if (dist < minDist) {
-            minDist = dist
-            vertexIndex = i
-          }
-        }
-      }
-
-      // Update the polygon coordinates
-      const newCoords = [...coords]
-      newCoords[vertexIndex] = [newLng, newLat]
-
-      // Also update the closing point if this is the first vertex
-      if (vertexIndex === 0) {
-        newCoords[newCoords.length - 1] = [newLng, newLat]
-      }
 
       return {
         ...p,
@@ -495,7 +474,7 @@ function App() {
         }
       }
     }))
-  }, [waypoints, polygons])
+  }, [waypoints])
 
   // Handle waypoint update (edit name, coords, etc.)
   const handleWaypointUpdate = useCallback((id, updateData) => {
