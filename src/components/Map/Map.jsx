@@ -47,6 +47,7 @@ const Map = ({
   onMapClick,
   onWaypointClick,
   onWaypointDelete,
+  onWaypointMove,
   onWaypointsBulkDelete,
   selectedPolygonId,
   editingPolygon = null,
@@ -457,12 +458,16 @@ const Map = ({
           />
         </Source>
 
-        {/* Display waypoints as markers (not draggable - use polygon edit instead) */}
+        {/* Display waypoints as draggable markers */}
         {waypoints.map((wp) => (
           <Marker
             key={wp.id}
             latitude={wp.lat}
             longitude={wp.lng}
+            draggable={true}
+            onDragEnd={(e) => {
+              onWaypointMove?.(wp.id, e.lngLat.lat, e.lngLat.lng)
+            }}
             onClick={(e) => {
               e.originalEvent.stopPropagation()
               onWaypointClick?.(wp)

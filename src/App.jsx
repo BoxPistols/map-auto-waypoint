@@ -415,6 +415,13 @@ function App() {
     showNotification(`${ids.length} 個のWaypointを削除しました`)
   }, [showNotification])
 
+  // Handle waypoint move (drag on map)
+  const handleWaypointMove = useCallback((id, newLat, newLng) => {
+    setWaypoints(prev => prev.map(w =>
+      w.id === id ? { ...w, lat: newLat, lng: newLng, elevation: null } : w
+    ))
+  }, [])
+
   // Handle waypoint update (edit name, coords, etc.)
   const handleWaypointUpdate = useCallback((id, updateData) => {
     setWaypoints(prev => prev.map(w =>
@@ -713,6 +720,7 @@ function App() {
             onMapClick={handleMapClick}
             onWaypointClick={handleWaypointSelect}
             onWaypointDelete={handleWaypointDelete}
+            onWaypointMove={handleWaypointMove}
             onWaypointsBulkDelete={handleWaypointsBulkDelete}
             selectedPolygonId={selectedPolygonId}
             editingPolygon={editingPolygon}
