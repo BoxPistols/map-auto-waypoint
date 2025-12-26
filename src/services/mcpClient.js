@@ -213,7 +213,7 @@ class MCPClient {
 
   /**
    * UTM干渉チェック（モック）
-   * 山崎さんのモックで実装されていた「判定！」機能の再現
+   * 過去のLLMモックで実装されていた「判定！」機能の再現
    *
    * @param {Object} flightPlan - フライトプラン
    * @param {Object} timeRange - 飛行予定時間帯
