@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -39,6 +39,15 @@ jobs:
       - name: Copy index.html to 404.html for SPA routing
         run: cp dist/index.html dist/404.html
 
+      - name: Verify build output
+        run: |
+          echo "Build output:"
+          ls -la dist/
+          echo "---"
+          ls -la dist/assets/ || true
+          echo "---"
+          head -20 dist/index.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
@@ -46,6 +55,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+          retention-days: 1
 
   deploy:
     environment:
@@ -57,3 +67,12 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify deployment
+        run: |
+          sleep 10
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.deployment.outputs.page_url }}")
+          echo "Site status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Warning: Site returned $STATUS"
+          fi
