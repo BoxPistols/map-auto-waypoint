@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import {
-  MessageCircle,
   Send,
   X,
   Zap,
@@ -11,25 +10,39 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-  Sparkles
+  Sparkles,
+  Settings,
+  Key,
+  Trash2,
+  ExternalLink,
+  Shield,
+  MapPin
 } from 'lucide-react';
-import { mcpClient } from '../../services/mcpClient';
+import { hasApiKey, setApiKey, getFlightAdvice } from '../../services/openaiService';
+import { runFullAnalysis, getFlightRecommendations } from '../../services/flightAnalyzer';
+import { hasReinfolibApiKey, setReinfolibApiKey } from '../../services/reinfolibService';
 import './FlightAssistant.scss';
 
 /**
- * フライトアシスタント - 自然言語によるフライト計画支援
+ * フライトアシスタント - AIによるフライト計画支援
  *
  * 機能:
  * - 自然言語でフライト目的を入力
- * - 経路パターンの自動提案
- * - 「判定！」ボタンで総合判定（UTM干渉、リスク、申請要件）
+ * - 実データに基づくリスク判定（空港、禁止区域）
+ * - OpenAI連携による高度な分析
+ * - 「判定！」ボタンで総合判定
  */
 function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [hasKey, setHasKey] = useState(hasApiKey());
+  const [mlitKeyInput, setMlitKeyInput] = useState('');
+  const [hasMlitKey, setHasMlitKey] = useState(hasReinfolibApiKey());
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'こんにちは！フライト計画のお手伝いをします。\n\n飛行目的を教えてください。例：\n• 「静岡県の太陽光発電所、パネル点検」\n• 「送電線の架線点検」\n• 「建設現場の測量」'
+      content: 'こんにちは！フライト計画のお手伝いをします。\n\n飛行目的を教えてください。例：\n• 「太陽光発電所のパネル点検」\n• 「送電線の架線点検」\n• 「建設現場の測量」'
     }
   ]);
   const [input, setInput] = useState('');
@@ -46,6 +59,58 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
     scrollToBottom();
   }, [messages]);
 
+  // APIキー保存
+  const handleSaveApiKey = () => {
+    if (apiKeyInput.trim()) {
+      setApiKey(apiKeyInput.trim());
+      setHasKey(true);
+      setApiKeyInput('');
+      setShowSettings(false);
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: '✅ OpenAI APIキーを保存しました。AI分析が有効になりました。'
+      }]);
+    }
+  };
+
+  // APIキー削除
+  const handleDeleteApiKey = () => {
+    if (confirm('OpenAI APIキーを削除しますか？')) {
+      localStorage.removeItem('openai_api_key');
+      setHasKey(false);
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: 'OpenAI APIキーを削除しました。'
+      }]);
+    }
+  };
+
+  // 国土交通省APIキー保存
+  const handleSaveMlitKey = () => {
+    if (mlitKeyInput.trim()) {
+      setReinfolibApiKey(mlitKeyInput.trim());
+      setHasMlitKey(true);
+      setMlitKeyInput('');
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: '✅ 国土交通省APIキーを保存しました。用途地域・都市計画情報が利用可能になりました。'
+      }]);
+    }
+  };
+
+  // 国土交通省APIキー削除
+  const handleDeleteMlitKey = () => {
+    if (confirm('国土交通省APIキーを削除しますか？')) {
+      localStorage.removeItem('reinfolib_api_key');
+      setHasMlitKey(false);
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: '国土交通省APIキーを削除しました。'
+      }]);
+    }
+  };
+
+  // メッセージ送信
   const handleSend = async () => {
     if (!input.trim() || isProcessing) return;
 
@@ -55,36 +120,40 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
     setIsProcessing(true);
 
     try {
-      // MCPクライアントで経路生成を呼び出し
-      const result = await mcpClient.generateFlightPath(
-        userMessage,
-        polygons.length > 0 ? polygons[0].geometry : null
-      );
+      // OpenAI APIキーがある場合はAI応答を取得
+      if (hasKey) {
+        const response = await getFlightAdvice(userMessage, { polygons, waypoints });
+        setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+      } else {
+        // ローカル推奨パラメータを取得
+        const recommendations = await getFlightRecommendations(userMessage);
 
-      if (result.success) {
-        const plan = result.flightPlan;
-        let response = `**${plan.purpose}**の経路を提案します。\n\n`;
-        response += `📍 **推奨パターン**: ${plan.pattern === 'grid' ? 'グリッド' : '周回'}\n`;
-        response += `🛫 **推奨高度**: ${plan.altitude}m\n`;
-        response += `📐 **オーバーラップ**: ${plan.overlap}%\n`;
-        response += `⏱️ **推定飛行時間**: ${plan.estimatedDuration}\n\n`;
-        response += `**アドバイス:**\n`;
-        plan.recommendations.forEach(rec => {
-          response += `• ${rec}\n`;
+        let response = `**推奨パラメータ**\n\n`;
+        response += `📍 **パターン**: ${recommendations.pattern === 'grid' ? 'グリッド' : '周回'}\n`;
+        response += `🛫 **推奨高度**: ${recommendations.altitude}m\n`;
+        response += `📷 **カメラ**: ${recommendations.camera}\n`;
+        response += `⏱️ **推定時間**: ${recommendations.estimatedFlightTime}\n\n`;
+        response += `**推奨機体**:\n`;
+        recommendations.recommendedAircraft.forEach(a => {
+          response += `• ${a}\n`;
+        });
+        response += `\n**Tips**:\n`;
+        recommendations.tips.forEach(t => {
+          response += `• ${t}\n`;
         });
 
         if (polygons.length > 0) {
-          response += `\n✅ ポリゴンが設定済みです。「判定！」ボタンで詳細なリスク判定ができます。`;
+          response += `\n✅ ポリゴンが設定済み。「判定！」で詳細分析できます。`;
         } else {
           response += `\n⚠️ まず地図上でエリアを設定してください。`;
         }
 
-        setMessages(prev => [...prev, { role: 'assistant', content: response, plan }]);
+        setMessages(prev => [...prev, { role: 'assistant', content: response }]);
       }
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'すみません、処理中にエラーが発生しました。もう一度お試しください。'
+        content: `エラーが発生しました: ${error.message}`
       }]);
     } finally {
       setIsProcessing(false);
@@ -113,60 +182,86 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
     setIsProcessing(true);
     setMessages(prev => [...prev, {
       role: 'system',
-      content: '🔍 総合判定を実行中...'
+      content: '🔍 実データに基づく分析を実行中...'
     }]);
 
     try {
-      const result = await mcpClient.runFullAssessment({
-        area: polygons[0].geometry,
-        waypoints: waypoints,
+      // 実データに基づく分析を実行
+      const result = await runFullAnalysis(polygons, waypoints, {
         altitude: 50,
-        purpose: '点検飛行'
+        purpose: '点検飛行',
+        useAI: hasKey
       });
 
       setAssessmentResult(result);
 
-      // 結果サマリーをメッセージに追加
-      const summary = result.summary;
-      const details = result.details;
-
+      // 結果をメッセージに整形
       let response = `## 📋 判定結果\n\n`;
 
-      // 総合リスク
-      const riskIcon = summary.overallRisk === 'LOW' ? '🟢' :
-        summary.overallRisk === 'MEDIUM' ? '🟡' : '🔴';
-      response += `### ${riskIcon} 地上リスク: ${summary.overallRisk}\n`;
-      details.groundRisk.factors.forEach(f => {
-        response += `• ${f.type}: ${f.value || f.count || f.items?.join(', ')} (${f.risk})\n`;
-      });
-      response += '\n';
+      // リスクレベル
+      const riskIcon = result.riskLevel === 'LOW' ? '🟢' :
+        result.riskLevel === 'MEDIUM' ? '🟡' :
+          result.riskLevel === 'HIGH' ? '🟠' : '🔴';
+      response += `### ${riskIcon} リスクレベル: ${result.riskLevel}\n`;
+      response += `${result.summary}\n\n`;
 
-      // UTM干渉
-      const utmIcon = summary.utmClear ? '✅' : '⚠️';
-      response += `### ${utmIcon} UTM干渉チェック\n`;
-      if (details.utmConflicts.conflicts.length === 0) {
-        response += `• 干渉なし - 飛行可能\n`;
-      } else {
-        details.utmConflicts.conflicts.forEach(c => {
-          response += `• ${c.description}\n`;
+      // リスク詳細
+      if (result.risks.length > 0) {
+        response += `### ⚠️ 検出されたリスク\n`;
+        result.risks.forEach(r => {
+          const icon = r.severity === 'critical' ? '🔴' :
+            r.severity === 'high' ? '🟠' :
+              r.severity === 'medium' ? '🟡' : '🟢';
+          response += `${icon} ${r.description}\n`;
         });
+        response += '\n';
       }
-      response += '\n';
 
-      // 推奨機体
-      response += `### 🚁 推奨機体\n`;
-      response += `• **${summary.recommendedAircraft}** (適合度: ${details.aircraftRecommendations[0]?.suitability}%)\n`;
-      response += '\n';
+      // 空港情報
+      if (result.context?.nearestAirport) {
+        const airport = result.context.nearestAirport;
+        response += `### 🛫 最寄り空港\n`;
+        response += `${airport.name}: ${(airport.distance / 1000).toFixed(1)}km\n\n`;
+      }
 
-      // 申請要件
-      response += `### 📝 申請要件\n`;
-      response += `• 承認取得目安: **${summary.estimatedApprovalDays}日**\n`;
-      details.requirements.tips.forEach(tip => {
-        response += `• ${tip}\n`;
+      // 用途地域情報（国土交通省API）
+      if (result.context?.mlitInfo?.success) {
+        const mlit = result.context.mlitInfo;
+        response += `### 🏛️ 用途地域情報\n`;
+        if (mlit.useZone?.zoneName) {
+          response += `• ${mlit.useZone.zoneName}\n`;
+        }
+        if (mlit.urbanArea?.areaName) {
+          response += `• ${mlit.urbanArea.areaName}\n`;
+        }
+        response += '\n';
+      }
+
+      // 推奨事項
+      response += `### 💡 推奨事項\n`;
+      result.recommendations.forEach(rec => {
+        response += `• ${rec}\n`;
       });
+      response += '\n';
+
+      // 必要な許可
+      if (result.requiredPermissions.length > 0) {
+        response += `### 📝 必要な許可\n`;
+        result.requiredPermissions.forEach(p => {
+          response += `• ${p}\n`;
+        });
+        response += `\n承認取得目安: **${result.estimatedApprovalDays}日**\n`;
+      }
+
+      // 連携状態
+      response += `\n---\n`;
+      const sources = [];
+      if (result.mlitEnhanced) sources.push('🏛️国交省API');
+      if (result.aiEnhanced) sources.push('🤖OpenAI');
+      if (sources.length === 0) sources.push('📊ローカル');
+      response += `データソース: ${sources.join(' + ')}`;
 
       setMessages(prev => {
-        // システムメッセージを削除して結果を追加
         const filtered = prev.filter(m => m.role !== 'system');
         return [...filtered, { role: 'assistant', content: response, isAssessment: true }];
       });
@@ -176,7 +271,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
         const filtered = prev.filter(m => m.role !== 'system');
         return [...filtered, {
           role: 'assistant',
-          content: '❌ 判定中にエラーが発生しました。'
+          content: `❌ 分析中にエラーが発生しました: ${error.message}`
         }];
       });
     } finally {
@@ -192,10 +287,135 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
         return <span className="risk-badge medium"><AlertTriangle size={12} /> 中リスク</span>;
       case 'HIGH':
         return <span className="risk-badge high"><AlertTriangle size={12} /> 高リスク</span>;
+      case 'CRITICAL':
+        return <span className="risk-badge critical"><Shield size={12} /> 飛行禁止</span>;
       default:
         return <span className="risk-badge"><Info size={12} /> 不明</span>;
     }
   };
+
+  // 設定パネル
+  const renderSettings = () => (
+    <div className="settings-panel">
+      <div className="settings-header">
+        <h3><Settings size={16} /> API設定</h3>
+        <button className="close-btn" onClick={() => setShowSettings(false)}>
+          <X size={16} />
+        </button>
+      </div>
+
+      <div className="settings-content">
+        {/* 国土交通省API */}
+        <div className="settings-section">
+          <h4>🏛️ 国土交通省 不動産情報ライブラリ</h4>
+          <div className="settings-info">
+            <p>用途地域・都市計画情報を取得できます：</p>
+            <ul>
+              <li>住居/商業/工業地域の判定</li>
+              <li>市街化区域/調整区域の判定</li>
+              <li>DID（人口集中地区）の参考情報</li>
+            </ul>
+          </div>
+
+          {hasMlitKey ? (
+            <div className="api-key-status">
+              <div className="status-row">
+                <CheckCircle size={16} className="success" />
+                <span>設定済み</span>
+              </div>
+              <button className="delete-btn" onClick={handleDeleteMlitKey}>
+                <Trash2 size={14} /> 削除
+              </button>
+            </div>
+          ) : (
+            <div className="api-key-input">
+              <input
+                type="text"
+                value={mlitKeyInput}
+                onChange={(e) => setMlitKeyInput(e.target.value)}
+                placeholder="APIキー"
+              />
+              <button
+                className="save-btn"
+                onClick={handleSaveMlitKey}
+                disabled={!mlitKeyInput.trim()}
+              >
+                保存
+              </button>
+            </div>
+          )}
+
+          <div className="settings-links">
+            <a
+              href="https://www.reinfolib.mlit.go.jp/api/request/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink size={12} /> APIキーを申請
+            </a>
+          </div>
+        </div>
+
+        <hr className="settings-divider" />
+
+        {/* OpenAI API */}
+        <div className="settings-section">
+          <h4>🤖 OpenAI API（オプション）</h4>
+          <div className="settings-info">
+            <p>高度なAI分析が有効になります：</p>
+            <ul>
+              <li>自然言語での質問応答</li>
+              <li>詳細なアドバイス生成</li>
+            </ul>
+          </div>
+
+          {hasKey ? (
+            <div className="api-key-status">
+              <div className="status-row">
+                <CheckCircle size={16} className="success" />
+                <span>設定済み</span>
+              </div>
+              <button className="delete-btn" onClick={handleDeleteApiKey}>
+                <Trash2 size={14} /> 削除
+              </button>
+            </div>
+          ) : (
+            <div className="api-key-input">
+              <input
+                type="password"
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                placeholder="sk-..."
+              />
+              <button
+                className="save-btn"
+                onClick={handleSaveApiKey}
+                disabled={!apiKeyInput.trim()}
+              >
+                保存
+              </button>
+            </div>
+          )}
+
+          <div className="settings-links">
+            <a
+              href="https://platform.openai.com/api-keys"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <ExternalLink size={12} /> APIキーを取得
+            </a>
+            <span className="separator">|</span>
+            <span className="model-info">gpt-4o-mini</span>
+          </div>
+        </div>
+
+        <p className="settings-note">
+          ※ APIキーはブラウザに保存（サーバー送信なし）
+        </p>
+      </div>
+    </div>
+  );
 
   if (!isOpen) {
     return (
@@ -215,12 +435,24 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
         <div className="header-title">
           <Sparkles size={18} />
           <span>フライトアシスタント</span>
-          <span className="beta-badge">BETA</span>
+          {hasMlitKey && <span className="mlit-badge">国交省</span>}
+          {hasKey && <span className="ai-badge">AI</span>}
         </div>
-        <button className="close-btn" onClick={() => setIsOpen(false)}>
-          <X size={18} />
-        </button>
+        <div className="header-actions">
+          <button
+            className={`settings-btn ${showSettings ? 'active' : ''}`}
+            onClick={() => setShowSettings(!showSettings)}
+            title="設定"
+          >
+            <Settings size={16} />
+          </button>
+          <button className="close-btn" onClick={() => setIsOpen(false)}>
+            <X size={18} />
+          </button>
+        </div>
       </div>
+
+      {showSettings && renderSettings()}
 
       <div className="flight-assistant-messages">
         {messages.map((msg, index) => (
@@ -241,10 +473,13 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
                 if (line.startsWith('**') && line.endsWith('**')) {
                   return <strong key={i}>{line.replace(/\*\*/g, '')}</strong>;
                 }
-                if (line.startsWith('• ')) {
+                if (line.startsWith('• ') || line.startsWith('- ')) {
                   return <div key={i} className="bullet-item">{line}</div>;
                 }
-                return <p key={i}>{line}</p>;
+                if (line.startsWith('---')) {
+                  return <hr key={i} />;
+                }
+                return line ? <p key={i}>{line}</p> : null;
               })}
             </div>
           </div>
@@ -267,11 +502,15 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
           className="assessment-btn"
           onClick={handleAssessment}
           disabled={isProcessing || polygons.length === 0}
-          title={polygons.length === 0 ? 'まずエリアを設定してください' : '総合判定を実行'}
+          title={polygons.length === 0 ? 'まずエリアを設定してください' : '実データに基づく総合判定'}
         >
           <Zap size={16} />
           判定！
         </button>
+        <div className="action-info">
+          <MapPin size={12} />
+          <span>{polygons.length}エリア / {waypoints.length}WP</span>
+        </div>
       </div>
 
       <div className="flight-assistant-input">
@@ -279,7 +518,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="飛行目的を入力..."
+          placeholder={hasKey ? '質問を入力...' : '飛行目的を入力...'}
           rows={1}
           disabled={isProcessing}
         />
@@ -299,25 +538,27 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
             onClick={() => setShowAssessmentDetail(!showAssessmentDetail)}
           >
             <span>最新の判定結果</span>
-            {getRiskBadge(assessmentResult.summary.overallRisk)}
+            {getRiskBadge(assessmentResult.riskLevel)}
             {showAssessmentDetail ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </div>
           {showAssessmentDetail && (
             <div className="summary-detail">
               <div className="detail-row">
-                <Plane size={14} />
-                <span>推奨機体: {assessmentResult.summary.recommendedAircraft}</span>
+                <Shield size={14} />
+                <span>スコア: {assessmentResult.riskScore}/100</span>
               </div>
+              {assessmentResult.context?.nearestAirport && (
+                <div className="detail-row">
+                  <Plane size={14} />
+                  <span>最寄空港: {assessmentResult.context.nearestAirport.name}</span>
+                </div>
+              )}
               <div className="detail-row">
                 <FileText size={14} />
-                <span>承認目安: {assessmentResult.summary.estimatedApprovalDays}日</span>
+                <span>承認目安: {assessmentResult.estimatedApprovalDays}日</span>
               </div>
-              <div className="detail-row">
-                {assessmentResult.summary.utmClear ?
-                  <CheckCircle size={14} className="success" /> :
-                  <AlertTriangle size={14} className="warning" />
-                }
-                <span>UTM: {assessmentResult.summary.utmClear ? '干渉なし' : '要確認'}</span>
+              <div className="detail-row source">
+                {assessmentResult.aiEnhanced ? '🤖 AI分析' : '📊 ローカル分析'}
               </div>
             </div>
           )}

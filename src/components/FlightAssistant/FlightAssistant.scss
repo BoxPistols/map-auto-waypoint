@@ -61,12 +61,21 @@
     gap: 8px;
     font-weight: 600;
 
-    .beta-badge {
-      font-size: 10px;
-      padding: 2px 6px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 4px;
-      font-weight: 500;
+    .ai-badge, .mlit-badge {
+      font-size: 9px;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    .ai-badge {
+      background: rgba(16, 185, 129, 0.3);
+      color: #6ee7b7;
+    }
+
+    .mlit-badge {
+      background: rgba(59, 130, 246, 0.3);
+      color: #93c5fd;
     }
   }
 
@@ -381,6 +390,215 @@
     background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
   }
+
+  &.critical {
+    background: rgba(220, 38, 38, 0.3);
+    color: #fca5a5;
+  }
+}
+
+// Settings Panel
+.settings-panel {
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+  .settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      margin: 0;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+    }
+  }
+
+  .settings-content {
+    padding: 12px 16px;
+  }
+
+  .settings-section {
+    h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin: 0 0 8px;
+    }
+  }
+
+  .settings-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 12px 0;
+  }
+
+  .settings-info {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 10px;
+
+    p {
+      margin: 0 0 6px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+
+      li {
+        margin: 2px 0;
+      }
+    }
+  }
+
+  .settings-note {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 12px 0 0;
+  }
+
+  .api-key-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(16, 185, 129, 0.1);
+    border-radius: 6px;
+    margin-bottom: 8px;
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #10b981;
+
+      .success {
+        color: #10b981;
+      }
+    }
+
+    .delete-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: rgba(239, 68, 68, 0.2);
+      border: none;
+      border-radius: 4px;
+      color: #ef4444;
+      font-size: 11px;
+      cursor: pointer;
+
+      &:hover {
+        background: rgba(239, 68, 68, 0.3);
+      }
+    }
+  }
+
+  .api-key-input {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    input {
+      flex: 1;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      color: white;
+      font-size: 13px;
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: #6366f1;
+      }
+    }
+
+    .save-btn {
+      padding: 8px 14px;
+      background: #6366f1;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+
+      &:hover:not(:disabled) {
+        background: #4f46e5;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .settings-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+
+    a {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: #a5b4fc;
+      text-decoration: none;
+
+      &:hover {
+        color: #c7d2fe;
+      }
+    }
+
+    .separator {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .model-info {
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}
+
+// Action Info
+.action-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0 8px;
 }
 
 // Responsive
