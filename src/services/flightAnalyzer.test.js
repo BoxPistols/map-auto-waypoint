@@ -13,7 +13,11 @@ import {
   analyzePolygonGaps,
   generateOptimizationPlan,
   analyzeFlightPlanLocal,
-  getDistanceMeters
+  getDistanceMeters,
+  checkDIDArea,
+  calculateApplicationCosts,
+  checkUTMConflicts,
+  recommendAircraft
 } from './flightAnalyzer';
 
 // テスト用のモックデータ
@@ -339,6 +343,132 @@ describe('flightAnalyzer', () => {
       expect(result.context).toBeDefined();
       expect(result.context.center).toBeDefined();
       expect(result.context.nearestAirport).toBeDefined();
+    });
+
+    it('DID情報を含む', () => {
+      const polygons = [createTestPolygon([
+        [139.7, 35.68],  // 東京都心部
+        [139.71, 35.68],
+        [139.71, 35.69],
+        [139.7, 35.69],
+        [139.7, 35.68]
+      ])];
+
+      const result = analyzeFlightPlanLocal(polygons, []);
+
+      expect(result.context.didInfo).toBeDefined();
+      expect(result.context.didInfo.isDID).toBe(true);
+    });
+
+    it('UTMチェック結果を含む', () => {
+      const polygons = [createTestPolygon([
+        [139.0, 35.3],
+        [139.01, 35.3],
+        [139.01, 35.31],
+        [139.0, 35.31],
+        [139.0, 35.3]
+      ])];
+
+      const result = analyzeFlightPlanLocal(polygons, []);
+
+      expect(result.utmCheck).toBeDefined();
+      expect(result.utmCheck.checked).toBe(true);
+    });
+  });
+
+  describe('checkDIDArea', () => {
+    it('東京都心部でDIDと判定', () => {
+      const result = checkDIDArea(35.6812, 139.7671);
+
+      expect(result.isDID).toBe(true);
+      expect(result.area).toBe('東京都心');
+    });
+
+    it('郊外でDID外と判定', () => {
+      const result = checkDIDArea(35.3, 139.0);
+
+      expect(result.isDID).toBe(false);
+      expect(result.area).toBeNull();
+    });
+
+    it('大阪市中心でDIDと判定', () => {
+      const result = checkDIDArea(34.6937, 135.5023);
+
+      expect(result.isDID).toBe(true);
+      expect(result.area).toBe('大阪市中心');
+    });
+  });
+
+  describe('calculateApplicationCosts', () => {
+    it('申請コストを計算', () => {
+      const mockResult = {
+        risks: [],
+        context: {
+          center: { lat: 35.3, lng: 139.0 }
+        }
+      };
+
+      const costs = calculateApplicationCosts(mockResult);
+
+      expect(costs.applications).toBeDefined();
+      expect(costs.requiredDocuments).toBeDefined();
+      expect(costs.timeline).toBeDefined();
+      expect(costs.tips.length).toBeGreaterThan(0);
+    });
+
+    it('空港近接でAIRPORT申請を追加', () => {
+      const mockResult = {
+        risks: [{ type: 'airport_proximity', severity: 'high' }],
+        context: {
+          center: { lat: 35.55, lng: 139.78 }
+        }
+      };
+
+      const costs = calculateApplicationCosts(mockResult);
+
+      expect(costs.applications.some(a => a.type === 'AIRPORT')).toBe(true);
+    });
+  });
+
+  describe('checkUTMConflicts', () => {
+    it('干渉がない場合clearForFlightがtrue', () => {
+      const result = checkUTMConflicts({ center: { lat: 35.3, lng: 139.0 } });
+
+      expect(result.checked).toBe(true);
+      expect(result.clearForFlight).toBe(true);
+    });
+
+    it('位置情報がない場合スキップ', () => {
+      const result = checkUTMConflicts({});
+
+      expect(result.checked).toBe(false);
+      expect(result.clearForFlight).toBe(true);
+    });
+  });
+
+  describe('recommendAircraft', () => {
+    it('太陽光点検で熱画像機体を推奨', () => {
+      const recommendations = recommendAircraft('太陽光パネル点検');
+
+      expect(recommendations.length).toBeGreaterThan(0);
+      expect(recommendations[0].specs.thermal).toBe(true);
+    });
+
+    it('測量でRTK対応機体を推奨', () => {
+      const recommendations = recommendAircraft('測量・3Dマッピング');
+
+      expect(recommendations.length).toBeGreaterThan(0);
+      expect(recommendations[0].specs.rtk).toBe(true);
+    });
+
+    it('推奨結果に適合度を含む', () => {
+      const recommendations = recommendAircraft('一般点検');
+
+      recommendations.forEach(r => {
+        expect(r.suitability).toBeDefined();
+        expect(r.suitability).toBeGreaterThanOrEqual(0);
+        expect(r.suitability).toBeLessThanOrEqual(100);
+      });
     });
   });
 });

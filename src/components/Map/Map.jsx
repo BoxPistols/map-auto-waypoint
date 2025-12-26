@@ -39,6 +39,7 @@ const Map = ({
   zoom = DEFAULT_ZOOM,
   polygons = [],
   waypoints = [],
+  recommendedWaypoints = null,
   onPolygonCreate,
   onPolygonUpdate,
   onPolygonDelete,
@@ -83,6 +84,50 @@ const Map = ({
   // Memoize airspace GeoJSON data
   const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
   const noFlyZonesGeoJSON = useMemo(() => getNoFlyZonesGeoJSON(), [])
+
+  // Memoize optimization overlay GeoJSON (lines from current to recommended positions)
+  const optimizationOverlayGeoJSON = useMemo(() => {
+    if (!recommendedWaypoints || recommendedWaypoints.length === 0) return null
+
+    const features = []
+
+    recommendedWaypoints.forEach(rw => {
+      if (rw.modified) {
+        // Find original waypoint
+        const original = waypoints.find(w => w.id === rw.id)
+        if (original) {
+          // Line from original to recommended position
+          features.push({
+            type: 'Feature',
+            properties: { type: 'optimization-line' },
+            geometry: {
+              type: 'LineString',
+              coordinates: [
+                [original.lng, original.lat],
+                [rw.lng, rw.lat]
+              ]
+            }
+          })
+          // Recommended position point
+          features.push({
+            type: 'Feature',
+            properties: { type: 'recommended-point', index: rw.index },
+            geometry: {
+              type: 'Point',
+              coordinates: [rw.lng, rw.lat]
+            }
+          })
+        }
+      }
+    })
+
+    if (features.length === 0) return null
+
+    return {
+      type: 'FeatureCollection',
+      features
+    }
+  }, [recommendedWaypoints, waypoints])
 
   // Update view when center changes
   useEffect(() => {
@@ -423,6 +468,52 @@ const Map = ({
               type="raster"
               paint={{
                 'raster-opacity': 0.6
+              }}
+            />
+          </Source>
+        )}
+
+        {/* Optimization overlay - recommended positions */}
+        {optimizationOverlayGeoJSON && (
+          <Source id="optimization-overlay" type="geojson" data={optimizationOverlayGeoJSON}>
+            {/* Lines from current to recommended position */}
+            <Layer
+              id="optimization-lines"
+              type="line"
+              filter={['==', ['get', 'type'], 'optimization-line']}
+              paint={{
+                'line-color': '#10b981',
+                'line-width': 3,
+                'line-dasharray': [3, 2]
+              }}
+            />
+            {/* Recommended position circles */}
+            <Layer
+              id="optimization-points"
+              type="circle"
+              filter={['==', ['get', 'type'], 'recommended-point']}
+              paint={{
+                'circle-radius': 10,
+                'circle-color': '#10b981',
+                'circle-stroke-color': '#ffffff',
+                'circle-stroke-width': 2,
+                'circle-opacity': 0.8
+              }}
+            />
+            {/* Labels for recommended positions */}
+            <Layer
+              id="optimization-labels"
+              type="symbol"
+              filter={['==', ['get', 'type'], 'recommended-point']}
+              layout={{
+                'text-field': '推奨',
+                'text-size': 10,
+                'text-offset': [0, 1.5]
+              }}
+              paint={{
+                'text-color': '#059669',
+                'text-halo-color': '#ffffff',
+                'text-halo-width': 1
               }}
             />
           </Source>

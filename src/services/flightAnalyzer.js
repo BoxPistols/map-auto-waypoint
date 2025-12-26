@@ -5,12 +5,570 @@
  * - 空港・禁止区域との距離計算
  * - DID（人口集中地区）判定
  * - OpenAI連携による総合分析
+ * - 申請コスト・タイムライン計算
+ * - UTM干渉チェック
+ * - 最適機体推奨
  */
 
 import * as turf from '@turf/turf';
 import { checkAirspaceRestrictions, AIRPORT_ZONES, NO_FLY_ZONES } from './airspace';
 import { analyzeFlightPlan, getRecommendedParameters, hasApiKey } from './openaiService';
 import { getLocationInfo, hasReinfolibApiKey } from './reinfolibService';
+
+// ===== DID (人口集中地区) 判定 =====
+
+/**
+ * 主要都市のDIDエリア（概略データ）
+ * 実際のDIDはGSIタイルから取得するが、オフライン用にキャッシュ
+ */
+const MAJOR_DID_AREAS = [
+  // 東京23区
+  { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 15000 },
+  { name: '渋谷・新宿', lat: 35.6585, lng: 139.7013, radius: 5000 },
+  { name: '池袋', lat: 35.7295, lng: 139.7109, radius: 3000 },
+  // 大阪
+  { name: '大阪市中心', lat: 34.6937, lng: 135.5023, radius: 10000 },
+  // 名古屋
+  { name: '名古屋市中心', lat: 35.1815, lng: 136.9066, radius: 8000 },
+  // 福岡
+  { name: '福岡市中心', lat: 33.5904, lng: 130.4017, radius: 6000 },
+  // 札幌
+  { name: '札幌市中心', lat: 43.0618, lng: 141.3545, radius: 7000 },
+  // 横浜
+  { name: '横浜市中心', lat: 35.4437, lng: 139.6380, radius: 8000 },
+  // 神戸
+  { name: '神戸市中心', lat: 34.6901, lng: 135.1956, radius: 5000 },
+  // 京都
+  { name: '京都市中心', lat: 35.0116, lng: 135.7681, radius: 5000 },
+];
+
+/**
+ * DID（人口集中地区）判定
+ * @param {number} lat - 緯度
+ * @param {number} lng - 経度
+ * @returns {Object} DID判定結果
+ */
+export const checkDIDArea = (lat, lng) => {
+  for (const did of MAJOR_DID_AREAS) {
+    const distance = getDistanceMeters(lat, lng, did.lat, did.lng);
+    if (distance < did.radius) {
+      return {
+        isDID: true,
+        area: did.name,
+        distance: Math.round(distance),
+        certainty: 'estimated', // GSIタイル未使用のため推定
+        description: `${did.name}のDID内（人口集中地区）`
+      };
+    }
+  }
+
+  return {
+    isDID: false,
+    area: null,
+    certainty: 'estimated',
+    description: 'DID外（人口集中地区外）'
+  };
+};
+
+// ===== 申請コスト・タイムライン計算 =====
+
+/**
+ * 申請区分と費用データ
+ */
+const APPLICATION_CATEGORIES = {
+  DID: {
+    name: 'DID上空飛行',
+    baseDays: 10,
+    documents: ['飛行計画書', '機体情報', '操縦者証明', '保険証書'],
+    coordination: [{ stakeholder: '地権者', leadTime: 7 }],
+    notes: '包括申請があれば個別申請不要な場合あり'
+  },
+  AIRPORT: {
+    name: '空港等周辺飛行',
+    baseDays: 14,
+    documents: ['飛行計画書', '空域図', '連絡先一覧'],
+    coordination: [
+      { stakeholder: '空港事務所', leadTime: 14, required: true },
+      { stakeholder: '航空局', leadTime: 10 }
+    ],
+    notes: '空港管制との事前調整が必須'
+  },
+  HIGH_ALTITUDE: {
+    name: '150m以上の高高度飛行',
+    baseDays: 14,
+    documents: ['飛行計画書', '高度計画図'],
+    coordination: [{ stakeholder: '航空局', leadTime: 14 }],
+    notes: '航空機との干渉リスクが高いため厳格な審査'
+  },
+  NIGHT: {
+    name: '夜間飛行',
+    baseDays: 10,
+    documents: ['飛行計画書', '照明計画', '安全対策書'],
+    coordination: [],
+    notes: '視認性確保の照明設備が必要'
+  },
+  BVLOS: {
+    name: '目視外飛行',
+    baseDays: 10,
+    documents: ['飛行計画書', '通信計画', '補助者配置計画'],
+    coordination: [],
+    notes: '補助者なし目視外は更に厳格'
+  }
+};
+
+/**
+ * 申請コストとタイムラインを計算
+ * @param {Object} analysisResult - フライト分析結果
+ * @returns {Object} 申請コスト詳細
+ */
+export const calculateApplicationCosts = (analysisResult) => {
+  const { risks, context } = analysisResult;
+  const applications = [];
+  let totalDays = 0;
+  let totalCost = 0;
+  const allDocuments = new Set();
+  const allCoordination = [];
+
+  // DIDチェック
+  const didCheck = context?.center ? checkDIDArea(context.center.lat, context.center.lng) : null;
+  if (didCheck?.isDID) {
+    const cat = APPLICATION_CATEGORIES.DID;
+    applications.push({
+      type: 'DID',
+      name: cat.name,
+      required: true,
+      estimatedDays: cat.baseDays,
+      reason: didCheck.description
+    });
+    totalDays = Math.max(totalDays, cat.baseDays);
+    cat.documents.forEach(d => allDocuments.add(d));
+    allCoordination.push(...cat.coordination);
+  }
+
+  // 空港近接チェック
+  if (risks.some(r => r.type === 'airport_proximity')) {
+    const cat = APPLICATION_CATEGORIES.AIRPORT;
+    applications.push({
+      type: 'AIRPORT',
+      name: cat.name,
+      required: true,
+      estimatedDays: cat.baseDays,
+      reason: '空港制限区域内での飛行'
+    });
+    totalDays = Math.max(totalDays, cat.baseDays);
+    cat.documents.forEach(d => allDocuments.add(d));
+    allCoordination.push(...cat.coordination);
+  }
+
+  // 高高度チェック
+  if (risks.some(r => r.type === 'high_altitude')) {
+    const cat = APPLICATION_CATEGORIES.HIGH_ALTITUDE;
+    applications.push({
+      type: 'HIGH_ALTITUDE',
+      name: cat.name,
+      required: true,
+      estimatedDays: cat.baseDays,
+      reason: '150m超の飛行高度'
+    });
+    totalDays = Math.max(totalDays, cat.baseDays);
+    cat.documents.forEach(d => allDocuments.add(d));
+    allCoordination.push(...cat.coordination);
+  }
+
+  // BVLOS（目視外）は常に追加（ドローン飛行の一般的なケース）
+  const bvlosCat = APPLICATION_CATEGORIES.BVLOS;
+  applications.push({
+    type: 'BVLOS',
+    name: bvlosCat.name,
+    required: true,
+    estimatedDays: bvlosCat.baseDays,
+    reason: '目視外飛行の標準申請'
+  });
+  totalDays = Math.max(totalDays, bvlosCat.baseDays);
+  bvlosCat.documents.forEach(d => allDocuments.add(d));
+
+  // コスト計算（申請自体は無料だが関連費用を算出）
+  const coordinationCost = allCoordination.length * 5000; // 調整コスト概算
+  totalCost = coordinationCost;
+
+  return {
+    applications,
+    totalEstimatedDays: totalDays,
+    totalEstimatedCost: totalCost,
+    requiredDocuments: [...allDocuments],
+    coordination: allCoordination,
+    timeline: generateTimeline(applications, totalDays),
+    tips: [
+      '包括申請（1年有効）があれば個別申請が不要な場合があります',
+      'DIPS2.0での事前登録で申請がスムーズに',
+      '第二種機体認証で一部許可が不要に'
+    ]
+  };
+};
+
+/**
+ * 申請タイムラインを生成
+ */
+const generateTimeline = (applications, totalDays) => {
+  const timeline = [];
+  const today = new Date();
+
+  timeline.push({
+    day: 0,
+    date: today.toISOString().split('T')[0],
+    event: '申請準備開始',
+    tasks: ['書類準備', '関係者連絡']
+  });
+
+  if (applications.some(a => a.type === 'AIRPORT')) {
+    timeline.push({
+      day: 1,
+      date: addDays(today, 1).toISOString().split('T')[0],
+      event: '空港事務所連絡',
+      tasks: ['事前調整依頼', '飛行計画共有']
+    });
+  }
+
+  timeline.push({
+    day: 3,
+    date: addDays(today, 3).toISOString().split('T')[0],
+    event: 'DIPS申請',
+    tasks: ['オンライン申請', '書類アップロード']
+  });
+
+  timeline.push({
+    day: totalDays,
+    date: addDays(today, totalDays).toISOString().split('T')[0],
+    event: '承認予定',
+    tasks: ['飛行許可取得', '最終確認']
+  });
+
+  return timeline;
+};
+
+const addDays = (date, days) => {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+};
+
+// ===== UTM (空域管理) 干渉チェック =====
+
+/**
+ * 既存のUTM登録飛行（シミュレーションデータ）
+ */
+const SIMULATED_UTM_FLIGHTS = [
+  {
+    id: 'UTM-2024-001',
+    operator: '○○測量株式会社',
+    area: { lat: 35.68, lng: 139.76, radius: 500 },
+    altitude: { min: 30, max: 100 },
+    timeSlots: ['09:00-12:00', '14:00-17:00'],
+    purpose: '測量飛行'
+  },
+  {
+    id: 'UTM-2024-002',
+    operator: '△△点検サービス',
+    area: { lat: 35.55, lng: 139.78, radius: 1000 },
+    altitude: { min: 50, max: 150 },
+    timeSlots: ['10:00-15:00'],
+    purpose: 'インフラ点検'
+  }
+];
+
+/**
+ * UTM干渉チェック
+ * @param {Object} flightPlan - フライトプラン
+ * @param {Object} options - オプション（時間帯など）
+ * @returns {Object} 干渉チェック結果
+ */
+export const checkUTMConflicts = (flightPlan, options = {}) => {
+  const { center } = flightPlan;
+  const { plannedTime = '10:00-12:00', altitude = 50 } = options;
+
+  if (!center) {
+    return {
+      checked: false,
+      conflicts: [],
+      warnings: [],
+      clearForFlight: true,
+      message: '位置情報がないためUTMチェックをスキップ'
+    };
+  }
+
+  const conflicts = [];
+  const warnings = [];
+
+  for (const flight of SIMULATED_UTM_FLIGHTS) {
+    const distance = getDistanceMeters(center.lat, center.lng, flight.area.lat, flight.area.lng);
+
+    // 距離チェック
+    if (distance < flight.area.radius + 500) { // 500mバッファ
+      // 時間重複チェック
+      const timeOverlap = checkTimeOverlap(plannedTime, flight.timeSlots);
+
+      // 高度重複チェック
+      const altitudeOverlap = altitude >= flight.altitude.min - 30 &&
+        altitude <= flight.altitude.max + 30;
+
+      if (timeOverlap && altitudeOverlap) {
+        conflicts.push({
+          id: flight.id,
+          severity: 'WARNING',
+          operator: flight.operator,
+          purpose: flight.purpose,
+          distance: Math.round(distance),
+          timeSlots: flight.timeSlots,
+          recommendation: '時間帯の変更または事前調整を推奨'
+        });
+      } else if (distance < flight.area.radius) {
+        warnings.push({
+          id: flight.id,
+          severity: 'INFO',
+          operator: flight.operator,
+          distance: Math.round(distance),
+          message: '同エリアで他の飛行予定あり（時間帯は異なる）'
+        });
+      }
+    }
+  }
+
+  return {
+    checked: true,
+    conflicts,
+    warnings,
+    clearForFlight: conflicts.length === 0,
+    totalConflicts: conflicts.length,
+    totalWarnings: warnings.length,
+    recommendations: conflicts.length > 0
+      ? ['他オペレーターとの事前調整を推奨', '飛行時間帯の変更を検討']
+      : warnings.length > 0
+        ? ['念のため周辺オペレーターへの通知を推奨']
+        : ['UTM干渉なし、安全に飛行可能'],
+    message: conflicts.length > 0
+      ? `${conflicts.length}件の飛行計画と重複の可能性があります`
+      : 'UTM干渉は検出されませんでした'
+  };
+};
+
+/**
+ * 時間帯の重複をチェック
+ */
+const checkTimeOverlap = (plannedTime, existingSlots) => {
+  const [plannedStart, plannedEnd] = plannedTime.split('-').map(t => parseInt(t.replace(':', '')));
+
+  for (const slot of existingSlots) {
+    const [slotStart, slotEnd] = slot.split('-').map(t => parseInt(t.replace(':', '')));
+    if (plannedStart < slotEnd && plannedEnd > slotStart) {
+      return true;
+    }
+  }
+  return false;
+};
+
+// ===== 機体推奨ロジック =====
+
+/**
+ * 機体データベース
+ */
+const AIRCRAFT_DATABASE = [
+  {
+    id: 'matrice-300-rtk',
+    model: 'DJI Matrice 300 RTK',
+    manufacturer: 'DJI',
+    category: 'enterprise',
+    specs: {
+      maxFlightTime: 55,
+      maxPayload: 2700, // g
+      maxSpeed: 23, // m/s
+      maxAltitude: 5000, // m
+      windResistance: 15, // m/s
+      operatingTemp: [-20, 50],
+      rtk: true,
+      thermalCamera: true
+    },
+    suitableFor: ['survey', 'inspection', 'mapping', 'thermal'],
+    price: 'high',
+    pros: ['長時間飛行', 'RTK高精度', 'マルチペイロード', '耐風性'],
+    cons: ['高価格', '大型で運搬に注意']
+  },
+  {
+    id: 'mavic-3-enterprise',
+    model: 'DJI Mavic 3 Enterprise',
+    manufacturer: 'DJI',
+    category: 'enterprise',
+    specs: {
+      maxFlightTime: 45,
+      maxPayload: 0,
+      maxSpeed: 21,
+      maxAltitude: 6000,
+      windResistance: 12,
+      operatingTemp: [-10, 40],
+      rtk: true,
+      thermalCamera: true
+    },
+    suitableFor: ['inspection', 'survey', 'thermal', 'general'],
+    price: 'medium',
+    pros: ['コンパクト', '持ち運び容易', '熱画像対応', 'RTKオプション'],
+    cons: ['ペイロード不可', '大型機より飛行時間短め']
+  },
+  {
+    id: 'phantom-4-rtk',
+    model: 'DJI Phantom 4 RTK',
+    manufacturer: 'DJI',
+    category: 'survey',
+    specs: {
+      maxFlightTime: 30,
+      maxPayload: 0,
+      maxSpeed: 16,
+      maxAltitude: 6000,
+      windResistance: 10,
+      operatingTemp: [0, 40],
+      rtk: true,
+      thermalCamera: false
+    },
+    suitableFor: ['survey', 'mapping', 'photogrammetry'],
+    price: 'medium',
+    pros: ['測量特化', '高精度RTK', 'PPK対応', '実績豊富'],
+    cons: ['熱画像なし', '限定的な用途']
+  },
+  {
+    id: 'matrice-30t',
+    model: 'DJI Matrice 30T',
+    manufacturer: 'DJI',
+    category: 'enterprise',
+    specs: {
+      maxFlightTime: 41,
+      maxPayload: 0,
+      maxSpeed: 23,
+      maxAltitude: 7000,
+      windResistance: 15,
+      operatingTemp: [-20, 50],
+      rtk: true,
+      thermalCamera: true
+    },
+    suitableFor: ['inspection', 'thermal', 'search', 'emergency'],
+    price: 'high',
+    pros: ['熱画像内蔵', '高耐久性', '全天候対応', 'ズームカメラ'],
+    cons: ['高価格']
+  },
+  {
+    id: 'mavic-3t',
+    model: 'DJI Mavic 3T',
+    manufacturer: 'DJI',
+    category: 'thermal',
+    specs: {
+      maxFlightTime: 45,
+      maxPayload: 0,
+      maxSpeed: 21,
+      maxAltitude: 6000,
+      windResistance: 12,
+      operatingTemp: [-10, 40],
+      rtk: false,
+      thermalCamera: true
+    },
+    suitableFor: ['thermal', 'inspection', 'solar'],
+    price: 'medium',
+    pros: ['熱画像特化', 'コンパクト', 'コスパ良好'],
+    cons: ['RTKなし', '測量には不向き']
+  }
+];
+
+/**
+ * ミッションに最適な機体を推奨
+ * @param {string} purpose - ミッション目的
+ * @param {Object} requirements - 要件（飛行時間、高度など）
+ * @returns {Array} 推奨機体リスト
+ */
+export const recommendAircraft = (purpose, requirements = {}) => {
+  const { flightTime = 30, altitude = 50, needsThermal = false, needsRTK = false } = requirements;
+
+  const purposeLower = purpose.toLowerCase();
+  let missionType = 'general';
+
+  // ミッションタイプの判定
+  if (purposeLower.includes('太陽光') || purposeLower.includes('ソーラー') || purposeLower.includes('熱')) {
+    missionType = 'thermal';
+  } else if (purposeLower.includes('測量') || purposeLower.includes('3d') || purposeLower.includes('マッピング')) {
+    missionType = 'survey';
+  } else if (purposeLower.includes('点検') || purposeLower.includes('送電') || purposeLower.includes('インフラ')) {
+    missionType = 'inspection';
+  }
+
+  const scoredAircraft = AIRCRAFT_DATABASE.map(aircraft => {
+    let score = 50; // ベーススコア
+    const matchReasons = [];
+    const limitations = [];
+
+    // ミッションタイプマッチ
+    if (aircraft.suitableFor.includes(missionType)) {
+      score += 30;
+      matchReasons.push(`${missionType}ミッションに適合`);
+    }
+
+    // 飛行時間要件
+    if (aircraft.specs.maxFlightTime >= flightTime) {
+      score += 10;
+      matchReasons.push(`飛行時間${aircraft.specs.maxFlightTime}分で要件を満たす`);
+    } else {
+      score -= 20;
+      limitations.push(`飛行時間${aircraft.specs.maxFlightTime}分は要件未満`);
+    }
+
+    // 熱画像要件
+    if (needsThermal || missionType === 'thermal') {
+      if (aircraft.specs.thermalCamera) {
+        score += 20;
+        matchReasons.push('熱画像カメラ搭載');
+      } else {
+        score -= 30;
+        limitations.push('熱画像カメラなし');
+      }
+    }
+
+    // RTK要件
+    if (needsRTK || missionType === 'survey') {
+      if (aircraft.specs.rtk) {
+        score += 15;
+        matchReasons.push('RTK対応で高精度');
+      } else {
+        score -= 15;
+        limitations.push('RTK非対応');
+      }
+    }
+
+    // 価格スコア（中価格帯にボーナス）
+    if (aircraft.price === 'medium') {
+      score += 5;
+      matchReasons.push('コストパフォーマンス良好');
+    }
+
+    return {
+      ...aircraft,
+      suitability: Math.max(0, Math.min(100, score)),
+      matchReasons,
+      limitations: [...aircraft.cons, ...limitations]
+    };
+  });
+
+  // スコア順にソート
+  return scoredAircraft
+    .sort((a, b) => b.suitability - a.suitability)
+    .slice(0, 3) // 上位3機種
+    .map(a => ({
+      model: a.model,
+      manufacturer: a.manufacturer,
+      suitability: a.suitability,
+      reasons: a.matchReasons,
+      limitations: a.limitations,
+      specs: {
+        flightTime: `${a.specs.maxFlightTime}分`,
+        windResistance: `${a.specs.windResistance}m/s`,
+        rtk: a.specs.rtk,
+        thermal: a.specs.thermalCamera
+      }
+    }));
+};
 
 /**
  * ポリゴンの中心座標を計算
@@ -363,9 +921,22 @@ export const analyzeFlightPlanLocal = (polygons, waypoints, options = {}) => {
   // 最寄り空港
   const nearestAirport = center ? findNearestAirport(center.lat, center.lng) : null;
 
+  // DID判定
+  const didInfo = center ? checkDIDArea(center.lat, center.lng) : null;
+
   // リスクスコア計算
   let riskScore = 0;
   const risks = [];
+
+  // DIDチェック
+  if (didInfo?.isDID) {
+    riskScore += 25;
+    risks.push({
+      type: 'did_area',
+      description: `人口集中地区（${didInfo.area}）`,
+      severity: 'medium'
+    });
+  }
 
   // 禁止区域チェック
   const criticalZones = restrictions.filter(r => r.severity === 'critical');
@@ -437,12 +1008,21 @@ export const analyzeFlightPlanLocal = (polygons, waypoints, options = {}) => {
 
   // 必要な許可
   const requiredPermissions = [];
+  if (didInfo?.isDID) {
+    requiredPermissions.push('DID（人口集中地区）上空の飛行許可');
+  }
   if (airportZones.length > 0) {
     requiredPermissions.push('空港等周辺飛行の許可・承認');
   }
   if (altitude > 150) {
     requiredPermissions.push('150m以上の高度での飛行許可');
   }
+
+  // 機体推奨
+  const aircraftRecommendations = purpose ? recommendAircraft(purpose, { altitude }) : null;
+
+  // UTMチェック
+  const utmCheck = center ? checkUTMConflicts({ center }, { altitude }) : null;
 
   return {
     riskLevel,
@@ -464,11 +1044,14 @@ export const analyzeFlightPlanLocal = (polygons, waypoints, options = {}) => {
       'バッテリー残量の確認',
       '第三者への注意喚起'
     ],
+    aircraftRecommendations,
+    utmCheck,
     context: {
       center,
       areaSqMeters,
       restrictions,
       nearestAirport,
+      didInfo,
       waypointCount: waypoints.length
     }
   };
@@ -541,7 +1124,7 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
       areaSqMeters: localAnalysis.context.areaSqMeters,
       waypointCount: localAnalysis.context.waypointCount,
       restrictions: localAnalysis.context.restrictions,
-      isDID: false, // TODO: DID判定の実装
+      isDID: localAnalysis.context?.didInfo?.isDID || false,
       purpose,
       altitude,
       maxElevation: waypoints.length > 0
@@ -677,5 +1260,10 @@ export default {
   getFlightRecommendations,
   analyzeWaypointGaps,
   analyzePolygonGaps,
-  generateOptimizationPlan
+  generateOptimizationPlan,
+  // 新機能
+  checkDIDArea,
+  calculateApplicationCosts,
+  checkUTMConflicts,
+  recommendAircraft
 };

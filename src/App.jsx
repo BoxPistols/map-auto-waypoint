@@ -46,6 +46,9 @@ function App() {
   const [isLoadingElevation, setIsLoadingElevation] = useState(false)
   const [elevationProgress, setElevationProgress] = useState(null)
 
+  // Optimization overlay state
+  const [recommendedWaypoints, setRecommendedWaypoints] = useState(null)
+
   // Show notification (defined early for use in undo/redo)
   const showNotification = useCallback((message, type = 'info') => {
     setNotification({ message, type })
@@ -767,6 +770,7 @@ function App() {
             zoom={zoom}
             polygons={polygons}
             waypoints={waypoints}
+            recommendedWaypoints={recommendedWaypoints}
             onPolygonCreate={handlePolygonCreate}
             onPolygonUpdate={handlePolygonUpdate}
             onPolygonDelete={handlePolygonDelete}
@@ -853,6 +857,14 @@ function App() {
       <FlightAssistant
         polygons={polygons}
         waypoints={waypoints}
+        onOptimizationUpdate={(optimizationPlan) => {
+          // 推奨位置のオーバーレイ表示用
+          if (optimizationPlan?.hasIssues && optimizationPlan.recommendedWaypoints) {
+            setRecommendedWaypoints(optimizationPlan.recommendedWaypoints)
+          } else {
+            setRecommendedWaypoints(null)
+          }
+        }}
         onApplyPlan={(plan) => {
           // 推奨プランを適用
           if (plan.waypoints && plan.waypoints.length > 0) {
@@ -879,6 +891,8 @@ function App() {
             ))
           }
 
+          // オーバーレイをクリア
+          setRecommendedWaypoints(null)
           showNotification('プランを安全な位置に最適化しました', 'success')
         }}
       />

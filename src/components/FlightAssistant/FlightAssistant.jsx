@@ -19,7 +19,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { hasApiKey, setApiKey, getFlightAdvice } from '../../services/openaiService';
-import { runFullAnalysis, getFlightRecommendations, generateOptimizationPlan } from '../../services/flightAnalyzer';
+import { runFullAnalysis, getFlightRecommendations, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
 import { hasReinfolibApiKey, setReinfolibApiKey } from '../../services/reinfolibService';
 import './FlightAssistant.scss';
 
@@ -32,7 +32,7 @@ import './FlightAssistant.scss';
  * - OpenAI連携による高度な分析
  * - 「判定！」ボタンで総合判定
  */
-function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
+function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -253,6 +253,18 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
         response += `${airport.name}: ${(airport.distance / 1000).toFixed(1)}km\n\n`;
       }
 
+      // DID情報
+      if (result.context?.didInfo) {
+        const did = result.context.didInfo;
+        response += `### 🏘️ 人口集中地区（DID）\n`;
+        if (did.isDID) {
+          response += `⚠️ ${did.description}\n`;
+        } else {
+          response += `✅ ${did.description}\n`;
+        }
+        response += '\n';
+      }
+
       // 用途地域情報（国土交通省API）
       if (result.context?.mlitInfo?.success) {
         const mlit = result.context.mlitInfo;
@@ -263,6 +275,31 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
         if (mlit.urbanArea?.areaName) {
           response += `• ${mlit.urbanArea.areaName}\n`;
         }
+        response += '\n';
+      }
+
+      // UTM干渉チェック
+      if (result.utmCheck?.checked) {
+        const utm = result.utmCheck;
+        response += `### 📡 UTM干渉チェック\n`;
+        if (utm.clearForFlight) {
+          response += `✅ ${utm.message}\n`;
+        } else {
+          response += `⚠️ ${utm.message}\n`;
+          utm.conflicts.forEach(c => {
+            response += `• ${c.operator}: ${c.recommendation}\n`;
+          });
+        }
+        response += '\n';
+      }
+
+      // 機体推奨
+      if (result.aircraftRecommendations && result.aircraftRecommendations.length > 0) {
+        response += `### 🚁 推奨機体\n`;
+        result.aircraftRecommendations.slice(0, 2).forEach((a, i) => {
+          response += `${i + 1}. **${a.model}** (適合度: ${a.suitability}%)\n`;
+          response += `   • ${a.reasons.slice(0, 2).join(', ')}\n`;
+        });
         response += '\n';
       }
 
@@ -282,9 +319,27 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan }) {
         response += `\n承認取得目安: **${result.estimatedApprovalDays}日**\n`;
       }
 
+      // 申請コスト詳細
+      const applicationCosts = calculateApplicationCosts(result);
+      if (applicationCosts.applications.length > 0) {
+        response += `\n### 📋 申請タイムライン\n`;
+        applicationCosts.timeline.forEach(t => {
+          response += `• Day ${t.day}: ${t.event}\n`;
+        });
+        response += `\n**必要書類**: ${applicationCosts.requiredDocuments.slice(0, 4).join('、')}\n`;
+        if (applicationCosts.tips.length > 0) {
+          response += `\n💡 ${applicationCosts.tips[0]}\n`;
+        }
+      }
+
       // ギャップ分析と最適化提案
       const optimization = generateOptimizationPlan(polygons, waypoints);
       setOptimizationPlan(optimization);
+
+      // 親コンポーネントに通知（マップオーバーレイ用）
+      if (onOptimizationUpdate) {
+        onOptimizationUpdate(optimization);
+      }
 
       if (optimization.hasIssues) {
         response += `### 🔧 プラン最適化の提案\n`;
