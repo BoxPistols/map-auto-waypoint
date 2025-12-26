@@ -3,7 +3,7 @@
  *
  * 実データに基づくドローン飛行のリスク判定
  * - 空港・禁止区域との距離計算
- * - DID（人口集中地区）判定
+ * - DID（人口集中地区）判定（国土地理院タイル使用）
  * - OpenAI連携による総合分析
  * - 申請コスト・タイムライン計算
  * - UTM干渉チェック
@@ -15,49 +15,189 @@ import { checkAirspaceRestrictions, AIRPORT_ZONES, NO_FLY_ZONES } from './airspa
 import { analyzeFlightPlan, getRecommendedParameters, hasApiKey } from './openaiService';
 import { getLocationInfo, hasReinfolibApiKey } from './reinfolibService';
 
+// ===== ユーティリティ関数 =====
+
+/**
+ * 2点間の距離を計算（メートル）
+ */
+const getDistanceMeters = (lat1, lng1, lat2, lng2) => {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 // ===== DID (人口集中地区) 判定 =====
 
 /**
- * 主要都市のDIDエリア（概略データ）
- * 実際のDIDはGSIタイルから取得するが、オフライン用にキャッシュ
+ * 緯度経度からタイル座標を計算
+ * @param {number} lat - 緯度
+ * @param {number} lng - 経度
+ * @param {number} zoom - ズームレベル
+ * @returns {{ x: number, y: number }} タイル座標
  */
-const MAJOR_DID_AREAS = [
-  // 東京23区
-  { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 15000 },
-  { name: '渋谷・新宿', lat: 35.6585, lng: 139.7013, radius: 5000 },
-  { name: '池袋', lat: 35.7295, lng: 139.7109, radius: 3000 },
-  // 大阪
-  { name: '大阪市中心', lat: 34.6937, lng: 135.5023, radius: 10000 },
-  // 名古屋
-  { name: '名古屋市中心', lat: 35.1815, lng: 136.9066, radius: 8000 },
-  // 福岡
-  { name: '福岡市中心', lat: 33.5904, lng: 130.4017, radius: 6000 },
-  // 札幌
-  { name: '札幌市中心', lat: 43.0618, lng: 141.3545, radius: 7000 },
-  // 横浜
-  { name: '横浜市中心', lat: 35.4437, lng: 139.6380, radius: 8000 },
-  // 神戸
-  { name: '神戸市中心', lat: 34.6901, lng: 135.1956, radius: 5000 },
-  // 京都
-  { name: '京都市中心', lat: 35.0116, lng: 135.7681, radius: 5000 },
-];
+const latLngToTile = (lat, lng, zoom) => {
+  const n = Math.pow(2, zoom);
+  const x = Math.floor((lng + 180) / 360 * n);
+  const latRad = lat * Math.PI / 180;
+  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+  return { x, y };
+};
 
 /**
- * DID（人口集中地区）判定
+ * DIDタイルのキャッシュ（メモリ内）
+ */
+const didTileCache = new Map();
+
+/**
+ * 国土地理院DID GeoJSONタイルを取得
+ * @param {number} x - タイルX座標
+ * @param {number} y - タイルY座標
+ * @param {number} z - ズームレベル
+ * @returns {Promise<Object|null>} GeoJSONデータ
+ */
+const fetchDIDTile = async (x, y, z) => {
+  const cacheKey = `${z}/${x}/${y}`;
+
+  // キャッシュチェック
+  if (didTileCache.has(cacheKey)) {
+    return didTileCache.get(cacheKey);
+  }
+
+  // fetch APIが利用できない環境（テスト環境等）ではスキップ
+  if (typeof fetch === 'undefined') {
+    return null;
+  }
+
+  try {
+    const url = `https://cyberjapandata.gsi.go.jp/xyz/did2015/${z}/${x}/${y}.geojson`;
+    const response = await fetch(url);
+
+    // response が undefined の場合（テスト環境等）
+    if (!response) {
+      return null;
+    }
+
+    if (!response.ok) {
+      // タイルが存在しない（404）= その地域にDIDがない
+      if (response.status === 404) {
+        didTileCache.set(cacheKey, null);
+        return null;
+      }
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const geojson = await response.json();
+    didTileCache.set(cacheKey, geojson);
+    return geojson;
+  } catch (error) {
+    // エラー時はフォールバックにフォールスルー（警告は抑制）
+    return null;
+  }
+};
+
+/**
+ * DID（人口集中地区）判定 - 国土地理院タイル使用
+ * @param {number} lat - 緯度
+ * @param {number} lng - 経度
+ * @returns {Promise<Object>} DID判定結果
+ */
+export const checkDIDArea = async (lat, lng) => {
+  // ズームレベル12でタイル取得（詳細度とパフォーマンスのバランス）
+  const zoom = 12;
+  const tile = latLngToTile(lat, lng, zoom);
+
+  try {
+    const geojson = await fetchDIDTile(tile.x, tile.y, zoom);
+
+    // GSIタイルが取得できなかった場合はフォールバック使用
+    if (geojson === null) {
+      return checkDIDAreaFallback(lat, lng);
+    }
+
+    // タイルは取得できたが特徴がない場合 = DID外
+    if (!geojson.features || geojson.features.length === 0) {
+      return {
+        isDID: false,
+        area: null,
+        certainty: 'confirmed',
+        source: 'GSI',
+        description: 'DID外（人口集中地区外）- 国土地理院データ確認済'
+      };
+    }
+
+    // 判定対象の点
+    const point = turf.point([lng, lat]);
+
+    // 各DIDポリゴンと照合
+    for (const feature of geojson.features) {
+      if (feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
+        try {
+          if (turf.booleanPointInPolygon(point, feature)) {
+            const areaName = feature.properties?.CITY_NAME ||
+                           feature.properties?.PREF_NAME ||
+                           feature.properties?.KEN_NAME ||
+                           '人口集中地区';
+            return {
+              isDID: true,
+              area: areaName,
+              certainty: 'confirmed',
+              source: 'GSI',
+              description: `${areaName}のDID内（人口集中地区）- 国土地理院データ`,
+              population: feature.properties?.JINKO || null
+            };
+          }
+        } catch (e) {
+          // 無効なジオメトリはスキップ
+          continue;
+        }
+      }
+    }
+
+    return {
+      isDID: false,
+      area: null,
+      certainty: 'confirmed',
+      source: 'GSI',
+      description: 'DID外（人口集中地区外）- 国土地理院データ確認済'
+    };
+  } catch (error) {
+    console.error('[DID] Check failed, falling back to estimation:', error);
+    // フォールバック: 主要都市の推定データを使用
+    return checkDIDAreaFallback(lat, lng);
+  }
+};
+
+/**
+ * DID判定フォールバック（オフライン用）
  * @param {number} lat - 緯度
  * @param {number} lng - 経度
  * @returns {Object} DID判定結果
  */
-export const checkDIDArea = (lat, lng) => {
+const checkDIDAreaFallback = (lat, lng) => {
+  const MAJOR_DID_AREAS = [
+    { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 15000 },
+    { name: '大阪市中心', lat: 34.6937, lng: 135.5023, radius: 10000 },
+    { name: '名古屋市中心', lat: 35.1815, lng: 136.9066, radius: 8000 },
+    { name: '福岡市中心', lat: 33.5904, lng: 130.4017, radius: 6000 },
+    { name: '札幌市中心', lat: 43.0618, lng: 141.3545, radius: 7000 },
+    { name: '横浜市中心', lat: 35.4437, lng: 139.6380, radius: 8000 },
+  ];
+
   for (const did of MAJOR_DID_AREAS) {
     const distance = getDistanceMeters(lat, lng, did.lat, did.lng);
     if (distance < did.radius) {
       return {
         isDID: true,
         area: did.name,
-        distance: Math.round(distance),
-        certainty: 'estimated', // GSIタイル未使用のため推定
-        description: `${did.name}のDID内（人口集中地区）`
+        certainty: 'estimated',
+        source: 'fallback',
+        description: `${did.name}のDID内（推定）- オフラインデータ`
       };
     }
   }
@@ -66,7 +206,8 @@ export const checkDIDArea = (lat, lng) => {
     isDID: false,
     area: null,
     certainty: 'estimated',
-    description: 'DID外（人口集中地区外）'
+    source: 'fallback',
+    description: 'DID外（推定）- 国土地理院データ取得失敗'
   };
 };
 
@@ -129,8 +270,8 @@ export const calculateApplicationCosts = (analysisResult) => {
   const allDocuments = new Set();
   const allCoordination = [];
 
-  // DIDチェック
-  const didCheck = context?.center ? checkDIDArea(context.center.lat, context.center.lng) : null;
+  // DIDチェック（既にcontext.didInfoに格納済み）
+  const didCheck = context?.didInfo || null;
   if (didCheck?.isDID) {
     const cat = APPLICATION_CATEGORIES.DID;
     applications.push({
@@ -639,21 +780,6 @@ export const findNearestAirport = (lat, lng) => {
   return nearest;
 };
 
-/**
- * 2点間の距離を計算（メートル）
- */
-const getDistanceMeters = (lat1, lng1, lat2, lng2) => {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
 // getDistanceMetersをエクスポート
 export { getDistanceMeters };
 
@@ -903,7 +1029,7 @@ export const generateOptimizationPlan = (polygons, waypoints) => {
 /**
  * ローカルリスク判定（OpenAI不要）
  */
-export const analyzeFlightPlanLocal = (polygons, waypoints, options = {}) => {
+export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) => {
   const { altitude = 50, purpose = '' } = options;
 
   // 基本情報収集
@@ -921,8 +1047,8 @@ export const analyzeFlightPlanLocal = (polygons, waypoints, options = {}) => {
   // 最寄り空港
   const nearestAirport = center ? findNearestAirport(center.lat, center.lng) : null;
 
-  // DID判定
-  const didInfo = center ? checkDIDArea(center.lat, center.lng) : null;
+  // DID判定（国土地理院タイルから取得）
+  const didInfo = center ? await checkDIDArea(center.lat, center.lng) : null;
 
   // リスクスコア計算
   let riskScore = 0;

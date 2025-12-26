@@ -260,7 +260,7 @@ describe('flightAnalyzer', () => {
   });
 
   describe('analyzeFlightPlanLocal', () => {
-    it('安全なエリアで低リスク判定', () => {
+    it('安全なエリアで低リスク判定', async () => {
       const polygons = [createTestPolygon([
         [139.0, 35.3],
         [139.01, 35.3],
@@ -273,13 +273,13 @@ describe('flightAnalyzer', () => {
         createTestWaypoint('wp1', 35.3, 139.0, 1),
       ];
 
-      const result = analyzeFlightPlanLocal(polygons, waypoints);
+      const result = await analyzeFlightPlanLocal(polygons, waypoints);
 
       expect(result.riskLevel).toBe('LOW');
       expect(result.riskScore).toBeLessThan(20);
     });
 
-    it('空港付近で高リスク判定', () => {
+    it('空港付近で高リスク判定', async () => {
       const polygons = [createTestPolygon([
         [139.78, 35.55],
         [139.79, 35.55],
@@ -292,13 +292,13 @@ describe('flightAnalyzer', () => {
         createTestWaypoint('wp1', 35.5533, 139.7811, 1), // 羽田空港近く
       ];
 
-      const result = analyzeFlightPlanLocal(polygons, waypoints);
+      const result = await analyzeFlightPlanLocal(polygons, waypoints);
 
       expect(['HIGH', 'CRITICAL']).toContain(result.riskLevel);
       expect(result.riskScore).toBeGreaterThan(30);
     });
 
-    it('150m超の高度で高リスク判定', () => {
+    it('150m超の高度で高リスク判定', async () => {
       const polygons = [createTestPolygon([
         [139.0, 35.3],
         [139.01, 35.3],
@@ -307,12 +307,12 @@ describe('flightAnalyzer', () => {
         [139.0, 35.3]
       ])];
 
-      const result = analyzeFlightPlanLocal(polygons, [], { altitude: 200 });
+      const result = await analyzeFlightPlanLocal(polygons, [], { altitude: 200 });
 
       expect(result.risks.some(r => r.type === 'high_altitude')).toBe(true);
     });
 
-    it('推奨事項と安全チェックリストを含む', () => {
+    it('推奨事項と安全チェックリストを含む', async () => {
       const polygons = [createTestPolygon([
         [139.0, 35.3],
         [139.01, 35.3],
@@ -321,7 +321,7 @@ describe('flightAnalyzer', () => {
         [139.0, 35.3]
       ])];
 
-      const result = analyzeFlightPlanLocal(polygons, []);
+      const result = await analyzeFlightPlanLocal(polygons, []);
 
       expect(result.recommendations).toBeDefined();
       expect(result.recommendations.length).toBeGreaterThan(0);
@@ -329,7 +329,7 @@ describe('flightAnalyzer', () => {
       expect(result.safetyChecklist.length).toBeGreaterThan(0);
     });
 
-    it('コンテキスト情報を含む', () => {
+    it('コンテキスト情報を含む', async () => {
       const polygons = [createTestPolygon([
         [139.0, 35.3],
         [139.01, 35.3],
@@ -338,14 +338,14 @@ describe('flightAnalyzer', () => {
         [139.0, 35.3]
       ])];
 
-      const result = analyzeFlightPlanLocal(polygons, []);
+      const result = await analyzeFlightPlanLocal(polygons, []);
 
       expect(result.context).toBeDefined();
       expect(result.context.center).toBeDefined();
       expect(result.context.nearestAirport).toBeDefined();
     });
 
-    it('DID情報を含む', () => {
+    it('DID情報を含む', async () => {
       const polygons = [createTestPolygon([
         [139.7, 35.68],  // 東京都心部
         [139.71, 35.68],
@@ -354,13 +354,14 @@ describe('flightAnalyzer', () => {
         [139.7, 35.68]
       ])];
 
-      const result = analyzeFlightPlanLocal(polygons, []);
+      const result = await analyzeFlightPlanLocal(polygons, []);
 
+      // GSI取得失敗時はフォールバック使用
       expect(result.context.didInfo).toBeDefined();
       expect(result.context.didInfo.isDID).toBe(true);
     });
 
-    it('UTMチェック結果を含む', () => {
+    it('UTMチェック結果を含む', async () => {
       const polygons = [createTestPolygon([
         [139.0, 35.3],
         [139.01, 35.3],
@@ -369,7 +370,7 @@ describe('flightAnalyzer', () => {
         [139.0, 35.3]
       ])];
 
-      const result = analyzeFlightPlanLocal(polygons, []);
+      const result = await analyzeFlightPlanLocal(polygons, []);
 
       expect(result.utmCheck).toBeDefined();
       expect(result.utmCheck.checked).toBe(true);
@@ -377,25 +378,26 @@ describe('flightAnalyzer', () => {
   });
 
   describe('checkDIDArea', () => {
-    it('東京都心部でDIDと判定', () => {
-      const result = checkDIDArea(35.6812, 139.7671);
+    it('東京都心部でDIDと判定', async () => {
+      const result = await checkDIDArea(35.6812, 139.7671);
 
       expect(result.isDID).toBe(true);
-      expect(result.area).toBe('東京都心');
+      // GSI成功時は実際の地名、フォールバック時は'東京都心'
+      expect(result.area).toBeTruthy();
     });
 
-    it('郊外でDID外と判定', () => {
-      const result = checkDIDArea(35.3, 139.0);
+    it('郊外でDID外と判定', async () => {
+      const result = await checkDIDArea(35.3, 139.0);
 
       expect(result.isDID).toBe(false);
       expect(result.area).toBeNull();
     });
 
-    it('大阪市中心でDIDと判定', () => {
-      const result = checkDIDArea(34.6937, 135.5023);
+    it('大阪市中心でDIDと判定', async () => {
+      const result = await checkDIDArea(34.6937, 135.5023);
 
       expect(result.isDID).toBe(true);
-      expect(result.area).toBe('大阪市中心');
+      expect(result.area).toBeTruthy();
     });
   });
 
