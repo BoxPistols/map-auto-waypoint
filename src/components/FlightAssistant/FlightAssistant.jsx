@@ -90,7 +90,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       setShowSettings(false);
       setMessages(prev => [...prev, {
         role: 'system',
-        content: '✅ OpenAI APIキーを保存しました。AI分析が有効になりました。'
+        content: '[OK] OpenAI APIキーを保存しました。AI分析が有効になりました。'
       }]);
     }
   };
@@ -115,7 +115,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       setMlitKeyInput('');
       setMessages(prev => [...prev, {
         role: 'system',
-        content: '✅ 国土交通省APIキーを保存しました。用途地域・都市計画情報が利用可能になりました。'
+        content: '[OK] 国土交通省APIキーを保存しました。用途地域・都市計画情報が利用可能になりました。'
       }]);
     }
   };
@@ -139,7 +139,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     const model = AVAILABLE_MODELS.find(m => m.id === modelId);
     setMessages(prev => [...prev, {
       role: 'system',
-      content: `✅ AIモデルを ${model?.name || modelId} に変更しました`
+      content: `[OK] AIモデルを ${model?.name || modelId} に変更しました`
     }]);
   };
 
@@ -148,7 +148,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     setLocalEndpoint(localEndpoint);
     setMessages(prev => [...prev, {
       role: 'system',
-      content: `✅ ローカルLLMエンドポイントを設定しました: ${localEndpoint}`
+      content: `[OK] ローカルLLMエンドポイントを設定: ${localEndpoint}`
     }]);
   };
 
@@ -157,7 +157,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     setLocalModelName(localModelName);
     setMessages(prev => [...prev, {
       role: 'system',
-      content: `✅ ローカルLLMモデル名を設定しました: ${localModelName}`
+      content: `[OK] ローカルLLMモデル名を設定: ${localModelName}`
     }]);
   };
 
@@ -188,23 +188,23 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         });
 
         let response = `**推奨パラメータ**\n\n`;
-        response += `📍 **パターン**: ${recommendations.pattern === 'grid' ? 'グリッド' : '周回'}\n`;
-        response += `🛫 **推奨高度**: ${recommendations.altitude}m\n`;
-        response += `📷 **カメラ**: ${recommendations.camera}\n`;
-        response += `⏱️ **推定時間**: ${recommendations.estimatedFlightTime}\n\n`;
+        response += `**パターン**: ${recommendations.pattern === 'grid' ? 'グリッド' : '周回'}\n`;
+        response += `**推奨高度**: ${recommendations.altitude}m\n`;
+        response += `**カメラ**: ${recommendations.camera}\n`;
+        response += `**推定時間**: ${recommendations.estimatedFlightTime}\n\n`;
         response += `**推奨機体**:\n`;
         recommendations.recommendedAircraft.forEach(a => {
-          response += `• ${a}\n`;
+          response += `- ${a}\n`;
         });
         response += `\n**Tips**:\n`;
         recommendations.tips.forEach(t => {
-          response += `• ${t}\n`;
+          response += `- ${t}\n`;
         });
 
         if (polygons.length > 0) {
-          response += `\n✅ ポリゴンが設定済み。「判定！」で詳細分析できます。`;
+          response += `\n[OK] ポリゴンが設定済み。「判定！」で詳細分析できます。`;
         } else {
-          response += `\n⚠️ まず地図上でエリアを設定してください。`;
+          response += `\n[!] まず地図上でエリアを設定してください。`;
         }
 
         setMessages(prev => [...prev, { role: 'assistant', content: response }]);
@@ -249,7 +249,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
       setMessages(prev => [...prev, {
         role: 'system',
-        content: `✅ ${modifiedCount}個のWaypointを安全な位置に移動しました。`
+        content: `[OK] ${modifiedCount}個のWaypointを安全な位置に移動しました。`
       }]);
     }
   };
@@ -261,7 +261,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     if (polygons.length === 0) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '⚠️ 判定を行うには、まず地図上でエリア（ポリゴン）を設定してください。'
+        content: '[!] 判定を行うには、まず地図上でエリア（ポリゴン）を設定してください。'
       }]);
       return;
     }
@@ -269,7 +269,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     setIsProcessing(true);
     setMessages(prev => [...prev, {
       role: 'system',
-      content: '🔍 実データに基づく分析を実行中...'
+      content: '実データに基づく分析を実行中...'
     }]);
 
     try {
@@ -283,23 +283,23 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       setAssessmentResult(result);
 
       // 結果をメッセージに整形
-      let response = `## 📋 判定結果\n\n`;
+      let response = `## 判定結果\n\n`;
 
       // リスクレベル
-      const riskIcon = result.riskLevel === 'LOW' ? '🟢' :
-        result.riskLevel === 'MEDIUM' ? '🟡' :
-          result.riskLevel === 'HIGH' ? '🟠' : '🔴';
-      response += `### ${riskIcon} リスクレベル: ${result.riskLevel}\n`;
+      const riskLabel = result.riskLevel === 'LOW' ? '[LOW]' :
+        result.riskLevel === 'MEDIUM' ? '[MEDIUM]' :
+          result.riskLevel === 'HIGH' ? '[HIGH]' : '[CRITICAL]';
+      response += `### ${riskLabel} リスクレベル: ${result.riskLevel}\n`;
       response += `${result.summary}\n\n`;
 
       // リスク詳細
       if (result.risks.length > 0) {
-        response += `### ⚠️ 検出されたリスク\n`;
+        response += `### 検出されたリスク\n`;
         result.risks.forEach(r => {
-          const icon = r.severity === 'critical' ? '🔴' :
-            r.severity === 'high' ? '🟠' :
-              r.severity === 'medium' ? '🟡' : '🟢';
-          response += `${icon} ${r.description}\n`;
+          const label = r.severity === 'critical' ? '[CRITICAL]' :
+            r.severity === 'high' ? '[HIGH]' :
+              r.severity === 'medium' ? '[MEDIUM]' : '[LOW]';
+          response += `${label} ${r.description}\n`;
         });
         response += '\n';
       }
@@ -307,18 +307,18 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       // 空港情報
       if (result.context?.nearestAirport) {
         const airport = result.context.nearestAirport;
-        response += `### 🛫 最寄り空港\n`;
+        response += `### 最寄り空港\n`;
         response += `${airport.name}: ${(airport.distance / 1000).toFixed(1)}km\n\n`;
       }
 
       // DID情報
       if (result.context?.didInfo) {
         const did = result.context.didInfo;
-        response += `### 🏘️ 人口集中地区（DID）\n`;
+        response += `### 人口集中地区（DID）\n`;
         if (did.isDID) {
-          response += `⚠️ ${did.description}\n`;
+          response += `[!] ${did.description}\n`;
         } else {
-          response += `✅ ${did.description}\n`;
+          response += `[OK] ${did.description}\n`;
         }
         response += '\n';
       }
@@ -332,7 +332,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           ? mlit.urbanArea.areaName : null;
 
         if (useZoneName || urbanAreaName) {
-          response += `### 🏛️ 用途地域情報\n`;
+          response += `### 用途地域情報\n`;
           if (useZoneName) {
             response += `• ${useZoneName}\n`;
           }
@@ -346,11 +346,11 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       // UTM干渉チェック
       if (result.utmCheck?.checked) {
         const utm = result.utmCheck;
-        response += `### 📡 UTM干渉チェック\n`;
+        response += `### UTM干渉チェック\n`;
         if (utm.clearForFlight) {
-          response += `✅ ${utm.message}\n`;
+          response += `[OK] ${utm.message}\n`;
         } else {
-          response += `⚠️ ${utm.message}\n`;
+          response += `[!] ${utm.message}\n`;
           utm.conflicts.forEach(c => {
             response += `• ${c.operator}: ${c.recommendation}\n`;
           });
@@ -360,7 +360,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
       // 機体推奨
       if (result.aircraftRecommendations && result.aircraftRecommendations.length > 0) {
-        response += `### 🚁 推奨機体\n`;
+        response += `### 推奨機体\n`;
         result.aircraftRecommendations.slice(0, 2).forEach((a, i) => {
           response += `${i + 1}. **${a.model}** (適合度: ${a.suitability}%)\n`;
           response += `   • ${a.reasons.slice(0, 2).join(', ')}\n`;
@@ -369,7 +369,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       }
 
       // 推奨事項
-      response += `### 💡 推奨事項\n`;
+      response += `### 推奨事項\n`;
       result.recommendations.forEach(rec => {
         response += `• ${rec}\n`;
       });
@@ -377,7 +377,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
       // 必要な許可
       if (result.requiredPermissions.length > 0) {
-        response += `### 📝 必要な許可\n`;
+        response += `### 必要な許可\n`;
         result.requiredPermissions.forEach(p => {
           response += `• ${p}\n`;
         });
@@ -387,13 +387,13 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       // 申請コスト詳細
       const applicationCosts = calculateApplicationCosts(result);
       if (applicationCosts.applications.length > 0) {
-        response += `\n### 📋 申請タイムライン\n`;
+        response += `\n### 申請タイムライン\n`;
         applicationCosts.timeline.forEach(t => {
           response += `• Day ${t.day}: ${t.event}\n`;
         });
         response += `\n**必要書類**: ${applicationCosts.requiredDocuments.slice(0, 4).join('、')}\n`;
         if (applicationCosts.tips.length > 0) {
-          response += `\n💡 ${applicationCosts.tips[0]}\n`;
+          response += `\nTIP: ${applicationCosts.tips[0]}\n`;
         }
       }
 
@@ -407,7 +407,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       }
 
       if (optimization.hasIssues) {
-        response += `### 🔧 プラン最適化の提案\n`;
+        response += `### プラン最適化の提案\n`;
         response += `${optimization.summary}\n`;
         optimization.actions.forEach(action => {
           response += `• ${action}\n`;
@@ -424,10 +424,10 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           }
         }
 
-        response += `\n⬇️ 下の「推奨プランを適用」ボタンで自動修正できます\n`;
+        response += `\n下の「推奨プランを適用」ボタンで自動修正できます\n`;
         setShowOptimization(true);
       } else {
-        response += `\n### ✅ プラン検証\n`;
+        response += `\n### プラン検証 [OK]\n`;
         response += `すべてのWaypointは安全な位置にあります。\n`;
         setShowOptimization(false);
       }
@@ -435,9 +435,9 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       // 連携状態
       response += `\n---\n`;
       const sources = [];
-      if (result.mlitEnhanced) sources.push('🏛️国交省API');
-      if (result.aiEnhanced) sources.push('🤖OpenAI');
-      if (sources.length === 0) sources.push('📊ローカル');
+      if (result.mlitEnhanced) sources.push('[MLIT] 国交省API');
+      if (result.aiEnhanced) sources.push('[AI] OpenAI');
+      if (sources.length === 0) sources.push('[LOCAL] ローカル分析');
       response += `データソース: ${sources.join(' + ')}`;
 
       setMessages(prev => {
@@ -451,7 +451,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         const filtered = prev.filter(m => m.role !== 'system');
         return [...filtered, {
           role: 'assistant',
-          content: `❌ 分析中にエラーが発生しました: ${error.message}`
+          content: `[ERROR] 分析中にエラーが発生しました: ${error.message}`
         }];
       });
     } finally {
@@ -563,7 +563,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       <div className="settings-content">
         {/* 国土交通省API */}
         <div className="settings-section">
-          <h4>🏛️ 国土交通省 不動産情報ライブラリ</h4>
+          <h4>国土交通省 不動産情報ライブラリ</h4>
           <div className="settings-info">
             <p>用途地域・都市計画情報を取得できます：</p>
             <ul>
@@ -616,7 +616,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
         {/* OpenAI API */}
         <div className="settings-section">
-          <h4>🤖 OpenAI API（オプション）</h4>
+          <h4>OpenAI API（オプション）</h4>
           <div className="settings-info">
             <p>高度なAI分析が有効になります：</p>
             <ul>
@@ -677,7 +677,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
                 </button>
               </div>
               <p className="settings-note local-note">
-                💡 LM Studioを起動し、サーバーを開始してください
+                ※ LM Studioを起動し、サーバーを開始してください
               </p>
             </div>
           ) : (
@@ -887,7 +887,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
                 <span>承認目安: {assessmentResult.estimatedApprovalDays}日</span>
               </div>
               <div className="detail-row source">
-                {assessmentResult.aiEnhanced ? '🤖 AI分析' : '📊 ローカル分析'}
+                {assessmentResult.aiEnhanced ? '[AI] AI分析' : '[LOCAL] ローカル分析'}
               </div>
               <button className="export-btn" onClick={handleExportResult}>
                 <Download size={14} />

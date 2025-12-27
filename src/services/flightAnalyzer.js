@@ -71,15 +71,25 @@ const fetchDIDTile = async (x, y, z) => {
 
   // fetch APIが利用できない環境（テスト環境等）ではスキップ
   if (typeof fetch === 'undefined') {
+    console.warn('[DID] fetch API unavailable');
     return null;
   }
 
   try {
+    // GSI GeoJSON tiles - note: may be blocked by CORS in browser
     const url = `https://cyberjapandata.gsi.go.jp/xyz/did2015/${z}/${x}/${y}.geojson`;
-    const response = await fetch(url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
 
     // response が undefined の場合（テスト環境等）
     if (!response) {
+      console.warn('[DID] Empty response from GSI');
       return null;
     }
 
@@ -89,14 +99,21 @@ const fetchDIDTile = async (x, y, z) => {
         didTileCache.set(cacheKey, null);
         return null;
       }
+      console.warn(`[DID] GSI tile fetch failed: HTTP ${response.status}`);
       throw new Error(`HTTP ${response.status}`);
     }
 
     const geojson = await response.json();
     didTileCache.set(cacheKey, geojson);
+    console.log(`[DID] GSI tile loaded: ${cacheKey}, features: ${geojson.features?.length || 0}`);
     return geojson;
   } catch (error) {
-    // エラー時はフォールバックにフォールスルー（警告は抑制）
+    // CORS error or network failure - log for debugging
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      console.warn('[DID] CORS or network error - using fallback data');
+    } else {
+      console.warn('[DID] GSI tile fetch error:', error.message);
+    }
     return null;
   }
 };
@@ -175,18 +192,94 @@ export const checkDIDArea = async (lat, lng) => {
 
 /**
  * DID判定フォールバック（オフライン用）
+ * 国土地理院タイル取得失敗時に使用する推定データ
+ * 全国の主要都市・県庁所在地をカバー
+ *
  * @param {number} lat - 緯度
  * @param {number} lng - 経度
  * @returns {Object} DID判定結果
  */
 const checkDIDAreaFallback = (lat, lng) => {
+  // 全国の主要DID地域（都道府県庁所在地・政令指定都市・主要都市）
   const MAJOR_DID_AREAS = [
-    { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 15000 },
-    { name: '大阪市中心', lat: 34.6937, lng: 135.5023, radius: 10000 },
-    { name: '名古屋市中心', lat: 35.1815, lng: 136.9066, radius: 8000 },
-    { name: '福岡市中心', lat: 33.5904, lng: 130.4017, radius: 6000 },
-    { name: '札幌市中心', lat: 43.0618, lng: 141.3545, radius: 7000 },
-    { name: '横浜市中心', lat: 35.4437, lng: 139.6380, radius: 8000 },
+    // 北海道・東北
+    { name: '札幌市', lat: 43.0618, lng: 141.3545, radius: 12000 },
+    { name: '函館市', lat: 41.7687, lng: 140.7288, radius: 4000 },
+    { name: '旭川市', lat: 43.7707, lng: 142.3650, radius: 4000 },
+    { name: '青森市', lat: 40.8246, lng: 140.7400, radius: 4000 },
+    { name: '盛岡市', lat: 39.7036, lng: 141.1527, radius: 4000 },
+    { name: '仙台市', lat: 38.2682, lng: 140.8694, radius: 8000 },
+    { name: '秋田市', lat: 39.7186, lng: 140.1024, radius: 4000 },
+    { name: '山形市', lat: 38.2404, lng: 140.3633, radius: 3500 },
+    { name: '福島市', lat: 37.7503, lng: 140.4676, radius: 4000 },
+    { name: '郡山市', lat: 37.4006, lng: 140.3594, radius: 4000 },
+    { name: 'いわき市', lat: 37.0504, lng: 140.8879, radius: 3500 },
+
+    // 関東
+    { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 20000 },
+    { name: '横浜市', lat: 35.4437, lng: 139.6380, radius: 12000 },
+    { name: '川崎市', lat: 35.5308, lng: 139.7030, radius: 6000 },
+    { name: 'さいたま市', lat: 35.8617, lng: 139.6455, radius: 8000 },
+    { name: '千葉市', lat: 35.6073, lng: 140.1064, radius: 7000 },
+    { name: '相模原市', lat: 35.5710, lng: 139.3730, radius: 5000 },
+    { name: '水戸市', lat: 36.3418, lng: 140.4468, radius: 4000 },
+    { name: '宇都宮市', lat: 36.5658, lng: 139.8836, radius: 5000 },
+    { name: '前橋市', lat: 36.3895, lng: 139.0634, radius: 4000 },
+    { name: '高崎市', lat: 36.3219, lng: 139.0032, radius: 4000 },
+
+    // 甲信越・北陸
+    { name: '新潟市', lat: 37.9162, lng: 139.0365, radius: 6000 },
+    { name: '長野市', lat: 36.6485, lng: 138.1950, radius: 4000 },
+    { name: '松本市', lat: 36.2381, lng: 137.9720, radius: 3500 },
+    { name: '甲府市', lat: 35.6641, lng: 138.5684, radius: 3500 },
+    { name: '富山市', lat: 36.6959, lng: 137.2136, radius: 5000 },
+    { name: '高岡市', lat: 36.7540, lng: 137.0257, radius: 3500 },
+    { name: '金沢市', lat: 36.5613, lng: 136.6562, radius: 5000 },
+    { name: '福井市', lat: 36.0652, lng: 136.2216, radius: 4000 },
+
+    // 東海
+    { name: '名古屋市', lat: 35.1815, lng: 136.9066, radius: 12000 },
+    { name: '静岡市', lat: 34.9756, lng: 138.3828, radius: 5000 },
+    { name: '浜松市', lat: 34.7108, lng: 137.7261, radius: 5000 },
+    { name: '岐阜市', lat: 35.3912, lng: 136.7223, radius: 4000 },
+    { name: '津市', lat: 34.7303, lng: 136.5086, radius: 3500 },
+    { name: '四日市市', lat: 34.9649, lng: 136.6249, radius: 4000 },
+
+    // 近畿
+    { name: '大阪市', lat: 34.6937, lng: 135.5023, radius: 15000 },
+    { name: '堺市', lat: 34.5733, lng: 135.4830, radius: 6000 },
+    { name: '京都市', lat: 35.0116, lng: 135.7681, radius: 8000 },
+    { name: '神戸市', lat: 34.6901, lng: 135.1956, radius: 8000 },
+    { name: '奈良市', lat: 34.6851, lng: 135.8328, radius: 4000 },
+    { name: '和歌山市', lat: 34.2306, lng: 135.1707, radius: 4000 },
+    { name: '大津市', lat: 35.0045, lng: 135.8686, radius: 4000 },
+    { name: '姫路市', lat: 34.8154, lng: 134.6858, radius: 4000 },
+
+    // 中国
+    { name: '広島市', lat: 34.3853, lng: 132.4553, radius: 8000 },
+    { name: '岡山市', lat: 34.6617, lng: 133.9350, radius: 6000 },
+    { name: '倉敷市', lat: 34.5850, lng: 133.7721, radius: 4000 },
+    { name: '鳥取市', lat: 35.5039, lng: 134.2381, radius: 3500 },
+    { name: '松江市', lat: 35.4723, lng: 133.0505, radius: 3500 },
+    { name: '山口市', lat: 34.1861, lng: 131.4705, radius: 3500 },
+    { name: '下関市', lat: 33.9589, lng: 130.9413, radius: 4000 },
+
+    // 四国
+    { name: '高松市', lat: 34.3401, lng: 134.0434, radius: 5000 },
+    { name: '徳島市', lat: 34.0658, lng: 134.5593, radius: 4000 },
+    { name: '松山市', lat: 33.8416, lng: 132.7657, radius: 5000 },
+    { name: '高知市', lat: 33.5597, lng: 133.5311, radius: 4000 },
+
+    // 九州・沖縄
+    { name: '福岡市', lat: 33.5904, lng: 130.4017, radius: 10000 },
+    { name: '北九州市', lat: 33.8834, lng: 130.8752, radius: 7000 },
+    { name: '佐賀市', lat: 33.2494, lng: 130.2988, radius: 3500 },
+    { name: '長崎市', lat: 32.7503, lng: 129.8777, radius: 4000 },
+    { name: '熊本市', lat: 32.8032, lng: 130.7079, radius: 6000 },
+    { name: '大分市', lat: 33.2382, lng: 131.6126, radius: 4000 },
+    { name: '宮崎市', lat: 31.9111, lng: 131.4239, radius: 4000 },
+    { name: '鹿児島市', lat: 31.5966, lng: 130.5571, radius: 5000 },
+    { name: '那覇市', lat: 26.2124, lng: 127.6809, radius: 5000 },
   ];
 
   for (const did of MAJOR_DID_AREAS) {
@@ -202,12 +295,18 @@ const checkDIDAreaFallback = (lat, lng) => {
     }
   }
 
+  // 人口密度による追加チェック（日本の一般的な都市部の緯度経度範囲）
+  // 日本本土の大まかな範囲内でかつ山間部でない場合は注意喚起
+  const isInJapanMainland = lat >= 31 && lat <= 45 && lng >= 129 && lng <= 146;
+
   return {
     isDID: false,
     area: null,
     certainty: 'estimated',
     source: 'fallback',
-    description: 'DID外（推定）- 国土地理院データ取得失敗'
+    description: isInJapanMainland
+      ? 'DID外（推定）- 周辺の人口密度を現地確認してください'
+      : 'DID外（推定）- 国土地理院データ取得失敗'
   };
 };
 
