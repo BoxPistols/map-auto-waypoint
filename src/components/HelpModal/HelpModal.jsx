@@ -316,7 +316,7 @@ const HelpModal = ({ onClose }) => {
                   <td>住所検索にフォーカス</td>
                 </tr>
                 <tr>
-                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> または <kbd>?</kbd></td>
+                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>/</kbd> または <kbd>?</kbd></td>
                   <td>ヘルプを開く / 閉じる</td>
                 </tr>
                 <tr>

@@ -13,6 +13,7 @@ import { searchAddress } from './services/geocoding'
 import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints } from './services/waypointGenerator'
 import { addElevationToWaypoints } from './services/elevation'
 import { createPolygonFromSearchResult } from './services/polygonGenerator'
+import FlightAssistant from './components/FlightAssistant'
 import './App.scss'
 
 // Default center: Tokyo Tower
@@ -44,6 +45,9 @@ function App() {
   const [gridSpacing, setGridSpacing] = useState(30)
   const [isLoadingElevation, setIsLoadingElevation] = useState(false)
   const [elevationProgress, setElevationProgress] = useState(null)
+
+  // Optimization overlay state
+  const [recommendedWaypoints, setRecommendedWaypoints] = useState(null)
 
   // Show notification (defined early for use in undo/redo)
   const showNotification = useCallback((message, type = 'info') => {
@@ -117,10 +121,18 @@ function App() {
         return
       }
 
-      // Cmd+Shift+H (Mac) or Ctrl+Shift+H (Win) for Help
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
+      // Cmd+/ (Mac) or Ctrl+/ (Win) for Help
+      // Also support ? key (Shift+/ on most keyboards)
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
         e.preventDefault()
-        setShowHelp(true)
+        setShowHelp(prev => !prev)
+        return
+      }
+
+      // ? key alone for Help (works on all keyboard layouts)
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        setShowHelp(prev => !prev)
         return
       }
 
@@ -673,7 +685,7 @@ function App() {
           <button
             className="help-button"
             onClick={() => setShowHelp(true)}
-            data-tooltip="ヘルプ (⌘⇧H)"
+            data-tooltip="ヘルプ (⌘/ or ?)"
             data-tooltip-pos="left"
           >
             ?
@@ -766,6 +778,7 @@ function App() {
             zoom={zoom}
             polygons={polygons}
             waypoints={waypoints}
+            recommendedWaypoints={recommendedWaypoints}
             onPolygonCreate={handlePolygonCreate}
             onPolygonUpdate={handlePolygonUpdate}
             onPolygonDelete={handlePolygonDelete}
@@ -847,6 +860,50 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Flight Assistant (AI) */}
+      <FlightAssistant
+        polygons={polygons}
+        waypoints={waypoints}
+        onOptimizationUpdate={(optimizationPlan) => {
+          // 推奨位置のオーバーレイ表示用
+          if (optimizationPlan?.hasIssues && optimizationPlan.recommendedWaypoints) {
+            setRecommendedWaypoints(optimizationPlan.recommendedWaypoints)
+          } else {
+            setRecommendedWaypoints(null)
+          }
+        }}
+        onApplyPlan={(plan) => {
+          // 推奨プランを適用
+          if (plan.waypoints && plan.waypoints.length > 0) {
+            // 修正されたWaypointのみ更新
+            const updatedWaypoints = waypoints.map(wp => {
+              const recommended = plan.waypoints.find(rw => rw.id === wp.id)
+              if (recommended && recommended.modified) {
+                return {
+                  ...wp,
+                  lat: recommended.lat,
+                  lng: recommended.lng,
+                  elevation: null // 座標が変わったので標高はリセット
+                }
+              }
+              return wp
+            })
+            setWaypoints(updatedWaypoints)
+          }
+
+          // ポリゴンも更新（もし推奨ポリゴンがあれば）
+          if (plan.polygon) {
+            setPolygons(prev => prev.map(p =>
+              p.id === plan.polygon.id ? plan.polygon : p
+            ))
+          }
+
+          // オーバーレイをクリア
+          setRecommendedWaypoints(null)
+          showNotification('プランを安全な位置に最適化しました', 'success')
+        }}
+      />
 
       {/* Notification */}
       {notification && (

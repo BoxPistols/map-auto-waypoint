@@ -32,6 +32,9 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_REINFOLIB_API_KEY: ${{ secrets.VITE_REINFOLIB_API_KEY }}
+          VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
 
       - name: Add .nojekyll
         run: touch dist/.nojekyll
