@@ -693,6 +693,68 @@ $color-border-light: rgba(255, 255, 255, 0.15);
     }
   }
 
+  .local-llm-settings {
+    margin-top: 8px;
+    padding: 10px;
+    background: rgba($color-success, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba($color-success, 0.2);
+
+    .local-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 8px;
+
+      label {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      input {
+        flex: 1;
+        padding: 6px 8px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid $color-border-light;
+        border-radius: 4px;
+        color: $color-text-white;
+        font-size: 11px;
+        font-family: monospace;
+
+        &::placeholder {
+          color: rgba(255, 255, 255, 0.3);
+        }
+
+        &:focus {
+          outline: none;
+          border-color: $color-success;
+        }
+      }
+
+      .save-btn {
+        align-self: flex-end;
+        padding: 4px 10px;
+        margin-top: 4px;
+        background: $color-success;
+        border: none;
+        border-radius: 4px;
+        color: $color-text-white;
+        font-size: 11px;
+        cursor: pointer;
+
+        &:hover {
+          background: $color-success-dark;
+        }
+      }
+    }
+
+    .local-note {
+      margin: 8px 0 0;
+      font-size: 11px;
+      color: $color-success-light;
+    }
+  }
+
   .settings-links {
     display: flex;
     align-items: center;

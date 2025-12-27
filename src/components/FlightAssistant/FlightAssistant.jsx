@@ -21,7 +21,19 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react';
-import { hasApiKey, setApiKey, getFlightAdvice, AVAILABLE_MODELS, getSelectedModel, setSelectedModel } from '../../services/openaiService';
+import {
+  hasApiKey,
+  setApiKey,
+  getFlightAdvice,
+  AVAILABLE_MODELS,
+  getSelectedModel,
+  setSelectedModel,
+  getLocalEndpoint,
+  setLocalEndpoint,
+  getLocalModelName,
+  setLocalModelName,
+  isLocalModel
+} from '../../services/openaiService';
 import { runFullAnalysis, getFlightRecommendations, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
 import { hasReinfolibApiKey, setReinfolibApiKey } from '../../services/reinfolibService';
 import './FlightAssistant.scss';
@@ -43,6 +55,8 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [mlitKeyInput, setMlitKeyInput] = useState('');
   const [hasMlitKey, setHasMlitKey] = useState(hasReinfolibApiKey());
   const [selectedModelId, setSelectedModelId] = useState(getSelectedModel());
+  const [localEndpoint, setLocalEndpointState] = useState(getLocalEndpoint());
+  const [localModelName, setLocalModelNameState] = useState(getLocalModelName());
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -126,6 +140,24 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     setMessages(prev => [...prev, {
       role: 'system',
       content: `✅ AIモデルを ${model?.name || modelId} に変更しました`
+    }]);
+  };
+
+  // ローカルLLMエンドポイント保存
+  const handleSaveLocalEndpoint = () => {
+    setLocalEndpoint(localEndpoint);
+    setMessages(prev => [...prev, {
+      role: 'system',
+      content: `✅ ローカルLLMエンドポイントを設定しました: ${localEndpoint}`
+    }]);
+  };
+
+  // ローカルLLMモデル名保存
+  const handleSaveLocalModelName = () => {
+    setLocalModelName(localModelName);
+    setMessages(prev => [...prev, {
+      role: 'system',
+      content: `✅ ローカルLLMモデル名を設定しました: ${localModelName}`
     }]);
   };
 
@@ -593,63 +625,107 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
             </ul>
           </div>
 
-          {hasKey ? (
-            <div className="api-key-status">
-              <div className="status-row">
-                <CheckCircle size={16} className="success" />
-                <span>設定済み</span>
+          {/* モデル選択（常に表示） */}
+          <div className="model-selector">
+            <label>AIモデル:</label>
+            <select
+              value={selectedModelId}
+              onChange={(e) => handleModelChange(e.target.value)}
+            >
+              {AVAILABLE_MODELS.map(model => (
+                <option key={model.id} value={model.id}>
+                  {model.name} ({model.cost}) - {model.description}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* ローカルLLM設定 */}
+          {isLocalModel(selectedModelId) ? (
+            <div className="local-llm-settings">
+              <div className="settings-info">
+                <p>LM Studio等のローカルLLMサーバーを使用：</p>
               </div>
-              <button className="delete-btn" onClick={handleDeleteApiKey}>
-                <Trash2 size={14} /> 削除
-              </button>
+              <div className="local-input-group">
+                <label>エンドポイント:</label>
+                <input
+                  type="text"
+                  value={localEndpoint}
+                  onChange={(e) => setLocalEndpointState(e.target.value)}
+                  placeholder="http://localhost:1234/v1/chat/completions"
+                />
+                <button
+                  className="save-btn"
+                  onClick={handleSaveLocalEndpoint}
+                >
+                  保存
+                </button>
+              </div>
+              <div className="local-input-group">
+                <label>モデル名:</label>
+                <input
+                  type="text"
+                  value={localModelName}
+                  onChange={(e) => setLocalModelNameState(e.target.value)}
+                  placeholder="local-model"
+                />
+                <button
+                  className="save-btn"
+                  onClick={handleSaveLocalModelName}
+                >
+                  保存
+                </button>
+              </div>
+              <p className="settings-note local-note">
+                💡 LM Studioを起動し、サーバーを開始してください
+              </p>
             </div>
           ) : (
-            <div className="api-key-input">
-              <input
-                type="password"
-                value={apiKeyInput}
-                onChange={(e) => setApiKeyInput(e.target.value)}
-                placeholder="sk-..."
-              />
-              <button
-                className="save-btn"
-                onClick={handleSaveApiKey}
-                disabled={!apiKeyInput.trim()}
-              >
-                保存
-              </button>
-            </div>
-          )}
+            <>
+              {/* OpenAI APIキー設定 */}
+              {hasKey ? (
+                <div className="api-key-status">
+                  <div className="status-row">
+                    <CheckCircle size={16} className="success" />
+                    <span>APIキー設定済み</span>
+                  </div>
+                  <button className="delete-btn" onClick={handleDeleteApiKey}>
+                    <Trash2 size={14} /> 削除
+                  </button>
+                </div>
+              ) : (
+                <div className="api-key-input">
+                  <input
+                    type="password"
+                    value={apiKeyInput}
+                    onChange={(e) => setApiKeyInput(e.target.value)}
+                    placeholder="sk-..."
+                  />
+                  <button
+                    className="save-btn"
+                    onClick={handleSaveApiKey}
+                    disabled={!apiKeyInput.trim()}
+                  >
+                    保存
+                  </button>
+                </div>
+              )}
 
-          {hasKey && (
-            <div className="model-selector">
-              <label>AIモデル:</label>
-              <select
-                value={selectedModelId}
-                onChange={(e) => handleModelChange(e.target.value)}
-              >
-                {AVAILABLE_MODELS.map(model => (
-                  <option key={model.id} value={model.id}>
-                    {model.name} ({model.cost}) - {model.description}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="settings-links">
+                <a
+                  href="https://platform.openai.com/api-keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ExternalLink size={12} /> APIキーを取得
+                </a>
+              </div>
+            </>
           )}
-
-          <div className="settings-links">
-            <a
-              href="https://platform.openai.com/api-keys"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <ExternalLink size={12} /> APIキーを取得
-            </a>
-          </div>
         </div>
 
         <p className="settings-note">
-          ※ APIキーはブラウザに保存（サーバー送信なし）
+          ※ 設定はブラウザに保存（サーバー送信なし）
         </p>
       </div>
     </div>

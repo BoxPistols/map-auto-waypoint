@@ -1,23 +1,29 @@
 /**
  * OpenAI API連携サービス
  *
- * GPT-5 / GPT-4.1 ファミリーを使用して
+ * GPT-5 / GPT-4.1 ファミリー、またはローカルLLM (LM Studio等) を使用して
  * ドローン経路の危険度判定・推奨を生成
  */
+
+// APIエンドポイント設定
+const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
+const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1/chat/completions';
 
 // 利用可能なモデル一覧（2025年最新）
 export const AVAILABLE_MODELS = [
   // GPT-5 ファミリー
-  { id: 'gpt-5-nano', name: 'GPT-5 Nano', description: '最速・最低コスト', cost: '$' },
-  { id: 'gpt-5-mini', name: 'GPT-5 Mini', description: 'バランス型', cost: '$$' },
-  { id: 'gpt-5', name: 'GPT-5', description: '最高性能', cost: '$$$' },
+  { id: 'gpt-5-nano', name: 'GPT-5 Nano', description: '最速・最低コスト', cost: '$', type: 'openai' },
+  { id: 'gpt-5-mini', name: 'GPT-5 Mini', description: 'バランス型', cost: '$$', type: 'openai' },
+  { id: 'gpt-5', name: 'GPT-5', description: '最高性能', cost: '$$$', type: 'openai' },
   // GPT-4.1 ファミリー
-  { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', description: '高速・低コスト', cost: '$' },
-  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', description: 'コスパ良好', cost: '$$' },
-  { id: 'gpt-4.1', name: 'GPT-4.1', description: '高精度・長文対応', cost: '$$$' },
+  { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', description: '高速・低コスト', cost: '$', type: 'openai' },
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', description: 'コスパ良好', cost: '$$', type: 'openai' },
+  { id: 'gpt-4.1', name: 'GPT-4.1', description: '高精度・長文対応', cost: '$$$', type: 'openai' },
   // 旧モデル（互換性用）
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: '旧世代・低コスト', cost: '$' },
-  { id: 'gpt-4o', name: 'GPT-4o', description: '旧世代・標準', cost: '$$' }
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: '旧世代・低コスト', cost: '$', type: 'openai' },
+  { id: 'gpt-4o', name: 'GPT-4o', description: '旧世代・標準', cost: '$$', type: 'openai' },
+  // ローカルLLM
+  { id: 'local-default', name: 'ローカルLLM', description: 'LM Studio等', cost: '無料', type: 'local' }
 ];
 
 // デフォルトモデル
@@ -53,35 +59,72 @@ export const setSelectedModel = (modelId) => {
   localStorage.setItem('openai_model', modelId);
 };
 
+// ローカルLLMエンドポイントを取得
+export const getLocalEndpoint = () => {
+  return localStorage.getItem('local_llm_endpoint') || DEFAULT_LOCAL_ENDPOINT;
+};
+
+// ローカルLLMエンドポイントを設定
+export const setLocalEndpoint = (endpoint) => {
+  localStorage.setItem('local_llm_endpoint', endpoint);
+};
+
+// ローカルLLMモデル名を取得（LM Studioで設定したモデル名）
+export const getLocalModelName = () => {
+  return localStorage.getItem('local_llm_model') || 'local-model';
+};
+
+// ローカルLLMモデル名を設定
+export const setLocalModelName = (modelName) => {
+  localStorage.setItem('local_llm_model', modelName);
+};
+
+// 選択中のモデルがローカルかどうか
+export const isLocalModel = (modelId) => {
+  const model = AVAILABLE_MODELS.find(m => m.id === modelId);
+  return model?.type === 'local';
+};
+
 /**
- * OpenAI Chat Completion APIを呼び出し
+ * OpenAI Chat Completion APIを呼び出し（ローカルLLM対応）
  *
  * @param {Array} messages - チャットメッセージ配列
  * @param {Object} options - オプション
  * @returns {Promise<string>} レスポンステキスト
  */
 export const callOpenAI = async (messages, options = {}) => {
-  const apiKey = getApiKey();
-
-  if (!apiKey) {
-    throw new Error('OpenAI APIキーが設定されていません。設定画面からAPIキーを入力してください。');
-  }
-
   const {
     model = getSelectedModel(), // ユーザー選択モデル
     temperature = 0.3,     // 一貫性のある出力
     maxTokens = 1000
   } = options;
 
+  const useLocal = isLocalModel(model);
+  const apiKey = getApiKey();
+
+  // OpenAIモデルの場合はAPIキーが必要
+  if (!useLocal && !apiKey) {
+    throw new Error('OpenAI APIキーが設定されていません。設定画面からAPIキーを入力してください。');
+  }
+
+  // エンドポイントとモデル名を決定
+  const endpoint = useLocal ? getLocalEndpoint() : OPENAI_ENDPOINT;
+  const modelName = useLocal ? getLocalModelName() : model;
+
+  // ヘッダーを構築
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  if (!useLocal) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
+      headers,
       body: JSON.stringify({
-        model,
+        model: modelName,
         messages,
         temperature,
         max_tokens: maxTokens
@@ -89,14 +132,20 @@ export const callOpenAI = async (messages, options = {}) => {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || 'OpenAI API呼び出しに失敗しました');
+      let errorMessage = 'API呼び出しに失敗しました';
+      try {
+        const error = await response.json();
+        errorMessage = error.error?.message || errorMessage;
+      } catch {
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(useLocal ? `ローカルLLMエラー: ${errorMessage}` : errorMessage);
     }
 
     const data = await response.json();
     return data.choices[0].message.content;
   } catch (error) {
-    console.error('[OpenAI] API Error:', error);
+    console.error(useLocal ? '[LocalLLM] API Error:' : '[OpenAI] API Error:', error);
     throw error;
   }
 };
@@ -287,6 +336,11 @@ export default {
   hasApiKey,
   getSelectedModel,
   setSelectedModel,
+  getLocalEndpoint,
+  setLocalEndpoint,
+  getLocalModelName,
+  setLocalModelName,
+  isLocalModel,
   callOpenAI,
   analyzeFlightPlan,
   getFlightAdvice,
