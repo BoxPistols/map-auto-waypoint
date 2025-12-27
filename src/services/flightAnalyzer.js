@@ -926,6 +926,73 @@ export const checkAllWaypointsRestrictions = (waypoints) => {
 };
 
 /**
+ * 全WaypointのDID判定を実行
+ * @param {Array} waypoints - Waypoint配列
+ * @returns {Promise<Object>} DID判定結果（DID内のWPリスト含む）
+ */
+export const checkAllWaypointsDID = async (waypoints) => {
+  if (!waypoints || waypoints.length === 0) {
+    return {
+      hasDIDWaypoints: false,
+      didWaypoints: [],
+      totalChecked: 0,
+      summary: 'Waypointがありません'
+    };
+  }
+
+  const didWaypoints = [];
+  const checkedAreas = new Map(); // エリア名でグループ化
+
+  for (const wp of waypoints) {
+    try {
+      const didResult = await checkDIDArea(wp.lat, wp.lng);
+
+      if (didResult?.isDID) {
+        didWaypoints.push({
+          waypointId: wp.id,
+          waypointIndex: wp.index !== undefined ? wp.index : waypoints.indexOf(wp) + 1,
+          lat: wp.lat,
+          lng: wp.lng,
+          area: didResult.area,
+          certainty: didResult.certainty,
+          source: didResult.source
+        });
+
+        // エリアごとにカウント
+        const areaName = didResult.area || '不明';
+        if (!checkedAreas.has(areaName)) {
+          checkedAreas.set(areaName, []);
+        }
+        checkedAreas.get(areaName).push(wp.index !== undefined ? wp.index : waypoints.indexOf(wp) + 1);
+      }
+    } catch (error) {
+      console.warn(`[DID] Waypoint ${wp.id} check failed:`, error);
+    }
+  }
+
+  // エリアごとのサマリーを作成
+  const areaSummaries = [];
+  for (const [area, wpIndices] of checkedAreas) {
+    areaSummaries.push({
+      area,
+      waypointIndices: wpIndices,
+      count: wpIndices.length
+    });
+  }
+
+  return {
+    hasDIDWaypoints: didWaypoints.length > 0,
+    didWaypoints,
+    totalChecked: waypoints.length,
+    didCount: didWaypoints.length,
+    areaSummaries,
+    summary: didWaypoints.length > 0
+      ? `${didWaypoints.length}/${waypoints.length}個のWaypointがDID内にあります`
+      : `全${waypoints.length}個のWaypointはDID外です`
+  };
+};
+
+/**
  * 最寄りの空港を検索
  */
 export const findNearestAirport = (lat, lng) => {
@@ -1210,8 +1277,39 @@ export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) 
   // 最寄り空港
   const nearestAirport = center ? findNearestAirport(center.lat, center.lng) : null;
 
-  // DID判定（国土地理院タイルから取得）
-  const didInfo = center ? await checkDIDArea(center.lat, center.lng) : null;
+  // DID判定 - 全Waypointをチェック
+  let didInfo = null;
+  let waypointDIDCheck = null;
+
+  if (waypoints.length > 0) {
+    // 全WaypointのDIDチェック
+    waypointDIDCheck = await checkAllWaypointsDID(waypoints);
+
+    if (waypointDIDCheck.hasDIDWaypoints) {
+      // DID内のWaypointがある場合
+      const firstDIDWp = waypointDIDCheck.didWaypoints[0];
+      didInfo = {
+        isDID: true,
+        area: firstDIDWp.area,
+        certainty: firstDIDWp.certainty,
+        source: firstDIDWp.source,
+        description: waypointDIDCheck.summary,
+        waypointDetails: waypointDIDCheck
+      };
+    } else {
+      // 全WaypointがDID外
+      didInfo = {
+        isDID: false,
+        area: null,
+        certainty: 'confirmed',
+        source: 'waypoint_check',
+        description: waypointDIDCheck.summary
+      };
+    }
+  } else if (center) {
+    // Waypointがない場合は中心点でチェック
+    didInfo = await checkDIDArea(center.lat, center.lng);
+  }
 
   // リスクスコア計算
   let riskScore = 0;
@@ -1220,10 +1318,23 @@ export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) 
   // DIDチェック
   if (didInfo?.isDID) {
     riskScore += 25;
+    // DID内のWaypoint数に応じてリスクを追加
+    const didCount = waypointDIDCheck?.didCount || 1;
+    if (didCount > 3) {
+      riskScore += 10; // 多くのWaypointがDID内
+    }
+
+    const areaList = waypointDIDCheck?.areaSummaries?.map(a =>
+      `${a.area}(WP: ${a.waypointIndices.join(', ')})`
+    ).join(', ') || didInfo.area;
+
     risks.push({
       type: 'did_area',
-      description: `人口集中地区（${didInfo.area}）`,
-      severity: 'medium'
+      description: waypointDIDCheck
+        ? `人口集中地区内のWaypoint: ${areaList}`
+        : `人口集中地区（${didInfo.area}）`,
+      severity: 'medium',
+      details: waypointDIDCheck
     });
   }
 
@@ -1543,6 +1654,7 @@ export default {
   getPolygonCenter,
   getPolygonArea,
   checkAllWaypointsRestrictions,
+  checkAllWaypointsDID,
   findNearestAirport,
   analyzeFlightPlanLocal,
   runFullAnalysis,

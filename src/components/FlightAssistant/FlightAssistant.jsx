@@ -317,6 +317,13 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         response += `### 人口集中地区（DID）\n`;
         if (did.isDID) {
           response += `[!] ${did.description}\n`;
+          // DID内のWaypoint詳細を表示
+          if (did.waypointDetails?.areaSummaries) {
+            response += `\n**DID内のWaypoint:**\n`;
+            for (const area of did.waypointDetails.areaSummaries) {
+              response += `• ${area.area}: WP ${area.waypointIndices.join(', ')}\n`;
+            }
+          }
         } else {
           response += `[OK] ${did.description}\n`;
         }
@@ -491,8 +498,20 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     }
 
     if (assessmentResult.context?.didInfo) {
+      const did = assessmentResult.context.didInfo;
       content += `【DID情報】\n`;
-      content += `${assessmentResult.context.didInfo.description}\n\n`;
+      if (did.isDID) {
+        content += `[!] ${did.description}\n`;
+        // DID内のWaypoint詳細
+        if (did.waypointDetails?.areaSummaries) {
+          for (const area of did.waypointDetails.areaSummaries) {
+            content += `  - ${area.area}: WP ${area.waypointIndices.join(', ')}\n`;
+          }
+        }
+      } else {
+        content += `[OK] ${did.description}\n`;
+      }
+      content += '\n';
     }
 
     content += `【推奨事項】\n`;
