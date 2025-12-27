@@ -121,10 +121,18 @@ function App() {
         return
       }
 
-      // Cmd+Shift+H (Mac) or Ctrl+Shift+H (Win) for Help
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
+      // Cmd+/ (Mac) or Ctrl+/ (Win) for Help
+      // Also support ? key (Shift+/ on most keyboards)
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
         e.preventDefault()
-        setShowHelp(true)
+        setShowHelp(prev => !prev)
+        return
+      }
+
+      // ? key alone for Help (works on all keyboard layouts)
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        setShowHelp(prev => !prev)
         return
       }
 
@@ -677,7 +685,7 @@ function App() {
           <button
             className="help-button"
             onClick={() => setShowHelp(true)}
-            data-tooltip="ヘルプ (⌘⇧H)"
+            data-tooltip="ヘルプ (⌘/ or ?)"
             data-tooltip-pos="left"
           >
             ?
