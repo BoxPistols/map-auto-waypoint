@@ -35,157 +35,221 @@ const getDistanceMeters = (lat1, lng1, lat2, lng2) => {
 // ===== DID (人口集中地区) 判定 =====
 
 /**
- * 緯度経度からタイル座標を計算
+ * DIDデータのキャッシュ（都道府県単位）
+ */
+const didPrefectureCache = new Map();
+
+/**
+ * 都道府県コードと名前のマッピング
+ * GitHub dronebird/DIDinJapan のファイル名形式: h22_did_[code]_[name].geojson
+ */
+const PREFECTURE_DATA = [
+  { code: '01', name: 'hokkaido', bounds: { minLat: 41.3, maxLat: 45.6, minLng: 139.3, maxLng: 145.9 } },
+  { code: '02', name: 'aomori', bounds: { minLat: 40.2, maxLat: 41.6, minLng: 139.5, maxLng: 141.7 } },
+  { code: '03', name: 'iwate', bounds: { minLat: 38.7, maxLat: 40.5, minLng: 140.7, maxLng: 142.1 } },
+  { code: '04', name: 'miyagi', bounds: { minLat: 37.8, maxLat: 39.0, minLng: 140.3, maxLng: 141.7 } },
+  { code: '05', name: 'akita', bounds: { minLat: 39.0, maxLat: 40.5, minLng: 139.7, maxLng: 140.6 } },
+  { code: '06', name: 'yamagata', bounds: { minLat: 37.7, maxLat: 39.2, minLng: 139.5, maxLng: 140.7 } },
+  { code: '07', name: 'fukushima', bounds: { minLat: 36.8, maxLat: 37.9, minLng: 139.2, maxLng: 141.0 } },
+  { code: '08', name: 'ibaraki', bounds: { minLat: 35.7, maxLat: 36.9, minLng: 139.7, maxLng: 140.9 } },
+  { code: '09', name: 'tochigi', bounds: { minLat: 36.2, maxLat: 37.2, minLng: 139.3, maxLng: 140.3 } },
+  { code: '10', name: 'gunma', bounds: { minLat: 36.0, maxLat: 37.1, minLng: 138.4, maxLng: 139.7 } },
+  { code: '11', name: 'saitama', bounds: { minLat: 35.7, maxLat: 36.3, minLng: 138.9, maxLng: 139.9 } },
+  { code: '12', name: 'chiba', bounds: { minLat: 34.9, maxLat: 36.0, minLng: 139.7, maxLng: 140.9 } },
+  { code: '13', name: 'tokyo', bounds: { minLat: 35.5, maxLat: 35.9, minLng: 138.9, maxLng: 139.9 } },
+  { code: '14', name: 'kanagawa', bounds: { minLat: 35.1, maxLat: 35.7, minLng: 138.9, maxLng: 139.8 } },
+  { code: '15', name: 'niigata', bounds: { minLat: 37.0, maxLat: 38.6, minLng: 137.8, maxLng: 140.0 } },
+  { code: '16', name: 'toyama', bounds: { minLat: 36.3, maxLat: 36.9, minLng: 136.8, maxLng: 137.8 } },
+  { code: '17', name: 'ishikawa', bounds: { minLat: 36.0, maxLat: 37.9, minLng: 136.2, maxLng: 137.4 } },
+  { code: '18', name: 'fukui', bounds: { minLat: 35.4, maxLat: 36.3, minLng: 135.5, maxLng: 136.8 } },
+  { code: '19', name: 'yamanashi', bounds: { minLat: 35.2, maxLat: 35.9, minLng: 138.2, maxLng: 139.2 } },
+  { code: '20', name: 'nagano', bounds: { minLat: 35.2, maxLat: 37.0, minLng: 137.3, maxLng: 138.8 } },
+  { code: '21', name: 'gifu', bounds: { minLat: 35.1, maxLat: 36.5, minLng: 136.3, maxLng: 137.7 } },
+  { code: '22', name: 'shizuoka', bounds: { minLat: 34.6, maxLat: 35.6, minLng: 137.5, maxLng: 139.2 } },
+  { code: '23', name: 'aichi', bounds: { minLat: 34.6, maxLat: 35.4, minLng: 136.7, maxLng: 137.8 } },
+  { code: '24', name: 'mie', bounds: { minLat: 33.7, maxLat: 35.2, minLng: 135.9, maxLng: 137.0 } },
+  { code: '25', name: 'shiga', bounds: { minLat: 34.8, maxLat: 35.7, minLng: 135.8, maxLng: 136.5 } },
+  { code: '26', name: 'kyoto', bounds: { minLat: 34.7, maxLat: 35.8, minLng: 135.0, maxLng: 136.1 } },
+  { code: '27', name: 'osaka', bounds: { minLat: 34.3, maxLat: 35.0, minLng: 135.1, maxLng: 135.7 } },
+  { code: '28', name: 'hyogo', bounds: { minLat: 34.2, maxLat: 35.7, minLng: 134.3, maxLng: 135.5 } },
+  { code: '29', name: 'nara', bounds: { minLat: 33.9, maxLat: 34.8, minLng: 135.6, maxLng: 136.2 } },
+  { code: '30', name: 'wakayama', bounds: { minLat: 33.4, maxLat: 34.4, minLng: 135.0, maxLng: 136.0 } },
+  { code: '31', name: 'tottori', bounds: { minLat: 35.0, maxLat: 35.6, minLng: 133.2, maxLng: 134.5 } },
+  { code: '32', name: 'shimane', bounds: { minLat: 34.3, maxLat: 37.3, minLng: 131.7, maxLng: 133.4 } },
+  { code: '33', name: 'okayama', bounds: { minLat: 34.4, maxLat: 35.4, minLng: 133.4, maxLng: 134.4 } },
+  { code: '34', name: 'hiroshima', bounds: { minLat: 34.0, maxLat: 35.0, minLng: 132.0, maxLng: 133.4 } },
+  { code: '35', name: 'yamaguchi', bounds: { minLat: 33.7, maxLat: 34.8, minLng: 130.8, maxLng: 132.2 } },
+  { code: '36', name: 'tokushima', bounds: { minLat: 33.5, maxLat: 34.3, minLng: 133.6, maxLng: 134.8 } },
+  { code: '37', name: 'kagawa', bounds: { minLat: 34.0, maxLat: 34.5, minLng: 133.6, maxLng: 134.5 } },
+  { code: '38', name: 'ehime', bounds: { minLat: 33.0, maxLat: 34.2, minLng: 132.0, maxLng: 133.7 } },
+  { code: '39', name: 'kochi', bounds: { minLat: 32.7, maxLat: 33.9, minLng: 132.5, maxLng: 134.3 } },
+  { code: '40', name: 'fukuoka', bounds: { minLat: 33.0, maxLat: 34.0, minLng: 130.0, maxLng: 131.2 } },
+  { code: '41', name: 'saga', bounds: { minLat: 33.0, maxLat: 33.6, minLng: 129.7, maxLng: 130.5 } },
+  { code: '42', name: 'nagasaki', bounds: { minLat: 32.5, maxLat: 34.7, minLng: 128.6, maxLng: 130.4 } },
+  { code: '43', name: 'kumamoto', bounds: { minLat: 32.0, maxLat: 33.2, minLng: 130.1, maxLng: 131.3 } },
+  { code: '44', name: 'oita', bounds: { minLat: 32.7, maxLat: 33.7, minLng: 130.8, maxLng: 132.1 } },
+  { code: '45', name: 'miyazaki', bounds: { minLat: 31.4, maxLat: 32.8, minLng: 130.7, maxLng: 131.9 } },
+  { code: '46', name: 'kagoshima', bounds: { minLat: 27.0, maxLat: 32.4, minLng: 128.4, maxLng: 131.2 } },
+  { code: '47', name: 'okinawa', bounds: { minLat: 24.0, maxLat: 27.9, minLng: 122.9, maxLng: 131.3 } }
+];
+
+/**
+ * 緯度経度から該当する都道府県を特定
  * @param {number} lat - 緯度
  * @param {number} lng - 経度
- * @param {number} zoom - ズームレベル
- * @returns {{ x: number, y: number }} タイル座標
+ * @returns {Object|null} 都道府県データ
  */
-const latLngToTile = (lat, lng, zoom) => {
-  const n = Math.pow(2, zoom);
-  const x = Math.floor((lng + 180) / 360 * n);
-  const latRad = lat * Math.PI / 180;
-  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
-  return { x, y };
+const getPrefectureFromCoords = (lat, lng) => {
+  // 境界ボックスで絞り込み（複数の候補がある場合は全て返す可能性あり）
+  const candidates = PREFECTURE_DATA.filter(pref => {
+    const b = pref.bounds;
+    return lat >= b.minLat && lat <= b.maxLat && lng >= b.minLng && lng <= b.maxLng;
+  });
+
+  if (candidates.length === 0) return null;
+
+  // 最初の候補を返す（境界が重複する場合は最初にマッチしたもの）
+  return candidates[0];
 };
 
 /**
- * DIDタイルのキャッシュ（メモリ内）
- */
-const didTileCache = new Map();
-
-/**
- * 国土地理院DID GeoJSONタイルを取得
- * @param {number} x - タイルX座標
- * @param {number} y - タイルY座標
- * @param {number} z - ズームレベル
+ * GitHub dronebird/DIDinJapan からDIDデータを取得
+ * @param {string} prefCode - 都道府県コード
+ * @param {string} prefName - 都道府県名（英語）
  * @returns {Promise<Object|null>} GeoJSONデータ
  */
-const fetchDIDTile = async (x, y, z) => {
-  const cacheKey = `${z}/${x}/${y}`;
+const fetchDIDFromGitHub = async (prefCode, prefName) => {
+  const cacheKey = `pref_${prefCode}`;
 
   // キャッシュチェック
-  if (didTileCache.has(cacheKey)) {
-    return didTileCache.get(cacheKey);
+  if (didPrefectureCache.has(cacheKey)) {
+    return didPrefectureCache.get(cacheKey);
   }
 
-  // fetch APIが利用できない環境（テスト環境等）ではスキップ
   if (typeof fetch === 'undefined') {
-    console.warn('[DID] fetch API unavailable');
     return null;
   }
 
   try {
-    // GSI GeoJSON tiles - note: may be blocked by CORS in browser
-    const url = `https://cyberjapandata.gsi.go.jp/xyz/did2015/${z}/${x}/${y}.geojson`;
+    // GitHub raw URL (CORS対応)
+    const url = `https://raw.githubusercontent.com/dronebird/DIDinJapan/master/GeoJSON/h22_did_${prefCode}_${prefName}.geojson`;
+
+    console.log(`[DID] Fetching from GitHub: ${prefName}`);
 
     const response = await fetch(url, {
       method: 'GET',
-      mode: 'cors',
-      headers: {
-        'Accept': 'application/json'
-      }
+      headers: { 'Accept': 'application/json' }
     });
 
-    // response が undefined の場合（テスト環境等）
-    if (!response) {
-      console.warn('[DID] Empty response from GSI');
+    if (!response || !response.ok) {
+      console.warn(`[DID] GitHub fetch failed: ${response?.status}`);
       return null;
     }
 
-    if (!response.ok) {
-      // タイルが存在しない（404）= その地域にDIDがない
-      if (response.status === 404) {
-        didTileCache.set(cacheKey, null);
-        return null;
-      }
-      console.warn(`[DID] GSI tile fetch failed: HTTP ${response.status}`);
-      throw new Error(`HTTP ${response.status}`);
-    }
-
     const geojson = await response.json();
-    didTileCache.set(cacheKey, geojson);
-    console.log(`[DID] GSI tile loaded: ${cacheKey}, features: ${geojson.features?.length || 0}`);
+    didPrefectureCache.set(cacheKey, geojson);
+    console.log(`[DID] GitHub data loaded: ${prefName}, features: ${geojson.features?.length || 0}`);
     return geojson;
   } catch (error) {
-    // CORS error or network failure - log for debugging
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      console.warn('[DID] CORS or network error - using fallback data');
-    } else {
-      console.warn('[DID] GSI tile fetch error:', error.message);
-    }
+    console.warn(`[DID] GitHub fetch error: ${error.message}`);
     return null;
   }
 };
 
 /**
- * DID（人口集中地区）判定 - 国土地理院タイル使用
+ * GeoJSONから点がDID内かチェック
+ * @param {Object} geojson - GeoJSONデータ
+ * @param {number} lat - 緯度
+ * @param {number} lng - 経度
+ * @returns {Object|null} マッチした場合の結果
+ */
+const checkPointInDIDGeoJSON = (geojson, lat, lng) => {
+  if (!geojson?.features || geojson.features.length === 0) {
+    return null;
+  }
+
+  const point = turf.point([lng, lat]);
+
+  for (const feature of geojson.features) {
+    if (!feature.geometry) continue;
+    if (feature.geometry.type !== 'Polygon' && feature.geometry.type !== 'MultiPolygon') continue;
+
+    try {
+      if (turf.booleanPointInPolygon(point, feature)) {
+        const areaName = feature.properties?.CITY_NAME ||
+                         feature.properties?.PREF_NAME ||
+                         feature.properties?.KEN_NAME ||
+                         feature.properties?.SIKUCHOSON ||
+                         '人口集中地区';
+        return {
+          isDID: true,
+          area: areaName,
+          certainty: 'confirmed',
+          source: 'GitHub/DIDinJapan',
+          description: `${areaName}のDID内（人口集中地区）`,
+          population: feature.properties?.JINKO || feature.properties?.POP || null
+        };
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+};
+
+/**
+ * DID（人口集中地区）判定 - 動的API取得
+ * 1. GitHub dronebird/DIDinJapan から都道府県単位でGeoJSON取得
+ * 2. 取得失敗時は静的フォールバックデータを使用
+ *
  * @param {number} lat - 緯度
  * @param {number} lng - 経度
  * @returns {Promise<Object>} DID判定結果
  */
 export const checkDIDArea = async (lat, lng) => {
-  // ズームレベル12でタイル取得（詳細度とパフォーマンスのバランス）
-  const zoom = 12;
-  const tile = latLngToTile(lat, lng, zoom);
-
   try {
-    const geojson = await fetchDIDTile(tile.x, tile.y, zoom);
+    // 1. 都道府県を特定
+    const prefecture = getPrefectureFromCoords(lat, lng);
 
-    // GSIタイルが取得できなかった場合はフォールバック使用
-    if (geojson === null) {
-      return checkDIDAreaFallback(lat, lng);
-    }
-
-    // タイルは取得できたが特徴がない場合 = DID外
-    if (!geojson.features || geojson.features.length === 0) {
+    if (!prefecture) {
+      // 日本国外の場合
       return {
         isDID: false,
         area: null,
         certainty: 'confirmed',
-        source: 'GSI',
-        description: 'DID外（人口集中地区外）- 国土地理院データ確認済'
+        source: 'bounds_check',
+        description: 'DID外（日本国外または離島）'
       };
     }
 
-    // 判定対象の点
-    const point = turf.point([lng, lat]);
+    // 2. GitHub から都道府県のDIDデータを取得
+    const geojson = await fetchDIDFromGitHub(prefecture.code, prefecture.name);
 
-    // 各DIDポリゴンと照合
-    for (const feature of geojson.features) {
-      if (feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
-        try {
-          if (turf.booleanPointInPolygon(point, feature)) {
-            const areaName = feature.properties?.CITY_NAME ||
-                           feature.properties?.PREF_NAME ||
-                           feature.properties?.KEN_NAME ||
-                           '人口集中地区';
-            return {
-              isDID: true,
-              area: areaName,
-              certainty: 'confirmed',
-              source: 'GSI',
-              description: `${areaName}のDID内（人口集中地区）- 国土地理院データ`,
-              population: feature.properties?.JINKO || null
-            };
-          }
-        } catch (e) {
-          // 無効なジオメトリはスキップ
-          continue;
-        }
+    if (geojson) {
+      // 3. 点がDID内かチェック
+      const result = checkPointInDIDGeoJSON(geojson, lat, lng);
+
+      if (result) {
+        return result;
       }
+
+      // DID外と確認
+      return {
+        isDID: false,
+        area: null,
+        certainty: 'confirmed',
+        source: 'GitHub/DIDinJapan',
+        description: 'DID外（人口集中地区外）- GeoJSONデータ確認済'
+      };
     }
 
-    return {
-      isDID: false,
-      area: null,
-      certainty: 'confirmed',
-      source: 'GSI',
-      description: 'DID外（人口集中地区外）- 国土地理院データ確認済'
-    };
+    // GitHub取得失敗時はフォールバック
+    console.log('[DID] GitHub unavailable, using fallback data');
+    return checkDIDAreaFallback(lat, lng);
+
   } catch (error) {
-    console.error('[DID] Check failed, falling back to estimation:', error);
-    // フォールバック: 主要都市の推定データを使用
+    console.error('[DID] Check failed:', error);
     return checkDIDAreaFallback(lat, lng);
   }
 };
