@@ -439,13 +439,19 @@ $color-border-light: rgba(255, 255, 255, 0.15);
       }
     }
 
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .copy-btn,
     .export-btn {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
       padding: 8px 12px;
-      margin-top: 4px;
       background: rgba($color-primary, 0.2);
       border: 1px solid rgba($color-primary, 0.3);
       border-radius: 6px;
@@ -454,10 +460,22 @@ $color-border-light: rgba(255, 255, 255, 0.15);
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
+      flex: 1;
 
       &:hover {
         background: rgba($color-primary, 0.3);
         border-color: $color-primary;
+      }
+    }
+
+    .copy-btn {
+      background: rgba($color-success, 0.2);
+      border-color: rgba($color-success, 0.3);
+      color: $color-success;
+
+      &:hover {
+        background: rgba($color-success, 0.3);
+        border-color: $color-success;
       }
     }
   }

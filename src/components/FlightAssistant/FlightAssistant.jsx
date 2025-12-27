@@ -19,7 +19,9 @@ import {
   MapPin,
   Download,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Copy,
+  Check
 } from 'lucide-react';
 import {
   hasApiKey,
@@ -71,6 +73,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [showOptimization, setShowOptimization] = useState(false);
   const [proposedPlan, setProposedPlan] = useState({ altitude: 50, purpose: '点検飛行' });
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -467,15 +470,12 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   };
 
   /**
-   * 判定結果をエクスポート
+   * 判定結果をテキスト形式で生成
    */
-  const handleExportResult = () => {
-    if (!assessmentResult) return;
+  const generateAssessmentText = () => {
+    if (!assessmentResult) return '';
 
     const now = new Date();
-    const dateStr = now.toISOString().slice(0, 19).replace(/[T:]/g, '-');
-
-    // テキスト形式でエクスポート
     let content = `フライト判定結果\n`;
     content += `================\n`;
     content += `日時: ${now.toLocaleString('ja-JP')}\n\n`;
@@ -541,6 +541,44 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
     content += `================\n`;
     content += `データソース: ${assessmentResult.aiEnhanced ? 'OpenAI + ローカル' : 'ローカル分析'}\n`;
+
+    return content;
+  };
+
+  /**
+   * 判定結果をクリップボードにコピー
+   */
+  const handleCopyResult = async () => {
+    const content = generateAssessmentText();
+    if (!content) return;
+
+    try {
+      await navigator.clipboard.writeText(content);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      // フォールバック: execCommand
+      const textArea = document.createElement('textarea');
+      textArea.value = content;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
+  /**
+   * 判定結果をエクスポート
+   */
+  const handleExportResult = () => {
+    const content = generateAssessmentText();
+    if (!content) return;
+
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 19).replace(/[T:]/g, '-');
 
     // ダウンロード
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -908,10 +946,16 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               <div className="detail-row source">
                 {assessmentResult.aiEnhanced ? '[AI] AI分析' : '[LOCAL] ローカル分析'}
               </div>
-              <button className="export-btn" onClick={handleExportResult}>
-                <Download size={14} />
-                結果をエクスポート
-              </button>
+              <div className="action-buttons">
+                <button className="copy-btn" onClick={handleCopyResult}>
+                  {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                  {isCopied ? 'コピー完了' : 'コピー'}
+                </button>
+                <button className="export-btn" onClick={handleExportResult}>
+                  <Download size={14} />
+                  エクスポート
+                </button>
+              </div>
             </div>
           )}
         </div>

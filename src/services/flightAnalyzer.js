@@ -44,53 +44,53 @@ const didPrefectureCache = new Map();
  * GitHub dronebird/DIDinJapan のファイル名形式: h22_did_[code]_[name].geojson
  */
 const PREFECTURE_DATA = [
-  { code: '01', name: 'hokkaido', bounds: { minLat: 41.3, maxLat: 45.6, minLng: 139.3, maxLng: 145.9 } },
-  { code: '02', name: 'aomori', bounds: { minLat: 40.2, maxLat: 41.6, minLng: 139.5, maxLng: 141.7 } },
-  { code: '03', name: 'iwate', bounds: { minLat: 38.7, maxLat: 40.5, minLng: 140.7, maxLng: 142.1 } },
-  { code: '04', name: 'miyagi', bounds: { minLat: 37.8, maxLat: 39.0, minLng: 140.3, maxLng: 141.7 } },
-  { code: '05', name: 'akita', bounds: { minLat: 39.0, maxLat: 40.5, minLng: 139.7, maxLng: 140.6 } },
-  { code: '06', name: 'yamagata', bounds: { minLat: 37.7, maxLat: 39.2, minLng: 139.5, maxLng: 140.7 } },
-  { code: '07', name: 'fukushima', bounds: { minLat: 36.8, maxLat: 37.9, minLng: 139.2, maxLng: 141.0 } },
-  { code: '08', name: 'ibaraki', bounds: { minLat: 35.7, maxLat: 36.9, minLng: 139.7, maxLng: 140.9 } },
-  { code: '09', name: 'tochigi', bounds: { minLat: 36.2, maxLat: 37.2, minLng: 139.3, maxLng: 140.3 } },
-  { code: '10', name: 'gunma', bounds: { minLat: 36.0, maxLat: 37.1, minLng: 138.4, maxLng: 139.7 } },
-  { code: '11', name: 'saitama', bounds: { minLat: 35.7, maxLat: 36.3, minLng: 138.9, maxLng: 139.9 } },
-  { code: '12', name: 'chiba', bounds: { minLat: 34.9, maxLat: 36.0, minLng: 139.7, maxLng: 140.9 } },
-  { code: '13', name: 'tokyo', bounds: { minLat: 35.5, maxLat: 35.9, minLng: 138.9, maxLng: 139.9 } },
-  { code: '14', name: 'kanagawa', bounds: { minLat: 35.1, maxLat: 35.7, minLng: 138.9, maxLng: 139.8 } },
-  { code: '15', name: 'niigata', bounds: { minLat: 37.0, maxLat: 38.6, minLng: 137.8, maxLng: 140.0 } },
-  { code: '16', name: 'toyama', bounds: { minLat: 36.3, maxLat: 36.9, minLng: 136.8, maxLng: 137.8 } },
-  { code: '17', name: 'ishikawa', bounds: { minLat: 36.0, maxLat: 37.9, minLng: 136.2, maxLng: 137.4 } },
-  { code: '18', name: 'fukui', bounds: { minLat: 35.4, maxLat: 36.3, minLng: 135.5, maxLng: 136.8 } },
-  { code: '19', name: 'yamanashi', bounds: { minLat: 35.2, maxLat: 35.9, minLng: 138.2, maxLng: 139.2 } },
-  { code: '20', name: 'nagano', bounds: { minLat: 35.2, maxLat: 37.0, minLng: 137.3, maxLng: 138.8 } },
-  { code: '21', name: 'gifu', bounds: { minLat: 35.1, maxLat: 36.5, minLng: 136.3, maxLng: 137.7 } },
-  { code: '22', name: 'shizuoka', bounds: { minLat: 34.6, maxLat: 35.6, minLng: 137.5, maxLng: 139.2 } },
-  { code: '23', name: 'aichi', bounds: { minLat: 34.6, maxLat: 35.4, minLng: 136.7, maxLng: 137.8 } },
-  { code: '24', name: 'mie', bounds: { minLat: 33.7, maxLat: 35.2, minLng: 135.9, maxLng: 137.0 } },
-  { code: '25', name: 'shiga', bounds: { minLat: 34.8, maxLat: 35.7, minLng: 135.8, maxLng: 136.5 } },
-  { code: '26', name: 'kyoto', bounds: { minLat: 34.7, maxLat: 35.8, minLng: 135.0, maxLng: 136.1 } },
-  { code: '27', name: 'osaka', bounds: { minLat: 34.3, maxLat: 35.0, minLng: 135.1, maxLng: 135.7 } },
-  { code: '28', name: 'hyogo', bounds: { minLat: 34.2, maxLat: 35.7, minLng: 134.3, maxLng: 135.5 } },
-  { code: '29', name: 'nara', bounds: { minLat: 33.9, maxLat: 34.8, minLng: 135.6, maxLng: 136.2 } },
-  { code: '30', name: 'wakayama', bounds: { minLat: 33.4, maxLat: 34.4, minLng: 135.0, maxLng: 136.0 } },
-  { code: '31', name: 'tottori', bounds: { minLat: 35.0, maxLat: 35.6, minLng: 133.2, maxLng: 134.5 } },
-  { code: '32', name: 'shimane', bounds: { minLat: 34.3, maxLat: 37.3, minLng: 131.7, maxLng: 133.4 } },
-  { code: '33', name: 'okayama', bounds: { minLat: 34.4, maxLat: 35.4, minLng: 133.4, maxLng: 134.4 } },
-  { code: '34', name: 'hiroshima', bounds: { minLat: 34.0, maxLat: 35.0, minLng: 132.0, maxLng: 133.4 } },
-  { code: '35', name: 'yamaguchi', bounds: { minLat: 33.7, maxLat: 34.8, minLng: 130.8, maxLng: 132.2 } },
-  { code: '36', name: 'tokushima', bounds: { minLat: 33.5, maxLat: 34.3, minLng: 133.6, maxLng: 134.8 } },
-  { code: '37', name: 'kagawa', bounds: { minLat: 34.0, maxLat: 34.5, minLng: 133.6, maxLng: 134.5 } },
-  { code: '38', name: 'ehime', bounds: { minLat: 33.0, maxLat: 34.2, minLng: 132.0, maxLng: 133.7 } },
-  { code: '39', name: 'kochi', bounds: { minLat: 32.7, maxLat: 33.9, minLng: 132.5, maxLng: 134.3 } },
-  { code: '40', name: 'fukuoka', bounds: { minLat: 33.0, maxLat: 34.0, minLng: 130.0, maxLng: 131.2 } },
-  { code: '41', name: 'saga', bounds: { minLat: 33.0, maxLat: 33.6, minLng: 129.7, maxLng: 130.5 } },
-  { code: '42', name: 'nagasaki', bounds: { minLat: 32.5, maxLat: 34.7, minLng: 128.6, maxLng: 130.4 } },
-  { code: '43', name: 'kumamoto', bounds: { minLat: 32.0, maxLat: 33.2, minLng: 130.1, maxLng: 131.3 } },
-  { code: '44', name: 'oita', bounds: { minLat: 32.7, maxLat: 33.7, minLng: 130.8, maxLng: 132.1 } },
-  { code: '45', name: 'miyazaki', bounds: { minLat: 31.4, maxLat: 32.8, minLng: 130.7, maxLng: 131.9 } },
-  { code: '46', name: 'kagoshima', bounds: { minLat: 27.0, maxLat: 32.4, minLng: 128.4, maxLng: 131.2 } },
-  { code: '47', name: 'okinawa', bounds: { minLat: 24.0, maxLat: 27.9, minLng: 122.9, maxLng: 131.3 } }
+  { code: '01', name: 'hokkaido', nameJa: '北海道', bounds: { minLat: 41.3, maxLat: 45.6, minLng: 139.3, maxLng: 145.9 } },
+  { code: '02', name: 'aomori', nameJa: '青森県', bounds: { minLat: 40.2, maxLat: 41.6, minLng: 139.5, maxLng: 141.7 } },
+  { code: '03', name: 'iwate', nameJa: '岩手県', bounds: { minLat: 38.7, maxLat: 40.5, minLng: 140.7, maxLng: 142.1 } },
+  { code: '04', name: 'miyagi', nameJa: '宮城県', bounds: { minLat: 37.8, maxLat: 39.0, minLng: 140.3, maxLng: 141.7 } },
+  { code: '05', name: 'akita', nameJa: '秋田県', bounds: { minLat: 39.0, maxLat: 40.5, minLng: 139.7, maxLng: 140.6 } },
+  { code: '06', name: 'yamagata', nameJa: '山形県', bounds: { minLat: 37.7, maxLat: 39.2, minLng: 139.5, maxLng: 140.7 } },
+  { code: '07', name: 'fukushima', nameJa: '福島県', bounds: { minLat: 36.8, maxLat: 37.9, minLng: 139.2, maxLng: 141.0 } },
+  { code: '08', name: 'ibaraki', nameJa: '茨城県', bounds: { minLat: 35.7, maxLat: 36.9, minLng: 139.7, maxLng: 140.9 } },
+  { code: '09', name: 'tochigi', nameJa: '栃木県', bounds: { minLat: 36.2, maxLat: 37.2, minLng: 139.3, maxLng: 140.3 } },
+  { code: '10', name: 'gunma', nameJa: '群馬県', bounds: { minLat: 36.0, maxLat: 37.1, minLng: 138.4, maxLng: 139.7 } },
+  { code: '11', name: 'saitama', nameJa: '埼玉県', bounds: { minLat: 35.7, maxLat: 36.3, minLng: 138.9, maxLng: 139.9 } },
+  { code: '12', name: 'chiba', nameJa: '千葉県', bounds: { minLat: 34.9, maxLat: 36.0, minLng: 139.7, maxLng: 140.9 } },
+  { code: '13', name: 'tokyo', nameJa: '東京都', bounds: { minLat: 35.5, maxLat: 35.9, minLng: 138.9, maxLng: 139.9 } },
+  { code: '14', name: 'kanagawa', nameJa: '神奈川県', bounds: { minLat: 35.1, maxLat: 35.7, minLng: 138.9, maxLng: 139.8 } },
+  { code: '15', name: 'niigata', nameJa: '新潟県', bounds: { minLat: 37.0, maxLat: 38.6, minLng: 137.8, maxLng: 140.0 } },
+  { code: '16', name: 'toyama', nameJa: '富山県', bounds: { minLat: 36.3, maxLat: 36.9, minLng: 136.8, maxLng: 137.8 } },
+  { code: '17', name: 'ishikawa', nameJa: '石川県', bounds: { minLat: 36.0, maxLat: 37.9, minLng: 136.2, maxLng: 137.4 } },
+  { code: '18', name: 'fukui', nameJa: '福井県', bounds: { minLat: 35.4, maxLat: 36.3, minLng: 135.5, maxLng: 136.8 } },
+  { code: '19', name: 'yamanashi', nameJa: '山梨県', bounds: { minLat: 35.2, maxLat: 35.9, minLng: 138.2, maxLng: 139.2 } },
+  { code: '20', name: 'nagano', nameJa: '長野県', bounds: { minLat: 35.2, maxLat: 37.0, minLng: 137.3, maxLng: 138.8 } },
+  { code: '21', name: 'gifu', nameJa: '岐阜県', bounds: { minLat: 35.1, maxLat: 36.5, minLng: 136.3, maxLng: 137.7 } },
+  { code: '22', name: 'shizuoka', nameJa: '静岡県', bounds: { minLat: 34.6, maxLat: 35.6, minLng: 137.5, maxLng: 139.2 } },
+  { code: '23', name: 'aichi', nameJa: '愛知県', bounds: { minLat: 34.6, maxLat: 35.4, minLng: 136.7, maxLng: 137.8 } },
+  { code: '24', name: 'mie', nameJa: '三重県', bounds: { minLat: 33.7, maxLat: 35.2, minLng: 135.9, maxLng: 137.0 } },
+  { code: '25', name: 'shiga', nameJa: '滋賀県', bounds: { minLat: 34.8, maxLat: 35.7, minLng: 135.8, maxLng: 136.5 } },
+  { code: '26', name: 'kyoto', nameJa: '京都府', bounds: { minLat: 34.7, maxLat: 35.8, minLng: 135.0, maxLng: 136.1 } },
+  { code: '27', name: 'osaka', nameJa: '大阪府', bounds: { minLat: 34.3, maxLat: 35.0, minLng: 135.1, maxLng: 135.7 } },
+  { code: '28', name: 'hyogo', nameJa: '兵庫県', bounds: { minLat: 34.2, maxLat: 35.7, minLng: 134.3, maxLng: 135.5 } },
+  { code: '29', name: 'nara', nameJa: '奈良県', bounds: { minLat: 33.9, maxLat: 34.8, minLng: 135.6, maxLng: 136.2 } },
+  { code: '30', name: 'wakayama', nameJa: '和歌山県', bounds: { minLat: 33.4, maxLat: 34.4, minLng: 135.0, maxLng: 136.0 } },
+  { code: '31', name: 'tottori', nameJa: '鳥取県', bounds: { minLat: 35.0, maxLat: 35.6, minLng: 133.2, maxLng: 134.5 } },
+  { code: '32', name: 'shimane', nameJa: '島根県', bounds: { minLat: 34.3, maxLat: 37.3, minLng: 131.7, maxLng: 133.4 } },
+  { code: '33', name: 'okayama', nameJa: '岡山県', bounds: { minLat: 34.4, maxLat: 35.4, minLng: 133.4, maxLng: 134.4 } },
+  { code: '34', name: 'hiroshima', nameJa: '広島県', bounds: { minLat: 34.0, maxLat: 35.0, minLng: 132.0, maxLng: 133.4 } },
+  { code: '35', name: 'yamaguchi', nameJa: '山口県', bounds: { minLat: 33.7, maxLat: 34.8, minLng: 130.8, maxLng: 132.2 } },
+  { code: '36', name: 'tokushima', nameJa: '徳島県', bounds: { minLat: 33.5, maxLat: 34.3, minLng: 133.6, maxLng: 134.8 } },
+  { code: '37', name: 'kagawa', nameJa: '香川県', bounds: { minLat: 34.0, maxLat: 34.5, minLng: 133.6, maxLng: 134.5 } },
+  { code: '38', name: 'ehime', nameJa: '愛媛県', bounds: { minLat: 33.0, maxLat: 34.2, minLng: 132.0, maxLng: 133.7 } },
+  { code: '39', name: 'kochi', nameJa: '高知県', bounds: { minLat: 32.7, maxLat: 33.9, minLng: 132.5, maxLng: 134.3 } },
+  { code: '40', name: 'fukuoka', nameJa: '福岡県', bounds: { minLat: 33.0, maxLat: 34.0, minLng: 130.0, maxLng: 131.2 } },
+  { code: '41', name: 'saga', nameJa: '佐賀県', bounds: { minLat: 33.0, maxLat: 33.6, minLng: 129.7, maxLng: 130.5 } },
+  { code: '42', name: 'nagasaki', nameJa: '長崎県', bounds: { minLat: 32.5, maxLat: 34.7, minLng: 128.6, maxLng: 130.4 } },
+  { code: '43', name: 'kumamoto', nameJa: '熊本県', bounds: { minLat: 32.0, maxLat: 33.2, minLng: 130.1, maxLng: 131.3 } },
+  { code: '44', name: 'oita', nameJa: '大分県', bounds: { minLat: 32.7, maxLat: 33.7, minLng: 130.8, maxLng: 132.1 } },
+  { code: '45', name: 'miyazaki', nameJa: '宮崎県', bounds: { minLat: 31.4, maxLat: 32.8, minLng: 130.7, maxLng: 131.9 } },
+  { code: '46', name: 'kagoshima', nameJa: '鹿児島県', bounds: { minLat: 27.0, maxLat: 32.4, minLng: 128.4, maxLng: 131.2 } },
+  { code: '47', name: 'okinawa', nameJa: '沖縄県', bounds: { minLat: 24.0, maxLat: 27.9, minLng: 122.9, maxLng: 131.3 } }
 ];
 
 /**
@@ -157,13 +157,59 @@ const fetchDIDFromGitHub = async (prefCode, prefName) => {
 };
 
 /**
+ * GeoJSONのプロパティから地名を取得
+ * @param {Object} properties - GeoJSON feature properties
+ * @param {Object} prefecture - 都道府県データ
+ * @returns {string} 地名
+ */
+const extractAreaName = (properties, prefecture) => {
+  if (!properties) return prefecture?.nameJa || prefecture?.name || '人口集中地区';
+
+  // 市区町村名の候補（優先順位順）
+  const cityName = properties.CITY_NAME ||
+                   properties.city_name ||
+                   properties.SIKUCHOSON ||
+                   properties.S_NAME ||
+                   properties.MOJI ||
+                   properties.N03_004 ||  // 国土数値情報の市区町村名
+                   properties.N03_003 ||  // 国土数値情報の郡名
+                   null;
+
+  // 都道府県名の候補
+  const prefName = properties.PREF_NAME ||
+                   properties.pref_name ||
+                   properties.KEN_NAME ||
+                   properties.ken_name ||
+                   properties.N03_001 ||  // 国土数値情報の都道府県名
+                   null;
+
+  // 市区町村名があれば使用
+  if (cityName) {
+    return cityName;
+  }
+
+  // GeoJSONに都道府県名があれば使用
+  if (prefName) {
+    return prefName;
+  }
+
+  // 都道府県データから日本語名を使用
+  if (prefecture?.nameJa) {
+    return `${prefecture.nameJa}DID`;
+  }
+
+  return '人口集中地区';
+};
+
+/**
  * GeoJSONから点がDID内かチェック
  * @param {Object} geojson - GeoJSONデータ
  * @param {number} lat - 緯度
  * @param {number} lng - 経度
+ * @param {Object} prefecture - 都道府県データ
  * @returns {Object|null} マッチした場合の結果
  */
-const checkPointInDIDGeoJSON = (geojson, lat, lng) => {
+const checkPointInDIDGeoJSON = (geojson, lat, lng, prefecture) => {
   if (!geojson?.features || geojson.features.length === 0) {
     return null;
   }
@@ -176,18 +222,20 @@ const checkPointInDIDGeoJSON = (geojson, lat, lng) => {
 
     try {
       if (turf.booleanPointInPolygon(point, feature)) {
-        const areaName = feature.properties?.CITY_NAME ||
-                         feature.properties?.PREF_NAME ||
-                         feature.properties?.KEN_NAME ||
-                         feature.properties?.SIKUCHOSON ||
-                         '人口集中地区';
+        const areaName = extractAreaName(feature.properties, prefecture);
+        const population = feature.properties?.JINKO ||
+                          feature.properties?.POP ||
+                          feature.properties?.POPULATION ||
+                          feature.properties?.jinko ||
+                          null;
+
         return {
           isDID: true,
           area: areaName,
           certainty: 'confirmed',
           source: 'GitHub/DIDinJapan',
           description: `${areaName}のDID内（人口集中地区）`,
-          population: feature.properties?.JINKO || feature.properties?.POP || null
+          population
         };
       }
     } catch {
@@ -227,8 +275,8 @@ export const checkDIDArea = async (lat, lng) => {
     const geojson = await fetchDIDFromGitHub(prefecture.code, prefecture.name);
 
     if (geojson) {
-      // 3. 点がDID内かチェック
-      const result = checkPointInDIDGeoJSON(geojson, lat, lng);
+      // 3. 点がDID内かチェック（都道府県情報も渡す）
+      const result = checkPointInDIDGeoJSON(geojson, lat, lng, prefecture);
 
       if (result) {
         return result;
