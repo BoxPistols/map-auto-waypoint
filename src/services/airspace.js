@@ -23,6 +23,12 @@ export const AIRPORT_ZONES = [
   // 北海道
   { name: '新千歳空港', lat: 42.7752, lng: 141.6924, radius: 9000, type: 'airport' },
   { name: '丘珠空港', lat: 43.1176, lng: 141.3816, radius: 3000, type: 'airfield' },
+  { name: '旭川空港', lat: 43.6708, lng: 142.4475, radius: 6000, type: 'airport' },
+  { name: '函館空港', lat: 41.7700, lng: 140.8219, radius: 6000, type: 'airport' },
+  { name: '帯広空港', lat: 42.7333, lng: 143.2172, radius: 6000, type: 'airport' },
+  { name: '釧路空港', lat: 43.0411, lng: 144.1928, radius: 6000, type: 'airport' },
+  { name: 'たきかわスカイパーク', lat: 43.5467, lng: 141.9097, radius: 2000, type: 'airfield' },
+  { name: '美唄農道離着陸場', lat: 43.3333, lng: 141.8500, radius: 1500, type: 'airfield' },
 
   // 九州
   { name: '福岡空港', lat: 33.5859, lng: 130.4510, radius: 9000, type: 'airport' },
