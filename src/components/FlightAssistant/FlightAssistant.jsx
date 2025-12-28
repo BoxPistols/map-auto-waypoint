@@ -537,77 +537,93 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   };
 
   /**
-   * 判定結果をテキスト形式で生成
+   * 判定結果をMarkdown形式で生成
    */
   const generateAssessmentText = () => {
     if (!assessmentResult) return '';
 
     const now = new Date();
-    let content = `フライト判定結果\n`;
-    content += `================\n`;
-    content += `日時: ${now.toLocaleString('ja-JP')}\n\n`;
+    let content = `# フライト判定結果\n\n`;
+    content += `**判定日時:** ${now.toLocaleString('ja-JP')}\n\n`;
+    content += `---\n\n`;
 
-    content += `【リスクレベル】\n`;
-    content += `${assessmentResult.riskLevel} (スコア: ${assessmentResult.riskScore}/100)\n`;
+    // リスクレベル
+    content += `## リスクレベル\n\n`;
+    const riskEmoji = assessmentResult.riskLevel === 'LOW' ? '✅' :
+      assessmentResult.riskLevel === 'MEDIUM' ? '⚠️' :
+      assessmentResult.riskLevel === 'HIGH' ? '🔶' : '🚫';
+    content += `**${riskEmoji} ${assessmentResult.riskLevel}** (スコア: ${assessmentResult.riskScore}/100)\n\n`;
     content += `${assessmentResult.summary}\n\n`;
 
+    // 検出されたリスク
     if (assessmentResult.risks.length > 0) {
-      content += `【検出されたリスク】\n`;
+      content += `## 検出されたリスク\n\n`;
+      content += `| 深刻度 | 説明 |\n`;
+      content += `|--------|------|\n`;
       assessmentResult.risks.forEach(r => {
-        content += `- [${r.severity}] ${r.description}\n`;
+        const severityLabel = r.severity === 'critical' ? '🚫 CRITICAL' :
+          r.severity === 'high' ? '🔶 HIGH' :
+          r.severity === 'medium' ? '⚠️ MEDIUM' : '✅ LOW';
+        content += `| ${severityLabel} | ${r.description} |\n`;
       });
       content += '\n';
     }
 
+    // 最寄り空港
     if (assessmentResult.context?.nearestAirport) {
-      content += `【最寄り空港】\n`;
-      content += `${assessmentResult.context.nearestAirport.name}: ${(assessmentResult.context.nearestAirport.distance / 1000).toFixed(1)}km\n\n`;
+      content += `## 最寄り空港\n\n`;
+      content += `- **名称:** ${assessmentResult.context.nearestAirport.name}\n`;
+      content += `- **距離:** ${(assessmentResult.context.nearestAirport.distance / 1000).toFixed(1)}km\n\n`;
     }
 
+    // DID情報
     if (assessmentResult.context?.didInfo) {
       const did = assessmentResult.context.didInfo;
-      content += `【DID情報】\n`;
+      content += `## 人口集中地区（DID）\n\n`;
       if (did.isDID) {
-        content += `[!] ${did.description}\n`;
-        // DID内のWaypoint詳細
+        content += `> ⚠️ **注意:** ${did.description}\n\n`;
         if (did.waypointDetails?.areaSummaries) {
+          content += `### DID内のWaypoint\n\n`;
           for (const area of did.waypointDetails.areaSummaries) {
-            content += `  - ${area.area}: WP ${area.waypointIndices.join(', ')}\n`;
+            content += `- **${area.area}:** WP ${area.waypointIndices.join(', ')}\n`;
           }
+          content += '\n';
         }
       } else {
-        content += `[OK] ${did.description}\n`;
+        content += `✅ ${did.description}\n\n`;
       }
-      content += '\n';
     }
 
-    content += `【推奨事項】\n`;
+    // 推奨事項
+    content += `## 推奨事項\n\n`;
     assessmentResult.recommendations.forEach(rec => {
       content += `- ${rec}\n`;
     });
     content += '\n';
 
+    // 必要な許可
     if (assessmentResult.requiredPermissions.length > 0) {
-      content += `【必要な許可】\n`;
+      content += `## 必要な許可\n\n`;
       assessmentResult.requiredPermissions.forEach(p => {
         content += `- ${p}\n`;
       });
-      content += `承認取得目安: ${assessmentResult.estimatedApprovalDays}日\n\n`;
+      content += `\n**承認取得目安:** ${assessmentResult.estimatedApprovalDays}日\n\n`;
     }
 
     // Waypointデータ
     if (waypoints.length > 0) {
-      content += `【Waypoint一覧】\n`;
+      content += `## Waypoint一覧\n\n`;
+      content += `| No. | 緯度 | 経度 | 高度 |\n`;
+      content += `|-----|------|------|------|\n`;
       waypoints.forEach((wp, i) => {
-        content += `WP${i + 1}: ${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}`;
-        if (wp.altitude) content += ` (高度: ${wp.altitude}m)`;
-        content += '\n';
+        const alt = wp.altitude ? `${wp.altitude}m` : '-';
+        content += `| WP${i + 1} | ${wp.lat.toFixed(6)} | ${wp.lng.toFixed(6)} | ${alt} |\n`;
       });
       content += '\n';
     }
 
-    content += `================\n`;
-    content += `データソース: ${assessmentResult.aiEnhanced ? 'OpenAI + ローカル' : 'ローカル分析'}\n`;
+    content += `---\n\n`;
+    content += `**データソース:** ${assessmentResult.aiEnhanced ? 'OpenAI + ローカル分析' : 'ローカル分析'}\n`;
 
     return content;
   };
@@ -638,7 +654,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   };
 
   /**
-   * 判定結果をエクスポート
+   * 判定結果をMarkdownファイルとしてエクスポート
    */
   const handleExportResult = () => {
     const content = generateAssessmentText();
@@ -647,12 +663,12 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     const now = new Date();
     const dateStr = now.toISOString().slice(0, 19).replace(/[T:]/g, '-');
 
-    // ダウンロード
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    // ダウンロード（Markdownファイル）
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `flight-assessment-${dateStr}.txt`;
+    a.download = `flight-assessment-${dateStr}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
