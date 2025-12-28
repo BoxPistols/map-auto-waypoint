@@ -38,7 +38,7 @@ import {
   setLocalModelName,
   isLocalModel
 } from '../../services/openaiService';
-import { runFullAnalysis, getFlightRecommendations, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
+import { runFullAnalysis, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
 import { hasReinfolibApiKey, setReinfolibApiKey } from '../../services/reinfolibService';
 import './FlightAssistant.scss';
 
@@ -64,7 +64,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'こんにちは！フライト計画のお手伝いをします。\n\n飛行目的を教えてください。例：\n• 「太陽光発電所のパネル点検」\n• 「送電線の架線点検」\n• 「建設現場の測量」'
+      content: '**フライト判定アシスタント**\n\n地図上でエリア/Waypointを設定し、「判定！」ボタンで安全性を分析します。\n\n**判定内容:**\n• DID（人口集中地区）チェック\n• 空港・禁止区域チェック\n• 必要な許可の確認\n• Waypointの最適化提案'
     }
   ]);
   const [input, setInput] = useState('');
@@ -241,40 +241,24 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     setIsProcessing(true);
 
     try {
-      // OpenAI APIキーがある場合はAI応答を取得
+      // OpenAI APIキーがある場合のみAI応答を取得
       if (hasKey) {
         const response = await getFlightAdvice(userMessage, { polygons, waypoints });
         setMessages(prev => [...prev, { role: 'assistant', content: response }]);
       } else {
-        // ローカル推奨パラメータを取得
-        const recommendations = await getFlightRecommendations(userMessage);
+        // AI未設定時は判定機能への誘導
+        let response = '現在、ローカル分析モードで動作しています。\n\n';
 
-        // 推奨パラメータをproposedPlanに保存（判定時に使用）
-        setProposedPlan({
-          altitude: recommendations.altitude,
-          purpose: recommendations.purpose || userMessage,
-          pattern: recommendations.pattern,
-          camera: recommendations.camera
-        });
-
-        let response = `**推奨パラメータ**\n\n`;
-        response += `**パターン**: ${recommendations.pattern === 'grid' ? 'グリッド' : '周回'}\n`;
-        response += `**推奨高度**: ${recommendations.altitude}m\n`;
-        response += `**カメラ**: ${recommendations.camera}\n`;
-        response += `**推定時間**: ${recommendations.estimatedFlightTime}\n\n`;
-        response += `**推奨機体**:\n`;
-        recommendations.recommendedAircraft.forEach(a => {
-          response += `- ${a}\n`;
-        });
-        response += `\n**Tips**:\n`;
-        recommendations.tips.forEach(t => {
-          response += `- ${t}\n`;
-        });
-
-        if (polygons.length > 0) {
-          response += `\n[OK] ポリゴンが設定済み。「判定！」で詳細分析できます。`;
+        if (polygons.length > 0 || waypoints.length > 0) {
+          response += `**現在の設定:**\n`;
+          response += `• エリア: ${polygons.length}件\n`;
+          response += `• Waypoint: ${waypoints.length}件\n\n`;
+          response += `「**判定！**」ボタンをクリックして安全性分析を実行してください。`;
         } else {
-          response += `\n[!] まず地図上でエリアを設定してください。`;
+          response += `**使い方:**\n`;
+          response += `1. 地図上でエリアまたはWaypointを設定\n`;
+          response += `2. 「判定！」ボタンで安全性を分析\n\n`;
+          response += `AI質問機能を使用するには、設定からOpenAI APIキーを登録してください。`;
         }
 
         setMessages(prev => [...prev, { role: 'assistant', content: response }]);
@@ -485,21 +469,26 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
       if (optimization.hasIssues) {
         response += `### プラン最適化の提案\n`;
-        response += `${optimization.summary}\n`;
+        response += `${optimization.summary}\n\n`;
+
+        // As-is / To-be 比較テーブル
+        if (optimization.waypointAnalysis.gaps.length > 0) {
+          response += `**As-is → To-be 比較:**\n\n`;
+          response += `| WP | 問題 | 移動距離 |\n`;
+          response += `|----|------|----------|\n`;
+          optimization.waypointAnalysis.gaps.forEach(gap => {
+            const issue = gap.issues[0];
+            const issueText = issue.type === 'airport' ? `空港: ${issue.zone}` : `禁止: ${issue.zone}`;
+            const moveDistance = gap.moveDistance ? `${Math.round(gap.moveDistance)}m` : '-';
+            response += `| WP${gap.waypointIndex} | ${issueText} | ${moveDistance} |\n`;
+          });
+          response += `\n`;
+        }
+
+        response += `**推奨アクション:**\n`;
         optimization.actions.forEach(action => {
           response += `• ${action}\n`;
         });
-
-        // ギャップの詳細
-        if (optimization.waypointAnalysis.gaps.length > 0) {
-          response += `\n**Waypointの問題:**\n`;
-          optimization.waypointAnalysis.gaps.slice(0, 3).forEach(gap => {
-            response += `• WP${gap.waypointIndex}: ${gap.issues[0].zone}から${gap.moveDistance}m移動が必要\n`;
-          });
-          if (optimization.waypointAnalysis.gaps.length > 3) {
-            response += `• ...他${optimization.waypointAnalysis.gaps.length - 3}件\n`;
-          }
-        }
 
         response += `\n下の「推奨プランを適用」ボタンで自動修正できます\n`;
         setShowOptimization(true);
@@ -618,6 +607,32 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       waypoints.forEach((wp, i) => {
         const alt = wp.altitude ? `${wp.altitude}m` : '-';
         content += `| WP${i + 1} | ${wp.lat.toFixed(6)} | ${wp.lng.toFixed(6)} | ${alt} |\n`;
+      });
+      content += '\n';
+    }
+
+    // 最適化プラン（As-is / To-be 比較）
+    if (optimizationPlan?.hasIssues && optimizationPlan?.waypointAnalysis?.gaps?.length > 0) {
+      content += `## 最適化提案 (As-is → To-be)\n\n`;
+      content += `> ${optimizationPlan.summary}\n\n`;
+      content += `| WP | 問題 | 現在位置 (As-is) | 推奨位置 (To-be) | 移動距離 |\n`;
+      content += `|----|------|------------------|------------------|----------|\n`;
+
+      optimizationPlan.waypointAnalysis.gaps.forEach(gap => {
+        const issue = gap.issues[0];
+        const issueText = `${issue.zone} (${issue.type === 'airport' ? '空港' : '禁止区域'})`;
+        const currentPos = `${gap.current.lat.toFixed(6)}, ${gap.current.lng.toFixed(6)}`;
+        const recommendedPos = gap.recommended
+          ? `${gap.recommended.lat.toFixed(6)}, ${gap.recommended.lng.toFixed(6)}`
+          : '-';
+        const moveDistance = gap.moveDistance ? `${Math.round(gap.moveDistance)}m` : '-';
+        content += `| WP${gap.waypointIndex} | ${issueText} | ${currentPos} | ${recommendedPos} | ${moveDistance} |\n`;
+      });
+      content += '\n';
+
+      content += `### 最適化アクション\n\n`;
+      optimizationPlan.actions.forEach(action => {
+        content += `- ${action}\n`;
       });
       content += '\n';
     }
@@ -998,7 +1013,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder={hasKey ? '質問を入力...' : '飛行目的を入力...'}
+          placeholder={hasKey ? 'AIに質問...' : 'メッセージ...（AI未設定）'}
           rows={1}
           disabled={isProcessing}
         />
