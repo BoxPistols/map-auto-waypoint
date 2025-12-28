@@ -1061,6 +1061,17 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
             {getRiskBadge(assessmentResult.riskLevel)}
             {showAssessmentDetail ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </div>
+          {/* コピー/エクスポートボタンは常に表示 */}
+          <div className="action-buttons-bar">
+            <button className="copy-btn" onClick={handleCopyResult}>
+              {isCopied ? <Check size={14} /> : <Copy size={14} />}
+              {isCopied ? 'コピー完了' : 'コピー'}
+            </button>
+            <button className="export-btn" onClick={handleExportResult}>
+              <Download size={14} />
+              DL
+            </button>
+          </div>
           {showAssessmentDetail && (
             <div className="summary-detail">
               <div className="detail-row">
@@ -1079,16 +1090,6 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               </div>
               <div className="detail-row source">
                 {assessmentResult.aiEnhanced ? '[AI] AI分析' : '[LOCAL] ローカル分析'}
-              </div>
-              <div className="action-buttons">
-                <button className="copy-btn" onClick={handleCopyResult}>
-                  {isCopied ? <Check size={14} /> : <Copy size={14} />}
-                  {isCopied ? 'コピー完了' : 'コピー'}
-                </button>
-                <button className="export-btn" onClick={handleExportResult}>
-                  <Download size={14} />
-                  エクスポート
-                </button>
               </div>
             </div>
           )}

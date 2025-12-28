@@ -97,19 +97,21 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   }
 
   &.fullscreen {
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw !important;
-    height: 100vh !important;
-    max-height: 100vh;
-    border-radius: 0;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    width: 80vw !important;
+    height: 85vh !important;
+    max-width: 1200px;
+    max-height: 900px;
+    border-radius: 16px;
     z-index: 9999;
 
     .flight-assistant-messages {
-      max-height: calc(100vh - 200px);
-      min-height: calc(100vh - 250px);
+      max-height: calc(85vh - 200px);
+      min-height: calc(85vh - 250px);
     }
 
     .message-content {
@@ -514,7 +516,50 @@ $color-border-light: rgba(255, 255, 255, 0.15);
       gap: 8px;
       margin-top: 8px;
     }
+  }
 
+  .action-buttons-bar {
+    display: flex;
+    gap: 8px;
+    padding: 8px 16px;
+    border-bottom: 1px solid $color-border;
+
+    .copy-btn,
+    .export-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 6px 12px;
+      background: rgba($color-primary, 0.2);
+      border: 1px solid rgba($color-primary, 0.3);
+      border-radius: 6px;
+      color: $color-primary-lighter;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex: 1;
+
+      &:hover {
+        background: rgba($color-primary, 0.3);
+        border-color: $color-primary;
+      }
+    }
+
+    .copy-btn {
+      background: rgba($color-success, 0.2);
+      border-color: rgba($color-success, 0.3);
+      color: $color-success;
+
+      &:hover {
+        background: rgba($color-success, 0.3);
+        border-color: $color-success;
+      }
+    }
+  }
+
+  .summary-detail {
     .copy-btn,
     .export-btn {
       display: flex;
