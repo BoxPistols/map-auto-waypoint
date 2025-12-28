@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   Send,
@@ -21,7 +21,9 @@ import {
   Maximize2,
   Minimize2,
   Copy,
-  Check
+  Check,
+  Expand,
+  Shrink
 } from 'lucide-react';
 import {
   hasApiKey,
@@ -73,8 +75,13 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [showOptimization, setShowOptimization] = useState(false);
   const [proposedPlan, setProposedPlan] = useState({ altitude: 50, purpose: '点検飛行' });
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [panelSize, setPanelSize] = useState({ width: 400, height: 500 });
+  const [isResizing, setIsResizing] = useState(false);
   const messagesEndRef = useRef(null);
+  const panelRef = useRef(null);
+  const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -83,6 +90,66 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // リサイズハンドラー
+  const handleResizeStart = useCallback((e, direction) => {
+    e.preventDefault();
+    setIsResizing(true);
+    resizeRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startWidth: panelSize.width,
+      startHeight: panelSize.height,
+      direction
+    };
+  }, [panelSize]);
+
+  const handleResizeMove = useCallback((e) => {
+    if (!isResizing) return;
+
+    const { startX, startY, startWidth, startHeight, direction } = resizeRef.current;
+    const deltaX = startX - e.clientX;
+    const deltaY = startY - e.clientY;
+
+    let newWidth = startWidth;
+    let newHeight = startHeight;
+
+    if (direction.includes('left')) {
+      newWidth = Math.max(360, Math.min(window.innerWidth - 48, startWidth + deltaX));
+    }
+    if (direction.includes('top')) {
+      newHeight = Math.max(300, Math.min(window.innerHeight - 48, startHeight + deltaY));
+    }
+
+    setPanelSize({ width: newWidth, height: newHeight });
+  }, [isResizing]);
+
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+      document.body.style.cursor = 'nwse-resize';
+      document.body.style.userSelect = 'none';
+    }
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, handleResizeMove, handleResizeEnd]);
+
+  // フルスクリーン切り替え
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+    if (!isFullscreen) {
+      setIsExpanded(false);
+    }
+  };
 
   // APIキー保存
   const handleSaveApiKey = () => {
@@ -800,8 +867,35 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     );
   }
 
+  const panelStyle = isFullscreen ? {} : (isExpanded ? {} : {
+    width: `${panelSize.width}px`,
+    height: `${panelSize.height}px`
+  });
+
   return (
-    <div className={`flight-assistant ${isExpanded ? 'expanded' : ''}`}>
+    <div
+      ref={panelRef}
+      className={`flight-assistant ${isExpanded ? 'expanded' : ''} ${isFullscreen ? 'fullscreen' : ''} ${isResizing ? 'resizing' : ''}`}
+      style={panelStyle}
+    >
+      {/* リサイズハンドル */}
+      {!isFullscreen && !isExpanded && (
+        <>
+          <div
+            className="resize-handle resize-left"
+            onMouseDown={(e) => handleResizeStart(e, 'left')}
+          />
+          <div
+            className="resize-handle resize-top"
+            onMouseDown={(e) => handleResizeStart(e, 'top')}
+          />
+          <div
+            className="resize-handle resize-corner"
+            onMouseDown={(e) => handleResizeStart(e, 'top-left')}
+          />
+        </>
+      )}
+
       <div className="flight-assistant-header">
         <div className="header-title">
           <Sparkles size={18} />
@@ -811,12 +905,21 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         </div>
         <div className="header-actions">
           <button
-            className="expand-btn"
-            onClick={() => setIsExpanded(!isExpanded)}
-            title={isExpanded ? '縮小' : '拡大'}
+            className="fullscreen-btn"
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'ウィンドウ表示' : 'フルスクリーン'}
           >
-            {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            {isFullscreen ? <Shrink size={16} /> : <Expand size={16} />}
           </button>
+          {!isFullscreen && (
+            <button
+              className="expand-btn"
+              onClick={() => setIsExpanded(!isExpanded)}
+              title={isExpanded ? '縮小' : '拡大'}
+            >
+              {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+          )}
           <button
             className={`settings-btn ${showSettings ? 'active' : ''}`}
             onClick={() => setShowSettings(!showSettings)}

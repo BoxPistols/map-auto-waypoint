@@ -73,9 +73,12 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   z-index: 1000;
   overflow: hidden;
   border: 1px solid $color-border;
-  transition: box-shadow 0.3s ease;
-  resize: horizontal;
-  overflow: auto;
+  transition: box-shadow 0.3s ease, width 0.1s ease, height 0.1s ease;
+
+  &.resizing {
+    transition: none;
+    user-select: none;
+  }
 
   &.expanded {
     width: 640px;
@@ -93,9 +96,68 @@ $color-border-light: rgba(255, 255, 255, 0.15);
     }
   }
 
-  // リサイズハンドル
-  &::-webkit-resizer {
-    background: transparent;
+  &.fullscreen {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh;
+    border-radius: 0;
+    z-index: 9999;
+
+    .flight-assistant-messages {
+      max-height: calc(100vh - 200px);
+      min-height: calc(100vh - 250px);
+    }
+
+    .message-content {
+      max-width: 800px;
+    }
+  }
+}
+
+// リサイズハンドル
+.resize-handle {
+  position: absolute;
+  z-index: 10;
+
+  &.resize-left {
+    left: 0;
+    top: 50px;
+    bottom: 0;
+    width: 6px;
+    cursor: ew-resize;
+
+    &:hover {
+      background: linear-gradient(to right, rgba($color-primary, 0.3), transparent);
+    }
+  }
+
+  &.resize-top {
+    top: 0;
+    left: 50px;
+    right: 0;
+    height: 6px;
+    cursor: ns-resize;
+
+    &:hover {
+      background: linear-gradient(to bottom, rgba($color-primary, 0.3), transparent);
+    }
+  }
+
+  &.resize-corner {
+    top: 0;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
+    border-radius: 16px 0 0 0;
+
+    &:hover {
+      background: rgba($color-primary, 0.3);
+    }
   }
 }
 
@@ -165,6 +227,14 @@ $color-border-light: rgba(255, 255, 255, 0.15);
 
       &.active {
         background: rgba(255, 255, 255, 0.15);
+      }
+    }
+
+    .fullscreen-btn {
+      color: $color-primary-lighter;
+
+      &:hover {
+        background: rgba($color-primary, 0.3);
       }
     }
   }
