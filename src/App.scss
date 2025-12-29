@@ -157,7 +157,7 @@ body {
 }
 
 .search-section {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(238, 238, 238, 0.7);
 
   &.collapsed {
     .search-section-content {
@@ -175,7 +175,7 @@ body {
   transition: background-color 0.2s;
 
   &:hover {
-    background: #f5f5f5;
+    background: rgba(245, 245, 245, 0.6);
   }
 }
 
@@ -205,7 +205,7 @@ body {
 
 .panel-tabs {
   display: flex;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid rgba(224, 224, 224, 0.7);
 }
 
 .tab {
@@ -214,19 +214,19 @@ body {
   font-size: 13px;
   font-weight: 500;
   color: #666;
-  background: #f9f9f9;
+  background: rgba(249, 249, 249, 0.5);
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 
   &:hover {
-    background: #f0f0f0;
+    background: rgba(240, 240, 240, 0.6);
   }
 
   &.active {
     color: #45B7D1;
-    background: white;
+    background: rgba(255, 255, 255, 0.7);
     border-bottom-color: #45B7D1;
   }
 }

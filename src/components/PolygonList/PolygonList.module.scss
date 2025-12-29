@@ -25,7 +25,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid rgba(238, 238, 238, 0.7);
 }
 
 .count {
@@ -61,16 +61,16 @@
   display: flex;
   flex-direction: column;
   padding: 12px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid rgba(240, 240, 240, 0.7);
   cursor: pointer;
   transition: background-color 0.15s;
 
   &:hover {
-    background: #f9f9f9;
+    background: rgba(249, 249, 249, 0.6);
   }
 
   &.selected {
-    background: #e8f4f8;
+    background: rgba(232, 244, 248, 0.7);
     border-left: 3px solid #45B7D1;
     padding-left: 13px;
   }
@@ -107,20 +107,20 @@
   padding: 0;
   font-size: 14px;
   color: #666;
-  background: white;
-  border: 1px solid #ddd;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(221, 221, 221, 0.7);
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s, border-color 0.2s;
   position: relative;
 
   &:hover {
-    background: #f0f0f0;
+    background: rgba(240, 240, 240, 0.8);
     border-color: #ccc;
   }
 
   &.deleteButton:hover {
-    background: #fee;
+    background: rgba(255, 238, 238, 0.8);
     border-color: #fcc;
     color: #c00;
   }
@@ -128,10 +128,10 @@
   &.linkedButton {
     color: #27ae60;
     border-color: #27ae60;
-    background: #e8f8ef;
+    background: rgba(232, 248, 239, 0.7);
 
     &:hover {
-      background: #d0f0db;
+      background: rgba(208, 240, 219, 0.8);
     }
   }
 }
