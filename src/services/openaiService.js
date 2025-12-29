@@ -11,10 +11,12 @@ const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1/chat/completions';
 
 // 利用可能なモデル一覧（コスト効率重視）
 export const AVAILABLE_MODELS = [
-  // GPT-4o Mini（低コスト・高速）
+  // GPT-4o 系
   { id: 'gpt-4o-mini', name: 'GPT-4o Mini ($)', description: '高速・低コスト', cost: '$', type: 'openai' },
-  // GPT-3.5 Turbo（最安）
-  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo ($)', description: '最安・軽量タスク向け', cost: '$', type: 'openai' },
+  { id: 'gpt-4o-nano', name: 'GPT-4o Nano ($)', description: '最速・最安', cost: '$', type: 'openai' },
+  // GPT-5 系
+  { id: 'gpt-5-mini', name: 'GPT-5 Mini ($$)', description: 'バランス型', cost: '$$', type: 'openai' },
+  { id: 'gpt-5-nano', name: 'GPT-5 Nano ($)', description: '次世代・高速', cost: '$', type: 'openai' },
   // ローカルLLM
   { id: 'local-default', name: 'ローカルLLM', description: 'LM Studio等', cost: '無料', type: 'local' }
 ];
