@@ -9,25 +9,18 @@
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1/chat/completions';
 
-// 利用可能なモデル一覧（2025年最新）
+// 利用可能なモデル一覧（コスト効率重視）
 export const AVAILABLE_MODELS = [
-  // GPT-5 ファミリー
-  { id: 'gpt-5-nano', name: 'GPT-5 Nano', description: '最速・最低コスト', cost: '$', type: 'openai' },
-  { id: 'gpt-5-mini', name: 'GPT-5 Mini', description: 'バランス型', cost: '$$', type: 'openai' },
-  { id: 'gpt-5', name: 'GPT-5', description: '最高性能', cost: '$$$', type: 'openai' },
-  // GPT-4.1 ファミリー
-  { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', description: '高速・低コスト', cost: '$', type: 'openai' },
-  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', description: 'コスパ良好', cost: '$$', type: 'openai' },
-  { id: 'gpt-4.1', name: 'GPT-4.1', description: '高精度・長文対応', cost: '$$$', type: 'openai' },
-  // 旧モデル（互換性用）
-  { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: '旧世代・低コスト', cost: '$', type: 'openai' },
-  { id: 'gpt-4o', name: 'GPT-4o', description: '旧世代・標準', cost: '$$', type: 'openai' },
+  // Nano（最速・最低コスト）
+  { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano ($)', description: '高速・低コスト', cost: '$', type: 'openai' },
+  // Mini（バランス型）
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini ($$)', description: 'コスパ良好', cost: '$$', type: 'openai' },
   // ローカルLLM
   { id: 'local-default', name: 'ローカルLLM', description: 'LM Studio等', cost: '無料', type: 'local' }
 ];
 
 // デフォルトモデル
-const DEFAULT_MODEL = 'gpt-5-nano';
+const DEFAULT_MODEL = 'gpt-4.1-nano';
 
 // 環境変数からAPIキーを取得（Vite経由）
 const getApiKey = () => {
@@ -330,6 +323,154 @@ export const getRecommendedParameters = async (purpose) => {
   }
 };
 
+/**
+ * AIによる自動経路生成
+ * ポリゴンと飛行目的からWaypointを自動生成
+ *
+ * @param {Object} polygon - GeoJSONポリゴン
+ * @param {string} purpose - 飛行目的
+ * @param {Object} options - オプション（pattern, altitude等）
+ * @returns {Promise<Object>} 生成されたWaypointと経路情報
+ */
+export const generateFlightRoute = async (polygon, purpose, options = {}) => {
+  const { pattern = 'auto', altitude = 50, overlap = 70 } = options;
+
+  // ポリゴンの座標を取得
+  const coords = polygon?.geometry?.coordinates?.[0];
+  if (!coords || coords.length < 3) {
+    throw new Error('有効なポリゴンが必要です');
+  }
+
+  // バウンディングボックスと中心点を計算
+  const lngs = coords.map(c => c[0]);
+  const lats = coords.map(c => c[1]);
+  const bounds = {
+    minLng: Math.min(...lngs),
+    maxLng: Math.max(...lngs),
+    minLat: Math.min(...lats),
+    maxLat: Math.max(...lats)
+  };
+  const center = {
+    lat: (bounds.minLat + bounds.maxLat) / 2,
+    lng: (bounds.minLng + bounds.maxLng) / 2
+  };
+
+  // 幅と高さ（メートル概算）
+  const widthM = (bounds.maxLng - bounds.minLng) * 111320 * Math.cos(center.lat * Math.PI / 180);
+  const heightM = (bounds.maxLat - bounds.minLat) * 110540;
+
+  const systemPrompt = `あなたはドローン飛行経路設計のエキスパートです。
+与えられたエリア情報と飛行目的から、最適なWaypoint座標を生成してください。
+
+【重要な制約】
+- Waypointはポリゴン境界内に収める
+- 安全マージン（境界から10m以内は避ける）
+- グリッドパターンの場合: オーバーラップ率を考慮した間隔
+- 周回パターンの場合: 境界に沿った配置
+- 点検パターンの場合: 対象物に最適な視点
+
+回答フォーマット（JSONのみ、説明不要）:
+{
+  "pattern": "grid" | "perimeter" | "spiral",
+  "waypoints": [
+    { "lat": number, "lng": number, "altitude": number, "action": "photo" | "video" | "hover" }
+  ],
+  "flightDirection": "north-south" | "east-west",
+  "estimatedDistance": "〇〇m",
+  "estimatedTime": "〇〇分",
+  "recommendations": ["推奨事項1", "推奨事項2"]
+}`;
+
+  const userPrompt = `【飛行目的】${purpose}
+
+【エリア情報】
+- 中心: ${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}
+- 幅: 約${Math.round(widthM)}m
+- 高さ: 約${Math.round(heightM)}m
+- 境界座標: ${JSON.stringify(coords.slice(0, 4))}
+
+【パラメータ】
+- 希望パターン: ${pattern}
+- 飛行高度: ${altitude}m
+- オーバーラップ: ${overlap}%
+
+上記エリア内に最適なWaypointを10〜20個程度生成してください。`;
+
+  try {
+    const response = await callOpenAI([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ], {
+      temperature: 0.2,
+      maxTokens: 2000
+    });
+
+    // JSONを抽出
+    let jsonStr = response;
+    const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      jsonStr = jsonMatch[1];
+    }
+
+    const result = JSON.parse(jsonStr.trim());
+
+    // Waypointにインデックスを追加
+    result.waypoints = result.waypoints.map((wp, i) => ({
+      ...wp,
+      index: i + 1,
+      id: `generated-${Date.now()}-${i}`
+    }));
+
+    return {
+      success: true,
+      ...result,
+      source: 'ai',
+      generatedAt: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('[OpenAI] Route generation error:', error);
+
+    // フォールバック: 基本的なグリッド生成
+    return generateFallbackRoute(bounds, center, altitude);
+  }
+};
+
+/**
+ * フォールバック用の基本グリッド生成
+ */
+const generateFallbackRoute = (bounds, center, altitude) => {
+  const waypoints = [];
+  const rows = 4;
+  const cols = 4;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const lat = bounds.minLat + (bounds.maxLat - bounds.minLat) * (r + 0.5) / rows;
+      const lng = bounds.minLng + (bounds.maxLng - bounds.minLng) * (c + 0.5) / cols;
+      waypoints.push({
+        lat,
+        lng,
+        altitude,
+        action: 'photo',
+        index: waypoints.length + 1,
+        id: `fallback-${Date.now()}-${waypoints.length}`
+      });
+    }
+  }
+
+  return {
+    success: true,
+    pattern: 'grid',
+    waypoints,
+    flightDirection: 'north-south',
+    estimatedDistance: '不明',
+    estimatedTime: '不明',
+    recommendations: ['AI生成に失敗したため基本グリッドを使用'],
+    source: 'fallback',
+    generatedAt: new Date().toISOString()
+  };
+};
+
 export default {
   AVAILABLE_MODELS,
   setApiKey,
@@ -344,5 +485,6 @@ export default {
   callOpenAI,
   analyzeFlightPlan,
   getFlightAdvice,
-  getRecommendedParameters
+  getRecommendedParameters,
+  generateFlightRoute
 };

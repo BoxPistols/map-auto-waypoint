@@ -23,12 +23,14 @@ import {
   Copy,
   Check,
   Expand,
-  Shrink
+  Shrink,
+  Route
 } from 'lucide-react';
 import {
   hasApiKey,
   setApiKey,
   getFlightAdvice,
+  generateFlightRoute,
   AVAILABLE_MODELS,
   getSelectedModel,
   setSelectedModel,
@@ -79,6 +81,8 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [isCopied, setIsCopied] = useState(false);
   const [panelSize, setPanelSize] = useState({ width: 400, height: 500 });
   const [isResizing, setIsResizing] = useState(false);
+  const [routePurpose, setRoutePurpose] = useState('');
+  const [isGeneratingRoute, setIsGeneratingRoute] = useState(false);
   const messagesEndRef = useRef(null);
   const panelRef = useRef(null);
   const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
@@ -522,6 +526,89 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       });
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  /**
+   * AI経路生成
+   */
+  const handleGenerateRoute = async () => {
+    if (polygons.length === 0) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '[!] 経路を生成するには、まず地図上でエリア（ポリゴン）を設定してください。'
+      }]);
+      return;
+    }
+
+    if (!hasKey) {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '[!] AI経路生成にはOpenAI APIキーが必要です。設定から登録してください。'
+      }]);
+      return;
+    }
+
+    const purpose = routePurpose.trim() || '一般点検飛行';
+    setIsGeneratingRoute(true);
+    setMessages(prev => [...prev, {
+      role: 'system',
+      content: `AI経路生成中... (目的: ${purpose})`
+    }]);
+
+    try {
+      const result = await generateFlightRoute(polygons[0], purpose, {
+        altitude: proposedPlan.altitude || 50,
+        pattern: 'auto'
+      });
+
+      if (result.success && result.waypoints?.length > 0) {
+        // 生成されたWaypointを適用
+        const plan = {
+          waypoints: result.waypoints.map(wp => ({
+            ...wp,
+            modified: true
+          })),
+          polygon: null
+        };
+
+        let response = `### AI経路生成完了\n\n`;
+        response += `**パターン:** ${result.pattern}\n`;
+        response += `**Waypoint数:** ${result.waypoints.length}個\n`;
+        response += `**推定距離:** ${result.estimatedDistance}\n`;
+        response += `**推定時間:** ${result.estimatedTime}\n\n`;
+
+        if (result.recommendations?.length > 0) {
+          response += `**推奨事項:**\n`;
+          result.recommendations.forEach(rec => {
+            response += `• ${rec}\n`;
+          });
+        }
+
+        response += `\n「適用」ボタンで地図に反映できます。`;
+
+        setMessages(prev => {
+          const filtered = prev.filter(m => m.role !== 'system');
+          return [...filtered, {
+            role: 'assistant',
+            content: response,
+            generatedRoute: plan
+          }];
+        });
+      } else {
+        throw new Error('経路生成に失敗しました');
+      }
+    } catch (error) {
+      console.error('[FlightAssistant] handleGenerateRoute error:', error);
+      setMessages(prev => {
+        const filtered = prev.filter(m => m.role !== 'system');
+        return [...filtered, {
+          role: 'assistant',
+          content: `[ERROR] 経路生成エラー: ${error.message}`
+        }];
+      });
+    } finally {
+      setIsGeneratingRoute(false);
     }
   };
 
@@ -976,6 +1063,22 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
             )}
             <div className="message-content">
               <ReactMarkdown>{msg.content}</ReactMarkdown>
+              {/* 生成されたルートの適用ボタン */}
+              {msg.generatedRoute && (
+                <button
+                  className="apply-route-btn"
+                  onClick={() => {
+                    onApplyPlan(msg.generatedRoute);
+                    setMessages(prev => [...prev, {
+                      role: 'system',
+                      content: `[OK] ${msg.generatedRoute.waypoints.length}個のWaypointを地図に適用しました`
+                    }]);
+                  }}
+                >
+                  <CheckCircle size={14} />
+                  経路を適用
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -996,7 +1099,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         <button
           className="assessment-btn"
           onClick={handleAssessment}
-          disabled={isProcessing || polygons.length === 0}
+          disabled={isProcessing || isGeneratingRoute || polygons.length === 0}
           title={polygons.length === 0 ? 'まずエリアを設定してください' : '実データに基づく総合判定'}
         >
           <Zap size={16} />
@@ -1007,6 +1110,28 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           <span>{polygons.length}エリア / {waypoints.length}WP</span>
         </div>
       </div>
+
+      {/* AI経路生成セクション */}
+      {hasKey && polygons.length > 0 && (
+        <div className="route-generation-section">
+          <input
+            type="text"
+            value={routePurpose}
+            onChange={(e) => setRoutePurpose(e.target.value)}
+            placeholder="飛行目的（例: 太陽光パネル点検）"
+            disabled={isGeneratingRoute}
+          />
+          <button
+            className="generate-route-btn"
+            onClick={handleGenerateRoute}
+            disabled={isGeneratingRoute || isProcessing}
+            title="AIでWaypointを自動生成"
+          >
+            <Route size={14} />
+            {isGeneratingRoute ? '生成中...' : '経路生成'}
+          </button>
+        </div>
+      )}
 
       <div className="flight-assistant-input">
         <textarea
