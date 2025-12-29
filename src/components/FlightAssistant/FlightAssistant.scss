@@ -65,7 +65,9 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   width: 400px;
   min-width: 360px;
   max-height: 600px;
-  background: $color-bg-dark;
+  background: rgba(30, 30, 46, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   display: flex;
@@ -99,20 +101,20 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   &.fullscreen {
     bottom: 24px;
     right: 24px;
-    width: 55vw !important;
+    width: 70vw !important;
     height: auto !important;
-    max-width: 800px;
-    max-height: 70vh;
+    max-width: 1000px;
+    max-height: 80vh;
     border-radius: 16px;
     z-index: 9999;
 
     .flight-assistant-messages {
-      max-height: calc(70vh - 220px);
-      min-height: 300px;
+      max-height: calc(80vh - 220px);
+      min-height: 400px;
     }
 
     .message-content {
-      max-width: 700px;
+      max-width: 850px;
     }
   }
 }
