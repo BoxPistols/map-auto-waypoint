@@ -2,13 +2,11 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  width: 90vw;
-  max-width: 700px;
-  min-width: 500px;
+  width: 420px;
+  max-width: 90vw;
 
   @media (max-width: 768px) {
     width: 95vw;
-    min-width: auto;
   }
 }
 
@@ -16,12 +14,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 14px 16px;
   border-bottom: 1px solid #eee;
 
   h3 {
     margin: 0;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     color: #333;
   }
@@ -49,8 +47,8 @@
 }
 
 .dropZone {
-  margin: 20px;
-  padding: 40px 20px;
+  margin: 16px;
+  padding: 32px 24px;
   border: 2px dashed #ddd;
   border-radius: 8px;
   cursor: pointer;
@@ -118,8 +116,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 20px 20px;
-  padding: 12px 16px;
+  margin: 0 16px 16px;
+  padding: 10px 14px;
   font-size: 13px;
   color: #d63031;
   background: #fee;
@@ -127,7 +125,7 @@
 }
 
 .preview {
-  padding: 20px;
+  padding: 16px;
 }
 
 .previewHeader {
