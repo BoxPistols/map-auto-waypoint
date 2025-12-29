@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronDown, Search, Undo2, Redo2 } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Search, Undo2, Redo2, Map as MapIcon, Layers } from 'lucide-react'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
 import PolygonList from './components/PolygonList/PolygonList'
@@ -34,6 +34,10 @@ function App() {
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
   const [panelHeight, setPanelHeight] = useState(null) // null = auto
   const [isSearchExpanded, setIsSearchExpanded] = useState(true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed')
+    return saved === 'true'
+  })
   const [showImport, setShowImport] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [showGridSettings, setShowGridSettings] = useState(null) // polygon for grid generation
@@ -51,6 +55,15 @@ function App() {
 
   // Highlighted waypoint (for FlightAssistant WP click)
   const [highlightedWaypointIndex, setHighlightedWaypointIndex] = useState(null)
+
+  // Toggle sidebar collapsed state
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed(prev => {
+      const newValue = !prev
+      localStorage.setItem('sidebarCollapsed', String(newValue))
+      return newValue
+    })
+  }, [])
 
   // Show notification (defined early for use in undo/redo)
   const showNotification = useCallback((message, type = 'info') => {
@@ -699,79 +712,106 @@ function App() {
       {/* Main content */}
       <main className="app-main">
         {/* Sidebar */}
-        <aside className="sidebar">
-          <div className={`search-section ${!isSearchExpanded ? 'collapsed' : ''}`}>
-            <div
-              className="search-section-header"
-              onClick={() => setIsSearchExpanded(!isSearchExpanded)}
-            >
-              <div className="search-section-title">
-                <Search size={16} />
-                <span>住所検索</span>
-              </div>
-              <ChevronDown
-                size={18}
-                className={`search-chevron ${isSearchExpanded ? 'expanded' : ''}`}
-              />
-            </div>
-            <div className="search-section-content">
-              <SearchForm
-                onSearch={handleSearch}
-                onSelect={handleSearchSelect}
-                onGeneratePolygon={handleGeneratePolygon}
-              />
-            </div>
-          </div>
-
-          <div className="panel-tabs">
-            <button
-              className={`tab ${activePanel === 'polygons' ? 'active' : ''}`}
-              onClick={() => setActivePanel('polygons')}
-            >
-              ポリゴン ({polygons.length})
-            </button>
-            <button
-              className={`tab ${activePanel === 'waypoints' ? 'active' : ''}`}
-              onClick={() => setActivePanel('waypoints')}
-            >
-              Waypoint ({waypoints.length})
-            </button>
-          </div>
-
-          <div
-            className="panel-content"
-            ref={panelContentRef}
-            style={panelHeight ? { height: panelHeight, flex: 'none' } : undefined}
+        <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+          {/* Sidebar Toggle Button */}
+          <button
+            className="sidebar-toggle"
+            onClick={toggleSidebar}
+            title={sidebarCollapsed ? 'サイドバーを開く' : 'サイドバーを閉じる'}
           >
-            <div className="resize-handle" onMouseDown={handleResizeStart} />
-            {activePanel === 'polygons' ? (
-              <PolygonList
-                polygons={polygons}
-                selectedPolygonId={selectedPolygonId}
-                onSelect={handlePolygonSelect}
-                onDelete={handlePolygonDelete}
-                onRename={handlePolygonRename}
-                onEditShape={handleEditPolygonShape}
-                onToggleWaypointLink={handleToggleWaypointLink}
-                onGenerateWaypoints={handleGenerateWaypoints}
-                onGenerateAllWaypoints={handleGenerateAllWaypoints}
-              />
-            ) : (
-              <WaypointList
-                waypoints={waypoints}
-                onSelect={handleWaypointSelect}
-                onDelete={handleWaypointDelete}
-                onUpdate={handleWaypointUpdate}
-                onClear={handleWaypointClear}
-                onFetchElevation={handleFetchElevation}
-                onRegenerateGrid={handleRegenerateGrid}
-                gridSpacing={gridSpacing}
-                onGridSpacingChange={setGridSpacing}
-                isLoadingElevation={isLoadingElevation}
-                elevationProgress={elevationProgress}
-              />
-            )}
-          </div>
+            {sidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
+
+          {/* Collapsed Mini View */}
+          {sidebarCollapsed && (
+            <div className="sidebar-collapsed-content">
+              <div className="collapsed-icon" onClick={toggleSidebar} title="サイドバーを開く">
+                <Layers size={20} />
+              </div>
+              <div className="collapsed-stats">
+                <span className="collapsed-badge">{polygons.length}</span>
+                <span className="collapsed-badge">{waypoints.length}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Full Sidebar Content */}
+          {!sidebarCollapsed && (
+            <>
+              <div className={`search-section ${!isSearchExpanded ? 'collapsed' : ''}`}>
+                <div
+                  className="search-section-header"
+                  onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+                >
+                  <div className="search-section-title">
+                    <Search size={16} />
+                    <span>住所検索</span>
+                  </div>
+                  <ChevronDown
+                    size={18}
+                    className={`search-chevron ${isSearchExpanded ? 'expanded' : ''}`}
+                  />
+                </div>
+                <div className="search-section-content">
+                  <SearchForm
+                    onSearch={handleSearch}
+                    onSelect={handleSearchSelect}
+                    onGeneratePolygon={handleGeneratePolygon}
+                  />
+                </div>
+              </div>
+
+              <div className="panel-tabs">
+                <button
+                  className={`tab ${activePanel === 'polygons' ? 'active' : ''}`}
+                  onClick={() => setActivePanel('polygons')}
+                >
+                  ポリゴン ({polygons.length})
+                </button>
+                <button
+                  className={`tab ${activePanel === 'waypoints' ? 'active' : ''}`}
+                  onClick={() => setActivePanel('waypoints')}
+                >
+                  Waypoint ({waypoints.length})
+                </button>
+              </div>
+
+              <div
+                className="panel-content"
+                ref={panelContentRef}
+                style={panelHeight ? { height: panelHeight, flex: 'none' } : undefined}
+              >
+                <div className="resize-handle" onMouseDown={handleResizeStart} />
+                {activePanel === 'polygons' ? (
+                  <PolygonList
+                    polygons={polygons}
+                    selectedPolygonId={selectedPolygonId}
+                    onSelect={handlePolygonSelect}
+                    onDelete={handlePolygonDelete}
+                    onRename={handlePolygonRename}
+                    onEditShape={handleEditPolygonShape}
+                    onToggleWaypointLink={handleToggleWaypointLink}
+                    onGenerateWaypoints={handleGenerateWaypoints}
+                    onGenerateAllWaypoints={handleGenerateAllWaypoints}
+                  />
+                ) : (
+                  <WaypointList
+                    waypoints={waypoints}
+                    onSelect={handleWaypointSelect}
+                    onDelete={handleWaypointDelete}
+                    onUpdate={handleWaypointUpdate}
+                    onClear={handleWaypointClear}
+                    onFetchElevation={handleFetchElevation}
+                    onRegenerateGrid={handleRegenerateGrid}
+                    gridSpacing={gridSpacing}
+                    onGridSpacingChange={setGridSpacing}
+                    isLoadingElevation={isLoadingElevation}
+                    elevationProgress={elevationProgress}
+                  />
+                )}
+              </div>
+            </>
+          )}
         </aside>
 
         {/* Map */}
