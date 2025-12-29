@@ -27,6 +27,7 @@ body {
   -webkit-backdrop-filter: blur(8px);
   color: white;
   z-index: 100;
+  flex-shrink: 0;
 }
 
 .app-title {
