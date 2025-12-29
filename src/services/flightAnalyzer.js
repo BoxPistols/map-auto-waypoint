@@ -40,6 +40,15 @@ const getDistanceMeters = (lat1, lng1, lat2, lng2) => {
 const didPrefectureCache = new Map();
 
 /**
+ * DIDキャッシュをクリア
+ * デバッグや地域切り替え時に使用
+ */
+export const clearDIDCache = () => {
+  didPrefectureCache.clear();
+  console.log('[DID] Cache cleared');
+};
+
+/**
  * 都道府県コードと名前のマッピング
  * GitHub dronebird/DIDinJapan のファイル名形式: h22_did_[code]_[name].geojson
  */
@@ -259,6 +268,7 @@ export const checkDIDArea = async (lat, lng) => {
   try {
     // 1. 都道府県を特定
     const prefecture = getPrefectureFromCoords(lat, lng);
+    console.log(`[DID] Checking point: ${lat.toFixed(4)}, ${lng.toFixed(4)} -> Prefecture: ${prefecture?.nameJa || 'unknown'}`);
 
     if (!prefecture) {
       // 日本国外の場合
@@ -279,6 +289,7 @@ export const checkDIDArea = async (lat, lng) => {
       const result = checkPointInDIDGeoJSON(geojson, lat, lng, prefecture);
 
       if (result) {
+        console.log(`[DID] Point is in DID: ${result.area}`);
         return result;
       }
 
@@ -294,11 +305,12 @@ export const checkDIDArea = async (lat, lng) => {
 
     // GitHub取得失敗時はフォールバック
     console.log('[DID] GitHub unavailable, using fallback data');
-    return checkDIDAreaFallback(lat, lng);
+    return checkDIDAreaFallback(lat, lng, prefecture);
 
   } catch (error) {
     console.error('[DID] Check failed:', error);
-    return checkDIDAreaFallback(lat, lng);
+    const prefecture = getPrefectureFromCoords(lat, lng);
+    return checkDIDAreaFallback(lat, lng, prefecture);
   }
 };
 
@@ -309,9 +321,10 @@ export const checkDIDArea = async (lat, lng) => {
  *
  * @param {number} lat - 緯度
  * @param {number} lng - 経度
+ * @param {Object} prefecture - 都道府県データ（オプション）
  * @returns {Object} DID判定結果
  */
-const checkDIDAreaFallback = (lat, lng) => {
+const checkDIDAreaFallback = (lat, lng, prefecture = null) => {
   // 全国の主要DID地域（都道府県庁所在地・政令指定都市・主要都市）
   const MAJOR_DID_AREAS = [
     // 北海道・東北
@@ -1604,6 +1617,9 @@ export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) 
  */
 export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
   const { altitude = 50, purpose = '', useAI = true, useMlit = true } = options;
+
+  // 新しい分析のためDIDキャッシュをクリア（新しい地域のデータを取得）
+  clearDIDCache();
 
   // まずローカル分析を実行
   const localAnalysis = await analyzeFlightPlanLocal(polygons, waypoints, { altitude, purpose });

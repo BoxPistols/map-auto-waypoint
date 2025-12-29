@@ -450,18 +450,29 @@ function App() {
     }
   }, [])
 
+  // Reindex waypoints to ensure sequential indices
+  const reindexWaypoints = useCallback((wps) => {
+    return wps.map((wp, idx) => ({ ...wp, index: idx + 1 }))
+  }, [])
+
   // Handle waypoint delete
   const handleWaypointDelete = useCallback((id) => {
-    setWaypoints(prev => prev.filter(w => w.id !== id))
-    showNotification('Waypointを削除しました')
-  }, [showNotification])
+    setWaypoints(prev => {
+      const filtered = prev.filter(w => w.id !== id)
+      return reindexWaypoints(filtered)
+    })
+    showNotification('Waypointを削除しました（番号再整理済）')
+  }, [showNotification, reindexWaypoints])
 
   // Handle bulk waypoint delete
   const handleWaypointsBulkDelete = useCallback((ids) => {
     const idSet = new Set(ids)
-    setWaypoints(prev => prev.filter(w => !idSet.has(w.id)))
-    showNotification(`${ids.length} 個のWaypointを削除しました`)
-  }, [showNotification])
+    setWaypoints(prev => {
+      const filtered = prev.filter(w => !idSet.has(w.id))
+      return reindexWaypoints(filtered)
+    })
+    showNotification(`${ids.length} 個のWaypointを削除しました（番号再整理済）`)
+  }, [showNotification, reindexWaypoints])
 
   // Handle waypoint move (drag on map) - rebuild polygon from all waypoints
   const handleWaypointMove = useCallback((id, newLat, newLng) => {
