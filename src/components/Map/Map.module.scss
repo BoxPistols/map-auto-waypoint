@@ -55,6 +55,26 @@
     box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
     transform: scale(1.1);
   }
+
+  &.highlighted {
+    border-color: #00BFFF;
+    border-width: 3px;
+    box-shadow: 0 0 0 6px rgba(0, 191, 255, 0.6), 0 0 20px rgba(0, 191, 255, 0.8);
+    transform: scale(1.3);
+    animation: highlightPulse 0.8s ease-in-out infinite;
+    z-index: 1000 !important;
+  }
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 6px rgba(0, 191, 255, 0.6), 0 0 20px rgba(0, 191, 255, 0.8);
+    transform: scale(1.3);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(0, 191, 255, 0.3), 0 0 30px rgba(0, 191, 255, 0.5);
+    transform: scale(1.5);
+  }
 }
 
 .selectionBox {

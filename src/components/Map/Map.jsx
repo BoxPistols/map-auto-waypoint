@@ -40,6 +40,7 @@ const Map = ({
   polygons = [],
   waypoints = [],
   recommendedWaypoints = null,
+  highlightedWaypointIndex = null,
   onPolygonCreate,
   onPolygonUpdate,
   onPolygonDelete,
@@ -550,31 +551,34 @@ const Map = ({
         </Source>
 
         {/* Display waypoints as draggable markers (non-interactive during polygon edit) */}
-        {waypoints.map((wp) => (
-          <Marker
-            key={wp.id}
-            latitude={wp.lat}
-            longitude={wp.lng}
-            draggable={!editingPolygon}
-            onDragEnd={(e) => {
-              onWaypointMove?.(wp.id, e.lngLat.lat, e.lngLat.lng)
-            }}
-            onClick={(e) => {
-              if (editingPolygon) return
-              e.originalEvent.stopPropagation()
-              onWaypointClick?.(wp)
-            }}
-          >
-            <div
-              className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${selectedWaypointIds.has(wp.id) ? styles.selected : ''}`}
-              style={editingPolygon ? { pointerEvents: 'none', opacity: 0.5 } : undefined}
-              title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}`}
-              onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
+        {waypoints.map((wp) => {
+          const isHighlighted = highlightedWaypointIndex === wp.index
+          return (
+            <Marker
+              key={wp.id}
+              latitude={wp.lat}
+              longitude={wp.lng}
+              draggable={!editingPolygon}
+              onDragEnd={(e) => {
+                onWaypointMove?.(wp.id, e.lngLat.lat, e.lngLat.lng)
+              }}
+              onClick={(e) => {
+                if (editingPolygon) return
+                e.originalEvent.stopPropagation()
+                onWaypointClick?.(wp)
+              }}
             >
-              {wp.index}
-            </div>
-          </Marker>
-        ))}
+              <div
+                className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${selectedWaypointIds.has(wp.id) ? styles.selected : ''} ${isHighlighted ? styles.highlighted : ''}`}
+                style={editingPolygon ? { pointerEvents: 'none', opacity: 0.5 } : undefined}
+                title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}`}
+                onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
+              >
+                {wp.index}
+              </div>
+            </Marker>
+          )
+        })}
       </MapGL>
 
       {/* Selection box overlay */}

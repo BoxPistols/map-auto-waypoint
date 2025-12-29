@@ -1103,17 +1103,27 @@ const calculateSafePosition = (lat, lng, zone, safetyMargin = 500) => {
 /**
  * Waypointのギャップ分析と推奨位置を計算
  * @param {Array} waypoints - 現在のWaypoint配列
+ * @param {Object} didInfo - DID判定結果（オプション）
  * @returns {Object} ギャップ分析結果
  */
-export const analyzeWaypointGaps = (waypoints) => {
+export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
   const gaps = [];
   const recommendedWaypoints = [];
   let hasIssues = false;
+
+  // DID内のWaypointインデックスをセットに格納
+  const didWaypointIndices = new Set();
+  if (didInfo?.waypointDetails?.didWaypoints) {
+    didInfo.waypointDetails.didWaypoints.forEach(dwp => {
+      didWaypointIndices.add(dwp.waypointIndex);
+    });
+  }
 
   for (const wp of waypoints) {
     let currentWp = { ...wp };
     let issues = [];
     let recommendedPosition = null;
+    const wpIndex = wp.index !== undefined ? wp.index : waypoints.indexOf(wp) + 1;
 
     // 空港制限区域チェック
     for (const airport of AIRPORT_ZONES) {
@@ -1153,10 +1163,27 @@ export const analyzeWaypointGaps = (waypoints) => {
       }
     }
 
+    // DID（人口集中地区）チェック
+    if (didWaypointIndices.has(wpIndex)) {
+      hasIssues = true;
+      // DID内のWaypoint情報を取得
+      const didWpInfo = didInfo.waypointDetails.didWaypoints.find(d => d.waypointIndex === wpIndex);
+      issues.push({
+        type: 'did',
+        zone: didWpInfo?.area || 'DID区域',
+        currentDistance: 0,
+        requiredDistance: null, // DIDは距離ベースではない
+        severity: 'medium',
+        description: `人口集中地区（${didWpInfo?.area || 'DID'}）内`
+      });
+      // DIDは移動による解決が難しいため、recommendedPositionは設定しない
+      // ただし、警告として表示する
+    }
+
     if (issues.length > 0) {
       gaps.push({
         waypointId: wp.id,
-        waypointIndex: wp.index,
+        waypointIndex: wpIndex,
         current: { lat: wp.lat, lng: wp.lng },
         recommended: recommendedPosition ? {
           lat: recommendedPosition.lat,
@@ -1170,10 +1197,11 @@ export const analyzeWaypointGaps = (waypoints) => {
         ...wp,
         lat: recommendedPosition?.lat || wp.lat,
         lng: recommendedPosition?.lng || wp.lng,
-        modified: !!recommendedPosition
+        modified: !!recommendedPosition,
+        hasDID: didWaypointIndices.has(wpIndex)
       });
     } else {
-      recommendedWaypoints.push({ ...wp, modified: false });
+      recommendedWaypoints.push({ ...wp, modified: false, hasDID: false });
     }
   }
 
@@ -1280,13 +1308,32 @@ export const analyzePolygonGaps = (polygon) => {
  * 総合的なプラン最適化提案を生成
  * @param {Array} polygons - ポリゴン配列
  * @param {Array} waypoints - Waypoint配列
+ * @param {Object} didInfo - DID判定結果（オプション）
  * @returns {Object} 最適化提案
  */
-export const generateOptimizationPlan = (polygons, waypoints) => {
-  const waypointAnalysis = analyzeWaypointGaps(waypoints);
+export const generateOptimizationPlan = (polygons, waypoints, didInfo = null) => {
+  const waypointAnalysis = analyzeWaypointGaps(waypoints, didInfo);
   const polygonAnalysis = polygons.length > 0 ? analyzePolygonGaps(polygons[0]) : null;
 
   const hasAnyIssues = waypointAnalysis.hasIssues || polygonAnalysis?.hasIssues;
+
+  // アクションリストを生成
+  const actions = [];
+  if (waypointAnalysis.hasIssues) {
+    // DID問題とその他の問題を分離
+    const didGaps = waypointAnalysis.gaps.filter(g => g.issues.some(i => i.type === 'did'));
+    const otherGaps = waypointAnalysis.gaps.filter(g => !g.issues.some(i => i.type === 'did'));
+
+    if (otherGaps.length > 0) {
+      actions.push(`${otherGaps.length}個のWaypointを移動（空港/禁止区域回避）`);
+    }
+    if (didGaps.length > 0) {
+      actions.push(`${didGaps.length}個のWaypointがDID内（許可申請が必要）`);
+    }
+  }
+  if (polygonAnalysis?.hasIssues) {
+    actions.push(`ポリゴンの${polygonAnalysis.totalGaps}頂点を調整`);
+  }
 
   return {
     hasIssues: hasAnyIssues,
@@ -1297,10 +1344,7 @@ export const generateOptimizationPlan = (polygons, waypoints) => {
     summary: hasAnyIssues
       ? '安全性向上のための修正が提案されています'
       : '現在のプランは安全基準を満たしています',
-    actions: hasAnyIssues ? [
-      waypointAnalysis.hasIssues ? `${waypointAnalysis.totalGaps}個のWaypointを移動` : null,
-      polygonAnalysis?.hasIssues ? `ポリゴンの${polygonAnalysis.totalGaps}頂点を調整` : null
-    ].filter(Boolean) : []
+    actions
   };
 };
 

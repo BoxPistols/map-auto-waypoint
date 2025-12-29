@@ -49,6 +49,9 @@ function App() {
   // Optimization overlay state
   const [recommendedWaypoints, setRecommendedWaypoints] = useState(null)
 
+  // Highlighted waypoint (for FlightAssistant WP click)
+  const [highlightedWaypointIndex, setHighlightedWaypointIndex] = useState(null)
+
   // Show notification (defined early for use in undo/redo)
   const showNotification = useCallback((message, type = 'info') => {
     setNotification({ message, type })
@@ -779,6 +782,7 @@ function App() {
             polygons={polygons}
             waypoints={waypoints}
             recommendedWaypoints={recommendedWaypoints}
+            highlightedWaypointIndex={highlightedWaypointIndex}
             onPolygonCreate={handlePolygonCreate}
             onPolygonUpdate={handlePolygonUpdate}
             onPolygonDelete={handlePolygonDelete}
@@ -902,6 +906,20 @@ function App() {
           // オーバーレイをクリア
           setRecommendedWaypoints(null)
           showNotification('プランを安全な位置に最適化しました', 'success')
+        }}
+        onWaypointSelect={(wpIndex) => {
+          // WP番号は1から始まる（表示用）、配列インデックスは0から
+          const waypoint = waypoints.find(wp => wp.index === wpIndex) || waypoints[wpIndex - 1]
+          if (waypoint) {
+            // 地図の中心をWaypointに移動
+            setCenter({ lat: waypoint.lat, lng: waypoint.lng })
+            setZoom(17) // ズームイン
+            // ハイライト表示
+            setHighlightedWaypointIndex(wpIndex)
+            // 3秒後にハイライトをクリア
+            setTimeout(() => setHighlightedWaypointIndex(null), 3000)
+            showNotification(`WP${wpIndex}を表示しています`, 'info')
+          }
         }}
       />
 

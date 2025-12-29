@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import {
   Send,
@@ -53,7 +53,7 @@ import './FlightAssistant.scss';
  * - OpenAI連携による高度な分析
  * - 「判定！」ボタンで総合判定
  */
-function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate }) {
+function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -89,6 +89,70 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  /**
+   * テキスト内のWP番号をクリック可能なリンクに変換
+   * マッチパターン: [WP21], WP21, WP 21, WP:21
+   */
+  const renderTextWithWPLinks = (text) => {
+    if (typeof text !== 'string') return text;
+
+    // WP番号のパターン: [WP21], WP21, WP 21, WP:21, WP1, etc.
+    const wpPattern = /\[?WP\s*:?\s*(\d+)\]?/gi;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = wpPattern.exec(text)) !== null) {
+      // マッチ前のテキスト
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+
+      const wpIndex = parseInt(match[1], 10);
+      const fullMatch = match[0];
+
+      // WPリンクを追加
+      parts.push(
+        <span
+          key={`wp-${match.index}`}
+          className="wp-link"
+          onClick={() => onWaypointSelect?.(wpIndex)}
+          title={`WP${wpIndex}を地図上で表示`}
+        >
+          WP{wpIndex}
+        </span>
+      );
+
+      lastIndex = match.index + fullMatch.length;
+    }
+
+    // 残りのテキスト
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
+
+  /**
+   * ReactMarkdown用カスタムコンポーネント
+   */
+  const markdownComponents = {
+    // テキストノードでWPリンクを変換
+    p: ({ children }) => <p>{React.Children.map(children, child =>
+      typeof child === 'string' ? renderTextWithWPLinks(child) : child
+    )}</p>,
+    li: ({ children }) => <li>{React.Children.map(children, child =>
+      typeof child === 'string' ? renderTextWithWPLinks(child) : child
+    )}</li>,
+    td: ({ children }) => <td>{React.Children.map(children, child =>
+      typeof child === 'string' ? renderTextWithWPLinks(child) : child
+    )}</td>,
+    strong: ({ children }) => <strong>{React.Children.map(children, child =>
+      typeof child === 'string' ? renderTextWithWPLinks(child) : child
+    )}</strong>,
   };
 
   useEffect(() => {
@@ -462,8 +526,8 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         }
       }
 
-      // ギャップ分析と最適化提案
-      const optimization = generateOptimizationPlan(polygons, waypoints);
+      // ギャップ分析と最適化提案（DID情報を渡す）
+      const optimization = generateOptimizationPlan(polygons, waypoints, result.context?.didInfo);
       setOptimizationPlan(optimization);
 
       // 親コンポーネントに通知（マップオーバーレイ用）
@@ -478,13 +542,26 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         // As-is / To-be 比較テーブル
         if (optimization.waypointAnalysis.gaps.length > 0) {
           response += `**As-is → To-be 比較:**\n\n`;
-          response += `| WP | 問題 | 移動距離 |\n`;
-          response += `|----|------|----------|\n`;
+          response += `| WP | 問題 | 対応 |\n`;
+          response += `|----|------|------|\n`;
           optimization.waypointAnalysis.gaps.forEach(gap => {
             const issue = gap.issues[0];
-            const issueText = issue.type === 'airport' ? `空港: ${issue.zone}` : `禁止: ${issue.zone}`;
-            const moveDistance = gap.moveDistance ? `${Math.round(gap.moveDistance)}m` : '-';
-            response += `| WP${gap.waypointIndex} | ${issueText} | ${moveDistance} |\n`;
+            let issueText;
+            let actionText;
+            if (issue.type === 'airport') {
+              issueText = `空港: ${issue.zone}`;
+              actionText = gap.moveDistance ? `${Math.round(gap.moveDistance)}m移動` : '要移動';
+            } else if (issue.type === 'prohibited') {
+              issueText = `禁止: ${issue.zone}`;
+              actionText = gap.moveDistance ? `${Math.round(gap.moveDistance)}m移動` : '要移動';
+            } else if (issue.type === 'did') {
+              issueText = `DID: ${issue.zone}`;
+              actionText = '許可申請必要';
+            } else {
+              issueText = issue.zone;
+              actionText = '-';
+            }
+            response += `| [WP${gap.waypointIndex}] | ${issueText} | ${actionText} |\n`;
           });
           response += `\n`;
         }
@@ -494,7 +571,13 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           response += `• ${action}\n`;
         });
 
-        response += `\n下の「推奨プランを適用」ボタンで自動修正できます\n`;
+        // DID以外の問題がある場合のみ「推奨プランを適用」ボタンを表示
+        const hasNonDIDIssues = optimization.waypointAnalysis.gaps.some(
+          g => g.issues.some(i => i.type !== 'did')
+        );
+        if (hasNonDIDIssues) {
+          response += `\n下の「推奨プランを適用」ボタンで自動修正できます\n`;
+        }
         setShowOptimization(true);
       } else {
         response += `\n### プラン検証 [OK]\n`;
@@ -1062,7 +1145,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               </div>
             )}
             <div className="message-content">
-              <ReactMarkdown>{msg.content}</ReactMarkdown>
+              <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
               {/* 生成されたルートの適用ボタン */}
               {msg.generatedRoute && (
                 <button
