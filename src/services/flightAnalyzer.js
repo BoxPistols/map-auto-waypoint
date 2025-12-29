@@ -1102,13 +1102,13 @@ const calculateSafePosition = (lat, lng, zone, safetyMargin = 500) => {
 
 /**
  * Waypointのギャップ分析と推奨位置を計算
+ * 空港/禁止区域内のWPグループは相対位置を維持して移動
  * @param {Array} waypoints - 現在のWaypoint配列
  * @param {Object} didInfo - DID判定結果（オプション）
  * @returns {Object} ギャップ分析結果
  */
 export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
   const gaps = [];
-  const recommendedWaypoints = [];
   let hasIssues = false;
 
   // DID内のWaypointインデックスをセットに格納
@@ -1119,18 +1119,22 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     });
   }
 
+  // 各制限区域に含まれるWPをグループ化
+  const zoneGroups = new Map(); // zone.name -> {zone, waypoints: []}
+
+  // 各WPの問題を特定
+  const wpIssuesMap = new Map(); // wp.id -> {issues: [], zones: []}
+
   for (const wp of waypoints) {
-    let currentWp = { ...wp };
-    let issues = [];
-    let recommendedPosition = null;
     const wpIndex = wp.index !== undefined ? wp.index : waypoints.indexOf(wp) + 1;
+    const issues = [];
+    const affectedZones = [];
 
     // 空港制限区域チェック
     for (const airport of AIRPORT_ZONES) {
       const distance = getDistanceMeters(wp.lat, wp.lng, airport.lat, airport.lng);
       if (distance < airport.radius) {
         hasIssues = true;
-        const safePos = calculateSafePosition(wp.lat, wp.lng, airport, 500);
         issues.push({
           type: 'airport',
           zone: airport.name,
@@ -1138,18 +1142,21 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
           requiredDistance: airport.radius + 500,
           severity: 'high'
         });
-        if (!recommendedPosition || safePos.distance > recommendedPosition.distance) {
-          recommendedPosition = safePos;
+        affectedZones.push({ ...airport, type: 'airport', margin: 500 });
+
+        // グループに追加
+        if (!zoneGroups.has(airport.name)) {
+          zoneGroups.set(airport.name, { zone: airport, margin: 500, waypoints: [] });
         }
+        zoneGroups.get(airport.name).waypoints.push(wp);
       }
     }
 
     // 飛行禁止区域チェック
     for (const zone of NO_FLY_ZONES) {
       const distance = getDistanceMeters(wp.lat, wp.lng, zone.lat, zone.lng);
-      if (distance < zone.radius + 300) { // 禁止区域は300mマージン
+      if (distance < zone.radius + 300) {
         hasIssues = true;
-        const safePos = calculateSafePosition(wp.lat, wp.lng, zone, 300);
         issues.push({
           type: 'prohibited',
           zone: zone.name,
@@ -1157,53 +1164,96 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
           requiredDistance: zone.radius + 300,
           severity: 'critical'
         });
-        if (!recommendedPosition || safePos.distance > recommendedPosition.distance) {
-          recommendedPosition = safePos;
+        affectedZones.push({ ...zone, type: 'prohibited', margin: 300 });
+
+        if (!zoneGroups.has(zone.name)) {
+          zoneGroups.set(zone.name, { zone, margin: 300, waypoints: [] });
         }
+        zoneGroups.get(zone.name).waypoints.push(wp);
       }
     }
 
     // DID（人口集中地区）チェック
     if (didWaypointIndices.has(wpIndex)) {
       hasIssues = true;
-      // DID内のWaypoint情報を取得
       const didWpInfo = didInfo.waypointDetails.didWaypoints.find(d => d.waypointIndex === wpIndex);
       issues.push({
         type: 'did',
         zone: didWpInfo?.area || 'DID区域',
         currentDistance: 0,
-        requiredDistance: null, // DIDは距離ベースではない
+        requiredDistance: null,
         severity: 'medium',
         description: `人口集中地区（${didWpInfo?.area || 'DID'}）内`
       });
-      // DIDは移動による解決が難しいため、recommendedPositionは設定しない
-      // ただし、警告として表示する
     }
 
-    if (issues.length > 0) {
+    wpIssuesMap.set(wp.id, { issues, affectedZones, wpIndex });
+  }
+
+  // 各ゾーングループに対して、グループ全体を移動させるオフセットを計算
+  const wpOffsets = new Map(); // wp.id -> {latOffset, lngOffset}
+
+  for (const [zoneName, group] of zoneGroups) {
+    if (group.waypoints.length === 0) continue;
+
+    const { zone, margin, waypoints: zoneWps } = group;
+
+    // グループの中心点を計算
+    const centerLat = zoneWps.reduce((sum, wp) => sum + wp.lat, 0) / zoneWps.length;
+    const centerLng = zoneWps.reduce((sum, wp) => sum + wp.lng, 0) / zoneWps.length;
+
+    // 中心点から制限区域への距離と方向を計算
+    const distToZone = getDistanceMeters(centerLat, centerLng, zone.lat, zone.lng);
+    const requiredDistance = zone.radius + margin;
+
+    if (distToZone < requiredDistance) {
+      // グループ中心を安全な位置に移動するオフセットを計算
+      const bearing = Math.atan2(centerLng - zone.lng, centerLat - zone.lat);
+      const moveDistance = requiredDistance - distToZone + 100; // 追加マージン100m
+
+      const latOffset = (moveDistance * Math.cos(bearing)) / 111320;
+      const lngOffset = (moveDistance * Math.sin(bearing)) / (111320 * Math.cos(centerLat * Math.PI / 180));
+
+      // グループ内の全WPに同じオフセットを適用
+      for (const wp of zoneWps) {
+        const existing = wpOffsets.get(wp.id);
+        if (!existing || Math.abs(latOffset) + Math.abs(lngOffset) > Math.abs(existing.latOffset) + Math.abs(existing.lngOffset)) {
+          wpOffsets.set(wp.id, { latOffset, lngOffset, moveDistance: Math.round(moveDistance) });
+        }
+      }
+    }
+  }
+
+  // 推奨WPリストを生成
+  const recommendedWaypoints = waypoints.map(wp => {
+    const wpIndex = wp.index !== undefined ? wp.index : waypoints.indexOf(wp) + 1;
+    const issueData = wpIssuesMap.get(wp.id);
+    const offset = wpOffsets.get(wp.id);
+
+    if (issueData?.issues.length > 0) {
       gaps.push({
         waypointId: wp.id,
         waypointIndex: wpIndex,
         current: { lat: wp.lat, lng: wp.lng },
-        recommended: recommendedPosition ? {
-          lat: recommendedPosition.lat,
-          lng: recommendedPosition.lng
+        recommended: offset ? {
+          lat: wp.lat + offset.latOffset,
+          lng: wp.lng + offset.lngOffset
         } : null,
-        moveDistance: recommendedPosition?.distance || 0,
-        issues
+        moveDistance: offset?.moveDistance || 0,
+        issues: issueData.issues
       });
 
-      recommendedWaypoints.push({
+      return {
         ...wp,
-        lat: recommendedPosition?.lat || wp.lat,
-        lng: recommendedPosition?.lng || wp.lng,
-        modified: !!recommendedPosition,
+        lat: offset ? wp.lat + offset.latOffset : wp.lat,
+        lng: offset ? wp.lng + offset.lngOffset : wp.lng,
+        modified: !!offset,
         hasDID: didWaypointIndices.has(wpIndex)
-      });
-    } else {
-      recommendedWaypoints.push({ ...wp, modified: false, hasDID: false });
+      };
     }
-  }
+
+    return { ...wp, modified: false, hasDID: false };
+  });
 
   return {
     hasIssues,
