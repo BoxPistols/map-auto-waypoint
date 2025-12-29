@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   Send,
   X,
@@ -250,9 +251,15 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     td: ({ children }) => <td>{React.Children.map(children, child =>
       typeof child === 'string' ? renderTextWithWPLinks(child) : child
     )}</td>,
+    th: ({ children }) => <th>{children}</th>,
     strong: ({ children }) => <strong>{React.Children.map(children, child =>
       typeof child === 'string' ? renderTextWithWPLinks(child) : child
     )}</strong>,
+    // テーブル要素
+    table: ({ children }) => <div className="table-wrapper"><table>{children}</table></div>,
+    thead: ({ children }) => <thead>{children}</thead>,
+    tbody: ({ children }) => <tbody>{children}</tbody>,
+    tr: ({ children }) => <tr>{children}</tr>,
   };
 
   useEffect(() => {
@@ -1353,7 +1360,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               </div>
             )}
             <div className="message-content">
-              <ReactMarkdown components={markdownComponents}>{msg.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{msg.content}</ReactMarkdown>
               {/* 生成されたルートの適用ボタン */}
               {msg.generatedRoute && (
                 <button

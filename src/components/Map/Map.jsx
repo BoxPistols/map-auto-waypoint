@@ -82,6 +82,18 @@ const Map = ({
     saveMapSettings({ is3D, showAirportZones, showNoFlyZones, showDID })
   }, [is3D, showAirportZones, showNoFlyZones, showDID])
 
+  // Sync viewState when center/zoom props change from parent (e.g., WP click)
+  useEffect(() => {
+    if (center && zoom) {
+      setViewState(prev => ({
+        ...prev,
+        latitude: center.lat,
+        longitude: center.lng,
+        zoom: zoom
+      }))
+    }
+  }, [center.lat, center.lng, zoom])
+
   // Memoize airspace GeoJSON data
   const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
   const noFlyZonesGeoJSON = useMemo(() => getNoFlyZonesGeoJSON(), [])

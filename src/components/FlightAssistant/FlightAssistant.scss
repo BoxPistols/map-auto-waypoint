@@ -571,6 +571,47 @@ $color-border-light: rgba(255, 255, 255, 0.15);
       padding-left: 4px;
     }
 
+    // テーブルスタイル
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 8px 0;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      white-space: nowrap;
+
+      th, td {
+        padding: 6px 8px;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      th {
+        background: rgba($color-primary, 0.3);
+        color: $color-primary-lighter;
+        font-weight: 600;
+        font-size: 10px;
+        text-transform: uppercase;
+      }
+
+      td {
+        color: $color-text-primary;
+      }
+
+      tr:hover td {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+    }
+
     &.typing {
       display: flex;
       gap: 4px;

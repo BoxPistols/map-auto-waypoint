@@ -953,12 +953,14 @@ function App() {
           if (waypoint) {
             // 地図の中心をWaypointに移動
             setCenter({ lat: waypoint.lat, lng: waypoint.lng })
-            setZoom(17) // ズームイン
+            setZoom(18) // より高いズームレベル
             // ハイライト表示
             setHighlightedWaypointIndex(wpIndex)
             // 3秒後にハイライトをクリア
             setTimeout(() => setHighlightedWaypointIndex(null), 3000)
-            showNotification(`WP${wpIndex}を表示しています`, 'info')
+            showNotification(`WP${wpIndex}にズームしました`, 'info')
+          } else {
+            showNotification(`WP${wpIndex}が見つかりません`, 'warning')
           }
         }}
       />
