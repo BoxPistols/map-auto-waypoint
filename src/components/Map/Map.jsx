@@ -98,7 +98,7 @@ const Map = ({
   const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
   const noFlyZonesGeoJSON = useMemo(() => getNoFlyZonesGeoJSON(), [])
 
-  // Memoize optimization overlay GeoJSON (lines from current to recommended positions)
+  // Memoize optimization overlay GeoJSON (lines from current to recommended positions + DID warnings)
   const optimizationOverlayGeoJSON = useMemo(() => {
     if (!recommendedWaypoints || recommendedWaypoints.length === 0) return null
 
@@ -131,6 +131,16 @@ const Map = ({
             }
           })
         }
+      } else if (rw.hasDID) {
+        // DID warning point (no move needed, but visual indicator)
+        features.push({
+          type: 'Feature',
+          properties: { type: 'did-warning-point', index: rw.index },
+          geometry: {
+            type: 'Point',
+            coordinates: [rw.lng, rw.lat]
+          }
+        })
       }
     })
 
@@ -526,6 +536,36 @@ const Map = ({
               paint={{
                 'text-color': '#059669',
                 'text-halo-color': '#ffffff',
+                'text-halo-width': 1
+              }}
+            />
+            {/* DID warning circles (orange) */}
+            <Layer
+              id="did-warning-points"
+              type="circle"
+              filter={['==', ['get', 'type'], 'did-warning-point']}
+              paint={{
+                'circle-radius': 18,
+                'circle-color': 'transparent',
+                'circle-stroke-color': '#f59e0b',
+                'circle-stroke-width': 3,
+                'circle-opacity': 1
+              }}
+            />
+            {/* DID warning labels */}
+            <Layer
+              id="did-warning-labels"
+              type="symbol"
+              filter={['==', ['get', 'type'], 'did-warning-point']}
+              layout={{
+                'text-field': 'DID',
+                'text-size': 9,
+                'text-offset': [0, 2.2],
+                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold']
+              }}
+              paint={{
+                'text-color': '#f59e0b',
+                'text-halo-color': '#000000',
                 'text-halo-width': 1
               }}
             />
