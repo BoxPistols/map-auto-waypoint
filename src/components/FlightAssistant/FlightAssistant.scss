@@ -729,65 +729,6 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   50% { transform: scale(1.1); }
 }
 
-// AI経路生成セクション
-.route-generation-section {
-  display: flex;
-  gap: 6px;
-  padding: 6px 12px;
-  border-top: 1px solid $color-border;
-  background: rgba($color-success, 0.05);
-  flex-shrink: 0;
-
-  input {
-    flex: 1;
-    padding: 6px 8px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid $color-border-light;
-    border-radius: 6px;
-    color: $color-text-white;
-    font-size: 13px;
-
-    &::placeholder {
-      color: rgba(255, 255, 255, 0.4);
-    }
-
-    &:focus {
-      outline: none;
-      border-color: $color-success;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-    }
-  }
-
-  .generate-route-btn {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 8px 12px;
-    background: linear-gradient(135deg, $color-success 0%, $color-success-dark 100%);
-    border: none;
-    border-radius: 6px;
-    color: $color-text-white;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-
-    &:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba($color-success, 0.4);
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
-}
-
 .flight-assistant-input {
   display: flex;
   gap: 6px;
