@@ -1145,6 +1145,20 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
             </button>
           )}
           <button
+            className="clear-chat-btn"
+            onClick={() => {
+              setMessages([{
+                role: 'assistant',
+                content: '**フライト判定アシスタント**\n\n地図上でエリア/Waypointを設定し、「判定！」ボタンで安全性を分析します。\n\n**判定内容:**\n• DID（人口集中地区）チェック\n• 空港・禁止区域チェック\n• 必要な許可の確認\n• Waypointの最適化提案'
+              }]);
+              setAssessmentResult(null);
+              setOptimizationPlan(null);
+            }}
+            title="チャットをクリア"
+          >
+            <Trash2 size={16} />
+          </button>
+          <button
             className={`settings-btn ${showSettings ? 'active' : ''}`}
             onClick={() => setShowSettings(!showSettings)}
             title="設定"
