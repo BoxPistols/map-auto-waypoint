@@ -93,42 +93,62 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
   /**
    * テキスト内のWP番号をクリック可能なリンクに変換
-   * マッチパターン: [WP21], WP21, WP 21, WP:21
+   * マッチパターン: [WP21], WP21, WP 21, WP:21, WP: 21, 27, 28
    */
   const renderTextWithWPLinks = (text) => {
     if (typeof text !== 'string') return text;
 
-    // WP番号のパターン: [WP21], WP21, WP 21, WP:21, WP1, etc.
-    const wpPattern = /\[?WP\s*:?\s*(\d+)\]?/gi;
     const parts = [];
+    let remaining = text;
+    let keyCounter = 0;
+
+    // パターン1: WP + 番号（カンマ区切りの連続番号も含む）
+    // 例: "WP: 21, 27, 28" や "WP 21" や "WP21"
+    const wpGroupPattern = /(\[?WP\s*:?\s*)(\d+(?:\s*,\s*\d+)*)\]?/gi;
+
     let lastIndex = 0;
     let match;
 
-    while ((match = wpPattern.exec(text)) !== null) {
-      // マッチ前のテキスト
+    while ((match = wpGroupPattern.exec(text)) !== null) {
+      // マッチ前のテキストを追加
       if (match.index > lastIndex) {
         parts.push(text.slice(lastIndex, match.index));
       }
 
-      const wpIndex = parseInt(match[1], 10);
+      const prefix = match[1]; // "WP: " や "WP" など
+      const numbersStr = match[2]; // "21, 27, 28" や "21"
       const fullMatch = match[0];
 
-      // WPリンクを追加
-      parts.push(
-        <span
-          key={`wp-${match.index}`}
-          className="wp-link"
-          onClick={() => onWaypointSelect?.(wpIndex)}
-          title={`WP${wpIndex}を地図上で表示`}
-        >
-          WP{wpIndex}
-        </span>
-      );
+      // カンマ区切りの番号を分割してリンクに変換
+      const numbers = numbersStr.split(/\s*,\s*/);
+      numbers.forEach((numStr, idx) => {
+        const wpIndex = parseInt(numStr.trim(), 10);
+        if (idx === 0) {
+          parts.push(prefix.replace(/\[/, '')); // 最初の番号の前にprefixを追加（ブラケット除去）
+        } else {
+          parts.push(', '); // 2番目以降はカンマを追加
+        }
+        parts.push(
+          <span
+            key={`wp-${keyCounter++}`}
+            className="wp-link"
+            onClick={() => onWaypointSelect?.(wpIndex)}
+            title={`WP${wpIndex}を地図上で表示`}
+          >
+            {wpIndex}
+          </span>
+        );
+      });
+
+      // 閉じブラケットがある場合
+      if (fullMatch.endsWith(']')) {
+        parts.push(']');
+      }
 
       lastIndex = match.index + fullMatch.length;
     }
 
-    // 残りのテキスト
+    // 残りのテキストを追加
     if (lastIndex < text.length) {
       parts.push(text.slice(lastIndex));
     }
@@ -527,7 +547,10 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       }
 
       // ギャップ分析と最適化提案（DID情報を渡す）
+      console.log('[FlightAssistant] DID Info:', result.context?.didInfo);
+      console.log('[FlightAssistant] DID waypointDetails:', result.context?.didInfo?.waypointDetails);
       const optimization = generateOptimizationPlan(polygons, waypoints, result.context?.didInfo);
+      console.log('[FlightAssistant] Optimization result:', optimization);
       setOptimizationPlan(optimization);
 
       // 親コンポーネントに通知（マップオーバーレイ用）
