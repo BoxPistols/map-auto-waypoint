@@ -1,7 +1,7 @@
 /**
  * OpenAI API連携サービス
  *
- * GPT-5 / GPT-4.1 ファミリー、またはローカルLLM (LM Studio等) を使用して
+ * GPT-4o ファミリー、またはローカルLLM (LM Studio等) を使用して
  * ドローン経路の危険度判定・推奨を生成
  */
 
@@ -11,16 +11,16 @@ const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1/chat/completions';
 
 // 利用可能なモデル一覧（コスト効率重視）
 export const AVAILABLE_MODELS = [
-  // Nano（最速・最低コスト）
-  { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano ($)', description: '高速・低コスト', cost: '$', type: 'openai' },
-  // Mini（バランス型）
-  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini ($$)', description: 'コスパ良好', cost: '$$', type: 'openai' },
+  // GPT-4o Mini（低コスト・高速）
+  { id: 'gpt-4o-mini', name: 'GPT-4o Mini ($)', description: '高速・低コスト', cost: '$', type: 'openai' },
+  // GPT-3.5 Turbo（最安）
+  { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo ($)', description: '最安・軽量タスク向け', cost: '$', type: 'openai' },
   // ローカルLLM
   { id: 'local-default', name: 'ローカルLLM', description: 'LM Studio等', cost: '無料', type: 'local' }
 ];
 
 // デフォルトモデル
-const DEFAULT_MODEL = 'gpt-4.1-nano';
+const DEFAULT_MODEL = 'gpt-4o-mini';
 
 // 環境変数からAPIキーを取得（Vite経由）
 const getApiKey = () => {
