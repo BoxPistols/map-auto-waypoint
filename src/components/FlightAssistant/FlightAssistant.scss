@@ -102,20 +102,20 @@ $color-border-light: rgba(255, 255, 255, 0.15);
     right: auto;
     bottom: auto;
     transform: translate(-50%, -50%);
-    width: 70vw !important;
-    height: 75vh !important;
-    max-width: 1000px;
-    max-height: 800px;
+    width: 55vw !important;
+    height: 65vh !important;
+    max-width: 800px;
+    max-height: 650px;
     border-radius: 16px;
     z-index: 9999;
 
     .flight-assistant-messages {
-      max-height: calc(75vh - 200px);
-      min-height: calc(75vh - 250px);
+      max-height: calc(65vh - 200px);
+      min-height: calc(65vh - 250px);
     }
 
     .message-content {
-      max-width: 800px;
+      max-width: 700px;
     }
   }
 }
