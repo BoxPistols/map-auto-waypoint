@@ -13,9 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-  Settings,
   Trash2,
-  ExternalLink,
   Shield,
   MapPin,
   Download,
@@ -32,19 +30,10 @@ import {
 } from 'lucide-react';
 import {
   hasApiKey,
-  setApiKey,
-  getFlightAdvice,
-  AVAILABLE_MODELS,
-  getSelectedModel,
-  setSelectedModel,
-  getLocalEndpoint,
-  setLocalEndpoint,
-  getLocalModelName,
-  setLocalModelName,
-  isLocalModel
+  getFlightAdvice
 } from '../../services/openaiService';
 import { runFullAnalysis, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
-import { hasReinfolibApiKey, setReinfolibApiKey } from '../../services/reinfolibService';
+import { hasReinfolibApiKey } from '../../services/reinfolibService';
 import {
   getAllChatLogs,
   saveChatLog,
@@ -65,14 +54,8 @@ import './FlightAssistant.scss';
  */
 function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState('');
   const [hasKey, setHasKey] = useState(hasApiKey());
-  const [mlitKeyInput, setMlitKeyInput] = useState('');
   const [hasMlitKey, setHasMlitKey] = useState(hasReinfolibApiKey());
-  const [selectedModelId, setSelectedModelId] = useState(getSelectedModel());
-  const [localEndpoint, setLocalEndpointState] = useState(getLocalEndpoint());
-  const [localModelName, setLocalModelNameState] = useState(getLocalModelName());
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -322,85 +305,16 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     }
   };
 
-  // APIキー保存
-  const handleSaveApiKey = () => {
-    if (apiKeyInput.trim()) {
-      setApiKey(apiKeyInput.trim());
-      setHasKey(true);
-      setApiKeyInput('');
-      setShowSettings(false);
-      setMessages(prev => [...prev, {
-        role: 'system',
-        content: '[OK] OpenAI APIキーを保存しました。AI分析が有効になりました。'
-      }]);
-    }
-  };
-
-  // APIキー削除
-  const handleDeleteApiKey = () => {
-    if (confirm('OpenAI APIキーを削除しますか？')) {
-      localStorage.removeItem('openai_api_key');
-      setHasKey(false);
-      setMessages(prev => [...prev, {
-        role: 'system',
-        content: 'OpenAI APIキーを削除しました。'
-      }]);
-    }
-  };
-
-  // 国土交通省APIキー保存
-  const handleSaveMlitKey = () => {
-    if (mlitKeyInput.trim()) {
-      setReinfolibApiKey(mlitKeyInput.trim());
-      setHasMlitKey(true);
-      setMlitKeyInput('');
-      setMessages(prev => [...prev, {
-        role: 'system',
-        content: '[OK] 国土交通省APIキーを保存しました。用途地域・都市計画情報が利用可能になりました。'
-      }]);
-    }
-  };
-
-  // 国土交通省APIキー削除
-  const handleDeleteMlitKey = () => {
-    if (confirm('国土交通省APIキーを削除しますか？')) {
-      localStorage.removeItem('reinfolib_api_key');
-      setHasMlitKey(false);
-      setMessages(prev => [...prev, {
-        role: 'system',
-        content: '国土交通省APIキーを削除しました。'
-      }]);
-    }
-  };
-
-  // OpenAIモデル変更
-  const handleModelChange = (modelId) => {
-    setSelectedModel(modelId);
-    setSelectedModelId(modelId);
-    const model = AVAILABLE_MODELS.find(m => m.id === modelId);
-    setMessages(prev => [...prev, {
-      role: 'system',
-      content: `[OK] AIモデルを ${model?.name || modelId} に変更しました`
-    }]);
-  };
-
-  // ローカルLLMエンドポイント保存
-  const handleSaveLocalEndpoint = () => {
-    setLocalEndpoint(localEndpoint);
-    setMessages(prev => [...prev, {
-      role: 'system',
-      content: `[OK] ローカルLLMエンドポイントを設定: ${localEndpoint}`
-    }]);
-  };
-
-  // ローカルLLMモデル名保存
-  const handleSaveLocalModelName = () => {
-    setLocalModelName(localModelName);
-    setMessages(prev => [...prev, {
-      role: 'system',
-      content: `[OK] ローカルLLMモデル名を設定: ${localModelName}`
-    }]);
-  };
+  // APIキー状態の更新（設定変更時にFlightAssistantの状態を同期）
+  useEffect(() => {
+    const checkApiStatus = () => {
+      setHasKey(hasApiKey());
+      setHasMlitKey(hasReinfolibApiKey());
+    };
+    // localStorageの変更を検知
+    window.addEventListener('storage', checkApiStatus);
+    return () => window.removeEventListener('storage', checkApiStatus);
+  }, []);
 
   // メッセージ送信
   const handleSend = async () => {
@@ -898,187 +812,6 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     }
   };
 
-  // 設定パネル
-  const renderSettings = () => (
-    <div className="settings-panel">
-      <div className="settings-header">
-        <h3><Settings size={16} /> API設定</h3>
-        <button className="close-btn" onClick={() => setShowSettings(false)}>
-          <X size={16} />
-        </button>
-      </div>
-
-      <div className="settings-content">
-        {/* 国土交通省API */}
-        <div className="settings-section">
-          <h4>国土交通省 不動産情報ライブラリ</h4>
-          <div className="settings-info">
-            <p>用途地域・都市計画情報を取得できます：</p>
-            <ul>
-              <li>住居/商業/工業地域の判定</li>
-              <li>市街化区域/調整区域の判定</li>
-              <li>DID（人口集中地区）の参考情報</li>
-            </ul>
-          </div>
-
-          {hasMlitKey ? (
-            <div className="api-key-status">
-              <div className="status-row">
-                <CheckCircle size={16} className="success" />
-                <span>設定済み</span>
-              </div>
-              <button className="delete-btn" onClick={handleDeleteMlitKey}>
-                <Trash2 size={14} /> 削除
-              </button>
-            </div>
-          ) : (
-            <div className="api-key-input">
-              <input
-                type="text"
-                value={mlitKeyInput}
-                onChange={(e) => setMlitKeyInput(e.target.value)}
-                placeholder="APIキー"
-              />
-              <button
-                className="save-btn"
-                onClick={handleSaveMlitKey}
-                disabled={!mlitKeyInput.trim()}
-              >
-                保存
-              </button>
-            </div>
-          )}
-
-          <div className="settings-links">
-            <a
-              href="https://www.reinfolib.mlit.go.jp/api/request/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <ExternalLink size={12} /> APIキーを申請
-            </a>
-          </div>
-        </div>
-
-        <hr className="settings-divider" />
-
-        {/* OpenAI API */}
-        <div className="settings-section">
-          <h4>OpenAI API（オプション）</h4>
-          <div className="settings-info">
-            <p>高度なAI分析が有効になります：</p>
-            <ul>
-              <li>自然言語での質問応答</li>
-              <li>詳細なアドバイス生成</li>
-            </ul>
-          </div>
-
-          {/* モデル選択（常に表示） */}
-          <div className="model-selector">
-            <label>AIモデル:</label>
-            <select
-              value={selectedModelId}
-              onChange={(e) => handleModelChange(e.target.value)}
-            >
-              {AVAILABLE_MODELS.map(model => (
-                <option key={model.id} value={model.id}>
-                  {model.name} ({model.cost}) - {model.description}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* ローカルLLM設定 */}
-          {isLocalModel(selectedModelId) ? (
-            <div className="local-llm-settings">
-              <div className="settings-info">
-                <p>LM Studio等のローカルLLMサーバーを使用：</p>
-              </div>
-              <div className="local-input-group">
-                <label>エンドポイント:</label>
-                <input
-                  type="text"
-                  value={localEndpoint}
-                  onChange={(e) => setLocalEndpointState(e.target.value)}
-                  placeholder="http://localhost:1234/v1/chat/completions"
-                />
-                <button
-                  className="save-btn"
-                  onClick={handleSaveLocalEndpoint}
-                >
-                  保存
-                </button>
-              </div>
-              <div className="local-input-group">
-                <label>モデル名:</label>
-                <input
-                  type="text"
-                  value={localModelName}
-                  onChange={(e) => setLocalModelNameState(e.target.value)}
-                  placeholder="local-model"
-                />
-                <button
-                  className="save-btn"
-                  onClick={handleSaveLocalModelName}
-                >
-                  保存
-                </button>
-              </div>
-              <p className="settings-note local-note">
-                ※ LM Studioを起動し、サーバーを開始してください
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* OpenAI APIキー設定 */}
-              {hasKey ? (
-                <div className="api-key-status">
-                  <div className="status-row">
-                    <CheckCircle size={16} className="success" />
-                    <span>APIキー設定済み</span>
-                  </div>
-                  <button className="delete-btn" onClick={handleDeleteApiKey}>
-                    <Trash2 size={14} /> 削除
-                  </button>
-                </div>
-              ) : (
-                <div className="api-key-input">
-                  <input
-                    type="password"
-                    value={apiKeyInput}
-                    onChange={(e) => setApiKeyInput(e.target.value)}
-                    placeholder="sk-..."
-                  />
-                  <button
-                    className="save-btn"
-                    onClick={handleSaveApiKey}
-                    disabled={!apiKeyInput.trim()}
-                  >
-                    保存
-                  </button>
-                </div>
-              )}
-
-              <div className="settings-links">
-                <a
-                  href="https://platform.openai.com/api-keys"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink size={12} /> APIキーを取得
-                </a>
-              </div>
-            </>
-          )}
-        </div>
-
-        <p className="settings-note">
-          ※ 設定はブラウザに保存（サーバー送信なし）
-        </p>
-      </div>
-    </div>
-  );
-
   if (!isOpen) {
     return (
       <button
@@ -1174,20 +907,11 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           >
             <Trash2 size={16} />
           </button>
-          <button
-            className={`settings-btn ${showSettings ? 'active' : ''}`}
-            onClick={() => { setShowSettings(!showSettings); setShowChatLogs(false); }}
-            title="設定"
-          >
-            <Settings size={16} />
-          </button>
           <button className="close-btn" onClick={() => setIsOpen(false)}>
             <X size={18} />
           </button>
         </div>
       </div>
-
-      {showSettings && renderSettings()}
 
       {/* チャットログパネル */}
       {showChatLogs && (

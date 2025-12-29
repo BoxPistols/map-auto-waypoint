@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, Search, Undo2, Redo2, Map as MapIcon, Layers } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings } from 'lucide-react'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
 import PolygonList from './components/PolygonList/PolygonList'
@@ -14,6 +14,7 @@ import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGri
 import { addElevationToWaypoints } from './services/elevation'
 import { createPolygonFromSearchResult } from './services/polygonGenerator'
 import FlightAssistant from './components/FlightAssistant'
+import ApiSettings from './components/ApiSettings'
 import './App.scss'
 
 // Default center: Tokyo Tower
@@ -42,6 +43,7 @@ function App() {
   const [showExport, setShowExport] = useState(false)
   const [showGridSettings, setShowGridSettings] = useState(null) // polygon for grid generation
   const [showHelp, setShowHelp] = useState(false)
+  const [showApiSettings, setShowApiSettings] = useState(false)
   const [notification, setNotification] = useState(null)
   const [editingPolygon, setEditingPolygon] = useState(null)
 
@@ -710,6 +712,14 @@ function App() {
             エクスポート
           </button>
           <button
+            className="icon-button settings-button"
+            onClick={() => setShowApiSettings(true)}
+            data-tooltip="API設定"
+            data-tooltip-pos="bottom"
+          >
+            <Settings size={18} />
+          </button>
+          <button
             className="help-button"
             onClick={() => setShowHelp(true)}
             data-tooltip="ヘルプ (⌘/ or ?)"
@@ -915,6 +925,12 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* API Settings Modal */}
+      <ApiSettings
+        isOpen={showApiSettings}
+        onClose={() => setShowApiSettings(false)}
+      />
 
       {/* Flight Assistant (AI) */}
       <FlightAssistant
