@@ -24,7 +24,11 @@ import {
   Check,
   Expand,
   Shrink,
-  Route
+  Route,
+  Save,
+  FolderOpen,
+  Clock,
+  Edit3
 } from 'lucide-react';
 import {
   hasApiKey,
@@ -42,6 +46,13 @@ import {
 } from '../../services/openaiService';
 import { runFullAnalysis, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
 import { hasReinfolibApiKey, setReinfolibApiKey } from '../../services/reinfolibService';
+import {
+  getAllChatLogs,
+  saveChatLog,
+  deleteChatLog,
+  getChatLog,
+  updateChatLog
+} from '../../services/chatLogService';
 import './FlightAssistant.scss';
 
 /**
@@ -83,12 +94,81 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [isResizing, setIsResizing] = useState(false);
   const [routePurpose, setRoutePurpose] = useState('');
   const [isGeneratingRoute, setIsGeneratingRoute] = useState(false);
+  const [showChatLogs, setShowChatLogs] = useState(false);
+  const [chatLogs, setChatLogs] = useState([]);
+  const [currentLogId, setCurrentLogId] = useState(null);
+  const [editingLogId, setEditingLogId] = useState(null);
+  const [editingLogName, setEditingLogName] = useState('');
   const messagesEndRef = useRef(null);
   const panelRef = useRef(null);
   const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // チャットログを読み込み
+  const loadChatLogs = useCallback(() => {
+    setChatLogs(getAllChatLogs());
+  }, []);
+
+  // 初期読み込み
+  useEffect(() => {
+    loadChatLogs();
+  }, [loadChatLogs]);
+
+  // チャットログを保存
+  const handleSaveChatLog = () => {
+    const name = prompt('チャットログの名前を入力してください:', `判定ログ ${new Date().toLocaleString('ja-JP')}`);
+    if (name === null) return; // キャンセル
+
+    try {
+      const newLog = saveChatLog({
+        name: name || undefined,
+        messages,
+        assessmentResult
+      });
+      setCurrentLogId(newLog.id);
+      loadChatLogs();
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: `[保存完了] "${newLog.name}" として保存しました`
+      }]);
+    } catch {
+      alert('保存に失敗しました');
+    }
+  };
+
+  // チャットログを読み込み
+  const handleLoadChatLog = (logId) => {
+    const log = getChatLog(logId);
+    if (log) {
+      setMessages(log.messages);
+      setAssessmentResult(log.assessmentResult);
+      setCurrentLogId(log.id);
+      setShowChatLogs(false);
+    }
+  };
+
+  // チャットログを削除
+  const handleDeleteChatLog = (logId) => {
+    if (confirm('このチャットログを削除しますか？')) {
+      deleteChatLog(logId);
+      if (currentLogId === logId) {
+        setCurrentLogId(null);
+      }
+      loadChatLogs();
+    }
+  };
+
+  // チャットログ名を更新
+  const handleUpdateLogName = (logId) => {
+    if (editingLogName.trim()) {
+      updateChatLog(logId, { name: editingLogName.trim() });
+      loadChatLogs();
+    }
+    setEditingLogId(null);
+    setEditingLogName('');
   };
 
   /**
@@ -1145,6 +1225,21 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
             </button>
           )}
           <button
+            className="save-chat-btn"
+            onClick={handleSaveChatLog}
+            title="チャットを保存"
+          >
+            <Save size={16} />
+          </button>
+          <button
+            className={`load-chat-btn ${showChatLogs ? 'active' : ''}`}
+            onClick={() => setShowChatLogs(!showChatLogs)}
+            title="保存済みログ"
+          >
+            <FolderOpen size={16} />
+            {chatLogs.length > 0 && <span className="log-count">{chatLogs.length}</span>}
+          </button>
+          <button
             className="clear-chat-btn"
             onClick={() => {
               setMessages([{
@@ -1153,6 +1248,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               }]);
               setAssessmentResult(null);
               setOptimizationPlan(null);
+              setCurrentLogId(null);
             }}
             title="チャットをクリア"
           >
@@ -1160,7 +1256,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           </button>
           <button
             className={`settings-btn ${showSettings ? 'active' : ''}`}
-            onClick={() => setShowSettings(!showSettings)}
+            onClick={() => { setShowSettings(!showSettings); setShowChatLogs(false); }}
             title="設定"
           >
             <Settings size={16} />
@@ -1172,6 +1268,77 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       </div>
 
       {showSettings && renderSettings()}
+
+      {/* チャットログパネル */}
+      {showChatLogs && (
+        <div className="chat-logs-panel">
+          <div className="chat-logs-header">
+            <h3><FolderOpen size={16} /> 保存済みログ</h3>
+            <button className="close-btn" onClick={() => setShowChatLogs(false)}>
+              <X size={14} />
+            </button>
+          </div>
+          <div className="chat-logs-list">
+            {chatLogs.length === 0 ? (
+              <div className="empty-logs">
+                <p>保存されたログはありません</p>
+                <p className="hint">チャット内容を保存するには上部の保存ボタンをクリック</p>
+              </div>
+            ) : (
+              chatLogs.map(log => (
+                <div
+                  key={log.id}
+                  className={`chat-log-item ${currentLogId === log.id ? 'active' : ''}`}
+                >
+                  <div className="log-info" onClick={() => handleLoadChatLog(log.id)}>
+                    {editingLogId === log.id ? (
+                      <input
+                        type="text"
+                        className="log-name-input"
+                        value={editingLogName}
+                        onChange={(e) => setEditingLogName(e.target.value)}
+                        onBlur={() => handleUpdateLogName(log.id)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleUpdateLogName(log.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                      />
+                    ) : (
+                      <span className="log-name">{log.name}</span>
+                    )}
+                    <span className="log-date">
+                      <Clock size={10} />
+                      {new Date(log.createdAt).toLocaleDateString('ja-JP')}
+                    </span>
+                  </div>
+                  <div className="log-actions">
+                    <button
+                      className="edit-log-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingLogId(log.id);
+                        setEditingLogName(log.name);
+                      }}
+                      title="名前を変更"
+                    >
+                      <Edit3 size={12} />
+                    </button>
+                    <button
+                      className="delete-log-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteChatLog(log.id);
+                      }}
+                      title="削除"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flight-assistant-messages">
         {messages.map((msg, index) => (
