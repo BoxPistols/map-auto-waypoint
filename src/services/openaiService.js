@@ -432,21 +432,47 @@ export const generateFlightRoute = async (polygon, purpose, options = {}) => {
   } catch (error) {
     console.error('[OpenAI] Route generation error:', error);
 
+    // エラーメッセージを整理
+    let errorReason = error.message;
+    if (error.message.includes('APIキー')) {
+      errorReason = 'APIキーが未設定';
+    } else if (error.message.includes('ローカルLLM')) {
+      errorReason = 'ローカルLLMに接続できません';
+    } else if (error instanceof SyntaxError) {
+      errorReason = 'AI応答の解析に失敗';
+    }
+
     // フォールバック: 基本的なグリッド生成
-    return generateFallbackRoute(bounds, center, altitude);
+    return generateFallbackRoute(bounds, center, altitude, errorReason);
   }
+};
+
+/**
+ * 2点間の距離を計算（メートル）
+ */
+const calculateDistance = (lat1, lng1, lat2, lng2) => {
+  const R = 6371000; // 地球の半径（メートル）
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 };
 
 /**
  * フォールバック用の基本グリッド生成
  */
-const generateFallbackRoute = (bounds, center, altitude) => {
+const generateFallbackRoute = (bounds, center, altitude, errorReason = null) => {
   const waypoints = [];
   const rows = 4;
   const cols = 4;
 
+  // グリッドパターンで生成（蛇行パターン: 上から下、交互に左右）
   for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
+    const colOrder = r % 2 === 0 ? [...Array(cols).keys()] : [...Array(cols).keys()].reverse();
+    for (const c of colOrder) {
       const lat = bounds.minLat + (bounds.maxLat - bounds.minLat) * (r + 0.5) / rows;
       const lng = bounds.minLng + (bounds.maxLng - bounds.minLng) * (c + 0.5) / cols;
       waypoints.push({
@@ -460,14 +486,40 @@ const generateFallbackRoute = (bounds, center, altitude) => {
     }
   }
 
+  // 総飛行距離を計算
+  let totalDistance = 0;
+  for (let i = 1; i < waypoints.length; i++) {
+    totalDistance += calculateDistance(
+      waypoints[i - 1].lat, waypoints[i - 1].lng,
+      waypoints[i].lat, waypoints[i].lng
+    );
+  }
+
+  // 推定飛行時間（平均速度5m/sとして計算）
+  const avgSpeed = 5; // m/s
+  const flightTimeSeconds = totalDistance / avgSpeed;
+  const flightTimeMinutes = Math.ceil(flightTimeSeconds / 60);
+
+  // エリアサイズ
+  const widthM = (bounds.maxLng - bounds.minLng) * 111320 * Math.cos(center.lat * Math.PI / 180);
+  const heightM = (bounds.maxLat - bounds.minLat) * 110540;
+
+  const recommendations = [];
+  if (errorReason) {
+    recommendations.push(`AIエラー: ${errorReason}`);
+  }
+  recommendations.push('基本グリッドパターンで生成しました');
+  recommendations.push(`エリアサイズ: 約${Math.round(widthM)}m × ${Math.round(heightM)}m`);
+  recommendations.push('Waypointは手動で調整可能です');
+
   return {
     success: true,
     pattern: 'grid',
     waypoints,
     flightDirection: 'north-south',
-    estimatedDistance: '不明',
-    estimatedTime: '不明',
-    recommendations: ['AI生成に失敗したため基本グリッドを使用'],
+    estimatedDistance: `約${Math.round(totalDistance)}m`,
+    estimatedTime: `約${flightTimeMinutes}分`,
+    recommendations,
     source: 'fallback',
     generatedAt: new Date().toISOString()
   };
