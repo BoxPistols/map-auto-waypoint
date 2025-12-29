@@ -539,7 +539,7 @@ const Map = ({
                 'text-halo-width': 1
               }}
             />
-            {/* DID warning circles (orange) */}
+            {/* DID warning circles (green - same style as optimization) */}
             <Layer
               id="did-warning-points"
               type="circle"
@@ -547,7 +547,7 @@ const Map = ({
               paint={{
                 'circle-radius': 18,
                 'circle-color': 'transparent',
-                'circle-stroke-color': '#f59e0b',
+                'circle-stroke-color': '#10b981',
                 'circle-stroke-width': 3,
                 'circle-opacity': 1
               }}
@@ -564,7 +564,7 @@ const Map = ({
                 'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold']
               }}
               paint={{
-                'text-color': '#f59e0b',
+                'text-color': '#10b981',
                 'text-halo-color': '#000000',
                 'text-halo-width': 1
               }}
