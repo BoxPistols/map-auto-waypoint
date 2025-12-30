@@ -260,14 +260,15 @@ const Map = ({
     }))
   }, [center.lat, center.lng])
 
-  // DID tile source configuration
+  // DID tile source configuration (令和2年国勢調査データ)
+  // Note: GSI DID tiles have limited zoom range, maxzoom 14 is safe
   const didTileSource = useMemo(() => ({
     type: 'raster',
-    tiles: ['https://cyberjapandata.gsi.go.jp/xyz/did2015/{z}/{x}/{y}.png'],
+    tiles: ['https://cyberjapandata.gsi.go.jp/xyz/did2020/{z}/{x}/{y}.png'],
     tileSize: 256,
     minzoom: 8,
-    maxzoom: 16,
-    attribution: '国土地理院・総務省統計局'
+    maxzoom: 14,
+    attribution: '国土地理院・総務省統計局（令和2年）'
   }), [])
 
   // Toggle 3D mode

@@ -17,8 +17,14 @@ export default defineConfig({
         target: 'https://www.reinfolib.mlit.go.jp',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/reinfolib/, '/ex-api/external'),
-        headers: {
-          'Origin': 'https://www.reinfolib.mlit.go.jp'
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            // Forward the API key header from client request
+            const apiKey = req.headers['ocp-apim-subscription-key'];
+            if (apiKey) {
+              proxyReq.setHeader('Ocp-Apim-Subscription-Key', apiKey);
+            }
+          });
         }
       }
     }

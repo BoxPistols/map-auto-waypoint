@@ -190,11 +190,29 @@ export const getLocationInfo = async (lat, lng) => {
   const useZone = results[0].status === 'fulfilled' ? results[0].value : null;
   const urbanArea = results[1].status === 'fulfilled' ? results[1].value : null;
 
-  // リスク判定
+  // 両方失敗した場合はエラーを返す
+  const useZoneFailed = !useZone?.success || useZone?.zoneName === '取得エラー';
+  const urbanAreaFailed = !urbanArea?.success || urbanArea?.areaName === '取得エラー';
+
+  if (useZoneFailed && urbanAreaFailed) {
+    return {
+      success: false,
+      error: useZone?.error || urbanArea?.error || 'API取得失敗',
+      location: { lat, lng },
+      useZone,
+      urbanArea,
+      riskLevel: 'LOW',
+      riskFactors: [],
+      recommendations: []
+    };
+  }
+
+  // リスク判定（成功したデータのみ使用）
   let riskLevel = 'LOW';
   const riskFactors = [];
 
-  if (useZone?.zoneName) {
+  // 用途地域が正常に取得できた場合のみ判定
+  if (useZone?.success && useZone.zoneName && useZone.zoneName !== '取得エラー' && useZone.zoneName !== '用途地域指定なし') {
     if (useZone.zoneName.includes('住居')) {
       riskLevel = 'MEDIUM';
       riskFactors.push({
@@ -213,7 +231,8 @@ export const getLocationInfo = async (lat, lng) => {
     }
   }
 
-  if (urbanArea?.areaName === '市街化区域') {
+  // 都市計画区域が正常に取得できた場合のみ判定
+  if (urbanArea?.success && urbanArea.areaName === '市街化区域') {
     if (riskLevel === 'MEDIUM') riskLevel = 'HIGH';
     else riskLevel = 'MEDIUM';
     riskFactors.push({
@@ -224,7 +243,7 @@ export const getLocationInfo = async (lat, lng) => {
   }
 
   return {
-    success: true,
+    success: !useZoneFailed || !urbanAreaFailed, // 少なくとも1つ成功すればtrue
     location: { lat, lng },
     useZone,
     urbanArea,

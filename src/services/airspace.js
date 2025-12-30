@@ -227,12 +227,13 @@ export const HELIPORTS = [
 
 // 国土地理院 DID (人口集中地区) タイルレイヤー
 // 参照: https://www.gsi.go.jp/chizujoho/h27did.html
-export const DID_TILE_URL = 'https://cyberjapandata.gsi.go.jp/xyz/did2015/{z}/{x}/{y}.geojson'
+// 令和2年国勢調査データに更新（2022年6月25日から航空法の基準として適用）
+export const DID_TILE_URL = 'https://cyberjapandata.gsi.go.jp/xyz/did2020/{z}/{x}/{y}.png'
 
 // DID区域の情報
 export const DID_INFO = {
   description: '人口集中地区（DID）は国勢調査に基づく人口密度4,000人/km²以上の地域',
-  source: '総務省統計局 平成27年国勢調査',
+  source: '総務省統計局 令和2年国勢調査',
   tileUrl: DID_TILE_URL,
   attribution: '国土地理院',
   externalLinks: {
@@ -243,11 +244,13 @@ export const DID_INFO = {
 }
 
 // DIDタイルソース設定（MapLibre用）
+// Note: GSI DID tiles have limited zoom availability, maxzoom 14 is reliable
 export const getDIDSourceConfig = () => ({
-  type: 'vector',
-  tiles: ['https://cyberjapandata.gsi.go.jp/xyz/did2015/{z}/{x}/{y}.pbf'],
+  type: 'raster',
+  tiles: ['https://cyberjapandata.gsi.go.jp/xyz/did2020/{z}/{x}/{y}.png'],
   minzoom: 8,
-  maxzoom: 16
+  maxzoom: 14,
+  tileSize: 256
 })
 
 // 空港制限区域をGeoJSON Feature Collectionに変換
