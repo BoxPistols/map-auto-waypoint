@@ -1270,50 +1270,59 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     if (shouldCalculateAvoidance) {
       if (isDID) {
         // DID回避: 経路に対して垂直方向に移動（経路形状を保持）
+        // 重要: 全WPを同じ方向に移動させる（交差を防ぐ）
         const moveDistance = margin + 50;
 
+        // 1. 全WPの平均経路方向を計算
+        let totalBearingX = 0;
+        let totalBearingY = 0;
         for (const wp of zoneWps) {
-          // 元のwaypointsリストでこのWPの前後を探す
           const wpIdx = waypoints.findIndex(w => w.id === wp.id);
           const prevWp = wpIdx > 0 ? waypoints[wpIdx - 1] : null;
           const nextWp = wpIdx < waypoints.length - 1 ? waypoints[wpIdx + 1] : null;
 
           let pathBearing;
           if (prevWp && nextWp) {
-            // 前後のWPがある場合: その方向を計算
             pathBearing = Math.atan2(nextWp.lng - prevWp.lng, nextWp.lat - prevWp.lat);
           } else if (prevWp) {
-            // 最後のWP
             pathBearing = Math.atan2(wp.lng - prevWp.lng, wp.lat - prevWp.lat);
           } else if (nextWp) {
-            // 最初のWP
             pathBearing = Math.atan2(nextWp.lng - wp.lng, nextWp.lat - wp.lat);
           } else {
-            // 単独WP: 北東方向
             pathBearing = Math.PI / 4;
           }
+          totalBearingX += Math.cos(pathBearing);
+          totalBearingY += Math.sin(pathBearing);
+        }
+        const avgPathBearing = Math.atan2(totalBearingY, totalBearingX);
 
-          // 垂直方向（左右）を計算
-          const perpLeft = pathBearing + Math.PI / 2;
-          const perpRight = pathBearing - Math.PI / 2;
+        // 2. 垂直方向（左右）を計算
+        const perpLeft = avgPathBearing + Math.PI / 2;
+        const perpRight = avgPathBearing - Math.PI / 2;
 
-          // DIDのcentroidから離れる方向を選択
-          let perpBearing;
+        // 3. 全WPに対してどちらの方向が良いか投票
+        let leftVotes = 0;
+        let rightVotes = 0;
+        for (const wp of zoneWps) {
           if (hasCentroid) {
-            // centroidからWPへの方向
             const toCentroid = Math.atan2(zone.lng - wp.lng, zone.lat - wp.lat);
-            // 垂直方向のうち、centroidから離れる方向を選択
             const leftDiff = Math.abs(((perpLeft - toCentroid + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
             const rightDiff = Math.abs(((perpRight - toCentroid + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-            perpBearing = leftDiff > rightDiff ? perpLeft : perpRight;
+            if (leftDiff > rightDiff) leftVotes++;
+            else rightVotes++;
           } else {
-            // centroidがない場合: 経路の外側方向（デフォルトで左側）
-            perpBearing = perpLeft;
+            leftVotes++;
           }
+        }
 
-          const latOffset = (moveDistance * Math.cos(perpBearing)) / 111320;
-          const lngOffset = (moveDistance * Math.sin(perpBearing)) / (111320 * Math.cos(wp.lat * Math.PI / 180));
+        // 4. 多数決で方向を決定（全WPが同じ方向に移動）
+        const chosenPerpBearing = leftVotes >= rightVotes ? perpLeft : perpRight;
 
+        // 5. 全WPに同じオフセットを適用
+        const latOffset = (moveDistance * Math.cos(chosenPerpBearing)) / 111320;
+        const lngOffset = (moveDistance * Math.sin(chosenPerpBearing)) / (111320 * Math.cos(centerLat * Math.PI / 180));
+
+        for (const wp of zoneWps) {
           const existing = wpOffsets.get(wp.id);
           if (!existing || Math.abs(latOffset) + Math.abs(lngOffset) > Math.abs(existing.latOffset) + Math.abs(existing.lngOffset)) {
             wpOffsets.set(wp.id, { latOffset, lngOffset, moveDistance: Math.round(moveDistance), isDIDAvoidance: true });
