@@ -233,9 +233,14 @@ $color-border-light: rgba(255, 255, 255, 0.15);
       transition: all 0.2s ease;
       width: 28px;
       height: 28px;
+      outline: none;
 
       &:hover {
         background: rgba(255, 255, 255, 0.2);
+      }
+
+      &:focus-visible {
+        box-shadow: 0 0 0 2px rgba($color-primary-lighter, 0.5);
       }
 
       &.active {
