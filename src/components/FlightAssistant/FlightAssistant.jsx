@@ -1028,7 +1028,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
       {/* コピー/DLボタン（判定結果がある時のみ） */}
       {assessmentResult && (
-        <div className="action-buttons-bar message-actions">
+        <div className="action-buttons-bar">
           <button className="copy-btn" onClick={handleCopyResult}>
             {isCopied ? <Check size={14} /> : <Copy size={14} />}
             {isCopied ? 'コピー完了' : 'コピー'}

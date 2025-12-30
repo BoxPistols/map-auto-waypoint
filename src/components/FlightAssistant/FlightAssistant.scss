@@ -728,6 +728,50 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   50% { transform: scale(1.1); }
 }
 
+// コピー/DLボタンバー（メッセージ領域の下）
+.action-buttons-bar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid $color-border;
+  flex-shrink: 0;
+
+  .copy-btn,
+  .export-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: rgba($color-primary, 0.2);
+    border: 1px solid rgba($color-primary, 0.3);
+    border-radius: 6px;
+    color: $color-primary-lighter;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+
+    &:hover {
+      background: rgba($color-primary, 0.3);
+      border-color: $color-primary;
+    }
+  }
+
+  .copy-btn {
+    background: rgba($color-success, 0.2);
+    border-color: rgba($color-success, 0.3);
+    color: $color-success;
+
+    &:hover {
+      background: rgba($color-success, 0.3);
+      border-color: $color-success;
+    }
+  }
+}
+
 .flight-assistant-input {
   display: flex;
   gap: 6px;
@@ -835,54 +879,6 @@ $color-border-light: rgba(255, 255, 255, 0.15);
       display: flex;
       gap: 8px;
       margin-top: 8px;
-    }
-  }
-
-  .action-buttons-bar {
-    display: flex;
-    gap: 8px;
-    padding: 8px 16px;
-    border-bottom: 1px solid $color-border;
-    flex-shrink: 0;
-
-    &.message-actions {
-      background: rgba(0, 0, 0, 0.2);
-      border-top: 1px solid $color-border;
-      border-bottom: none;
-    }
-
-    .copy-btn,
-    .export-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      padding: 6px 12px;
-      background: rgba($color-primary, 0.2);
-      border: 1px solid rgba($color-primary, 0.3);
-      border-radius: 6px;
-      color: $color-primary-lighter;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      flex: 1;
-
-      &:hover {
-        background: rgba($color-primary, 0.3);
-        border-color: $color-primary;
-      }
-    }
-
-    .copy-btn {
-      background: rgba($color-success, 0.2);
-      border-color: rgba($color-success, 0.3);
-      color: $color-success;
-
-      &:hover {
-        background: rgba($color-success, 0.3);
-        border-color: $color-success;
-      }
     }
   }
 
