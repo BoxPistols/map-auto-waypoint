@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
-import { getAirportZonesGeoJSON, getNoFlyZonesGeoJSON } from '../../services/airspace'
+import { getAirportZonesGeoJSON, getRedZonesGeoJSON, getYellowZonesGeoJSON, getHeliportsGeoJSON } from '../../services/airspace'
 import { loadMapSettings, saveMapSettings } from '../../utils/storage'
 import styles from './Map.module.scss'
 
@@ -163,6 +163,7 @@ const Map = ({
   const [is3D, setIs3D] = useState(initialSettings.is3D)
   const [showAirportZones, setShowAirportZones] = useState(initialSettings.showAirportZones)
   const [showNoFlyZones, setShowNoFlyZones] = useState(initialSettings.showNoFlyZones)
+  const [showHeliports, setShowHeliports] = useState(initialSettings.showHeliports ?? false)
   const [showDID, setShowDID] = useState(initialSettings.showDID)
   const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
   const [showStylePicker, setShowStylePicker] = useState(false)
@@ -172,8 +173,8 @@ const Map = ({
 
   // Save map settings when they change
   useEffect(() => {
-    saveMapSettings({ is3D, showAirportZones, showNoFlyZones, showDID, mapStyleId })
-  }, [is3D, showAirportZones, showNoFlyZones, showDID, mapStyleId])
+    saveMapSettings({ is3D, showAirportZones, showNoFlyZones, showHeliports, showDID, mapStyleId })
+  }, [is3D, showAirportZones, showNoFlyZones, showHeliports, showDID, mapStyleId])
 
   // Sync viewState when center/zoom props change from parent (e.g., WP click)
   useEffect(() => {
@@ -189,7 +190,9 @@ const Map = ({
 
   // Memoize airspace GeoJSON data
   const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
-  const noFlyZonesGeoJSON = useMemo(() => getNoFlyZonesGeoJSON(), [])
+  const redZonesGeoJSON = useMemo(() => getRedZonesGeoJSON(), [])
+  const yellowZonesGeoJSON = useMemo(() => getYellowZonesGeoJSON(), [])
+  const heliportsGeoJSON = useMemo(() => getHeliportsGeoJSON(), [])
 
   // Memoize optimization overlay GeoJSON (lines from current to recommended positions + DID warnings)
   const optimizationOverlayGeoJSON = useMemo(() => {
@@ -303,6 +306,10 @@ const Map = ({
         case 'n': // No-fly zones toggle
           e.preventDefault()
           setShowNoFlyZones(prev => !prev)
+          break
+        case 'h': // Heliport toggle
+          e.preventDefault()
+          setShowHeliports(prev => !prev)
           break
         case '3': // 3D toggle
           e.preventDefault()
@@ -540,27 +547,27 @@ const Map = ({
           </Source>
         )}
 
-        {/* No-fly zones */}
+        {/* レッドゾーン（国の重要施設・原発・米軍基地） */}
         {showNoFlyZones && (
-          <Source id="nofly-zones" type="geojson" data={noFlyZonesGeoJSON}>
+          <Source id="red-zones" type="geojson" data={redZonesGeoJSON}>
             <Layer
-              id="nofly-zones-fill"
+              id="red-zones-fill"
               type="fill"
               paint={{
-                'fill-color': '#f44336',
-                'fill-opacity': 0.25
+                'fill-color': '#dc2626',
+                'fill-opacity': 0.35
               }}
             />
             <Layer
-              id="nofly-zones-outline"
+              id="red-zones-outline"
               type="line"
               paint={{
-                'line-color': '#f44336',
+                'line-color': '#dc2626',
                 'line-width': 2
               }}
             />
             <Layer
-              id="nofly-zones-label"
+              id="red-zones-label"
               type="symbol"
               layout={{
                 'text-field': ['get', 'name'],
@@ -568,7 +575,80 @@ const Map = ({
                 'text-anchor': 'center'
               }}
               paint={{
-                'text-color': '#c62828',
+                'text-color': '#991b1b',
+                'text-halo-color': '#fff',
+                'text-halo-width': 1
+              }}
+            />
+          </Source>
+        )}
+
+        {/* イエローゾーン（外国公館・政党本部） */}
+        {showNoFlyZones && (
+          <Source id="yellow-zones" type="geojson" data={yellowZonesGeoJSON}>
+            <Layer
+              id="yellow-zones-fill"
+              type="fill"
+              paint={{
+                'fill-color': '#eab308',
+                'fill-opacity': 0.35
+              }}
+            />
+            <Layer
+              id="yellow-zones-outline"
+              type="line"
+              paint={{
+                'line-color': '#ca8a04',
+                'line-width': 2
+              }}
+            />
+            <Layer
+              id="yellow-zones-label"
+              type="symbol"
+              layout={{
+                'text-field': ['get', 'name'],
+                'text-size': 10,
+                'text-anchor': 'center'
+              }}
+              paint={{
+                'text-color': '#854d0e',
+                'text-halo-color': '#fff',
+                'text-halo-width': 1
+              }}
+            />
+          </Source>
+        )}
+
+        {/* ヘリポート */}
+        {showHeliports && (
+          <Source id="heliports" type="geojson" data={heliportsGeoJSON}>
+            <Layer
+              id="heliports-fill"
+              type="fill"
+              paint={{
+                'fill-color': '#3b82f6',
+                'fill-opacity': 0.25
+              }}
+            />
+            <Layer
+              id="heliports-outline"
+              type="line"
+              paint={{
+                'line-color': '#2563eb',
+                'line-width': 2,
+                'line-dasharray': [3, 2]
+              }}
+            />
+            <Layer
+              id="heliports-label"
+              type="symbol"
+              layout={{
+                'text-field': ['get', 'name'],
+                'text-size': 10,
+                'text-anchor': 'center'
+              }}
+              paint={{
+                'text-color': '#1d4ed8',
                 'text-halo-color': '#fff',
                 'text-halo-width': 1
               }}
@@ -771,6 +851,14 @@ const Map = ({
           data-tooltip-pos="left"
         >
           <ShieldAlert size={18} />
+        </button>
+        <button
+          className={`${styles.toggleButton} ${showHeliports ? styles.activeHeliport : ''}`}
+          onClick={() => setShowHeliports(!showHeliports)}
+          data-tooltip={`ヘリポート [H]`}
+          data-tooltip-pos="left"
+        >
+          <Landmark size={18} />
         </button>
         <button
           className={`${styles.toggleButton} ${is3D ? styles.active : ''}`}

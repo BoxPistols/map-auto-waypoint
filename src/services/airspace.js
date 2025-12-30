@@ -145,17 +145,84 @@ export const AIRPORT_ZONES = [
   { name: '千歳飛行場（自衛隊）', lat: 42.7944, lng: 141.6667, radius: 6000, type: 'military' },
 ]
 
-// 飛行禁止区域（重要施設周辺）
+// 飛行禁止区域（重要施設周辺）- 小型無人機等飛行禁止法
+// レッドゾーン: 施設上空 完全禁止
+// イエローゾーン: 周辺300m 事前通報・許可が必要
 export const NO_FLY_ZONES = [
-  { name: '皇居', lat: 35.6852, lng: 139.7528, radius: 300, type: 'prohibited' },
-  { name: '国会議事堂', lat: 35.6760, lng: 139.7450, radius: 300, type: 'prohibited' },
-  { name: '首相官邸', lat: 35.6736, lng: 139.7500, radius: 300, type: 'prohibited' },
-  { name: '最高裁判所', lat: 35.6797, lng: 139.7414, radius: 300, type: 'prohibited' },
-  { name: '迎賓館', lat: 35.6803, lng: 139.7267, radius: 300, type: 'prohibited' },
-  // 原子力発電所（代表例）
-  { name: '福島第一原発', lat: 37.4211, lng: 141.0328, radius: 300, type: 'prohibited' },
-  { name: '福島第二原発', lat: 37.3167, lng: 141.0250, radius: 300, type: 'prohibited' },
-  { name: '柏崎刈羽原発', lat: 37.4286, lng: 138.5978, radius: 300, type: 'prohibited' },
+  // ===== 国の重要施設（東京） =====
+  { name: '皇居', lat: 35.6852, lng: 139.7528, radius: 300, type: 'red', category: 'imperial' },
+  { name: '国会議事堂', lat: 35.6760, lng: 139.7450, radius: 300, type: 'red', category: 'government' },
+  { name: '首相官邸', lat: 35.6736, lng: 139.7500, radius: 300, type: 'red', category: 'government' },
+  { name: '最高裁判所', lat: 35.6797, lng: 139.7414, radius: 300, type: 'red', category: 'government' },
+  { name: '迎賓館', lat: 35.6803, lng: 139.7267, radius: 300, type: 'red', category: 'government' },
+  { name: '警視庁本部', lat: 35.6762, lng: 139.7534, radius: 300, type: 'red', category: 'government' },
+  { name: '外務省', lat: 35.6739, lng: 139.7503, radius: 300, type: 'red', category: 'government' },
+  { name: '防衛省', lat: 35.6936, lng: 139.7294, radius: 300, type: 'red', category: 'defense' },
+
+  // ===== 在日米軍施設 =====
+  { name: '横田基地', lat: 35.7483, lng: 139.3486, radius: 300, type: 'red', category: 'us_military' },
+  { name: '厚木基地', lat: 35.4547, lng: 139.4500, radius: 300, type: 'red', category: 'us_military' },
+  { name: '横須賀基地', lat: 35.2833, lng: 139.6667, radius: 300, type: 'red', category: 'us_military' },
+  { name: '座間キャンプ', lat: 35.4833, lng: 139.4000, radius: 300, type: 'red', category: 'us_military' },
+  { name: '嘉手納基地', lat: 26.3517, lng: 127.7683, radius: 300, type: 'red', category: 'us_military' },
+  { name: '普天間基地', lat: 26.2744, lng: 127.7558, radius: 300, type: 'red', category: 'us_military' },
+  { name: '三沢基地', lat: 40.7033, lng: 141.3686, radius: 300, type: 'red', category: 'us_military' },
+  { name: '岩国基地', lat: 34.1456, lng: 132.2361, radius: 300, type: 'red', category: 'us_military' },
+  { name: '佐世保基地', lat: 33.1500, lng: 129.7167, radius: 300, type: 'red', category: 'us_military' },
+
+  // ===== 原子力発電所 =====
+  { name: '泊原発', lat: 43.0339, lng: 140.5136, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '東通原発', lat: 41.1861, lng: 141.3861, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '女川原発', lat: 38.4019, lng: 141.5003, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '福島第一原発', lat: 37.4211, lng: 141.0328, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '福島第二原発', lat: 37.3167, lng: 141.0250, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '東海第二原発', lat: 36.4664, lng: 140.6072, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '柏崎刈羽原発', lat: 37.4286, lng: 138.5978, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '浜岡原発', lat: 34.6219, lng: 138.1428, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '志賀原発', lat: 37.0600, lng: 136.7289, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '敦賀原発', lat: 35.7514, lng: 136.0186, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '美浜原発', lat: 35.7017, lng: 135.9581, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '大飯原発', lat: 35.5422, lng: 135.6561, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '高浜原発', lat: 35.5203, lng: 135.5050, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '島根原発', lat: 35.5386, lng: 132.9992, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '伊方原発', lat: 33.4903, lng: 132.3094, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '玄海原発', lat: 33.5153, lng: 129.8369, radius: 300, type: 'red', category: 'nuclear' },
+  { name: '川内原発', lat: 31.8339, lng: 130.1894, radius: 300, type: 'red', category: 'nuclear' },
+
+  // ===== 政党本部 =====
+  { name: '自民党本部', lat: 35.6781, lng: 139.7394, radius: 300, type: 'yellow', category: 'political' },
+
+  // ===== 外国公館（主要） =====
+  { name: 'アメリカ大使館', lat: 35.6669, lng: 139.7483, radius: 300, type: 'yellow', category: 'embassy' },
+  { name: '中国大使館', lat: 35.6644, lng: 139.7297, radius: 300, type: 'yellow', category: 'embassy' },
+  { name: '韓国大使館', lat: 35.6606, lng: 139.7386, radius: 300, type: 'yellow', category: 'embassy' },
+  { name: 'ロシア大使館', lat: 35.6672, lng: 139.7361, radius: 300, type: 'yellow', category: 'embassy' },
+]
+
+// 主要ヘリポート（有人機離発着エリア）
+export const HELIPORTS = [
+  // ===== 東京都 =====
+  { name: '東京ヘリポート', lat: 35.6403, lng: 139.8372, radius: 500, type: 'heliport' },
+  { name: '虎ノ門ヒルズヘリポート', lat: 35.6667, lng: 139.7500, radius: 200, type: 'heliport' },
+  { name: '六本木ヒルズヘリポート', lat: 35.6603, lng: 139.7292, radius: 200, type: 'heliport' },
+  { name: '晴海ヘリポート', lat: 35.6478, lng: 139.7833, radius: 300, type: 'heliport' },
+
+  // ===== 大阪府 =====
+  { name: '八尾ヘリポート', lat: 34.5967, lng: 135.6019, radius: 500, type: 'heliport' },
+  { name: '舞洲ヘリポート', lat: 34.6592, lng: 135.3931, radius: 500, type: 'heliport' },
+
+  // ===== 神奈川県 =====
+  { name: '横浜ヘリポート', lat: 35.4667, lng: 139.6333, radius: 500, type: 'heliport' },
+
+  // ===== 愛知県 =====
+  { name: '名古屋ヘリポート', lat: 35.1833, lng: 136.9000, radius: 500, type: 'heliport' },
+
+  // ===== 福岡県 =====
+  { name: '福岡ヘリポート', lat: 33.5903, lng: 130.4017, radius: 500, type: 'heliport' },
+
+  // ===== 病院ヘリポート（ドクターヘリ） =====
+  { name: '聖路加国際病院', lat: 35.6714, lng: 139.7731, radius: 200, type: 'hospital_heliport' },
+  { name: '日本医科大学付属病院', lat: 35.7028, lng: 139.7683, radius: 200, type: 'hospital_heliport' },
 ]
 
 // 国土地理院 DID (人口集中地区) タイルレイヤー
@@ -196,6 +263,34 @@ export const getNoFlyZonesGeoJSON = () => {
   return {
     type: 'FeatureCollection',
     features: NO_FLY_ZONES.map(zone => createCircleFeature(zone, 32))
+  }
+}
+
+// レッドゾーン（国の重要施設・原発・米軍基地）のみ取得
+export const getRedZonesGeoJSON = () => {
+  return {
+    type: 'FeatureCollection',
+    features: NO_FLY_ZONES
+      .filter(zone => zone.type === 'red')
+      .map(zone => createCircleFeature(zone, 32))
+  }
+}
+
+// イエローゾーン（外国公館・政党本部等）のみ取得
+export const getYellowZonesGeoJSON = () => {
+  return {
+    type: 'FeatureCollection',
+    features: NO_FLY_ZONES
+      .filter(zone => zone.type === 'yellow')
+      .map(zone => createCircleFeature(zone, 32))
+  }
+}
+
+// ヘリポートをGeoJSON Feature Collectionに変換
+export const getHeliportsGeoJSON = () => {
+  return {
+    type: 'FeatureCollection',
+    features: HELIPORTS.map(hp => createCircleFeature(hp, 32))
   }
 }
 
