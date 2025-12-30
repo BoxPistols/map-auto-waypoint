@@ -680,6 +680,105 @@
   30% { transform: translateY(-4px); opacity: 1; }
 }
 
+// 回避設定パネル
+.avoidance-settings {
+  padding: 10px 12px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+
+  .avoidance-slider {
+    margin-bottom: 10px;
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      margin-bottom: 6px;
+
+      strong {
+        color: var(--color-primary);
+        font-size: 14px;
+      }
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: linear-gradient(to right,
+        var(--color-success) 0%,
+        var(--color-primary) 50%,
+        var(--color-danger) 100%
+      );
+      border-radius: 2px;
+      outline: none;
+      cursor: pointer;
+
+      &::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: var(--color-primary);
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid var(--color-bg);
+        box-shadow: var(--shadow-sm);
+      }
+
+      &::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: var(--color-primary);
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid var(--color-bg);
+      }
+    }
+
+    .slider-ticks {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+      font-size: 9px;
+      color: var(--color-text-tertiary);
+    }
+  }
+
+  .avoidance-toggles {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+
+      input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        accent-color: var(--color-primary);
+        cursor: pointer;
+      }
+
+      &.sub {
+        padding-left: 8px;
+        border-left: 2px solid var(--color-border);
+        font-size: 10px;
+        color: var(--color-text-tertiary);
+      }
+    }
+  }
+}
+
 .flight-assistant-actions {
   padding: 6px 10px;
   border-top: 1px solid var(--color-border);
@@ -736,6 +835,20 @@
       border-color: var(--color-success);
       color: var(--color-success);
       background: var(--color-success-bg);
+    }
+
+    &.settings {
+      &:hover {
+        border-color: var(--color-warning);
+        color: var(--color-warning);
+        background: rgba(245, 158, 11, 0.1);
+      }
+
+      &.active {
+        border-color: var(--color-warning);
+        color: var(--color-text-inverse);
+        background: var(--color-warning);
+      }
     }
   }
 

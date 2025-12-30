@@ -27,7 +27,9 @@ import {
   FolderOpen,
   Clock,
   Edit3,
-  GripVertical
+  GripVertical,
+  Settings,
+  Sliders
 } from 'lucide-react';
 import {
   hasApiKey,
@@ -42,6 +44,7 @@ import {
   getChatLog,
   updateChatLog
 } from '../../services/chatLogService';
+import { getSetting, setSetting, isDIDAvoidanceModeEnabled } from '../../services/settingsService';
 import './FlightAssistant.scss';
 
 /**
@@ -80,6 +83,11 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [currentLogId, setCurrentLogId] = useState(null);
   const [editingLogId, setEditingLogId] = useState(null);
   const [editingLogName, setEditingLogName] = useState('');
+  // 回避設定
+  const [showAvoidanceSettings, setShowAvoidanceSettings] = useState(false);
+  const [avoidanceDistance, setAvoidanceDistance] = useState(getSetting('didAvoidanceDistance') || 100);
+  const [didAvoidanceMode, setDIDAvoidanceMode] = useState(isDIDAvoidanceModeEnabled());
+  const [didWarningOnly, setDIDWarningOnly] = useState(getSetting('didWarningOnlyMode') || false);
   const messagesEndRef = useRef(null);
   const panelRef = useRef(null);
   const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
@@ -1035,8 +1043,78 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         <div ref={messagesEndRef} />
       </div>
 
+      {/* 回避設定パネル（折りたたみ式） */}
+      {showAvoidanceSettings && (
+        <div className="avoidance-settings">
+          <div className="avoidance-slider">
+            <label>
+              <span>回避距離:</span>
+              <strong>{avoidanceDistance}m</strong>
+            </label>
+            <input
+              type="range"
+              min="50"
+              max="300"
+              step="10"
+              value={avoidanceDistance}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                setAvoidanceDistance(value);
+                setSetting('didAvoidanceDistance', value);
+                setSetting('airportAvoidanceMargin', value);
+              }}
+            />
+            <div className="slider-ticks">
+              <span>50</span>
+              <span>100</span>
+              <span>200</span>
+              <span>300</span>
+            </div>
+          </div>
+          <div className="avoidance-toggles">
+            <label className="toggle-item">
+              <input
+                type="checkbox"
+                checked={didAvoidanceMode}
+                onChange={(e) => {
+                  const enabled = e.target.checked;
+                  setDIDAvoidanceMode(enabled);
+                  setSetting('didAvoidanceMode', enabled);
+                  if (enabled) {
+                    setDIDWarningOnly(false);
+                    setSetting('didWarningOnlyMode', false);
+                  }
+                }}
+              />
+              <span>DID回避</span>
+            </label>
+            {!didAvoidanceMode && (
+              <label className="toggle-item sub">
+                <input
+                  type="checkbox"
+                  checked={didWarningOnly}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    setDIDWarningOnly(enabled);
+                    setSetting('didWarningOnlyMode', enabled);
+                  }}
+                />
+                <span>警告のみ</span>
+              </label>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 判定・アクションバー（コンパクト） */}
       <div className="flight-assistant-actions">
+        <button
+          className={`icon-btn settings ${showAvoidanceSettings ? 'active' : ''}`}
+          onClick={() => setShowAvoidanceSettings(!showAvoidanceSettings)}
+          title="回避設定"
+        >
+          <Sliders size={14} />
+        </button>
         <button
           className="assessment-btn"
           onClick={handleAssessment}
