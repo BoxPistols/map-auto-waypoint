@@ -64,7 +64,7 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   right: 24px;
   width: 400px;
   min-width: 360px;
-  max-height: 600px;
+  max-height: min(600px, calc(100vh - 100px)); // 画面上端を超えない
   background: rgba(30, 30, 46, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -84,7 +84,7 @@ $color-border-light: rgba(255, 255, 255, 0.15);
 
   &.expanded {
     width: 640px;
-    max-height: 90vh;
+    max-height: calc(100vh - 80px); // 上端に余裕を持たせる
     bottom: 16px;
     right: 16px;
 
@@ -100,16 +100,17 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   &.fullscreen {
     bottom: 24px;
     right: 24px;
+    top: 60px; // ヘッダー下に収まるように
     width: 70vw !important;
     height: auto !important;
     max-width: 1000px;
-    max-height: 80vh;
+    max-height: calc(100vh - 84px); // top + bottom margin
     border-radius: 16px;
     z-index: 9999;
 
     .flight-assistant-messages {
-      max-height: calc(80vh - 220px);
-      min-height: 400px;
+      flex: 1;
+      min-height: 200px;
     }
 
     .message-content {
