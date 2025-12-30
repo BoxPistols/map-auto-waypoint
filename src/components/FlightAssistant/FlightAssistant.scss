@@ -1248,6 +1248,42 @@ $color-border-light: rgba(255, 255, 255, 0.15);
   padding: 0 8px;
 }
 
+// Optimization Footer - 常に表示される推奨プラン適用ボタン
+.optimization-footer {
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba($color-success, 0.15) 0%, rgba($color-success-dark, 0.2) 100%);
+  border-top: 1px solid rgba($color-success, 0.3);
+  flex-shrink: 0;
+
+  .apply-optimization-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, $color-success 0%, $color-success-dark 100%);
+    border: none;
+    border-radius: 8px;
+    color: $color-text-white;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba($color-success, 0.3);
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba($color-success, 0.5);
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba($color-success, 0.3);
+    }
+  }
+}
+
 // Optimization Panel
 .optimization-panel {
   border-top: 1px solid $color-border;

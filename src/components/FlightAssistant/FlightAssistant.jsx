@@ -1056,28 +1056,16 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         </div>
       </div>
 
-      {/* Optimization Panel */}
+      {/* 推奨プラン適用ボタン - 常に表示されるフッター位置 */}
       {showOptimization && optimizationPlan?.hasIssues && (
-        <div className="optimization-panel">
-          <div className="optimization-header">
-            <AlertTriangle size={14} className="warning" />
-            <span>プラン最適化が可能</span>
-          </div>
-          <div className="optimization-content">
-            <p className="optimization-summary">{optimizationPlan.summary}</p>
-            <ul className="optimization-actions">
-              {optimizationPlan.actions.map((action, i) => (
-                <li key={i}>{action}</li>
-              ))}
-            </ul>
-            <button
-              className="apply-optimization-btn"
-              onClick={handleApplyOptimization}
-            >
-              <Zap size={14} />
-              推奨プランを適用
-            </button>
-          </div>
+        <div className="optimization-footer">
+          <button
+            className="apply-optimization-btn"
+            onClick={handleApplyOptimization}
+          >
+            <Zap size={14} />
+            推奨プランを適用
+          </button>
         </div>
       )}
 
