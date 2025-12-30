@@ -1263,15 +1263,24 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     const distToZone = getDistanceMeters(centerLat, centerLng, zone.lat, zone.lng);
     const requiredDistance = zone.radius + margin;
 
-    if (distToZone < requiredDistance) {
+    // DIDの場合は常に回避計算を行う（centroidが遠くても回避が必要）
+    // 空港/禁止区域は距離条件を適用
+    const shouldCalculateAvoidance = isDID || (distToZone < requiredDistance);
+
+    if (shouldCalculateAvoidance) {
       let bearing;
       let moveDistance;
 
-      if (isDID && !hasCentroid) {
-        // DID回避でcentroidがない場合: 北東方向（都市中心から離れる傾向）に移動
-        // または最寄りの空港の反対方向に移動
-        bearing = Math.PI / 4; // 北東 (45度)
-        moveDistance = margin + 50; // 設定距離 + 50m
+      if (isDID) {
+        // DID回避: centroidの方向から離れる方向に移動
+        if (hasCentroid && distToZone > 1) {
+          // centroidがある場合: centroidから離れる方向
+          bearing = Math.atan2(centerLng - zone.lng, centerLat - zone.lat);
+        } else {
+          // centroidがない場合: 北東方向（都市中心から離れる傾向）
+          bearing = Math.PI / 4;
+        }
+        moveDistance = margin + 50; // DID回避距離 + 50m
       } else if (distToZone < 1) {
         // 距離がほぼ0の場合（同一地点）: デフォルト方向に移動
         bearing = Math.PI / 4; // 北東
