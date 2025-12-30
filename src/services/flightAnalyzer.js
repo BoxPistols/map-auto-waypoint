@@ -239,13 +239,28 @@ const checkPointInDIDGeoJSON = (geojson, lat, lng, prefecture) => {
                           feature.properties?.jinko ||
                           null;
 
+        // DIDポリゴンのcentroidを計算（回避位置計算用）
+        let centroid = null;
+        try {
+          const centroidPoint = turf.centroid(feature);
+          if (centroidPoint?.geometry?.coordinates) {
+            centroid = {
+              lng: centroidPoint.geometry.coordinates[0],
+              lat: centroidPoint.geometry.coordinates[1]
+            };
+          }
+        } catch {
+          // centroid計算失敗時はnull
+        }
+
         return {
           isDID: true,
           area: areaName,
           certainty: 'confirmed',
           source: 'GitHub/DIDinJapan',
           description: `${areaName}のDID内（人口集中地区）`,
-          population
+          population,
+          centroid
         };
       }
     } catch {
@@ -1017,7 +1032,8 @@ export const checkAllWaypointsDID = async (waypoints) => {
           lng: wp.lng,
           area: didResult.area,
           certainty: didResult.certainty,
-          source: didResult.source
+          source: didResult.source,
+          centroid: didResult.centroid  // DID回避位置計算用
         });
 
         // エリアごとにカウント
@@ -1203,19 +1219,25 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
       });
 
       // DID回避モードが有効な場合、DID用のゾーングループを作成
-      if (didAvoidanceEnabled && didWpInfo?.centroid) {
-        const didZoneName = `DID_${didWpInfo.area || 'zone'}`;
+      if (didAvoidanceEnabled) {
+        const didZoneName = `DID_${didWpInfo?.area || 'zone'}`;
         if (!zoneGroups.has(didZoneName)) {
+          // centroidがある場合はそれを使用、ない場合はWP位置をベースに推定
+          const centroid = didWpInfo?.centroid || {
+            lat: wp.lat,
+            lng: wp.lng
+          };
           zoneGroups.set(didZoneName, {
             zone: {
-              lat: didWpInfo.centroid.lat,
-              lng: didWpInfo.centroid.lng,
-              radius: 500, // DIDの概算半径
-              name: didWpInfo.area || 'DID区域'
+              lat: centroid.lat,
+              lng: centroid.lng,
+              radius: didWpInfo?.centroid ? 500 : 100, // centroidがない場合は小さい半径
+              name: didWpInfo?.area || 'DID区域'
             },
             margin: getSetting('didAvoidanceDistance') || 100,
             waypoints: [],
-            isDID: true
+            isDID: true,
+            hasCentroid: !!didWpInfo?.centroid
           });
         }
         zoneGroups.get(didZoneName).waypoints.push(wp);
@@ -1231,7 +1253,7 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
   for (const [zoneName, group] of zoneGroups) {
     if (group.waypoints.length === 0) continue;
 
-    const { zone, margin, waypoints: zoneWps } = group;
+    const { zone, margin, waypoints: zoneWps, isDID, hasCentroid } = group;
 
     // グループの中心点を計算
     const centerLat = zoneWps.reduce((sum, wp) => sum + wp.lat, 0) / zoneWps.length;
@@ -1242,9 +1264,23 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     const requiredDistance = zone.radius + margin;
 
     if (distToZone < requiredDistance) {
-      // グループ中心を安全な位置に移動するオフセットを計算
-      const bearing = Math.atan2(centerLng - zone.lng, centerLat - zone.lat);
-      const moveDistance = requiredDistance - distToZone + 100; // 追加マージン100m
+      let bearing;
+      let moveDistance;
+
+      if (isDID && !hasCentroid) {
+        // DID回避でcentroidがない場合: 北東方向（都市中心から離れる傾向）に移動
+        // または最寄りの空港の反対方向に移動
+        bearing = Math.PI / 4; // 北東 (45度)
+        moveDistance = margin + 50; // 設定距離 + 50m
+      } else if (distToZone < 1) {
+        // 距離がほぼ0の場合（同一地点）: デフォルト方向に移動
+        bearing = Math.PI / 4; // 北東
+        moveDistance = requiredDistance + 100;
+      } else {
+        // 通常: 制限区域の中心から外側に移動
+        bearing = Math.atan2(centerLng - zone.lng, centerLat - zone.lat);
+        moveDistance = requiredDistance - distToZone + 100; // 追加マージン100m
+      }
 
       const latOffset = (moveDistance * Math.cos(bearing)) / 111320;
       const lngOffset = (moveDistance * Math.sin(bearing)) / (111320 * Math.cos(centerLat * Math.PI / 180));
@@ -1253,7 +1289,7 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
       for (const wp of zoneWps) {
         const existing = wpOffsets.get(wp.id);
         if (!existing || Math.abs(latOffset) + Math.abs(lngOffset) > Math.abs(existing.latOffset) + Math.abs(existing.lngOffset)) {
-          wpOffsets.set(wp.id, { latOffset, lngOffset, moveDistance: Math.round(moveDistance) });
+          wpOffsets.set(wp.id, { latOffset, lngOffset, moveDistance: Math.round(moveDistance), isDIDAvoidance: isDID });
         }
       }
     }
