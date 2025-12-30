@@ -56,7 +56,7 @@ import './FlightAssistant.scss';
  * - OpenAI連携による高度な分析
  * - 「判定！」ボタンで総合判定
  */
-function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect }) {
+function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect, onApiInfoUpdate }) {
   const [isOpen, setIsOpen] = useState(false);
   const [hasKey, setHasKey] = useState(hasApiKey());
   const [hasMlitKey, setHasMlitKey] = useState(hasReinfolibApiKey());
@@ -629,6 +629,38 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       }
       if (result.aiError) {
         response += `\n⚠️ OpenAI: ${result.aiError}`;
+      }
+
+      // 国交省API情報を詳細表示（成功時）
+      const mlitInfo = result.context?.mlitInfo;
+      if (mlitInfo?.success) {
+        response += `\n\n### 📍 国交省API情報\n`;
+        if (mlitInfo.useZone?.zoneName) {
+          response += `**用途地域:** ${mlitInfo.useZone.zoneName}\n`;
+        }
+        if (mlitInfo.urbanArea?.areaName) {
+          response += `**都市計画:** ${mlitInfo.urbanArea.areaName}\n`;
+        }
+        if (mlitInfo.riskLevel) {
+          const riskEmoji = mlitInfo.riskLevel === 'HIGH' ? '🔴' : mlitInfo.riskLevel === 'MEDIUM' ? '🟡' : '🟢';
+          response += `**土地利用リスク:** ${riskEmoji} ${mlitInfo.riskLevel}\n`;
+        }
+        if (mlitInfo.recommendations?.length > 0) {
+          response += `**API推奨事項:**\n`;
+          mlitInfo.recommendations.forEach(rec => {
+            response += `• ${rec}\n`;
+          });
+        }
+      }
+
+      // 親コンポーネントにAPI情報を通知（マップオーバーレイ用）
+      if (onApiInfoUpdate) {
+        onApiInfoUpdate({
+          mlitInfo: mlitInfo,
+          mlitError: result.mlitError,
+          mlitEnhanced: result.mlitEnhanced,
+          center: result.context?.center
+        });
       }
 
       setMessages(prev => {

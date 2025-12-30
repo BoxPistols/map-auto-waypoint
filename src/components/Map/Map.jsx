@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Database } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import { getAirportZonesGeoJSON, getRedZonesGeoJSON, getYellowZonesGeoJSON, getHeliportsGeoJSON } from '../../services/airspace'
@@ -129,6 +129,7 @@ const Map = ({
   waypoints = [],
   recommendedWaypoints = null,
   highlightedWaypointIndex = null,
+  apiInfo = null,
   onPolygonCreate,
   onPolygonUpdate,
   onPolygonDelete,
@@ -168,6 +169,7 @@ const Map = ({
   const [showDID, setShowDID] = useState(initialSettings.showDID)
   const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
   const [showStylePicker, setShowStylePicker] = useState(false)
+  const [showApiOverlay, setShowApiOverlay] = useState(false)
 
   // 現在の地図スタイル
   const currentMapStyle = MAP_STYLES[mapStyleId]?.style || MAP_STYLES.osm.style
@@ -835,6 +837,45 @@ const Map = ({
         </div>
       )}
 
+      {/* API Info Overlay */}
+      {showApiOverlay && apiInfo && (
+        <div className={styles.apiOverlay}>
+          <div className={styles.apiOverlayHeader}>
+            <Database size={16} />
+            <span>国交省API情報</span>
+            <button className={styles.apiOverlayClose} onClick={() => setShowApiOverlay(false)}>×</button>
+          </div>
+          {apiInfo.mlitEnhanced && apiInfo.mlitInfo?.success ? (
+            <div className={styles.apiOverlayContent}>
+              {apiInfo.mlitInfo.useZone?.zoneName && (
+                <div className={styles.apiInfoRow}>
+                  <span className={styles.apiInfoLabel}>用途地域</span>
+                  <span className={styles.apiInfoValue}>{apiInfo.mlitInfo.useZone.zoneName}</span>
+                </div>
+              )}
+              {apiInfo.mlitInfo.urbanArea?.areaName && (
+                <div className={styles.apiInfoRow}>
+                  <span className={styles.apiInfoLabel}>都市計画</span>
+                  <span className={styles.apiInfoValue}>{apiInfo.mlitInfo.urbanArea.areaName}</span>
+                </div>
+              )}
+              {apiInfo.mlitInfo.riskLevel && (
+                <div className={styles.apiInfoRow}>
+                  <span className={styles.apiInfoLabel}>リスク</span>
+                  <span className={`${styles.apiInfoValue} ${styles[`risk${apiInfo.mlitInfo.riskLevel}`]}`}>
+                    {apiInfo.mlitInfo.riskLevel === 'HIGH' ? '🔴 高' : apiInfo.mlitInfo.riskLevel === 'MEDIUM' ? '🟡 中' : '🟢 低'}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className={styles.apiOverlayError}>
+              ⚠️ {apiInfo.mlitError || 'データなし'}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Map control buttons */}
       <div className={styles.mapControls}>
         <button
@@ -885,6 +926,18 @@ const Map = ({
         >
           {is3D ? <Box size={18} /> : <Rotate3D size={18} />}
         </button>
+
+        {/* API情報トグル（データがある場合のみ表示） */}
+        {apiInfo && (
+          <button
+            className={`${styles.toggleButton} ${showApiOverlay ? styles.activeApi : ''} ${apiInfo.mlitEnhanced ? styles.apiConnected : apiInfo.mlitError ? styles.apiError : ''}`}
+            onClick={() => setShowApiOverlay(!showApiOverlay)}
+            data-tooltip={apiInfo.mlitEnhanced ? 'API情報 [I]' : `API: ${apiInfo.mlitError || '未接続'}`}
+            data-tooltip-pos="left"
+          >
+            <Database size={18} />
+          </button>
+        )}
 
         {/* 地図スタイル切り替え */}
         <div className={styles.stylePickerContainer}>

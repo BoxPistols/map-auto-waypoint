@@ -79,6 +79,9 @@ function App() {
   // Optimization overlay state
   const [recommendedWaypoints, setRecommendedWaypoints] = useState(null)
 
+  // API info overlay state (from FlightAssistant)
+  const [apiInfo, setApiInfo] = useState(null)
+
   // Highlighted waypoint (for FlightAssistant WP click)
   const [highlightedWaypointIndex, setHighlightedWaypointIndex] = useState(null)
 
@@ -905,6 +908,7 @@ function App() {
             waypoints={waypoints}
             recommendedWaypoints={recommendedWaypoints}
             highlightedWaypointIndex={highlightedWaypointIndex}
+            apiInfo={apiInfo}
             onPolygonCreate={handlePolygonCreate}
             onPolygonUpdate={handlePolygonUpdate}
             onPolygonDelete={handlePolygonDelete}
@@ -1058,6 +1062,7 @@ function App() {
             showNotification(`WP${wpIndex}が見つかりません`, 'warning')
           }
         }}
+        onApiInfoUpdate={setApiInfo}
       />
 
       {/* Notification */}
