@@ -1,7 +1,7 @@
 .fileImport {
-  background: white;
+  background: var(--color-bg-modal);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-xl);
   width: 420px;
   max-width: 90vw;
 
@@ -15,13 +15,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 14px 16px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
 
   h3 {
     margin: 0;
     font-size: 15px;
     font-weight: 600;
-    color: #333;
+    color: var(--color-text);
   }
 }
 
@@ -33,7 +33,7 @@
   height: 28px;
   padding: 0;
   font-size: 20px;
-  color: #999;
+  color: var(--color-text-tertiary);
   background: transparent;
   border: none;
   border-radius: 50%;
@@ -41,29 +41,29 @@
   transition: background-color 0.2s, color 0.2s;
 
   &:hover {
-    background: #f0f0f0;
-    color: #666;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-secondary);
   }
 }
 
 .dropZone {
   margin: 16px;
   padding: 32px 24px;
-  border: 2px dashed #ddd;
+  border: 2px dashed var(--color-border);
   border-radius: 8px;
   cursor: pointer;
   transition: border-color 0.2s, background-color 0.2s;
 
   &:hover,
   &.dragging {
-    border-color: #45B7D1;
-    background: #f8fcfd;
+    border-color: var(--color-primary);
+    background: var(--color-primary-bg);
   }
 }
 
 .dropContent {
   text-align: center;
-  color: #666;
+  color: var(--color-text-secondary);
 
   p {
     margin: 8px 0 0;
@@ -71,19 +71,19 @@
 }
 
 .folderIcon {
-  color: #45B7D1;
+  color: var(--color-primary);
   margin-bottom: 8px;
 }
 
 .hint {
   font-size: 13px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .formats {
   margin-top: 16px !important;
   font-size: 12px;
-  color: #aaa;
+  color: var(--color-text-tertiary);
 }
 
 .fileInput {
@@ -96,14 +96,14 @@
   justify-content: center;
   gap: 10px;
   padding: 20px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .spinner {
   width: 18px;
   height: 18px;
-  border: 2px solid #ddd;
-  border-top-color: #45B7D1;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -119,8 +119,8 @@
   margin: 0 16px 16px;
   padding: 10px 14px;
   font-size: 13px;
-  color: #d63031;
-  background: #fee;
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
   border-radius: 6px;
 }
 
@@ -137,15 +137,15 @@
 
 .filename {
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
 }
 
 .polygonCount {
   padding: 4px 10px;
   font-size: 12px;
-  background: #e8f4f8;
+  background: var(--color-primary-bg);
   border-radius: 12px;
-  color: #45B7D1;
+  color: var(--color-primary);
 }
 
 .previewList {
@@ -154,7 +154,7 @@
   list-style: none;
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
 }
 
@@ -163,7 +163,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid var(--color-border-light);
 
   &:last-child {
     border-bottom: none;
@@ -180,7 +180,7 @@
 .polygonName {
   flex: 1;
   font-size: 13px;
-  color: #555;
+  color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -188,15 +188,15 @@
 
 .vertexCount {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .moreItems {
   padding: 10px 12px;
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-tertiary);
   text-align: center;
-  background: #fafafa;
+  background: var(--color-bg-secondary);
 }
 
 .actions {
@@ -209,15 +209,15 @@
   flex: 1;
   padding: 10px;
   font-size: 14px;
-  color: #666;
-  background: #f5f5f5;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
   border: none;
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s;
 
   &:hover {
-    background: #e8e8e8;
+    background: var(--color-border);
   }
 }
 
@@ -225,14 +225,14 @@
   flex: 1;
   padding: 10px;
   font-size: 14px;
-  color: white;
-  background: #45B7D1;
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
   border: none;
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s;
 
   &:hover {
-    background: #3aa4bd;
+    background: var(--color-primary-dark);
   }
 }
