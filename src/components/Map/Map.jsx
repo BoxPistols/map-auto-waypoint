@@ -162,7 +162,8 @@ const Map = ({
   })
   const [is3D, setIs3D] = useState(initialSettings.is3D)
   const [showAirportZones, setShowAirportZones] = useState(initialSettings.showAirportZones)
-  const [showNoFlyZones, setShowNoFlyZones] = useState(initialSettings.showNoFlyZones)
+  const [showRedZones, setShowRedZones] = useState(initialSettings.showRedZones ?? false)
+  const [showYellowZones, setShowYellowZones] = useState(initialSettings.showYellowZones ?? false)
   const [showHeliports, setShowHeliports] = useState(initialSettings.showHeliports ?? false)
   const [showDID, setShowDID] = useState(initialSettings.showDID)
   const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
@@ -173,8 +174,8 @@ const Map = ({
 
   // Save map settings when they change
   useEffect(() => {
-    saveMapSettings({ is3D, showAirportZones, showNoFlyZones, showHeliports, showDID, mapStyleId })
-  }, [is3D, showAirportZones, showNoFlyZones, showHeliports, showDID, mapStyleId])
+    saveMapSettings({ is3D, showAirportZones, showRedZones, showYellowZones, showHeliports, showDID, mapStyleId })
+  }, [is3D, showAirportZones, showRedZones, showYellowZones, showHeliports, showDID, mapStyleId])
 
   // Sync viewState when center/zoom props change from parent (e.g., WP click)
   useEffect(() => {
@@ -303,9 +304,13 @@ const Map = ({
           e.preventDefault()
           setShowAirportZones(prev => !prev)
           break
-        case 'n': // No-fly zones toggle
+        case 'r': // Red zones toggle
           e.preventDefault()
-          setShowNoFlyZones(prev => !prev)
+          setShowRedZones(prev => !prev)
+          break
+        case 'y': // Yellow zones toggle
+          e.preventDefault()
+          setShowYellowZones(prev => !prev)
           break
         case 'h': // Heliport toggle
           e.preventDefault()
@@ -548,7 +553,7 @@ const Map = ({
         )}
 
         {/* レッドゾーン（国の重要施設・原発・米軍基地） */}
-        {showNoFlyZones && (
+        {showRedZones && (
           <Source id="red-zones" type="geojson" data={redZonesGeoJSON}>
             <Layer
               id="red-zones-fill"
@@ -584,7 +589,7 @@ const Map = ({
         )}
 
         {/* イエローゾーン（外国公館・政党本部） */}
-        {showNoFlyZones && (
+        {showYellowZones && (
           <Source id="yellow-zones" type="geojson" data={yellowZonesGeoJSON}>
             <Layer
               id="yellow-zones-fill"
@@ -845,12 +850,20 @@ const Map = ({
           <Plane size={18} />
         </button>
         <button
-          className={`${styles.toggleButton} ${showNoFlyZones ? styles.activeNoFly : ''}`}
-          onClick={() => setShowNoFlyZones(!showNoFlyZones)}
-          data-tooltip={`飛行禁止区域 [N]`}
+          className={`${styles.toggleButton} ${showRedZones ? styles.activeRed : ''}`}
+          onClick={() => setShowRedZones(!showRedZones)}
+          data-tooltip={`レッドゾーン [R]`}
           data-tooltip-pos="left"
         >
           <ShieldAlert size={18} />
+        </button>
+        <button
+          className={`${styles.toggleButton} ${showYellowZones ? styles.activeYellow : ''}`}
+          onClick={() => setShowYellowZones(!showYellowZones)}
+          data-tooltip={`イエローゾーン [Y]`}
+          data-tooltip-pos="left"
+        >
+          <Building2 size={18} />
         </button>
         <button
           className={`${styles.toggleButton} ${showHeliports ? styles.activeHeliport : ''}`}

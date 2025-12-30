@@ -169,8 +169,13 @@
   color: white;
 }
 
-.toggleButton.activeNoFly {
-  background: #f44336;
+.toggleButton.activeRed {
+  background: #dc2626;
+  color: white;
+}
+
+.toggleButton.activeYellow {
+  background: #eab308;
   color: white;
 }
 
