@@ -846,11 +846,22 @@ $color-border-light: rgba(255, 255, 255, 0.15);
 
     &:hover {
       background: rgba(255, 255, 255, 0.05);
+
+      > svg {
+        color: $color-text-white;
+      }
     }
 
     span:first-child {
       font-size: 12px;
       color: rgba(255, 255, 255, 0.6);
+    }
+
+    // アローアイコンの視認性向上
+    > svg {
+      color: rgba(255, 255, 255, 0.7);
+      flex-shrink: 0;
+      transition: color 0.2s ease;
     }
   }
 
