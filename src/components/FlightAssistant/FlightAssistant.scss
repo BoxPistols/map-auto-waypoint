@@ -92,7 +92,7 @@
   }
 }
 
-// リサイズハンドル
+// リサイズハンドル（左端のみ、上はヘッダーのドラッグアイコンで対応）
 .resize-handle {
   position: absolute;
   z-index: 10;
@@ -106,31 +106,6 @@
 
     &:hover {
       background: linear-gradient(to right, var(--color-primary-bg), transparent);
-    }
-  }
-
-  &.resize-top {
-    top: 0;
-    left: 50px;
-    right: 0;
-    height: 6px;
-    cursor: ns-resize;
-
-    &:hover {
-      background: linear-gradient(to bottom, var(--color-primary-bg), transparent);
-    }
-  }
-
-  &.resize-corner {
-    top: 0;
-    left: 0;
-    width: 16px;
-    height: 16px;
-    cursor: nwse-resize;
-    border-radius: 16px 0 0 0;
-
-    &:hover {
-      background: var(--color-primary-bg);
     }
   }
 }

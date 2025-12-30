@@ -845,22 +845,12 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       className={`flight-assistant ${isExpanded ? 'expanded' : ''} ${isFullscreen ? 'fullscreen' : ''} ${isResizing ? 'resizing' : ''}`}
       style={panelStyle}
     >
-      {/* リサイズハンドル */}
+      {/* リサイズハンドル（左端のみ、上はアイコンで対応） */}
       {!isFullscreen && !isExpanded && (
-        <>
-          <div
-            className="resize-handle resize-left"
-            onMouseDown={(e) => handleResizeStart(e, 'left')}
-          />
-          <div
-            className="resize-handle resize-top"
-            onMouseDown={(e) => handleResizeStart(e, 'top')}
-          />
-          <div
-            className="resize-handle resize-corner"
-            onMouseDown={(e) => handleResizeStart(e, 'top-left')}
-          />
-        </>
+        <div
+          className="resize-handle resize-left"
+          onMouseDown={(e) => handleResizeStart(e, 'left')}
+        />
       )}
 
       <div className="flight-assistant-header">
