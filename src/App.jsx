@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon } from 'lucide-react'
+import { getTheme, toggleTheme, THEMES } from './services/themeService'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
 import PolygonList from './components/PolygonList/PolygonList'
@@ -45,6 +46,13 @@ function App() {
   const [showHelp, setShowHelp] = useState(false)
   const [showApiSettings, setShowApiSettings] = useState(false)
   const [notification, setNotification] = useState(null)
+  const [theme, setThemeState] = useState(() => getTheme())
+
+  // テーマ切り替え
+  const handleToggleTheme = () => {
+    const newTheme = toggleTheme()
+    setThemeState(newTheme)
+  }
   const [editingPolygon, setEditingPolygon] = useState(null)
 
   // Waypoint settings
@@ -710,6 +718,14 @@ function App() {
             disabled={!!editingPolygon}
           >
             エクスポート
+          </button>
+          <button
+            className="icon-button theme-button"
+            onClick={handleToggleTheme}
+            data-tooltip={theme === THEMES.DARK ? 'ライトモード' : 'ダークモード'}
+            data-tooltip-pos="bottom"
+          >
+            {theme === THEMES.DARK ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <button
             className="icon-button settings-button"
