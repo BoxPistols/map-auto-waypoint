@@ -1,34 +1,122 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import { getAirportZonesGeoJSON, getNoFlyZonesGeoJSON } from '../../services/airspace'
 import { loadMapSettings, saveMapSettings } from '../../utils/storage'
 import styles from './Map.module.scss'
 
-// OpenStreetMap style with higher maxzoom
-const MAP_STYLE = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '&copy; OpenStreetMap contributors',
-      maxzoom: 19
+// 地図スタイル定義
+const MAP_STYLES = {
+  osm: {
+    id: 'osm',
+    name: 'OpenStreetMap',
+    shortName: 'OSM',
+    style: {
+      version: 8,
+      sources: {
+        osm: {
+          type: 'raster',
+          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '&copy; OpenStreetMap contributors',
+          maxzoom: 19
+        }
+      },
+      layers: [
+        {
+          id: 'osm',
+          type: 'raster',
+          source: 'osm',
+          minzoom: 0,
+          maxzoom: 22
+        }
+      ]
     }
   },
-  layers: [
-    {
-      id: 'osm',
-      type: 'raster',
-      source: 'osm',
-      minzoom: 0,
-      maxzoom: 22
+  gsi_std: {
+    id: 'gsi_std',
+    name: '国土地理院 標準',
+    shortName: '標準',
+    style: {
+      version: 8,
+      sources: {
+        gsi: {
+          type: 'raster',
+          tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '&copy; 国土地理院',
+          maxzoom: 18
+        }
+      },
+      layers: [
+        {
+          id: 'gsi',
+          type: 'raster',
+          source: 'gsi',
+          minzoom: 0,
+          maxzoom: 22
+        }
+      ]
     }
-  ]
+  },
+  gsi_pale: {
+    id: 'gsi_pale',
+    name: '国土地理院 淡色',
+    shortName: '淡色',
+    style: {
+      version: 8,
+      sources: {
+        gsi: {
+          type: 'raster',
+          tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '&copy; 国土地理院',
+          maxzoom: 18
+        }
+      },
+      layers: [
+        {
+          id: 'gsi',
+          type: 'raster',
+          source: 'gsi',
+          minzoom: 0,
+          maxzoom: 22
+        }
+      ]
+    }
+  },
+  gsi_photo: {
+    id: 'gsi_photo',
+    name: '国土地理院 航空写真',
+    shortName: '航空写真',
+    style: {
+      version: 8,
+      sources: {
+        gsi: {
+          type: 'raster',
+          tiles: ['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'],
+          tileSize: 256,
+          attribution: '&copy; 国土地理院',
+          maxzoom: 18
+        }
+      },
+      layers: [
+        {
+          id: 'gsi',
+          type: 'raster',
+          source: 'gsi',
+          minzoom: 0,
+          maxzoom: 22
+        }
+      ]
+    }
+  }
 }
+
+// デフォルトスタイル（後方互換）
+const MAP_STYLE = MAP_STYLES.osm.style
 
 // Default center: Tokyo Tower
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
@@ -76,11 +164,16 @@ const Map = ({
   const [showAirportZones, setShowAirportZones] = useState(initialSettings.showAirportZones)
   const [showNoFlyZones, setShowNoFlyZones] = useState(initialSettings.showNoFlyZones)
   const [showDID, setShowDID] = useState(initialSettings.showDID)
+  const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
+  const [showStylePicker, setShowStylePicker] = useState(false)
+
+  // 現在の地図スタイル
+  const currentMapStyle = MAP_STYLES[mapStyleId]?.style || MAP_STYLES.osm.style
 
   // Save map settings when they change
   useEffect(() => {
-    saveMapSettings({ is3D, showAirportZones, showNoFlyZones, showDID })
-  }, [is3D, showAirportZones, showNoFlyZones, showDID])
+    saveMapSettings({ is3D, showAirportZones, showNoFlyZones, showDID, mapStyleId })
+  }, [is3D, showAirportZones, showNoFlyZones, showDID, mapStyleId])
 
   // Sync viewState when center/zoom props change from parent (e.g., WP click)
   useEffect(() => {
@@ -391,7 +484,7 @@ const Map = ({
         onMouseMove={handleSelectionMove}
         onMouseUp={handleSelectionEnd}
         interactiveLayerIds={interactiveLayerIds}
-        mapStyle={MAP_STYLE}
+        mapStyle={currentMapStyle}
         style={{ width: '100%', height: '100%' }}
         doubleClickZoom={false}
         maxZoom={20}
@@ -687,6 +780,37 @@ const Map = ({
         >
           {is3D ? <Box size={18} /> : <Rotate3D size={18} />}
         </button>
+
+        {/* 地図スタイル切り替え */}
+        <div className={styles.stylePickerContainer}>
+          <button
+            className={`${styles.toggleButton} ${showStylePicker ? styles.active : ''}`}
+            onClick={() => setShowStylePicker(!showStylePicker)}
+            data-tooltip="地図スタイル [M]"
+            data-tooltip-pos="left"
+          >
+            <Layers size={18} />
+          </button>
+          {showStylePicker && (
+            <div className={styles.stylePicker}>
+              {Object.values(MAP_STYLES).map(styleOption => (
+                <button
+                  key={styleOption.id}
+                  className={`${styles.styleOption} ${mapStyleId === styleOption.id ? styles.activeStyle : ''}`}
+                  onClick={() => {
+                    setMapStyleId(styleOption.id)
+                    setShowStylePicker(false)
+                  }}
+                >
+                  <span className={styles.styleIcon}>
+                    {styleOption.id === 'gsi_photo' ? '🛰️' : '🗺️'}
+                  </span>
+                  <span className={styles.styleName}>{styleOption.shortName}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Instructions overlay */}

@@ -125,7 +125,8 @@ export const loadMapSettings = () => {
       is3D: false,
       showDID: false,
       showAirportZones: false,
-      showNoFlyZones: false
+      showNoFlyZones: false,
+      mapStyleId: 'osm'
     }
   } catch (error) {
     console.error('Failed to load map settings:', error)
@@ -133,7 +134,8 @@ export const loadMapSettings = () => {
       is3D: false,
       showDID: false,
       showAirportZones: false,
-      showNoFlyZones: false
+      showNoFlyZones: false,
+      mapStyleId: 'osm'
     }
   }
 }
