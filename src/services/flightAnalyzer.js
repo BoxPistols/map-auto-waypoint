@@ -14,6 +14,7 @@ import * as turf from '@turf/turf';
 import { checkAirspaceRestrictions, AIRPORT_ZONES, NO_FLY_ZONES } from './airspace';
 import { analyzeFlightPlan, getRecommendedParameters, hasApiKey } from './openaiService';
 import { getLocationInfo, hasReinfolibApiKey } from './reinfolibService';
+import { isDIDAvoidanceModeEnabled, getSetting } from './settingsService';
 
 // ===== ユーティリティ関数 =====
 
@@ -1190,14 +1191,35 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     if (didWaypointIndices.has(wpIndex)) {
       hasIssues = true;
       const didWpInfo = didInfo.waypointDetails.didWaypoints.find(d => d.waypointIndex === wpIndex);
+      const didAvoidanceEnabled = isDIDAvoidanceModeEnabled();
       issues.push({
         type: 'did',
         zone: didWpInfo?.area || 'DID区域',
         currentDistance: 0,
-        requiredDistance: null,
-        severity: 'medium',
-        description: `人口集中地区（${didWpInfo?.area || 'DID'}）内`
+        requiredDistance: didAvoidanceEnabled ? getSetting('didAvoidanceDistance') : null,
+        severity: didAvoidanceEnabled ? 'high' : 'medium',
+        description: `人口集中地区（${didWpInfo?.area || 'DID'}）内`,
+        avoidanceEnabled: didAvoidanceEnabled
       });
+
+      // DID回避モードが有効な場合、DID用のゾーングループを作成
+      if (didAvoidanceEnabled && didWpInfo?.centroid) {
+        const didZoneName = `DID_${didWpInfo.area || 'zone'}`;
+        if (!zoneGroups.has(didZoneName)) {
+          zoneGroups.set(didZoneName, {
+            zone: {
+              lat: didWpInfo.centroid.lat,
+              lng: didWpInfo.centroid.lng,
+              radius: 500, // DIDの概算半径
+              name: didWpInfo.area || 'DID区域'
+            },
+            margin: getSetting('didAvoidanceDistance') || 100,
+            waypoints: [],
+            isDID: true
+          });
+        }
+        zoneGroups.get(didZoneName).waypoints.push(wp);
+      }
     }
 
     wpIssuesMap.set(wp.id, { issues, affectedZones, wpIndex });

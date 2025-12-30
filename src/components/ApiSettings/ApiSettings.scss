@@ -419,3 +419,32 @@ $color-border-light: rgba(255, 255, 255, 0.15);
     transform: rotate(360deg);
   }
 }
+
+// Toggle Setting
+.toggle-setting {
+  .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: $color-primary;
+      cursor: pointer;
+    }
+
+    .toggle-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: $color-text-white;
+    }
+  }
+
+  .toggle-description {
+    margin: 6px 0 0 28px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+}

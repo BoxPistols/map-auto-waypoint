@@ -1,0 +1,95 @@
+/**
+ * アプリケーション設定サービス
+ * ユーザー設定をlocalStorageに保存・読み込み
+ */
+
+const SETTINGS_KEY = 'drone_waypoint_settings';
+
+// デフォルト設定
+const DEFAULT_SETTINGS = {
+  // DID回避モード: DID内のWPに対して回避位置をサジェストするか
+  didAvoidanceMode: false,
+  // DID回避距離（メートル）: DID境界からどれだけ離れた位置を推奨するか
+  didAvoidanceDistance: 100,
+  // 空港回避マージン（メートル）
+  airportAvoidanceMargin: 500,
+  // 禁止区域回避マージン（メートル）
+  prohibitedAvoidanceMargin: 300,
+};
+
+/**
+ * 全設定を取得
+ * @returns {Object} 設定オブジェクト
+ */
+export const getSettings = () => {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY);
+    if (stored) {
+      return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+    }
+  } catch (e) {
+    console.warn('[SettingsService] Failed to load settings:', e);
+  }
+  return { ...DEFAULT_SETTINGS };
+};
+
+/**
+ * 設定を保存
+ * @param {Object} settings - 保存する設定
+ */
+export const saveSettings = (settings) => {
+  try {
+    const current = getSettings();
+    const updated = { ...current, ...settings };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+    // storage イベントを発火して他のコンポーネントに通知
+    window.dispatchEvent(new Event('storage'));
+    return updated;
+  } catch (e) {
+    console.warn('[SettingsService] Failed to save settings:', e);
+    return null;
+  }
+};
+
+/**
+ * 特定の設定値を取得
+ * @param {string} key - 設定キー
+ * @returns {any} 設定値
+ */
+export const getSetting = (key) => {
+  const settings = getSettings();
+  return settings[key];
+};
+
+/**
+ * 特定の設定値を保存
+ * @param {string} key - 設定キー
+ * @param {any} value - 設定値
+ */
+export const setSetting = (key, value) => {
+  return saveSettings({ [key]: value });
+};
+
+/**
+ * DID回避モードが有効か確認
+ * @returns {boolean}
+ */
+export const isDIDAvoidanceModeEnabled = () => {
+  return getSetting('didAvoidanceMode') === true;
+};
+
+/**
+ * DID回避モードを設定
+ * @param {boolean} enabled
+ */
+export const setDIDAvoidanceMode = (enabled) => {
+  return setSetting('didAvoidanceMode', enabled);
+};
+
+/**
+ * 設定をリセット
+ */
+export const resetSettings = () => {
+  localStorage.removeItem(SETTINGS_KEY);
+  return { ...DEFAULT_SETTINGS };
+};

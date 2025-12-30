@@ -23,6 +23,7 @@ import {
   testApiConnection
 } from '../../services/openaiService';
 import { hasReinfolibApiKey, setReinfolibApiKey } from '../../services/reinfolibService';
+import { getSetting, setSetting } from '../../services/settingsService';
 import './ApiSettings.scss';
 
 function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
@@ -34,6 +35,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const [localEndpoint, setLocalEndpointState] = useState(getLocalEndpoint());
   const [localModelName, setLocalModelNameState] = useState(getLocalModelName());
   const [testStatus, setTestStatus] = useState(null); // null | 'testing' | {success, message}
+  const [didAvoidanceMode, setDidAvoidanceMode] = useState(getSetting('didAvoidanceMode'));
   const modalRef = useRef(null);
 
   // 外部クリックで閉じる
@@ -327,6 +329,33 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                 )}
               </div>
             )}
+          </div>
+
+          <hr className="settings-divider" />
+
+          {/* 判定設定 */}
+          <div className="settings-section">
+            <h3>判定設定</h3>
+            <div className="toggle-setting">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={didAvoidanceMode}
+                  onChange={(e) => {
+                    const enabled = e.target.checked;
+                    setDidAvoidanceMode(enabled);
+                    setSetting('didAvoidanceMode', enabled);
+                    notifyStatusChange('didAvoidance', enabled);
+                  }}
+                />
+                <span className="toggle-text">DID回避モード</span>
+              </label>
+              <p className="toggle-description">
+                {didAvoidanceMode
+                  ? 'DID内のWPに対して回避位置をサジェストします'
+                  : 'DID内のWPは警告のみ（許可申請で対応）'}
+              </p>
+            </div>
           </div>
 
           <p className="settings-note">
