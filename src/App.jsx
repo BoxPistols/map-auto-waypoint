@@ -963,11 +963,18 @@ function App() {
             setWaypoints(updatedWaypoints)
           }
 
-          // ポリゴンも更新（もし推奨ポリゴンがあれば）
-          if (plan.polygon) {
+          // ポリゴンも更新（ウェイポイント移動に連動）
+          if (plan.polygons && plan.polygons.length > 0) {
+            // 複数ポリゴン対応: 各ポリゴンをIDで照合して更新
+            setPolygons(prev => prev.map(p => {
+              const updated = plan.polygons.find(rp => rp.id === p.id);
+              return updated || p;
+            }));
+          } else if (plan.polygon) {
+            // 後方互換: 単一ポリゴン
             setPolygons(prev => prev.map(p =>
               p.id === plan.polygon.id ? plan.polygon : p
-            ))
+            ));
           }
 
           // オーバーレイをクリア

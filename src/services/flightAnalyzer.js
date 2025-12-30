@@ -1426,6 +1426,7 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     totalGaps: gaps.length,
     gaps,
     recommendedWaypoints,
+    polygonOffsets, // ポリゴンジオメトリ更新用のオフセット情報
     summary: hasIssues
       ? `${gaps.length}個のWaypointに問題があります`
       : 'すべてのWaypointは安全な位置にあります'
@@ -1551,12 +1552,42 @@ export const generateOptimizationPlan = (polygons, waypoints, didInfo = null) =>
     actions.push(`ポリゴンの${polygonAnalysis.totalGaps}頂点を調整`);
   }
 
+  // ポリゴンジオメトリをウェイポイント移動に合わせて更新
+  // polygonOffsetsはウェイポイント分析から取得（同じポリゴンに属するWPが移動する場合のオフセット）
+  const { polygonOffsets } = waypointAnalysis;
+  let recommendedPolygons = null;
+
+  if (polygonOffsets && polygonOffsets.size > 0 && polygons.length > 0) {
+    recommendedPolygons = polygons.map(polygon => {
+      const offset = polygonOffsets.get(polygon.id);
+      if (offset && polygon.geometry?.coordinates?.[0]) {
+        // ポリゴンの全座標にオフセットを適用
+        const updatedCoords = polygon.geometry.coordinates[0].map(([lng, lat]) => [
+          lng + offset.lngOffset,
+          lat + offset.latOffset
+        ]);
+        return {
+          ...polygon,
+          geometry: {
+            ...polygon.geometry,
+            coordinates: [updatedCoords]
+          }
+        };
+      }
+      return polygon;
+    });
+  }
+
+  // 推奨ポリゴン: まずウェイポイント移動に連動したもの、なければポリゴン分析結果
+  const recommendedPolygon = recommendedPolygons?.[0] || polygonAnalysis?.recommendedPolygon;
+
   return {
     hasIssues: hasAnyIssues,
     waypointAnalysis,
     polygonAnalysis,
     recommendedWaypoints: waypointAnalysis.recommendedWaypoints,
-    recommendedPolygon: polygonAnalysis?.recommendedPolygon,
+    recommendedPolygon,
+    recommendedPolygons, // 複数ポリゴン対応用
     summary: hasAnyIssues
       ? '安全性向上のための修正が提案されています'
       : '現在のプランは安全基準を満たしています',

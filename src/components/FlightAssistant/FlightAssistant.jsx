@@ -374,7 +374,8 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
     const plan = {
       waypoints: optimizationPlan.recommendedWaypoints,
-      polygon: optimizationPlan.recommendedPolygon
+      polygon: optimizationPlan.recommendedPolygon,
+      polygons: optimizationPlan.recommendedPolygons // 複数ポリゴン対応
     };
 
     // 適用前に確認
