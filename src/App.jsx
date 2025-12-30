@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon } from 'lucide-react'
+import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route } from 'lucide-react'
 import { getTheme, toggleTheme, THEMES } from './services/themeService'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
@@ -20,6 +20,22 @@ import './App.scss'
 
 // Default center: Tokyo Tower
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
+
+// WP間の総距離を計算 (km)
+const calcTotalDistance = (wps) => {
+  if (!wps || wps.length < 2) return 0
+  let total = 0
+  for (let i = 1; i < wps.length; i++) {
+    const p1 = wps[i - 1]
+    const p2 = wps[i]
+    const R = 6371 // km
+    const dLat = (p2.lat - p1.lat) * Math.PI / 180
+    const dLon = (p2.lng - p1.lng) * Math.PI / 180
+    const a = Math.sin(dLat/2) ** 2 + Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) * Math.sin(dLon/2) ** 2
+    total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+  }
+  return total
+}
 
 function App() {
   // Map state
@@ -750,24 +766,53 @@ function App() {
       <main className="app-main">
         {/* Sidebar */}
         <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
-          {/* Sidebar Toggle Button */}
-          <button
-            className="sidebar-toggle"
-            onClick={toggleSidebar}
-            title={sidebarCollapsed ? 'サイドバーを開く' : 'サイドバーを閉じる'}
-          >
-            {sidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-          </button>
+          {/* Sidebar Toggle Button - 展開時のみ表示 */}
+          {!sidebarCollapsed && (
+            <button
+              className="sidebar-toggle"
+              onClick={toggleSidebar}
+              title="サイドバーを閉じる"
+            >
+              <Menu size={16} />
+            </button>
+          )}
 
           {/* Collapsed Mini View */}
           {sidebarCollapsed && (
             <div className="sidebar-collapsed-content">
-              <div className="collapsed-icon" onClick={toggleSidebar} title="サイドバーを開く">
-                <Layers size={20} />
-              </div>
-              <div className="collapsed-stats">
-                <span className="collapsed-badge">{polygons.length}</span>
-                <span className="collapsed-badge">{waypoints.length}</span>
+              <button
+                className="sidebar-expand-btn"
+                onClick={toggleSidebar}
+                title="サイドバーを開く"
+              >
+                <Menu size={18} />
+              </button>
+              <div className="collapsed-info">
+                <div
+                  className="collapsed-stat clickable"
+                  title={`エリア: ${polygons.length}件`}
+                  onClick={toggleSidebar}
+                >
+                  <Layers size={14} />
+                  <span>{polygons.length}</span>
+                </div>
+                <div
+                  className="collapsed-stat clickable"
+                  title={`WP: ${waypoints.length}件`}
+                  onClick={toggleSidebar}
+                >
+                  <MapIcon size={14} />
+                  <span>{waypoints.length}</span>
+                </div>
+                {waypoints.length >= 2 && (
+                  <div
+                    className="collapsed-stat small"
+                    title={`総距離: ${calcTotalDistance(waypoints).toFixed(2)}km`}
+                  >
+                    <Route size={12} />
+                    <span>{calcTotalDistance(waypoints).toFixed(1)}km</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
