@@ -623,6 +623,14 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       if (sources.length === 0) sources.push('[LOCAL] ローカル分析');
       response += `データソース: ${sources.join(' + ')}`;
 
+      // APIエラー情報を表示
+      if (result.mlitError) {
+        response += `\n⚠️ 国交省API: ${result.mlitError}`;
+      }
+      if (result.aiError) {
+        response += `\n⚠️ OpenAI: ${result.aiError}`;
+      }
+
       setMessages(prev => {
         const filtered = prev.filter(m => m.role !== 'system');
         return [...filtered, { role: 'assistant', content: response, isAssessment: true }];

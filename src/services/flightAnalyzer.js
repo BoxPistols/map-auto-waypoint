@@ -1833,12 +1833,17 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
 
   // 国土交通省APIで用途地域情報を取得
   let mlitInfo = null;
-  if (useMlit && hasReinfolibApiKey() && localAnalysis.context.center) {
+  let mlitError = null;
+  const hasMlitKey = hasReinfolibApiKey();
+
+  if (useMlit && hasMlitKey && localAnalysis.context.center) {
     try {
+      console.log('[FlightAnalyzer] Calling MLIT API...');
       mlitInfo = await getLocationInfo(
         localAnalysis.context.center.lat,
         localAnalysis.context.center.lng
       );
+      console.log('[FlightAnalyzer] MLIT API result:', mlitInfo);
 
       if (mlitInfo.success) {
         // 国土交通省データからのリスクを追加
@@ -1863,22 +1868,29 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
           ...mlitInfo.recommendations,
           ...localAnalysis.recommendations
         ];
+      } else {
+        mlitError = mlitInfo.error || 'API応答エラー';
       }
     } catch (error) {
       console.warn('[FlightAnalyzer] MLIT API error:', error);
+      mlitError = error.message || 'ネットワークエラー（CORS制限の可能性）';
     }
+  } else if (useMlit && !hasMlitKey) {
+    mlitError = 'APIキー未設定';
   }
 
   // コンテキストに国土交通省データを追加
   localAnalysis.context.mlitInfo = mlitInfo;
+  localAnalysis.context.mlitError = mlitError;
 
   // OpenAI APIキーがない、またはuseAI=falseの場合はローカル結果のみ
   if (!useAI || !hasApiKey()) {
     return {
       ...localAnalysis,
-      source: hasReinfolibApiKey() ? 'local+mlit' : 'local',
+      source: hasMlitKey ? 'local+mlit' : 'local',
       aiEnhanced: false,
-      mlitEnhanced: !!mlitInfo?.success
+      mlitEnhanced: !!mlitInfo?.success,
+      mlitError: mlitError
     };
   }
 
@@ -1915,7 +1927,9 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
       safetyChecklist: aiAnalysis.safetyChecklist || localAnalysis.safetyChecklist,
       context: localAnalysis.context,
       source: 'openai',
-      aiEnhanced: true
+      aiEnhanced: true,
+      mlitEnhanced: !!mlitInfo?.success,
+      mlitError: mlitError
     };
   } catch (error) {
     console.error('[FlightAnalyzer] AI analysis failed, using local:', error);
@@ -1923,7 +1937,9 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
       ...localAnalysis,
       source: 'local',
       aiEnhanced: false,
-      aiError: error.message
+      aiError: error.message,
+      mlitEnhanced: !!mlitInfo?.success,
+      mlitError: mlitError
     };
   }
 };
