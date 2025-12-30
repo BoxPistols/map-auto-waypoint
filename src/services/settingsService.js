@@ -9,10 +9,12 @@ const SETTINGS_KEY = 'drone_waypoint_settings';
 const DEFAULT_SETTINGS = {
   // DID回避モード: DID内のWPに対して回避位置をサジェストするか
   didAvoidanceMode: false,
+  // DID警告のみモード: 回避位置を提案せず警告のみ表示（許可申請前提）
+  didWarningOnlyMode: false,
   // DID回避距離（メートル）: DID境界からどれだけ離れた位置を推奨するか
   didAvoidanceDistance: 100,
   // 空港回避マージン（メートル）
-  airportAvoidanceMargin: 500,
+  airportAvoidanceMargin: 300,
   // 禁止区域回避マージン（メートル）
   prohibitedAvoidanceMargin: 300,
 };

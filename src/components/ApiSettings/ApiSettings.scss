@@ -447,4 +447,125 @@ $color-border-light: rgba(255, 255, 255, 0.15);
     font-size: 11px;
     color: rgba(255, 255, 255, 0.6);
   }
+
+  &.sub-setting {
+    margin-left: 28px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    margin-top: 8px;
+  }
+}
+
+// Sub Divider
+.settings-sub-divider {
+  border: none;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  margin: 12px 0;
+}
+
+// Slider Setting
+.slider-setting {
+  margin-bottom: 8px;
+
+  .slider-label {
+    display: block;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 8px;
+
+    strong {
+      color: $color-primary;
+      font-size: 15px;
+    }
+  }
+
+  .distance-slider {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(to right,
+      rgba($color-success, 0.3) 0%,
+      rgba($color-primary, 0.3) 50%,
+      rgba($color-danger, 0.3) 100%
+    );
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: $color-primary;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      transition: transform 0.15s;
+
+      &:hover {
+        transform: scale(1.1);
+      }
+    }
+
+    &::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: $color-primary;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .slider-description {
+    margin: 8px 0 0;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+// Info Setting (read-only display)
+.info-setting {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  margin-bottom: 8px;
+
+  .setting-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+  }
+
+  .setting-content {
+    flex: 1;
+
+    .setting-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: $color-text-white;
+    }
+
+    .setting-description {
+      margin: 2px 0 0;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  }
 }

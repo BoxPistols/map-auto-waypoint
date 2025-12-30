@@ -1163,41 +1163,43 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     // 空港制限区域チェック
     for (const airport of AIRPORT_ZONES) {
       const distance = getDistanceMeters(wp.lat, wp.lng, airport.lat, airport.lng);
+      const airportMargin = getSetting('airportAvoidanceMargin') || 300;
       if (distance < airport.radius) {
         hasIssues = true;
         issues.push({
           type: 'airport',
           zone: airport.name,
           currentDistance: Math.round(distance),
-          requiredDistance: airport.radius + 500,
+          requiredDistance: airport.radius + airportMargin,
           severity: 'high'
         });
-        affectedZones.push({ ...airport, type: 'airport', margin: 500 });
+        affectedZones.push({ ...airport, type: 'airport', margin: airportMargin });
 
         // グループに追加
         if (!zoneGroups.has(airport.name)) {
-          zoneGroups.set(airport.name, { zone: airport, margin: 500, waypoints: [] });
+          zoneGroups.set(airport.name, { zone: airport, margin: airportMargin, waypoints: [] });
         }
         zoneGroups.get(airport.name).waypoints.push(wp);
       }
     }
 
     // 飛行禁止区域チェック
+    const prohibitedMargin = getSetting('prohibitedAvoidanceMargin') || 300;
     for (const zone of NO_FLY_ZONES) {
       const distance = getDistanceMeters(wp.lat, wp.lng, zone.lat, zone.lng);
-      if (distance < zone.radius + 300) {
+      if (distance < zone.radius + prohibitedMargin) {
         hasIssues = true;
         issues.push({
           type: 'prohibited',
           zone: zone.name,
           currentDistance: Math.round(distance),
-          requiredDistance: zone.radius + 300,
+          requiredDistance: zone.radius + prohibitedMargin,
           severity: 'critical'
         });
-        affectedZones.push({ ...zone, type: 'prohibited', margin: 300 });
+        affectedZones.push({ ...zone, type: 'prohibited', margin: prohibitedMargin });
 
         if (!zoneGroups.has(zone.name)) {
-          zoneGroups.set(zone.name, { zone, margin: 300, waypoints: [] });
+          zoneGroups.set(zone.name, { zone, margin: prohibitedMargin, waypoints: [] });
         }
         zoneGroups.get(zone.name).waypoints.push(wp);
       }
@@ -1205,20 +1207,41 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
 
     // DID（人口集中地区）チェック
     if (didWaypointIndices.has(wpIndex)) {
-      hasIssues = true;
       const didWpInfo = didInfo.waypointDetails.didWaypoints.find(d => d.waypointIndex === wpIndex);
       const didAvoidanceEnabled = isDIDAvoidanceModeEnabled();
+      const didWarningOnly = getSetting('didWarningOnlyMode');
+
+      // DID警告のみモードの場合は警告表示のみ（回避提案なし）
+      // DID回避モードがOFFでも警告は表示
+      hasIssues = true;
+
+      // 重要度の決定:
+      // - 回避モード: high（回避提案あり）
+      // - 警告のみモード: low（情報提供のみ、許可申請前提）
+      // - どちらもOFF: medium（警告のみ）
+      let severity = 'medium';
+      let description = `人口集中地区（${didWpInfo?.area || 'DID'}）内`;
+
+      if (didAvoidanceEnabled) {
+        severity = 'high';
+        description += ' - 回避位置を提案';
+      } else if (didWarningOnly) {
+        severity = 'low';
+        description += ' - DIPS許可申請が必要';
+      }
+
       issues.push({
         type: 'did',
         zone: didWpInfo?.area || 'DID区域',
         currentDistance: 0,
         requiredDistance: didAvoidanceEnabled ? getSetting('didAvoidanceDistance') : null,
-        severity: didAvoidanceEnabled ? 'high' : 'medium',
-        description: `人口集中地区（${didWpInfo?.area || 'DID'}）内`,
-        avoidanceEnabled: didAvoidanceEnabled
+        severity,
+        description,
+        avoidanceEnabled: didAvoidanceEnabled,
+        warningOnly: didWarningOnly
       });
 
-      // DID回避モードが有効な場合、DID用のゾーングループを作成
+      // DID回避モードが有効な場合のみ、DID用のゾーングループを作成
       if (didAvoidanceEnabled) {
         const didZoneName = `DID_${didWpInfo?.area || 'zone'}`;
         if (!zoneGroups.has(didZoneName)) {

@@ -36,6 +36,9 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const [localModelName, setLocalModelNameState] = useState(getLocalModelName());
   const [testStatus, setTestStatus] = useState(null); // null | 'testing' | {success, message}
   const [didAvoidanceMode, setDidAvoidanceMode] = useState(getSetting('didAvoidanceMode'));
+  const [didWarningOnlyMode, setDidWarningOnlyMode] = useState(getSetting('didWarningOnlyMode'));
+  const [avoidanceDistance, setAvoidanceDistance] = useState(getSetting('didAvoidanceDistance') || 100);
+  const [airportMargin, setAirportMargin] = useState(getSetting('airportAvoidanceMargin') || 300);
   const modalRef = useRef(null);
 
   // 外部クリックで閉じる
@@ -335,7 +338,41 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
 
           {/* 判定設定 */}
           <div className="settings-section">
-            <h3>判定設定</h3>
+            <h3>回避設定</h3>
+
+            {/* 回避距離スライダー */}
+            <div className="slider-setting">
+              <label className="slider-label">
+                <span>回避距離: <strong>{avoidanceDistance}m</strong></span>
+              </label>
+              <input
+                type="range"
+                min="50"
+                max="300"
+                step="10"
+                value={avoidanceDistance}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value);
+                  setAvoidanceDistance(value);
+                  setSetting('didAvoidanceDistance', value);
+                  setSetting('airportAvoidanceMargin', value);
+                }}
+                className="distance-slider"
+              />
+              <div className="slider-labels">
+                <span>最小 50m</span>
+                <span>標準 100m</span>
+                <span>安全 200m</span>
+                <span>300m</span>
+              </div>
+              <p className="slider-description">
+                制限区域境界からの推奨離隔距離
+              </p>
+            </div>
+
+            <hr className="settings-sub-divider" />
+
+            {/* DID設定 */}
             <div className="toggle-setting">
               <label className="toggle-label">
                 <input
@@ -345,16 +382,57 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                     const enabled = e.target.checked;
                     setDidAvoidanceMode(enabled);
                     setSetting('didAvoidanceMode', enabled);
+                    if (enabled) {
+                      setDidWarningOnlyMode(false);
+                      setSetting('didWarningOnlyMode', false);
+                    }
                     notifyStatusChange('didAvoidance', enabled);
                   }}
                 />
                 <span className="toggle-text">DID回避モード</span>
               </label>
               <p className="toggle-description">
-                {didAvoidanceMode
-                  ? 'DID内のWPに対して回避位置をサジェストします'
-                  : 'DID内のWPは警告のみ（許可申請で対応）'}
+                DID内のWPに対して回避位置をサジェスト
               </p>
+            </div>
+
+            {!didAvoidanceMode && (
+              <div className="toggle-setting sub-setting">
+                <label className="toggle-label">
+                  <input
+                    type="checkbox"
+                    checked={didWarningOnlyMode}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      setDidWarningOnlyMode(enabled);
+                      setSetting('didWarningOnlyMode', enabled);
+                    }}
+                  />
+                  <span className="toggle-text">DID警告のみ</span>
+                </label>
+                <p className="toggle-description">
+                  回避提案なし（DIPS許可申請前提）
+                </p>
+              </div>
+            )}
+
+            <hr className="settings-sub-divider" />
+
+            {/* 空港回避（常にON） */}
+            <div className="info-setting">
+              <span className="setting-icon">✈️</span>
+              <div className="setting-content">
+                <span className="setting-title">空港制限区域</span>
+                <p className="setting-description">回避必須（{avoidanceDistance}m離隔）</p>
+              </div>
+            </div>
+
+            <div className="info-setting">
+              <span className="setting-icon">⛔</span>
+              <div className="setting-content">
+                <span className="setting-title">飛行禁止区域</span>
+                <p className="setting-description">回避必須（{avoidanceDistance}m離隔）</p>
+              </div>
             </div>
           </div>
 
