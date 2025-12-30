@@ -351,3 +351,71 @@ $color-border-light: rgba(255, 255, 255, 0.15);
     }
   }
 }
+
+// Connection Test
+.connection-test {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid $color-border;
+
+  .test-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba($color-primary, 0.15);
+    border: 1px solid rgba($color-primary, 0.3);
+    border-radius: 6px;
+    color: $color-primary;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover:not(:disabled) {
+      background: rgba($color-primary, 0.25);
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    &.testing {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  .test-result {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+
+    &.success {
+      background: rgba($color-success, 0.1);
+      color: $color-success;
+    }
+
+    &.error {
+      background: rgba($color-danger, 0.1);
+      color: $color-danger;
+    }
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -44,6 +44,57 @@ export const hasApiKey = () => {
   return !!getApiKey();
 };
 
+/**
+ * OpenAI API接続テスト
+ * 最小限のリクエストでAPIキーの有効性を確認
+ * @returns {Promise<{success: boolean, message: string, model?: string}>}
+ */
+export const testApiConnection = async () => {
+  const model = getSelectedModel();
+  const useLocal = isLocalModel(model);
+  const apiKey = getApiKey();
+
+  if (!useLocal && !apiKey) {
+    return { success: false, message: 'APIキーが設定されていません' };
+  }
+
+  const endpoint = useLocal ? getLocalEndpoint() : OPENAI_ENDPOINT;
+  const actualModel = useLocal ? getLocalModelName() : model;
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(useLocal ? {} : { 'Authorization': `Bearer ${apiKey}` })
+      },
+      body: JSON.stringify({
+        model: actualModel,
+        messages: [{ role: 'user', content: 'test' }],
+        max_tokens: 5
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMsg = errorData.error?.message || `HTTP ${response.status}`;
+      return { success: false, message: errorMsg };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      message: '接続成功',
+      model: data.model || actualModel
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || '接続エラー'
+    };
+  }
+};
+
 // 選択中のモデルを取得
 export const getSelectedModel = () => {
   return localStorage.getItem('openai_model') || DEFAULT_MODEL;

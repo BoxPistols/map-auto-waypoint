@@ -4,7 +4,10 @@ import {
   X,
   CheckCircle,
   Trash2,
-  ExternalLink
+  ExternalLink,
+  Zap,
+  AlertCircle,
+  Loader
 } from 'lucide-react';
 import {
   hasApiKey,
@@ -16,7 +19,8 @@ import {
   setLocalEndpoint,
   getLocalModelName,
   setLocalModelName,
-  isLocalModel
+  isLocalModel,
+  testApiConnection
 } from '../../services/openaiService';
 import { hasReinfolibApiKey, setReinfolibApiKey } from '../../services/reinfolibService';
 import './ApiSettings.scss';
@@ -29,6 +33,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const [selectedModelId, setSelectedModelId] = useState(getSelectedModel());
   const [localEndpoint, setLocalEndpointState] = useState(getLocalEndpoint());
   const [localModelName, setLocalModelNameState] = useState(getLocalModelName());
+  const [testStatus, setTestStatus] = useState(null); // null | 'testing' | {success, message}
   const modalRef = useRef(null);
 
   // 外部クリックで閉じる
@@ -118,6 +123,15 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const handleSaveLocalModelName = () => {
     setLocalModelName(localModelName);
     notifyStatusChange('localModel', localModelName);
+  };
+
+  // 接続テスト
+  const handleTestConnection = async () => {
+    setTestStatus('testing');
+    const result = await testApiConnection();
+    setTestStatus(result);
+    // 5秒後にステータスをクリア
+    setTimeout(() => setTestStatus(null), 5000);
   };
 
   if (!isOpen) return null;
@@ -286,6 +300,32 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                   </a>
                 </div>
               </>
+            )}
+
+            {/* 接続テストボタン */}
+            {(hasKey || isLocalModel(selectedModelId)) && (
+              <div className="connection-test">
+                <button
+                  className={`test-btn ${testStatus === 'testing' ? 'testing' : ''}`}
+                  onClick={handleTestConnection}
+                  disabled={testStatus === 'testing'}
+                >
+                  {testStatus === 'testing' ? (
+                    <><Loader size={14} className="spin" /> テスト中...</>
+                  ) : (
+                    <><Zap size={14} /> 接続テスト</>
+                  )}
+                </button>
+                {testStatus && testStatus !== 'testing' && (
+                  <div className={`test-result ${testStatus.success ? 'success' : 'error'}`}>
+                    {testStatus.success ? (
+                      <><CheckCircle size={14} /> {testStatus.message} ({testStatus.model})</>
+                    ) : (
+                      <><AlertCircle size={14} /> {testStatus.message}</>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
