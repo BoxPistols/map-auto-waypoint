@@ -791,7 +791,7 @@ function App() {
                 <div
                   className="collapsed-stat clickable"
                   title={`エリア: ${polygons.length}件`}
-                  onClick={toggleSidebar}
+                  onClick={() => { setActivePanel('polygons'); toggleSidebar(); }}
                 >
                   <Layers size={14} />
                   <span>{polygons.length}</span>
@@ -799,7 +799,7 @@ function App() {
                 <div
                   className="collapsed-stat clickable"
                   title={`WP: ${waypoints.length}件`}
-                  onClick={toggleSidebar}
+                  onClick={() => { setActivePanel('waypoints'); toggleSidebar(); }}
                 >
                   <MapIcon size={14} />
                   <span>{waypoints.length}</span>
