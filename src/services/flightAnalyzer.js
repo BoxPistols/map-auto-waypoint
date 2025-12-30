@@ -1354,6 +1354,30 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     }
   }
 
+  // ポリゴン整合性の維持: 同じポリゴンに属する全WPを一緒に移動
+  // 一部のWPだけ移動するとポリゴンが分離するため
+  const polygonOffsets = new Map(); // polygonId -> {latOffset, lngOffset, moveDistance}
+
+  // 1. 移動が必要なWPからポリゴンごとの最大オフセットを特定
+  for (const [wpId, offset] of wpOffsets) {
+    const wp = waypoints.find(w => w.id === wpId);
+    if (wp?.polygonId) {
+      const existing = polygonOffsets.get(wp.polygonId);
+      if (!existing || offset.moveDistance > existing.moveDistance) {
+        polygonOffsets.set(wp.polygonId, offset);
+      }
+    }
+  }
+
+  // 2. 同じポリゴンの全WPに同じオフセットを適用
+  for (const [polygonId, offset] of polygonOffsets) {
+    for (const wp of waypoints) {
+      if (wp.polygonId === polygonId && !wpOffsets.has(wp.id)) {
+        wpOffsets.set(wp.id, { ...offset, isPolygonSync: true });
+      }
+    }
+  }
+
   // 推奨WPリストを生成
   const recommendedWaypoints = waypoints.map(wp => {
     const wpIndex = wp.index !== undefined ? wp.index : waypoints.indexOf(wp) + 1;
@@ -1379,6 +1403,18 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
         lng: offset ? wp.lng + offset.lngOffset : wp.lng,
         modified: !!offset,
         hasDID: didWaypointIndices.has(wpIndex)
+      };
+    }
+
+    // ポリゴン整合性のための同期移動（問題はないが同じポリゴンの他WPが移動する場合）
+    if (offset?.isPolygonSync) {
+      return {
+        ...wp,
+        lat: wp.lat + offset.latOffset,
+        lng: wp.lng + offset.lngOffset,
+        modified: true,
+        isPolygonSync: true, // ポリゴン同期による移動
+        hasDID: false
       };
     }
 
