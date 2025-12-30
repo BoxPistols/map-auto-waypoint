@@ -681,90 +681,90 @@
 }
 
 .flight-assistant-actions {
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-top: 1px solid var(--color-border);
   display: flex;
+  align-items: center;
   gap: 6px;
   flex-shrink: 0;
 
   .assessment-btn {
-    flex: 1;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 8px 12px;
+    gap: 4px;
+    padding: 6px 12px;
     background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-danger) 100%);
     border: none;
-    border-radius: 6px;
+    border-radius: 5px;
     color: var(--color-text-inverse);
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
 
     &:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-lg);
+      filter: brightness(1.1);
     }
 
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
     }
-
-    svg {
-      animation: pulse 1.5s ease-in-out infinite;
-    }
   }
-}
 
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-// コピー/DLボタンバー（メッセージ領域の下）
-.action-buttons-bar {
-  display: flex;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--color-bg-secondary);
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
-
-  .copy-btn,
-  .export-btn {
+  .icon-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 6px 12px;
-    background: var(--color-primary-bg);
-    border: 1px solid var(--color-primary);
-    border-radius: 6px;
-    color: var(--color-primary);
-    font-size: 12px;
-    font-weight: 500;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
     cursor: pointer;
-    transition: all 0.2s ease;
-    flex: 1;
+    transition: all 0.15s ease;
 
     &:hover {
-      background: var(--color-primary);
-      color: var(--color-text-inverse);
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      background: var(--color-primary-bg);
+    }
+
+    &.copy:hover {
+      border-color: var(--color-success);
+      color: var(--color-success);
+      background: var(--color-success-bg);
     }
   }
 
-  .copy-btn {
-    background: var(--color-success-bg);
-    border-color: var(--color-success);
-    color: var(--color-success);
+  .optimize-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: var(--color-success);
+    border: none;
+    border-radius: 5px;
+    color: var(--color-text-inverse);
+    font-weight: 600;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s ease;
 
     &:hover {
-      background: var(--color-success);
-      color: var(--color-text-inverse);
+      background: var(--color-success-dark);
     }
+  }
+
+  .action-info {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--color-text-tertiary);
   }
 }
 
@@ -829,97 +829,57 @@
   border-top: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
   flex-shrink: 0;
-  max-height: 120px;
-  overflow-y: auto;
 
   .summary-header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
+    gap: 8px;
+    padding: 6px 10px;
     cursor: pointer;
     transition: background 0.2s ease;
 
     &:hover {
       background: var(--color-bg-tertiary);
-
-      > svg {
-        color: var(--color-text);
-      }
     }
 
-    span:first-child {
-      font-size: 12px;
+    > span:first-child {
+      font-size: 11px;
       color: var(--color-text-secondary);
+    }
+
+    .score {
+      font-size: 10px;
+      color: var(--color-text-tertiary);
+      margin-left: auto;
     }
 
     > svg {
       color: var(--color-text-tertiary);
       flex-shrink: 0;
-      transition: color 0.2s ease;
     }
   }
 
   .summary-detail {
-    padding: 0 16px 12px;
+    padding: 4px 10px 8px;
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 6px 12px;
 
     .detail-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--color-text);
+      gap: 4px;
+      font-size: 11px;
+      color: var(--color-text-secondary);
 
       svg {
         color: var(--color-primary);
-
-        &.success { color: var(--color-success); }
-        &.warning { color: var(--color-warning); }
+        flex-shrink: 0;
       }
-    }
 
-    .action-buttons {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-  }
-
-  .summary-detail {
-    .copy-btn,
-    .export-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 8px 12px;
-      background: var(--color-primary-bg);
-      border: 1px solid var(--color-primary);
-      border-radius: 6px;
-      color: var(--color-primary);
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      flex: 1;
-
-      &:hover {
-        background: var(--color-primary);
-        color: var(--color-text-inverse);
-      }
-    }
-
-    .copy-btn {
-      background: var(--color-success-bg);
-      border-color: var(--color-success);
-      color: var(--color-success);
-
-      &:hover {
-        background: var(--color-success);
-        color: var(--color-text-inverse);
+      &.source {
+        font-size: 10px;
+        color: var(--color-text-tertiary);
       }
     }
   }
@@ -1249,42 +1209,6 @@
   font-size: 11px;
   color: var(--color-text-tertiary);
   padding: 0 8px;
-}
-
-// Optimization Footer - 常に表示される推奨プラン適用ボタン
-.optimization-footer {
-  padding: 8px 12px;
-  background: var(--color-success-bg);
-  border-top: 1px solid var(--color-success);
-  flex-shrink: 0;
-
-  .apply-optimization-btn {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 16px;
-    background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-dark) 100%);
-    border: none;
-    border-radius: 8px;
-    color: var(--color-text-inverse);
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: var(--shadow-sm);
-
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-lg);
-    }
-
-    &:active {
-      transform: translateY(0);
-      box-shadow: var(--shadow-sm);
-    }
-  }
 }
 
 // Optimization Panel

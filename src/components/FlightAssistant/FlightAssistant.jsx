@@ -1035,20 +1035,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         <div ref={messagesEndRef} />
       </div>
 
-      {/* コピー/DLボタン（判定結果がある時のみ） */}
-      {assessmentResult && (
-        <div className="action-buttons-bar">
-          <button className="copy-btn" onClick={handleCopyResult}>
-            {isCopied ? <Check size={14} /> : <Copy size={14} />}
-            {isCopied ? 'コピー完了' : 'コピー'}
-          </button>
-          <button className="export-btn" onClick={handleExportResult}>
-            <Download size={14} />
-            DL
-          </button>
-        </div>
-      )}
-
+      {/* 判定・アクションバー（コンパクト） */}
       <div className="flight-assistant-actions">
         <button
           className="assessment-btn"
@@ -1056,56 +1043,61 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           disabled={isProcessing || polygons.length === 0}
           title={polygons.length === 0 ? 'まずエリアを設定してください' : '実データに基づく総合判定'}
         >
-          <Zap size={16} />
-          判定！
+          <Zap size={14} />
+          判定
         </button>
+        {assessmentResult && (
+          <>
+            <button className="icon-btn copy" onClick={handleCopyResult} title="結果をコピー">
+              {isCopied ? <Check size={14} /> : <Copy size={14} />}
+            </button>
+            <button className="icon-btn download" onClick={handleExportResult} title="結果をDL">
+              <Download size={14} />
+            </button>
+          </>
+        )}
+        {showOptimization && optimizationPlan?.hasIssues && (
+          <button
+            className="optimize-btn"
+            onClick={handleApplyOptimization}
+            title="推奨プランを適用"
+          >
+            <Zap size={14} />
+            最適化
+          </button>
+        )}
         <div className="action-info">
           <MapPin size={12} />
-          <span>{polygons.length}エリア / {waypoints.length}WP</span>
+          <span>{polygons.length}エリア/{waypoints.length}WP</span>
         </div>
       </div>
 
-      {/* 推奨プラン適用ボタン - 常に表示されるフッター位置 */}
-      {showOptimization && optimizationPlan?.hasIssues && (
-        <div className="optimization-footer">
-          <button
-            className="apply-optimization-btn"
-            onClick={handleApplyOptimization}
-          >
-            <Zap size={14} />
-            推奨プランを適用
-          </button>
-        </div>
-      )}
-
+      {/* 判定結果サマリー（コンパクト） */}
       {assessmentResult && (
         <div className="assessment-summary">
           <div
             className="summary-header"
             onClick={() => setShowAssessmentDetail(!showAssessmentDetail)}
           >
-            <span>最新の判定結果</span>
+            <span>判定結果</span>
             {getRiskBadge(assessmentResult.riskLevel)}
-            {showAssessmentDetail ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            <span className="score">スコア:{assessmentResult.riskScore}</span>
+            {showAssessmentDetail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </div>
           {showAssessmentDetail && (
             <div className="summary-detail">
-              <div className="detail-row">
-                <Shield size={14} />
-                <span>スコア: {assessmentResult.riskScore}/100</span>
-              </div>
               {assessmentResult.context?.nearestAirport && (
                 <div className="detail-row">
-                  <Plane size={14} />
+                  <Plane size={12} />
                   <span>最寄空港: {assessmentResult.context.nearestAirport.name}</span>
                 </div>
               )}
               <div className="detail-row">
-                <FileText size={14} />
+                <FileText size={12} />
                 <span>承認目安: {assessmentResult.estimatedApprovalDays}日</span>
               </div>
               <div className="detail-row source">
-                {assessmentResult.aiEnhanced ? '[AI] AI分析' : '[LOCAL] ローカル分析'}
+                {assessmentResult.aiEnhanced ? '[AI]' : '[LOCAL]'}
               </div>
             </div>
           )}
