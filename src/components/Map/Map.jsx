@@ -316,6 +316,10 @@ const Map = ({
           e.preventDefault()
           setShowHeliports(prev => !prev)
           break
+        case 'm': // Map style picker toggle
+          e.preventDefault()
+          setShowStylePicker(prev => !prev)
+          break
         case '3': // 3D toggle
           e.preventDefault()
           toggle3D()
