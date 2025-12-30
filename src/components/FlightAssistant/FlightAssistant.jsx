@@ -1026,6 +1026,20 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         <div ref={messagesEndRef} />
       </div>
 
+      {/* コピー/DLボタン（判定結果がある時のみ） */}
+      {assessmentResult && (
+        <div className="action-buttons-bar message-actions">
+          <button className="copy-btn" onClick={handleCopyResult}>
+            {isCopied ? <Check size={14} /> : <Copy size={14} />}
+            {isCopied ? 'コピー完了' : 'コピー'}
+          </button>
+          <button className="export-btn" onClick={handleExportResult}>
+            <Download size={14} />
+            DL
+          </button>
+        </div>
+      )}
+
       <div className="flight-assistant-actions">
         <button
           className="assessment-btn"
@@ -1040,24 +1054,6 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           <MapPin size={12} />
           <span>{polygons.length}エリア / {waypoints.length}WP</span>
         </div>
-      </div>
-
-      <div className="flight-assistant-input">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder={hasKey ? 'AIに質問...' : 'メッセージ...（AI未設定）'}
-          rows={1}
-          disabled={isProcessing}
-        />
-        <button
-          className="send-btn"
-          onClick={handleSend}
-          disabled={!input.trim() || isProcessing}
-        >
-          <Send size={18} />
-        </button>
       </div>
 
       {/* Optimization Panel */}
@@ -1095,17 +1091,6 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
             {getRiskBadge(assessmentResult.riskLevel)}
             {showAssessmentDetail ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </div>
-          {/* コピー/エクスポートボタンは常に表示 */}
-          <div className="action-buttons-bar">
-            <button className="copy-btn" onClick={handleCopyResult}>
-              {isCopied ? <Check size={14} /> : <Copy size={14} />}
-              {isCopied ? 'コピー完了' : 'コピー'}
-            </button>
-            <button className="export-btn" onClick={handleExportResult}>
-              <Download size={14} />
-              DL
-            </button>
-          </div>
           {showAssessmentDetail && (
             <div className="summary-detail">
               <div className="detail-row">
@@ -1129,6 +1114,25 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           )}
         </div>
       )}
+
+      {/* AIに質問フォーム（最下部） */}
+      <div className="flight-assistant-input">
+        <textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder={hasKey ? 'AIに質問...' : 'メッセージ...（AI未設定）'}
+          rows={1}
+          disabled={isProcessing}
+        />
+        <button
+          className="send-btn"
+          onClick={handleSend}
+          disabled={!input.trim() || isProcessing}
+        >
+          <Send size={18} />
+        </button>
+      </div>
     </div>
   );
 }

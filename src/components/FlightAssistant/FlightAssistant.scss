@@ -843,6 +843,13 @@ $color-border-light: rgba(255, 255, 255, 0.15);
     gap: 8px;
     padding: 8px 16px;
     border-bottom: 1px solid $color-border;
+    flex-shrink: 0;
+
+    &.message-actions {
+      background: rgba(0, 0, 0, 0.2);
+      border-top: 1px solid $color-border;
+      border-bottom: none;
+    }
 
     .copy-btn,
     .export-btn {
