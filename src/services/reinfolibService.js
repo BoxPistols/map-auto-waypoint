@@ -50,13 +50,20 @@ const callReinfolibApi = async (endpoint, params = {}) => {
     throw new Error('国土交通省APIキーが設定されていません');
   }
 
-  const baseUrl = 'https://www.reinfolib.mlit.go.jp/ex-api/external';
+  // 開発環境ではViteプロキシを使用、本番環境では直接アクセス
+  const isDev = import.meta.env.DEV;
+  const baseUrl = isDev
+    ? '/api/reinfolib'
+    : 'https://www.reinfolib.mlit.go.jp/ex-api/external';
+
   const queryParams = new URLSearchParams({
     response_format: 'geojson',
     ...params
   });
 
   const url = `${baseUrl}/${endpoint}?${queryParams}`;
+
+  console.log('[reinfolib] Calling API:', { isDev, url });
 
   try {
     const response = await fetch(url, {

@@ -158,11 +158,11 @@ function App() {
     }
   }, [])
 
-  // Keyboard shortcuts for Undo/Redo and Help
+  // Keyboard shortcuts for Undo/Redo, Help, and Panel switching
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ignore shortcuts when typing in input fields
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
         return
       }
 
@@ -190,12 +190,29 @@ function App() {
         } else {
           handleUndo()
         }
+        return
+      }
+
+      // Single key shortcuts (no modifier keys)
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case 'p': // Switch to Polygon panel
+            e.preventDefault()
+            setActivePanel('polygons')
+            if (sidebarCollapsed) setSidebarCollapsed(false)
+            break
+          case 'w': // Switch to Waypoint panel
+            e.preventDefault()
+            setActivePanel('waypoints')
+            if (sidebarCollapsed) setSidebarCollapsed(false)
+            break
+        }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleUndo, handleRedo])
+  }, [handleUndo, handleRedo, sidebarCollapsed])
 
   // Auto-save polygons and push to history
   useEffect(() => {

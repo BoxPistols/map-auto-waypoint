@@ -10,4 +10,17 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.js',
   },
+  server: {
+    proxy: {
+      // 国土交通省 不動産情報ライブラリ API
+      '/api/reinfolib': {
+        target: 'https://www.reinfolib.mlit.go.jp',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/reinfolib/, '/ex-api/external'),
+        headers: {
+          'Origin': 'https://www.reinfolib.mlit.go.jp'
+        }
+      }
+    }
+  }
 })
