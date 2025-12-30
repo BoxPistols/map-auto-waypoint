@@ -854,13 +854,16 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       )}
 
       <div className="flight-assistant-header">
-        <div
-          className="drag-handle"
-          onMouseDown={(e) => handleResizeStart(e, 'top-left')}
-          title="ドラッグでリサイズ"
-        >
-          <GripVertical size={16} />
-        </div>
+        {/* 通常サイズ時のみドラッグアイコン表示 */}
+        {!isFullscreen && !isExpanded && (
+          <div
+            className="drag-handle"
+            onMouseDown={(e) => handleResizeStart(e, 'top-left')}
+            title="ドラッグでリサイズ"
+          >
+            <GripVertical size={16} />
+          </div>
+        )}
         <div className="header-title">
           <Sparkles size={18} />
           <span>フライトアシスタント</span>

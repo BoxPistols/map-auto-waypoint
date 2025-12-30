@@ -116,9 +116,14 @@
   justify-content: space-between;
   padding: 10px 12px;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-  color: var(--color-text-inverse);
+  color: white;
   flex-shrink: 0;
   min-height: 44px;
+
+  // ダークモードではヘッダーを少し暗く
+  [data-theme="dark"] & {
+    background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-secondary-dark) 100%);
+  }
 
   .drag-handle {
     display: flex;
@@ -189,7 +194,7 @@
     button {
       background: transparent;
       border: none;
-      color: var(--color-text-inverse);
+      color: rgba(255, 255, 255, 0.85);
       cursor: pointer;
       padding: 5px;
       border-radius: 4px;
@@ -203,6 +208,7 @@
 
       &:hover {
         background: rgba(255, 255, 255, 0.2);
+        color: white;
       }
 
       &:focus-visible {
@@ -211,39 +217,33 @@
 
       &.active {
         background: rgba(255, 255, 255, 0.15);
+        color: white;
       }
     }
 
     .fullscreen-btn {
-      color: var(--color-primary-lighter);
-
       &:hover {
-        background: var(--color-primary-bg);
+        background: rgba(255, 255, 255, 0.2);
       }
     }
 
     .clear-chat-btn {
-      color: var(--color-danger-light);
-
       &:hover {
-        background: var(--color-danger-bg);
+        background: rgba(248, 113, 113, 0.3);
       }
     }
 
     .save-chat-btn {
-      color: var(--color-success-light);
-
       &:hover {
-        background: var(--color-success-bg);
+        background: rgba(52, 211, 153, 0.3);
       }
     }
 
     .load-chat-btn {
       position: relative;
-      color: var(--color-info-light);
 
       &:hover {
-        background: var(--color-info-bg);
+        background: rgba(56, 189, 248, 0.3);
       }
 
       .log-count {
