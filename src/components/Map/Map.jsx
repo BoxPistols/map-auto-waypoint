@@ -322,6 +322,10 @@ const Map = ({
           e.preventDefault()
           setShowStylePicker(prev => !prev)
           break
+        case 'i': // API info overlay toggle
+          e.preventDefault()
+          setShowApiOverlay(prev => !prev)
+          break
         case '3': // 3D toggle
           e.preventDefault()
           toggle3D()
@@ -840,7 +844,7 @@ const Map = ({
       {/* API Info Overlay */}
       {showApiOverlay && apiInfo && (
         <div className={styles.apiOverlay}>
-          <div className={styles.apiOverlayHeader}>
+          <div className={`${styles.apiOverlayHeader} ${apiInfo.mlitError ? styles.apiOverlayHeaderError : ''}`}>
             <Database size={16} />
             <span>国交省API情報</span>
             <button className={styles.apiOverlayClose} onClick={() => setShowApiOverlay(false)}>×</button>
@@ -870,7 +874,12 @@ const Map = ({
             </div>
           ) : (
             <div className={styles.apiOverlayError}>
-              ⚠️ {apiInfo.mlitError || 'データなし'}
+              <div className={styles.apiErrorIcon}>⚠️</div>
+              <div className={styles.apiErrorMessage}>{apiInfo.mlitError || 'データなし'}</div>
+              <div className={styles.apiErrorHint}>
+                ※ CORS制限によりブラウザから直接APIを呼び出せません。
+                サーバープロキシが必要です。
+              </div>
             </div>
           )}
         </div>
