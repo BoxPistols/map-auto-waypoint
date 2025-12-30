@@ -1268,37 +1268,78 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     const shouldCalculateAvoidance = isDID || (distToZone < requiredDistance);
 
     if (shouldCalculateAvoidance) {
-      let bearing;
-      let moveDistance;
-
       if (isDID) {
-        // DID回避: centroidの方向から離れる方向に移動
-        if (hasCentroid && distToZone > 1) {
-          // centroidがある場合: centroidから離れる方向
-          bearing = Math.atan2(centerLng - zone.lng, centerLat - zone.lat);
-        } else {
-          // centroidがない場合: 北東方向（都市中心から離れる傾向）
-          bearing = Math.PI / 4;
+        // DID回避: 経路に対して垂直方向に移動（経路形状を保持）
+        const moveDistance = margin + 50;
+
+        for (const wp of zoneWps) {
+          // 元のwaypointsリストでこのWPの前後を探す
+          const wpIdx = waypoints.findIndex(w => w.id === wp.id);
+          const prevWp = wpIdx > 0 ? waypoints[wpIdx - 1] : null;
+          const nextWp = wpIdx < waypoints.length - 1 ? waypoints[wpIdx + 1] : null;
+
+          let pathBearing;
+          if (prevWp && nextWp) {
+            // 前後のWPがある場合: その方向を計算
+            pathBearing = Math.atan2(nextWp.lng - prevWp.lng, nextWp.lat - prevWp.lat);
+          } else if (prevWp) {
+            // 最後のWP
+            pathBearing = Math.atan2(wp.lng - prevWp.lng, wp.lat - prevWp.lat);
+          } else if (nextWp) {
+            // 最初のWP
+            pathBearing = Math.atan2(nextWp.lng - wp.lng, nextWp.lat - wp.lat);
+          } else {
+            // 単独WP: 北東方向
+            pathBearing = Math.PI / 4;
+          }
+
+          // 垂直方向（左右）を計算
+          const perpLeft = pathBearing + Math.PI / 2;
+          const perpRight = pathBearing - Math.PI / 2;
+
+          // DIDのcentroidから離れる方向を選択
+          let perpBearing;
+          if (hasCentroid) {
+            // centroidからWPへの方向
+            const toCentroid = Math.atan2(zone.lng - wp.lng, zone.lat - wp.lat);
+            // 垂直方向のうち、centroidから離れる方向を選択
+            const leftDiff = Math.abs(((perpLeft - toCentroid + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+            const rightDiff = Math.abs(((perpRight - toCentroid + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+            perpBearing = leftDiff > rightDiff ? perpLeft : perpRight;
+          } else {
+            // centroidがない場合: 経路の外側方向（デフォルトで左側）
+            perpBearing = perpLeft;
+          }
+
+          const latOffset = (moveDistance * Math.cos(perpBearing)) / 111320;
+          const lngOffset = (moveDistance * Math.sin(perpBearing)) / (111320 * Math.cos(wp.lat * Math.PI / 180));
+
+          const existing = wpOffsets.get(wp.id);
+          if (!existing || Math.abs(latOffset) + Math.abs(lngOffset) > Math.abs(existing.latOffset) + Math.abs(existing.lngOffset)) {
+            wpOffsets.set(wp.id, { latOffset, lngOffset, moveDistance: Math.round(moveDistance), isDIDAvoidance: true });
+          }
         }
-        moveDistance = margin + 50; // DID回避距離 + 50m
-      } else if (distToZone < 1) {
-        // 距離がほぼ0の場合（同一地点）: デフォルト方向に移動
-        bearing = Math.PI / 4; // 北東
-        moveDistance = requiredDistance + 100;
       } else {
-        // 通常: 制限区域の中心から外側に移動
-        bearing = Math.atan2(centerLng - zone.lng, centerLat - zone.lat);
-        moveDistance = requiredDistance - distToZone + 100; // 追加マージン100m
-      }
+        // 空港/禁止区域: 従来通りcentroidから離れる方向
+        let bearing;
+        let moveDistance;
 
-      const latOffset = (moveDistance * Math.cos(bearing)) / 111320;
-      const lngOffset = (moveDistance * Math.sin(bearing)) / (111320 * Math.cos(centerLat * Math.PI / 180));
+        if (distToZone < 1) {
+          bearing = Math.PI / 4;
+          moveDistance = requiredDistance + 100;
+        } else {
+          bearing = Math.atan2(centerLng - zone.lng, centerLat - zone.lat);
+          moveDistance = requiredDistance - distToZone + 100;
+        }
 
-      // グループ内の全WPに同じオフセットを適用
-      for (const wp of zoneWps) {
-        const existing = wpOffsets.get(wp.id);
-        if (!existing || Math.abs(latOffset) + Math.abs(lngOffset) > Math.abs(existing.latOffset) + Math.abs(existing.lngOffset)) {
-          wpOffsets.set(wp.id, { latOffset, lngOffset, moveDistance: Math.round(moveDistance), isDIDAvoidance: isDID });
+        const latOffset = (moveDistance * Math.cos(bearing)) / 111320;
+        const lngOffset = (moveDistance * Math.sin(bearing)) / (111320 * Math.cos(centerLat * Math.PI / 180));
+
+        for (const wp of zoneWps) {
+          const existing = wpOffsets.get(wp.id);
+          if (!existing || Math.abs(latOffset) + Math.abs(lngOffset) > Math.abs(existing.latOffset) + Math.abs(existing.lngOffset)) {
+            wpOffsets.set(wp.id, { latOffset, lngOffset, moveDistance: Math.round(moveDistance), isDIDAvoidance: false });
+          }
         }
       }
     }
