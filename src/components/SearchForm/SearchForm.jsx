@@ -4,6 +4,10 @@ import { searchAddress, debounce } from '../../services/geocoding'
 import { POLYGON_SIZE_OPTIONS, POLYGON_SHAPE_OPTIONS } from '../../services/polygonGenerator'
 import styles from './SearchForm.module.scss'
 
+// OS判定（Mac: Cmd, その他: Ctrl）
+const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform)
+const modKey = isMac ? '⌘' : 'Ctrl'
+
 const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState([])
@@ -166,7 +170,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
             onCompositionStart={() => setIsComposing(true)}
             onCompositionEnd={() => setIsComposing(false)}
             onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-            placeholder="住所・建物名を検索 (Ctrl+K)"
+            placeholder={`住所・建物名を検索 (${modKey}+K)`}
             className={styles.input}
             autoComplete="off"
           />
