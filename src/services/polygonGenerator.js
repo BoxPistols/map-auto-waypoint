@@ -140,13 +140,13 @@ export const createPolygonFromSearchResult = (searchResult, options = {}) => {
 }
 
 /**
- * Generate random color for polygon
+ * Generate random color for polygon (青系で統一、DIDカラーとの被りを防ぐ)
  */
 const getRandomColor = () => {
   const colors = [
-    '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4',
-    '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F',
-    '#BB8FCE', '#85C1E9', '#F8B500', '#00CED1'
+    '#45B7D1', '#4ECDC4', '#5DADE2', '#48C9B0',
+    '#85C1E9', '#76D7C4', '#3498DB', '#1ABC9C',
+    '#5499C7', '#45B39D', '#00CED1', '#17A2B8'
   ]
   return colors[Math.floor(Math.random() * colors.length)]
 }
