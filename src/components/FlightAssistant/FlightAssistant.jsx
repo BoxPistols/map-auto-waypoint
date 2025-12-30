@@ -26,7 +26,8 @@ import {
   Save,
   FolderOpen,
   Clock,
-  Edit3
+  Edit3,
+  GripVertical
 } from 'lucide-react';
 import {
   hasApiKey,
@@ -855,6 +856,13 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       )}
 
       <div className="flight-assistant-header">
+        <div
+          className="drag-handle"
+          onMouseDown={(e) => handleResizeStart(e, 'top-left')}
+          title="ドラッグでリサイズ"
+        >
+          <GripVertical size={16} />
+        </div>
         <div className="header-title">
           <Sparkles size={18} />
           <span>フライトアシスタント</span>
