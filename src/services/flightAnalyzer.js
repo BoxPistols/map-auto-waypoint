@@ -1393,9 +1393,19 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
   }
 
   // 2. 同じポリゴンの全WPに同じオフセットを適用
+  // ただしDID回避OFFの場合、DID-onlyのWPにはポリゴン同期を適用しない
+  const didAvoidanceForPolygonSync = isDIDAvoidanceModeEnabled();
   for (const [polygonId, offset] of polygonOffsets) {
     for (const wp of waypoints) {
       if (wp.polygonId === polygonId && !wpOffsets.has(wp.id)) {
+        const wpIndex = wp.index !== undefined ? wp.index : waypoints.indexOf(wp) + 1;
+        const isDIDOnly = didWaypointIndices.has(wpIndex) &&
+          !wpIssuesMap.get(wp.id)?.issues.some(i => i.type === 'airport' || i.type === 'prohibited');
+
+        // DID回避OFFでDID-onlyのWPの場合はスキップ
+        if (!didAvoidanceForPolygonSync && isDIDOnly) {
+          continue;
+        }
         wpOffsets.set(wp.id, { ...offset, isPolygonSync: true });
       }
     }
@@ -1403,8 +1413,8 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
 
   // 3. 経路一貫性の維持: DID回避モードONの場合のみ、DID内WPも同じ方向に移動
   // DID警告のみモードの場合は、DID内WPは移動させない
-  const didAvoidanceEnabled = isDIDAvoidanceModeEnabled();
-  if (didAvoidanceEnabled && wpOffsets.size > 0 && didWaypointIndices.size > 0) {
+  const didAvoidanceEnabledForPath = isDIDAvoidanceModeEnabled();
+  if (didAvoidanceEnabledForPath && wpOffsets.size > 0 && didWaypointIndices.size > 0) {
     // 最大のオフセットを計算（経路全体を動かすため）
     let maxOffset = null;
     for (const offset of wpOffsets.values()) {
