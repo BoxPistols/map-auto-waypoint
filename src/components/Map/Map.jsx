@@ -199,7 +199,7 @@ const Map = ({
   const yellowZonesGeoJSON = useMemo(() => getYellowZonesGeoJSON(), [])
   const heliportsGeoJSON = useMemo(() => getHeliportsGeoJSON(), [])
 
-  // Memoize optimization overlay GeoJSON (lines from current to recommended positions + DID warnings)
+  // Memoize optimization overlay GeoJSON (lines from current to recommended positions + zone warnings)
   const optimizationOverlayGeoJSON = useMemo(() => {
     if (!recommendedWaypoints || recommendedWaypoints.length === 0) return null
 
@@ -210,10 +210,16 @@ const Map = ({
         // Find original waypoint
         const original = waypoints.find(w => w.id === rw.id)
         if (original) {
+          // Determine warning type for line color
+          let warningType = 'optimization'
+          if (rw.hasProhibited) warningType = 'prohibited'
+          else if (rw.hasAirport) warningType = 'airport'
+          else if (rw.hasDID) warningType = 'did'
+
           // Line from original to recommended position
           features.push({
             type: 'Feature',
-            properties: { type: 'optimization-line' },
+            properties: { type: 'optimization-line', warningType },
             geometry: {
               type: 'LineString',
               coordinates: [
@@ -225,18 +231,22 @@ const Map = ({
           // Recommended position point
           features.push({
             type: 'Feature',
-            properties: { type: 'recommended-point', index: rw.index },
+            properties: { type: 'recommended-point', index: rw.index, warningType },
             geometry: {
               type: 'Point',
               coordinates: [rw.lng, rw.lat]
             }
           })
         }
-      } else if (rw.hasDID) {
-        // DID warning point (no move needed, but visual indicator)
+      } else if (rw.hasProhibited || rw.hasAirport || rw.hasDID) {
+        // Warning point (no move needed, but visual indicator)
+        let warningType = 'did'
+        if (rw.hasProhibited) warningType = 'prohibited'
+        else if (rw.hasAirport) warningType = 'airport'
+
         features.push({
           type: 'Feature',
-          properties: { type: 'did-warning-point', index: rw.index },
+          properties: { type: 'zone-warning-point', index: rw.index, warningType },
           geometry: {
             type: 'Point',
             coordinates: [rw.lng, rw.lat]
@@ -788,9 +798,26 @@ const Map = ({
         {/* Display waypoints as draggable markers (non-interactive during polygon edit) */}
         {waypoints.map((wp) => {
           const isHighlighted = highlightedWaypointIndex === wp.index
-          // Check if this waypoint is in a DID area
+          // Check zone violations for this waypoint
           const recommendedWp = recommendedWaypoints?.find(rw => rw.id === wp.id)
           const isInDID = recommendedWp?.hasDID || false
+          const isInAirport = recommendedWp?.hasAirport || false
+          const isInProhibited = recommendedWp?.hasProhibited || false
+
+          // Build zone class (priority: prohibited > airport > DID)
+          let zoneClass = ''
+          let zoneLabel = ''
+          if (isInProhibited) {
+            zoneClass = styles.inProhibited
+            zoneLabel = ' [禁止区域]'
+          } else if (isInAirport) {
+            zoneClass = styles.inAirport
+            zoneLabel = ' [空港制限]'
+          } else if (isInDID) {
+            zoneClass = styles.inDID
+            zoneLabel = ' [DID内]'
+          }
+
           return (
             <Marker
               key={wp.id}
@@ -807,9 +834,9 @@ const Map = ({
               }}
             >
               <div
-                className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${selectedWaypointIds.has(wp.id) ? styles.selected : ''} ${isHighlighted ? styles.highlighted : ''} ${isInDID ? styles.inDID : ''}`}
+                className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${selectedWaypointIds.has(wp.id) ? styles.selected : ''} ${isHighlighted ? styles.highlighted : ''} ${zoneClass}`}
                 style={editingPolygon ? { pointerEvents: 'none', opacity: 0.5 } : undefined}
-                title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}${isInDID ? ' [DID内]' : ''}`}
+                title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}${zoneLabel}`}
                 onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
               >
                 {wp.index}

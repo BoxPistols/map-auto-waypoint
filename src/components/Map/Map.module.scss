@@ -78,6 +78,7 @@
     background: #FF8C00;
     border-color: #CC6600;
     box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.4), 0 4px 12px rgba(255, 140, 0, 0.3);
+    animation: airportPulse 2s ease-in-out infinite;
   }
 
   // 飛行禁止区域内のWP - 紫色
@@ -85,6 +86,7 @@
     background: #9932CC;
     border-color: #7B28A0;
     box-shadow: 0 0 0 3px rgba(153, 50, 204, 0.4), 0 4px 12px rgba(153, 50, 204, 0.3);
+    animation: prohibitedPulse 1.5s ease-in-out infinite;
   }
 }
 
@@ -94,6 +96,24 @@
   }
   50% {
     box-shadow: 0 0 0 6px rgba(255, 68, 68, 0.6), 0 4px 20px rgba(255, 0, 0, 0.5);
+  }
+}
+
+@keyframes airportPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.4), 0 4px 12px rgba(255, 140, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 140, 0, 0.6), 0 4px 20px rgba(255, 140, 0, 0.5);
+  }
+}
+
+@keyframes prohibitedPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(153, 50, 204, 0.4), 0 4px 12px rgba(153, 50, 204, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(153, 50, 204, 0.7), 0 4px 24px rgba(153, 50, 204, 0.6);
   }
 }
 

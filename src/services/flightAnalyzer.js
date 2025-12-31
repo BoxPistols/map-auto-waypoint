@@ -1445,12 +1445,18 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
         issues: issueData.issues
       });
 
+      // 問題タイプを抽出（airport, prohibited, did）
+      const issueTypes = [...new Set(issueData.issues.map(issue => issue.type))];
+
       return {
         ...wp,
         lat: offset ? wp.lat + offset.latOffset : wp.lat,
         lng: offset ? wp.lng + offset.lngOffset : wp.lng,
         modified: !!offset,
-        hasDID: didWaypointIndices.has(wpIndex)
+        hasDID: didWaypointIndices.has(wpIndex),
+        hasAirport: issueTypes.includes('airport'),
+        hasProhibited: issueTypes.includes('prohibited'),
+        issueTypes
       };
     }
 
@@ -1462,11 +1468,14 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
         lng: wp.lng + offset.lngOffset,
         modified: true,
         isPolygonSync: true, // ポリゴン同期による移動
-        hasDID: false
+        hasDID: false,
+        hasAirport: false,
+        hasProhibited: false,
+        issueTypes: []
       };
     }
 
-    return { ...wp, modified: false, hasDID: false };
+    return { ...wp, modified: false, hasDID: false, hasAirport: false, hasProhibited: false, issueTypes: [] };
   });
 
   return {
