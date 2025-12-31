@@ -16,27 +16,37 @@ export default defineConfig({
       '/api/reinfolib': {
         target: 'https://www.reinfolib.mlit.go.jp',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/reinfolib/, '/ex-api/external'),
+        secure: true,
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
-            // Extract API key from query parameter and set as header
+            console.log('[Proxy] === Request intercepted ===');
+            console.log('[Proxy] Original URL:', req.url);
+
+            // Extract API key from query parameter
             const url = new URL(req.url, 'http://localhost');
             const apiKey = url.searchParams.get('_apiKey');
 
-            console.log('[Proxy] Request URL:', req.url);
-            console.log('[Proxy] API Key found:', !!apiKey, apiKey ? `(${apiKey.length} chars)` : '');
-
             if (apiKey) {
+              console.log('[Proxy] API Key found:', apiKey.length, 'chars');
+
               // Set the API key header
               proxyReq.setHeader('Ocp-Apim-Subscription-Key', apiKey);
 
-              // Remove _apiKey from the forwarded URL
+              // Remove _apiKey and rebuild path
               url.searchParams.delete('_apiKey');
-              const cleanPath = url.pathname + url.search;
-              proxyReq.path = cleanPath.replace(/^\/api\/reinfolib/, '/ex-api/external');
+              const newPath = '/ex-api/external' + url.pathname.replace('/api/reinfolib', '') + url.search;
+              proxyReq.path = newPath;
 
-              console.log('[Proxy] Header set, clean path:', proxyReq.path);
+              console.log('[Proxy] New path:', newPath);
+            } else {
+              console.log('[Proxy] No API key in URL!');
+              // Fallback rewrite
+              proxyReq.path = proxyReq.path.replace('/api/reinfolib', '/ex-api/external');
             }
+          });
+
+          proxy.on('error', (err) => {
+            console.error('[Proxy] Error:', err.message);
           });
         }
       }
