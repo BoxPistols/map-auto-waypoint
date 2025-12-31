@@ -625,16 +625,16 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
       // APIエラー情報を表示
       if (result.mlitError) {
-        response += `\n⚠️ 国交省API: ${result.mlitError}`;
+        response += `\n[WARN] 国交省API: ${result.mlitError}`;
       }
       if (result.aiError) {
-        response += `\n⚠️ OpenAI: ${result.aiError}`;
+        response += `\n[WARN] OpenAI: ${result.aiError}`;
       }
 
       // 国交省API情報を詳細表示（成功時）
       const mlitInfo = result.context?.mlitInfo;
       if (mlitInfo?.success) {
-        response += `\n\n### 📍 国交省API情報\n`;
+        response += `\n\n### 国交省API情報\n`;
         if (mlitInfo.useZone?.zoneName) {
           response += `**用途地域:** ${mlitInfo.useZone.zoneName}\n`;
         }
@@ -642,13 +642,13 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           response += `**都市計画:** ${mlitInfo.urbanArea.areaName}\n`;
         }
         if (mlitInfo.riskLevel) {
-          const riskEmoji = mlitInfo.riskLevel === 'HIGH' ? '🔴' : mlitInfo.riskLevel === 'MEDIUM' ? '🟡' : '🟢';
-          response += `**土地利用リスク:** ${riskEmoji} ${mlitInfo.riskLevel}\n`;
+          const riskMarker = mlitInfo.riskLevel === 'HIGH' ? '[HIGH]' : mlitInfo.riskLevel === 'MEDIUM' ? '[MED]' : '[LOW]';
+          response += `**土地利用リスク:** ${riskMarker} ${mlitInfo.riskLevel}\n`;
         }
         if (mlitInfo.recommendations?.length > 0) {
           response += `**API推奨事項:**\n`;
           mlitInfo.recommendations.forEach(rec => {
-            response += `• ${rec}\n`;
+            response += `- ${rec}\n`;
           });
         }
       }
@@ -695,10 +695,10 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
     // リスクレベル
     content += `## リスクレベル\n\n`;
-    const riskEmoji = assessmentResult.riskLevel === 'LOW' ? '✅' :
-      assessmentResult.riskLevel === 'MEDIUM' ? '⚠️' :
-      assessmentResult.riskLevel === 'HIGH' ? '🔶' : '🚫';
-    content += `**${riskEmoji} ${assessmentResult.riskLevel}** (スコア: ${assessmentResult.riskScore}/100)\n\n`;
+    const riskMarker = assessmentResult.riskLevel === 'LOW' ? '[OK]' :
+      assessmentResult.riskLevel === 'MEDIUM' ? '[WARN]' :
+      assessmentResult.riskLevel === 'HIGH' ? '[HIGH]' : '[CRITICAL]';
+    content += `**${riskMarker} ${assessmentResult.riskLevel}** (スコア: ${assessmentResult.riskScore}/100)\n\n`;
     content += `${assessmentResult.summary}\n\n`;
 
     // 検出されたリスク
@@ -707,9 +707,9 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       content += `| 深刻度 | 説明 |\n`;
       content += `|--------|------|\n`;
       assessmentResult.risks.forEach(r => {
-        const severityLabel = r.severity === 'critical' ? '🚫 CRITICAL' :
-          r.severity === 'high' ? '🔶 HIGH' :
-          r.severity === 'medium' ? '⚠️ MEDIUM' : '✅ LOW';
+        const severityLabel = r.severity === 'critical' ? '[CRITICAL]' :
+          r.severity === 'high' ? '[HIGH]' :
+          r.severity === 'medium' ? '[WARN]' : '[OK]';
         content += `| ${severityLabel} | ${r.description} |\n`;
       });
       content += '\n';
@@ -727,7 +727,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       const did = assessmentResult.context.didInfo;
       content += `## 人口集中地区（DID）\n\n`;
       if (did.isDID) {
-        content += `> ⚠️ **注意:** ${did.description}\n\n`;
+        content += `> [WARN] **注意:** ${did.description}\n\n`;
         if (did.waypointDetails?.areaSummaries) {
           content += `### DID内のWaypoint\n\n`;
           for (const area of did.waypointDetails.areaSummaries) {
@@ -736,7 +736,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           content += '\n';
         }
       } else {
-        content += `✅ ${did.description}\n\n`;
+        content += `[OK] ${did.description}\n\n`;
       }
     }
 

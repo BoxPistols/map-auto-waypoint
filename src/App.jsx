@@ -196,6 +196,14 @@ function App() {
       // Single key shortcuts (no modifier keys)
       if (!e.metaKey && !e.ctrlKey && !e.altKey) {
         switch (e.key.toLowerCase()) {
+          case 's': // Toggle sidebar
+            e.preventDefault()
+            setSidebarCollapsed(prev => {
+              const newValue = !prev
+              localStorage.setItem('sidebarCollapsed', String(newValue))
+              return newValue
+            })
+            break
           case 'p': // Switch to Polygon panel
             e.preventDefault()
             setActivePanel('polygons')
@@ -791,9 +799,9 @@ function App() {
             <button
               className="sidebar-toggle"
               onClick={toggleSidebar}
-              title="サイドバーを閉じる"
+              title="サイドバーを閉じる [S]"
             >
-              <Menu size={16} />
+              <Menu size={20} />
             </button>
           )}
 
@@ -803,9 +811,9 @@ function App() {
               <button
                 className="sidebar-expand-btn"
                 onClick={toggleSidebar}
-                title="サイドバーを開く"
+                title="サイドバーを開く [S]"
               >
-                <Menu size={18} />
+                <Menu size={20} />
               </button>
               <div className="collapsed-info">
                 <div

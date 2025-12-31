@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Database } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Database, AlertTriangle, Circle, Satellite } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import { getAirportZonesGeoJSON, getRedZonesGeoJSON, getYellowZonesGeoJSON, getHeliportsGeoJSON } from '../../services/airspace'
@@ -868,18 +868,24 @@ const Map = ({
                 <div className={styles.apiInfoRow}>
                   <span className={styles.apiInfoLabel}>リスク</span>
                   <span className={`${styles.apiInfoValue} ${styles[`risk${apiInfo.mlitInfo.riskLevel}`]}`}>
-                    {apiInfo.mlitInfo.riskLevel === 'HIGH' ? '🔴 高' : apiInfo.mlitInfo.riskLevel === 'MEDIUM' ? '🟡 中' : '🟢 低'}
+                    <Circle size={10} fill="currentColor" style={{ marginRight: 4 }} />
+                    {apiInfo.mlitInfo.riskLevel === 'HIGH' ? '高' : apiInfo.mlitInfo.riskLevel === 'MEDIUM' ? '中' : '低'}
                   </span>
                 </div>
               )}
             </div>
           ) : (
             <div className={styles.apiOverlayError}>
-              <div className={styles.apiErrorIcon}>⚠️</div>
+              <div className={styles.apiErrorIcon}><AlertTriangle size={24} /></div>
               <div className={styles.apiErrorMessage}>{apiInfo.mlitError || 'データなし'}</div>
               <div className={styles.apiErrorHint}>
-                ※ CORS制限によりブラウザから直接APIを呼び出せません。
-                サーバープロキシが必要です。
+                {apiInfo.mlitError?.includes('403') ? (
+                  <>※ APIキーが無効または未設定です。設定画面でAPIキーを確認してください。</>
+                ) : apiInfo.mlitError?.includes('CORS') || apiInfo.mlitError?.includes('network') ? (
+                  <>※ CORS制限によりブラウザから直接APIを呼び出せません。サーバープロキシが必要です。</>
+                ) : (
+                  <>※ APIエラーが発生しました。ネットワーク接続を確認してください。</>
+                )}
               </div>
             </div>
           )}
@@ -971,7 +977,7 @@ const Map = ({
                   }}
                 >
                   <span className={styles.styleIcon}>
-                    {styleOption.id === 'gsi_photo' ? '🛰️' : '🗺️'}
+                    {styleOption.id === 'gsi_photo' ? <Satellite size={16} /> : <MapIcon size={16} />}
                   </span>
                   <span className={styles.styleName}>{styleOption.shortName}</span>
                 </button>
