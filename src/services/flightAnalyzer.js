@@ -1401,9 +1401,10 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     }
   }
 
-  // 3. 経路一貫性の維持: 移動するWPがある場合、DID内のWPも同じ方向に移動
-  // これによりDID回避モードがOFFでも、経路全体が一貫して移動する
-  if (wpOffsets.size > 0 && didWaypointIndices.size > 0) {
+  // 3. 経路一貫性の維持: DID回避モードONの場合のみ、DID内WPも同じ方向に移動
+  // DID警告のみモードの場合は、DID内WPは移動させない
+  const didAvoidanceEnabled = isDIDAvoidanceModeEnabled();
+  if (didAvoidanceEnabled && wpOffsets.size > 0 && didWaypointIndices.size > 0) {
     // 最大のオフセットを計算（経路全体を動かすため）
     let maxOffset = null;
     for (const offset of wpOffsets.values()) {
