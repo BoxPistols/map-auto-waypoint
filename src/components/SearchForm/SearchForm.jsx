@@ -1,8 +1,9 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { MapPin, Plane, X, Square, Circle, ChevronDown } from 'lucide-react'
 import { searchAddress, debounce } from '../../services/geocoding'
 import { POLYGON_SIZE_OPTIONS, POLYGON_SHAPE_OPTIONS } from '../../services/polygonGenerator'
 import styles from './SearchForm.module.scss'
+
 
 const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const [query, setQuery] = useState('')
@@ -22,8 +23,8 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const suggestionsRef = useRef(null)
 
   // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(async (value) => {
+  const debouncedSearch = useMemo(
+    () => debounce(async (value) => {
       if (value.length < 2) {
         setSuggestions([])
         return
@@ -166,7 +167,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
             onCompositionStart={() => setIsComposing(true)}
             onCompositionEnd={() => setIsComposing(false)}
             onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-            placeholder="住所・建物名を検索 (Ctrl+K)"
+            placeholder="住所・建物名を検索"
             className={styles.input}
             autoComplete="off"
           />

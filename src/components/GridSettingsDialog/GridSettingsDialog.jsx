@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { X, Grid3X3, AlertTriangle, Info } from 'lucide-react'
 import { estimateGridWaypointCount, calculatePolygonArea, formatArea } from '../../services/waypointGenerator'
 import styles from './GridSettingsDialog.module.scss'

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronDown, Search, Undo2, Redo2 } from 'lucide-react'
+import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route } from 'lucide-react'
+import { getTheme, toggleTheme, THEMES } from './services/themeService'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
 import PolygonList from './components/PolygonList/PolygonList'
@@ -13,10 +14,28 @@ import { searchAddress } from './services/geocoding'
 import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints } from './services/waypointGenerator'
 import { addElevationToWaypoints } from './services/elevation'
 import { createPolygonFromSearchResult } from './services/polygonGenerator'
+import FlightAssistant from './components/FlightAssistant'
+import ApiSettings from './components/ApiSettings'
 import './App.scss'
 
 // Default center: Tokyo Tower
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
+
+// WP間の総距離を計算 (km)
+const calcTotalDistance = (wps) => {
+  if (!wps || wps.length < 2) return 0
+  let total = 0
+  for (let i = 1; i < wps.length; i++) {
+    const p1 = wps[i - 1]
+    const p2 = wps[i]
+    const R = 6371 // km
+    const dLat = (p2.lat - p1.lat) * Math.PI / 180
+    const dLon = (p2.lng - p1.lng) * Math.PI / 180
+    const a = Math.sin(dLat/2) ** 2 + Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) * Math.sin(dLon/2) ** 2
+    total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+  }
+  return total
+}
 
 function App() {
   // Map state
@@ -33,17 +52,48 @@ function App() {
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
   const [panelHeight, setPanelHeight] = useState(null) // null = auto
   const [isSearchExpanded, setIsSearchExpanded] = useState(true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed')
+    return saved === 'true'
+  })
   const [showImport, setShowImport] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [showGridSettings, setShowGridSettings] = useState(null) // polygon for grid generation
   const [showHelp, setShowHelp] = useState(false)
+  const [showApiSettings, setShowApiSettings] = useState(false)
+  const [showChat, setShowChat] = useState(false)
   const [notification, setNotification] = useState(null)
+  const [theme, setThemeState] = useState(() => getTheme())
+
+  // テーマ切り替え
+  const handleToggleTheme = () => {
+    const newTheme = toggleTheme()
+    setThemeState(newTheme)
+  }
   const [editingPolygon, setEditingPolygon] = useState(null)
 
   // Waypoint settings
   const [gridSpacing, setGridSpacing] = useState(30)
   const [isLoadingElevation, setIsLoadingElevation] = useState(false)
   const [elevationProgress, setElevationProgress] = useState(null)
+
+  // Optimization overlay state
+  const [recommendedWaypoints, setRecommendedWaypoints] = useState(null)
+
+  // API info overlay state (from FlightAssistant)
+  const [apiInfo, setApiInfo] = useState(null)
+
+  // Highlighted waypoint (for FlightAssistant WP click)
+  const [highlightedWaypointIndex, setHighlightedWaypointIndex] = useState(null)
+
+  // Toggle sidebar collapsed state
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed(prev => {
+      const newValue = !prev
+      localStorage.setItem('sidebarCollapsed', String(newValue))
+      return newValue
+    })
+  }, [])
 
   // Show notification (defined early for use in undo/redo)
   const showNotification = useCallback((message, type = 'info') => {
@@ -109,18 +159,26 @@ function App() {
     }
   }, [])
 
-  // Keyboard shortcuts for Undo/Redo and Help
+  // Keyboard shortcuts for Undo/Redo, Help, and Panel switching
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ignore shortcuts when typing in input fields
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
         return
       }
 
-      // Cmd+Shift+H (Mac) or Ctrl+Shift+H (Win) for Help
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'h') {
+      // Cmd+/ (Mac) or Ctrl+/ (Win) for Help
+      // Also support ? key (Shift+/ on most keyboards)
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
         e.preventDefault()
-        setShowHelp(true)
+        setShowHelp(prev => !prev)
+        return
+      }
+
+      // ? key alone for Help (works on all keyboard layouts)
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        setShowHelp(prev => !prev)
         return
       }
 
@@ -133,12 +191,41 @@ function App() {
         } else {
           handleUndo()
         }
+        return
+      }
+
+      // Single key shortcuts (no modifier keys)
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case 's': // Toggle sidebar
+            e.preventDefault()
+            setSidebarCollapsed(prev => {
+              const newValue = !prev
+              localStorage.setItem('sidebarCollapsed', String(newValue))
+              return newValue
+            })
+            break
+          case 'p': // Switch to Polygon panel
+            e.preventDefault()
+            setActivePanel('polygons')
+            if (sidebarCollapsed) setSidebarCollapsed(false)
+            break
+          case 'w': // Switch to Waypoint panel
+            e.preventDefault()
+            setActivePanel('waypoints')
+            if (sidebarCollapsed) setSidebarCollapsed(false)
+            break
+          case 'c': // Toggle Chat (Flight Assistant)
+            e.preventDefault()
+            setShowChat(prev => !prev)
+            break
+        }
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleUndo, handleRedo])
+  }, [handleUndo, handleRedo, sidebarCollapsed])
 
   // Auto-save polygons and push to history
   useEffect(() => {
@@ -422,18 +509,29 @@ function App() {
     }
   }, [])
 
+  // Reindex waypoints to ensure sequential indices
+  const reindexWaypoints = useCallback((wps) => {
+    return wps.map((wp, idx) => ({ ...wp, index: idx + 1 }))
+  }, [])
+
   // Handle waypoint delete
   const handleWaypointDelete = useCallback((id) => {
-    setWaypoints(prev => prev.filter(w => w.id !== id))
-    showNotification('Waypointを削除しました')
-  }, [showNotification])
+    setWaypoints(prev => {
+      const filtered = prev.filter(w => w.id !== id)
+      return reindexWaypoints(filtered)
+    })
+    showNotification('Waypointを削除しました（番号再整理済）')
+  }, [showNotification, reindexWaypoints])
 
   // Handle bulk waypoint delete
   const handleWaypointsBulkDelete = useCallback((ids) => {
     const idSet = new Set(ids)
-    setWaypoints(prev => prev.filter(w => !idSet.has(w.id)))
-    showNotification(`${ids.length} 個のWaypointを削除しました`)
-  }, [showNotification])
+    setWaypoints(prev => {
+      const filtered = prev.filter(w => !idSet.has(w.id))
+      return reindexWaypoints(filtered)
+    })
+    showNotification(`${ids.length} 個のWaypointを削除しました（番号再整理済）`)
+  }, [showNotification, reindexWaypoints])
 
   // Handle waypoint move (drag on map) - rebuild polygon from all waypoints
   const handleWaypointMove = useCallback((id, newLat, newLng) => {
@@ -581,8 +679,8 @@ function App() {
     }
   }, [drawMode, waypoints.length, showNotification])
 
-  // Mobile detection
-  const isMobile = () => window.innerWidth <= 768
+  // Mobile detection (reserved for future use)
+  const _isMobile = () => window.innerWidth <= 768
 
   // Panel resize handlers
   const panelContentRef = useRef(null)
@@ -671,9 +769,25 @@ function App() {
             エクスポート
           </button>
           <button
+            className="icon-button theme-button"
+            onClick={handleToggleTheme}
+            data-tooltip={theme === THEMES.DARK ? 'ライトモード' : 'ダークモード'}
+            data-tooltip-pos="bottom"
+          >
+            {theme === THEMES.DARK ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <button
+            className="icon-button settings-button"
+            onClick={() => setShowApiSettings(true)}
+            data-tooltip="API設定"
+            data-tooltip-pos="bottom"
+          >
+            <Settings size={18} />
+          </button>
+          <button
             className="help-button"
             onClick={() => setShowHelp(true)}
-            data-tooltip="ヘルプ (⌘⇧H)"
+            data-tooltip="ヘルプ (⌘/ or ?)"
             data-tooltip-pos="left"
           >
             ?
@@ -684,79 +798,135 @@ function App() {
       {/* Main content */}
       <main className="app-main">
         {/* Sidebar */}
-        <aside className="sidebar">
-          <div className={`search-section ${!isSearchExpanded ? 'collapsed' : ''}`}>
-            <div
-              className="search-section-header"
-              onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+        <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+          {/* Sidebar Toggle Button - 展開時のみ表示 */}
+          {!sidebarCollapsed && (
+            <button
+              className="sidebar-toggle"
+              onClick={toggleSidebar}
+              title="サイドバーを閉じる [S]"
             >
-              <div className="search-section-title">
-                <Search size={16} />
-                <span>住所検索</span>
+              <Menu size={20} />
+            </button>
+          )}
+
+          {/* Collapsed Mini View */}
+          {sidebarCollapsed && (
+            <div className="sidebar-collapsed-content">
+              <button
+                className="sidebar-expand-btn"
+                onClick={toggleSidebar}
+                title="サイドバーを開く [S]"
+              >
+                <Menu size={20} />
+              </button>
+              <div className="collapsed-info">
+                <div
+                  className="collapsed-stat clickable"
+                  title={`エリア: ${polygons.length}件`}
+                  onClick={() => { setActivePanel('polygons'); toggleSidebar(); }}
+                >
+                  <Layers size={14} />
+                  <span>{polygons.length}</span>
+                </div>
+                <div
+                  className="collapsed-stat clickable"
+                  title={`WP: ${waypoints.length}件`}
+                  onClick={() => { setActivePanel('waypoints'); toggleSidebar(); }}
+                >
+                  <MapIcon size={14} />
+                  <span>{waypoints.length}</span>
+                </div>
+                {waypoints.length >= 2 && (
+                  <div
+                    className="collapsed-stat small"
+                    title={`総距離: ${calcTotalDistance(waypoints).toFixed(2)}km`}
+                  >
+                    <Route size={12} />
+                    <span>{calcTotalDistance(waypoints).toFixed(1)}km</span>
+                  </div>
+                )}
               </div>
-              <ChevronDown
-                size={18}
-                className={`search-chevron ${isSearchExpanded ? 'expanded' : ''}`}
-              />
             </div>
-            <div className="search-section-content">
-              <SearchForm
-                onSearch={handleSearch}
-                onSelect={handleSearchSelect}
-                onGeneratePolygon={handleGeneratePolygon}
-              />
-            </div>
-          </div>
+          )}
 
-          <div className="panel-tabs">
-            <button
-              className={`tab ${activePanel === 'polygons' ? 'active' : ''}`}
-              onClick={() => setActivePanel('polygons')}
-            >
-              ポリゴン ({polygons.length})
-            </button>
-            <button
-              className={`tab ${activePanel === 'waypoints' ? 'active' : ''}`}
-              onClick={() => setActivePanel('waypoints')}
-            >
-              Waypoint ({waypoints.length})
-            </button>
-          </div>
+          {/* Full Sidebar Content */}
+          {!sidebarCollapsed && (
+            <>
+              <div className={`search-section ${!isSearchExpanded ? 'collapsed' : ''}`}>
+                <div
+                  className="search-section-header"
+                  onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+                >
+                  <div className="search-section-title">
+                    <Search size={16} />
+                    <span>住所検索</span>
+                  </div>
+                  <ChevronDown
+                    size={18}
+                    className={`search-chevron ${isSearchExpanded ? 'expanded' : ''}`}
+                  />
+                </div>
+                <div className="search-section-content">
+                  <SearchForm
+                    onSearch={handleSearch}
+                    onSelect={handleSearchSelect}
+                    onGeneratePolygon={handleGeneratePolygon}
+                  />
+                </div>
+              </div>
 
-          <div
-            className="panel-content"
-            ref={panelContentRef}
-            style={panelHeight ? { height: panelHeight, flex: 'none' } : undefined}
-          >
-            <div className="resize-handle" onMouseDown={handleResizeStart} />
-            {activePanel === 'polygons' ? (
-              <PolygonList
-                polygons={polygons}
-                selectedPolygonId={selectedPolygonId}
-                onSelect={handlePolygonSelect}
-                onDelete={handlePolygonDelete}
-                onRename={handlePolygonRename}
-                onEditShape={handleEditPolygonShape}
-                onToggleWaypointLink={handleToggleWaypointLink}
-                onGenerateWaypoints={handleGenerateWaypoints}
-                onGenerateAllWaypoints={handleGenerateAllWaypoints}
-              />
-            ) : (
-              <WaypointList
-                waypoints={waypoints}
-                onSelect={handleWaypointSelect}
-                onDelete={handleWaypointDelete}
-                onUpdate={handleWaypointUpdate}
-                onClear={handleWaypointClear}
-                onFetchElevation={handleFetchElevation}
-                onRegenerateGrid={handleRegenerateGrid}
-                gridSpacing={gridSpacing}
-                onGridSpacingChange={setGridSpacing}
-                isLoadingElevation={isLoadingElevation}
-                elevationProgress={elevationProgress}
-              />
-            )}
-          </div>
+              <div className="panel-tabs">
+                <button
+                  className={`tab ${activePanel === 'polygons' ? 'active' : ''}`}
+                  onClick={() => setActivePanel('polygons')}
+                >
+                  ポリゴン ({polygons.length})
+                </button>
+                <button
+                  className={`tab ${activePanel === 'waypoints' ? 'active' : ''}`}
+                  onClick={() => setActivePanel('waypoints')}
+                >
+                  Waypoint ({waypoints.length})
+                </button>
+              </div>
+
+              <div
+                className="panel-content"
+                ref={panelContentRef}
+                style={panelHeight ? { height: panelHeight, flex: 'none' } : undefined}
+              >
+                <div className="resize-handle" onMouseDown={handleResizeStart} />
+                {activePanel === 'polygons' ? (
+                  <PolygonList
+                    polygons={polygons}
+                    selectedPolygonId={selectedPolygonId}
+                    onSelect={handlePolygonSelect}
+                    onDelete={handlePolygonDelete}
+                    onRename={handlePolygonRename}
+                    onEditShape={handleEditPolygonShape}
+                    onToggleWaypointLink={handleToggleWaypointLink}
+                    onGenerateWaypoints={handleGenerateWaypoints}
+                    onGenerateAllWaypoints={handleGenerateAllWaypoints}
+                  />
+                ) : (
+                  <WaypointList
+                    waypoints={waypoints}
+                    onSelect={handleWaypointSelect}
+                    onDelete={handleWaypointDelete}
+                    onUpdate={handleWaypointUpdate}
+                    onClear={handleWaypointClear}
+                    onFetchElevation={handleFetchElevation}
+                    onRegenerateGrid={handleRegenerateGrid}
+                    gridSpacing={gridSpacing}
+                    onGridSpacingChange={setGridSpacing}
+                    isLoadingElevation={isLoadingElevation}
+                    elevationProgress={elevationProgress}
+                  />
+                )}
+              </div>
+            </>
+          )}
         </aside>
 
         {/* Map */}
@@ -766,6 +936,9 @@ function App() {
             zoom={zoom}
             polygons={polygons}
             waypoints={waypoints}
+            recommendedWaypoints={recommendedWaypoints}
+            highlightedWaypointIndex={highlightedWaypointIndex}
+            apiInfo={apiInfo}
             onPolygonCreate={handlePolygonCreate}
             onPolygonUpdate={handlePolygonUpdate}
             onPolygonDelete={handlePolygonDelete}
@@ -847,6 +1020,82 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* API Settings Modal */}
+      <ApiSettings
+        isOpen={showApiSettings}
+        onClose={() => setShowApiSettings(false)}
+      />
+
+      {/* Flight Assistant (AI) */}
+      <FlightAssistant
+        polygons={polygons}
+        waypoints={waypoints}
+        isOpen={showChat}
+        onOpenChange={setShowChat}
+        onOptimizationUpdate={(optimizationPlan) => {
+          // 推奨位置のオーバーレイ表示用
+          if (optimizationPlan?.hasIssues && optimizationPlan.recommendedWaypoints) {
+            setRecommendedWaypoints(optimizationPlan.recommendedWaypoints)
+          } else {
+            setRecommendedWaypoints(null)
+          }
+        }}
+        onApplyPlan={(plan) => {
+          // 推奨プランを適用
+          if (plan.waypoints && plan.waypoints.length > 0) {
+            // 修正されたWaypointのみ更新
+            const updatedWaypoints = waypoints.map(wp => {
+              const recommended = plan.waypoints.find(rw => rw.id === wp.id)
+              if (recommended && recommended.modified) {
+                return {
+                  ...wp,
+                  lat: recommended.lat,
+                  lng: recommended.lng,
+                  elevation: null // 座標が変わったので標高はリセット
+                }
+              }
+              return wp
+            })
+            setWaypoints(updatedWaypoints)
+          }
+
+          // ポリゴンも更新（ウェイポイント移動に連動）
+          if (plan.polygons && plan.polygons.length > 0) {
+            // 複数ポリゴン対応: 各ポリゴンをIDで照合して更新
+            setPolygons(prev => prev.map(p => {
+              const updated = plan.polygons.find(rp => rp.id === p.id);
+              return updated || p;
+            }));
+          } else if (plan.polygon) {
+            // 後方互換: 単一ポリゴン
+            setPolygons(prev => prev.map(p =>
+              p.id === plan.polygon.id ? plan.polygon : p
+            ));
+          }
+
+          // オーバーレイをクリア
+          setRecommendedWaypoints(null)
+          showNotification('プランを安全な位置に最適化しました', 'success')
+        }}
+        onWaypointSelect={(wpIndex) => {
+          // WP番号は1から始まる（表示用）、配列インデックスは0から
+          const waypoint = waypoints.find(wp => wp.index === wpIndex) || waypoints[wpIndex - 1]
+          if (waypoint) {
+            // 地図の中心をWaypointに移動
+            setCenter({ lat: waypoint.lat, lng: waypoint.lng })
+            setZoom(18) // より高いズームレベル
+            // ハイライト表示
+            setHighlightedWaypointIndex(wpIndex)
+            // 3秒後にハイライトをクリア
+            setTimeout(() => setHighlightedWaypointIndex(null), 3000)
+            showNotification(`WP${wpIndex}にズームしました`, 'info')
+          } else {
+            showNotification(`WP${wpIndex}が見つかりません`, 'warning')
+          }
+        }}
+        onApiInfoUpdate={setApiInfo}
+      />
 
       {/* Notification */}
       {notification && (

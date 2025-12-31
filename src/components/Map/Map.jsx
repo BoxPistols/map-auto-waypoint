@@ -1,34 +1,122 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Database, AlertTriangle, Circle, Satellite } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
-import { getAirportZonesGeoJSON, getNoFlyZonesGeoJSON } from '../../services/airspace'
+import { getAirportZonesGeoJSON, getRedZonesGeoJSON, getYellowZonesGeoJSON, getHeliportsGeoJSON } from '../../services/airspace'
 import { loadMapSettings, saveMapSettings } from '../../utils/storage'
 import styles from './Map.module.scss'
 
-// OpenStreetMap style with higher maxzoom
-const MAP_STYLE = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '&copy; OpenStreetMap contributors',
-      maxzoom: 19
+// 地図スタイル定義
+const MAP_STYLES = {
+  osm: {
+    id: 'osm',
+    name: 'OpenStreetMap',
+    shortName: 'OSM',
+    style: {
+      version: 8,
+      sources: {
+        osm: {
+          type: 'raster',
+          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '&copy; OpenStreetMap contributors',
+          maxzoom: 19
+        }
+      },
+      layers: [
+        {
+          id: 'osm',
+          type: 'raster',
+          source: 'osm',
+          minzoom: 0,
+          maxzoom: 22
+        }
+      ]
     }
   },
-  layers: [
-    {
-      id: 'osm',
-      type: 'raster',
-      source: 'osm',
-      minzoom: 0,
-      maxzoom: 22
+  gsi_std: {
+    id: 'gsi_std',
+    name: '国土地理院 標準',
+    shortName: '標準',
+    style: {
+      version: 8,
+      sources: {
+        gsi: {
+          type: 'raster',
+          tiles: ['https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '&copy; 国土地理院',
+          maxzoom: 18
+        }
+      },
+      layers: [
+        {
+          id: 'gsi',
+          type: 'raster',
+          source: 'gsi',
+          minzoom: 0,
+          maxzoom: 22
+        }
+      ]
     }
-  ]
+  },
+  gsi_pale: {
+    id: 'gsi_pale',
+    name: '国土地理院 淡色',
+    shortName: '淡色',
+    style: {
+      version: 8,
+      sources: {
+        gsi: {
+          type: 'raster',
+          tiles: ['https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '&copy; 国土地理院',
+          maxzoom: 18
+        }
+      },
+      layers: [
+        {
+          id: 'gsi',
+          type: 'raster',
+          source: 'gsi',
+          minzoom: 0,
+          maxzoom: 22
+        }
+      ]
+    }
+  },
+  gsi_photo: {
+    id: 'gsi_photo',
+    name: '国土地理院 航空写真',
+    shortName: '航空写真',
+    style: {
+      version: 8,
+      sources: {
+        gsi: {
+          type: 'raster',
+          tiles: ['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'],
+          tileSize: 256,
+          attribution: '&copy; 国土地理院',
+          maxzoom: 18
+        }
+      },
+      layers: [
+        {
+          id: 'gsi',
+          type: 'raster',
+          source: 'gsi',
+          minzoom: 0,
+          maxzoom: 22
+        }
+      ]
+    }
+  }
 }
+
+// デフォルトスタイル（後方互換）
+const MAP_STYLE = MAP_STYLES.osm.style
 
 // Default center: Tokyo Tower
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
@@ -39,6 +127,9 @@ const Map = ({
   zoom = DEFAULT_ZOOM,
   polygons = [],
   waypoints = [],
+  recommendedWaypoints = null,
+  highlightedWaypointIndex = null,
+  apiInfo = null,
   onPolygonCreate,
   onPolygonUpdate,
   onPolygonDelete,
@@ -58,7 +149,7 @@ const Map = ({
   // Selection state for bulk operations
   const [selectionBox, setSelectionBox] = useState(null) // {startX, startY, endX, endY}
   const [selectedWaypointIds, setSelectedWaypointIds] = useState(new Set())
-  const isSelectingRef = useRef(false)
+  const [isSelecting, setIsSelecting] = useState(false)
 
   // Load map settings from localStorage (must be before viewState init)
   const initialSettings = useMemo(() => loadMapSettings(), [])
@@ -72,35 +163,116 @@ const Map = ({
   })
   const [is3D, setIs3D] = useState(initialSettings.is3D)
   const [showAirportZones, setShowAirportZones] = useState(initialSettings.showAirportZones)
-  const [showNoFlyZones, setShowNoFlyZones] = useState(initialSettings.showNoFlyZones)
+  const [showRedZones, setShowRedZones] = useState(initialSettings.showRedZones ?? false)
+  const [showYellowZones, setShowYellowZones] = useState(initialSettings.showYellowZones ?? false)
+  const [showHeliports, setShowHeliports] = useState(initialSettings.showHeliports ?? false)
   const [showDID, setShowDID] = useState(initialSettings.showDID)
+  const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
+  const [showStylePicker, setShowStylePicker] = useState(false)
+  const [showApiOverlay, setShowApiOverlay] = useState(false)
+
+  // 現在の地図スタイル
+  const currentMapStyle = MAP_STYLES[mapStyleId]?.style || MAP_STYLES.osm.style
 
   // Save map settings when they change
   useEffect(() => {
-    saveMapSettings({ is3D, showAirportZones, showNoFlyZones, showDID })
-  }, [is3D, showAirportZones, showNoFlyZones, showDID])
+    saveMapSettings({ is3D, showAirportZones, showRedZones, showYellowZones, showHeliports, showDID, mapStyleId })
+  }, [is3D, showAirportZones, showRedZones, showYellowZones, showHeliports, showDID, mapStyleId])
+
+  // Sync viewState when center/zoom props change from parent (e.g., WP click)
+  useEffect(() => {
+    if (center && zoom) {
+       
+      setViewState(prev => ({
+        ...prev,
+        latitude: center.lat,
+        longitude: center.lng,
+        zoom: zoom
+      }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [center.lat, center.lng, zoom])
 
   // Memoize airspace GeoJSON data
   const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
-  const noFlyZonesGeoJSON = useMemo(() => getNoFlyZonesGeoJSON(), [])
+  const redZonesGeoJSON = useMemo(() => getRedZonesGeoJSON(), [])
+  const yellowZonesGeoJSON = useMemo(() => getYellowZonesGeoJSON(), [])
+  const heliportsGeoJSON = useMemo(() => getHeliportsGeoJSON(), [])
 
-  // Update view when center changes
-  useEffect(() => {
-    setViewState(prev => ({
-      ...prev,
-      latitude: center.lat,
-      longitude: center.lng
-    }))
-  }, [center.lat, center.lng])
+  // Memoize optimization overlay GeoJSON (lines from current to recommended positions + zone warnings)
+  const optimizationOverlayGeoJSON = useMemo(() => {
+    if (!recommendedWaypoints || recommendedWaypoints.length === 0) return null
 
-  // DID tile source configuration
+    const features = []
+
+    recommendedWaypoints.forEach(rw => {
+      if (rw.modified) {
+        // Find original waypoint
+        const original = waypoints.find(w => w.id === rw.id)
+        if (original) {
+          // Determine warning type for line color
+          let warningType = 'optimization'
+          if (rw.hasProhibited) warningType = 'prohibited'
+          else if (rw.hasAirport) warningType = 'airport'
+          else if (rw.hasDID) warningType = 'did'
+
+          // Line from original to recommended position
+          features.push({
+            type: 'Feature',
+            properties: { type: 'optimization-line', warningType },
+            geometry: {
+              type: 'LineString',
+              coordinates: [
+                [original.lng, original.lat],
+                [rw.lng, rw.lat]
+              ]
+            }
+          })
+          // Recommended position point
+          features.push({
+            type: 'Feature',
+            properties: { type: 'recommended-point', index: rw.index, warningType },
+            geometry: {
+              type: 'Point',
+              coordinates: [rw.lng, rw.lat]
+            }
+          })
+        }
+      } else if (rw.hasProhibited || rw.hasAirport || rw.hasDID) {
+        // Warning point (no move needed, but visual indicator)
+        let warningType = 'did'
+        if (rw.hasProhibited) warningType = 'prohibited'
+        else if (rw.hasAirport) warningType = 'airport'
+
+        features.push({
+          type: 'Feature',
+          properties: { type: 'zone-warning-point', index: rw.index, warningType },
+          geometry: {
+            type: 'Point',
+            coordinates: [rw.lng, rw.lat]
+          }
+        })
+      }
+    })
+
+    if (features.length === 0) return null
+
+    return {
+      type: 'FeatureCollection',
+      features
+    }
+  }, [recommendedWaypoints, waypoints])
+
+
+  // DID tile source configuration (令和2年国勢調査データ)
+  // Note: GSI DID tiles have limited zoom range, maxzoom 14 is safe
   const didTileSource = useMemo(() => ({
     type: 'raster',
-    tiles: ['https://cyberjapandata.gsi.go.jp/xyz/did2015/{z}/{x}/{y}.png'],
+    tiles: ['https://cyberjapandata.gsi.go.jp/xyz/did2020/{z}/{x}/{y}.png'],
     tileSize: 256,
     minzoom: 8,
-    maxzoom: 16,
-    attribution: '国土地理院・総務省統計局'
+    maxzoom: 14,
+    attribution: '国土地理院・総務省統計局（令和2年）'
   }), [])
 
   // Toggle 3D mode
@@ -139,9 +311,25 @@ const Map = ({
           e.preventDefault()
           setShowAirportZones(prev => !prev)
           break
-        case 'n': // No-fly zones toggle
+        case 'r': // Red zones toggle
           e.preventDefault()
-          setShowNoFlyZones(prev => !prev)
+          setShowRedZones(prev => !prev)
+          break
+        case 'y': // Yellow zones toggle
+          e.preventDefault()
+          setShowYellowZones(prev => !prev)
+          break
+        case 'h': // Heliport toggle
+          e.preventDefault()
+          setShowHeliports(prev => !prev)
+          break
+        case 'm': // Map style picker toggle
+          e.preventDefault()
+          setShowStylePicker(prev => !prev)
+          break
+        case 'i': // API info overlay toggle
+          e.preventDefault()
+          setShowApiOverlay(prev => !prev)
           break
         case '3': // 3D toggle
           e.preventDefault()
@@ -226,7 +414,7 @@ const Map = ({
   const handleSelectionStart = useCallback((e) => {
     if (!e.originalEvent.shiftKey || drawMode || editingPolygon) return
 
-    isSelectingRef.current = true
+    setIsSelecting(true)
     const rect = e.target.getCanvas().getBoundingClientRect()
     const x = e.originalEvent.clientX - rect.left
     const y = e.originalEvent.clientY - rect.top
@@ -235,7 +423,7 @@ const Map = ({
   }, [drawMode, editingPolygon])
 
   const handleSelectionMove = useCallback((e) => {
-    if (!isSelectingRef.current || !selectionBox) return
+    if (!selectionBox) return
 
     const rect = e.target.getCanvas().getBoundingClientRect()
     const x = e.originalEvent.clientX - rect.left
@@ -244,8 +432,8 @@ const Map = ({
   }, [selectionBox])
 
   const handleSelectionEnd = useCallback(() => {
-    if (!isSelectingRef.current || !selectionBox || !mapRef.current) {
-      isSelectingRef.current = false
+    if (!selectionBox || !mapRef.current) {
+      setIsSelecting(false)
       setSelectionBox(null)
       return
     }
@@ -267,7 +455,7 @@ const Map = ({
     })
 
     setSelectedWaypointIds(selected)
-    isSelectingRef.current = false
+    setIsSelecting(false)
     setSelectionBox(null)
   }, [selectionBox, waypoints])
 
@@ -323,11 +511,11 @@ const Map = ({
         onMouseMove={handleSelectionMove}
         onMouseUp={handleSelectionEnd}
         interactiveLayerIds={interactiveLayerIds}
-        mapStyle={MAP_STYLE}
+        mapStyle={currentMapStyle}
         style={{ width: '100%', height: '100%' }}
         doubleClickZoom={false}
         maxZoom={20}
-        dragPan={!isSelectingRef.current}
+        dragPan={!isSelecting}
       >
         <NavigationControl position="top-right" visualizePitch={true} />
         <ScaleControl position="bottom-left" unit="metric" />
@@ -379,27 +567,27 @@ const Map = ({
           </Source>
         )}
 
-        {/* No-fly zones */}
-        {showNoFlyZones && (
-          <Source id="nofly-zones" type="geojson" data={noFlyZonesGeoJSON}>
+        {/* レッドゾーン（国の重要施設・原発・米軍基地） */}
+        {showRedZones && (
+          <Source id="red-zones" type="geojson" data={redZonesGeoJSON}>
             <Layer
-              id="nofly-zones-fill"
+              id="red-zones-fill"
               type="fill"
               paint={{
-                'fill-color': '#f44336',
-                'fill-opacity': 0.25
+                'fill-color': '#dc2626',
+                'fill-opacity': 0.35
               }}
             />
             <Layer
-              id="nofly-zones-outline"
+              id="red-zones-outline"
               type="line"
               paint={{
-                'line-color': '#f44336',
+                'line-color': '#dc2626',
                 'line-width': 2
               }}
             />
             <Layer
-              id="nofly-zones-label"
+              id="red-zones-label"
               type="symbol"
               layout={{
                 'text-field': ['get', 'name'],
@@ -407,7 +595,80 @@ const Map = ({
                 'text-anchor': 'center'
               }}
               paint={{
-                'text-color': '#c62828',
+                'text-color': '#991b1b',
+                'text-halo-color': '#fff',
+                'text-halo-width': 1
+              }}
+            />
+          </Source>
+        )}
+
+        {/* イエローゾーン（外国公館・政党本部） */}
+        {showYellowZones && (
+          <Source id="yellow-zones" type="geojson" data={yellowZonesGeoJSON}>
+            <Layer
+              id="yellow-zones-fill"
+              type="fill"
+              paint={{
+                'fill-color': '#eab308',
+                'fill-opacity': 0.35
+              }}
+            />
+            <Layer
+              id="yellow-zones-outline"
+              type="line"
+              paint={{
+                'line-color': '#ca8a04',
+                'line-width': 2
+              }}
+            />
+            <Layer
+              id="yellow-zones-label"
+              type="symbol"
+              layout={{
+                'text-field': ['get', 'name'],
+                'text-size': 10,
+                'text-anchor': 'center'
+              }}
+              paint={{
+                'text-color': '#854d0e',
+                'text-halo-color': '#fff',
+                'text-halo-width': 1
+              }}
+            />
+          </Source>
+        )}
+
+        {/* ヘリポート */}
+        {showHeliports && (
+          <Source id="heliports" type="geojson" data={heliportsGeoJSON}>
+            <Layer
+              id="heliports-fill"
+              type="fill"
+              paint={{
+                'fill-color': '#3b82f6',
+                'fill-opacity': 0.25
+              }}
+            />
+            <Layer
+              id="heliports-outline"
+              type="line"
+              paint={{
+                'line-color': '#2563eb',
+                'line-width': 2,
+                'line-dasharray': [3, 2]
+              }}
+            />
+            <Layer
+              id="heliports-label"
+              type="symbol"
+              layout={{
+                'text-field': ['get', 'name'],
+                'text-size': 10,
+                'text-anchor': 'center'
+              }}
+              paint={{
+                'text-color': '#1d4ed8',
                 'text-halo-color': '#fff',
                 'text-halo-width': 1
               }}
@@ -423,6 +684,82 @@ const Map = ({
               type="raster"
               paint={{
                 'raster-opacity': 0.6
+              }}
+            />
+          </Source>
+        )}
+
+        {/* Optimization overlay - recommended positions */}
+        {optimizationOverlayGeoJSON && (
+          <Source id="optimization-overlay" type="geojson" data={optimizationOverlayGeoJSON}>
+            {/* Lines from current to recommended position */}
+            <Layer
+              id="optimization-lines"
+              type="line"
+              filter={['==', ['get', 'type'], 'optimization-line']}
+              paint={{
+                'line-color': '#10b981',
+                'line-width': 3,
+                'line-dasharray': [3, 2]
+              }}
+            />
+            {/* Recommended position circles */}
+            <Layer
+              id="optimization-points"
+              type="circle"
+              filter={['==', ['get', 'type'], 'recommended-point']}
+              paint={{
+                'circle-radius': 10,
+                'circle-color': '#10b981',
+                'circle-stroke-color': '#ffffff',
+                'circle-stroke-width': 2,
+                'circle-opacity': 0.8
+              }}
+            />
+            {/* Labels for recommended positions */}
+            <Layer
+              id="optimization-labels"
+              type="symbol"
+              filter={['==', ['get', 'type'], 'recommended-point']}
+              layout={{
+                'text-field': '推奨',
+                'text-size': 10,
+                'text-offset': [0, 1.5]
+              }}
+              paint={{
+                'text-color': '#059669',
+                'text-halo-color': '#ffffff',
+                'text-halo-width': 1
+              }}
+            />
+            {/* DID warning circles (green - same style as optimization) */}
+            <Layer
+              id="did-warning-points"
+              type="circle"
+              filter={['==', ['get', 'type'], 'did-warning-point']}
+              paint={{
+                'circle-radius': 18,
+                'circle-color': 'transparent',
+                'circle-stroke-color': '#10b981',
+                'circle-stroke-width': 3,
+                'circle-opacity': 1
+              }}
+            />
+            {/* DID warning labels */}
+            <Layer
+              id="did-warning-labels"
+              type="symbol"
+              filter={['==', ['get', 'type'], 'did-warning-point']}
+              layout={{
+                'text-field': 'DID',
+                'text-size': 9,
+                'text-offset': [0, 2.2],
+                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold']
+              }}
+              paint={{
+                'text-color': '#10b981',
+                'text-halo-color': '#000000',
+                'text-halo-width': 1
               }}
             />
           </Source>
@@ -459,31 +796,59 @@ const Map = ({
         </Source>
 
         {/* Display waypoints as draggable markers (non-interactive during polygon edit) */}
-        {waypoints.map((wp) => (
-          <Marker
-            key={wp.id}
-            latitude={wp.lat}
-            longitude={wp.lng}
-            draggable={!editingPolygon}
-            onDragEnd={(e) => {
-              onWaypointMove?.(wp.id, e.lngLat.lat, e.lngLat.lng)
-            }}
-            onClick={(e) => {
-              if (editingPolygon) return
-              e.originalEvent.stopPropagation()
-              onWaypointClick?.(wp)
-            }}
-          >
-            <div
-              className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${selectedWaypointIds.has(wp.id) ? styles.selected : ''}`}
-              style={editingPolygon ? { pointerEvents: 'none', opacity: 0.5 } : undefined}
-              title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}`}
-              onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
+        {waypoints.map((wp) => {
+          const isHighlighted = highlightedWaypointIndex === wp.index
+          // Check zone violations for this waypoint
+          const recommendedWp = recommendedWaypoints?.find(rw => rw.id === wp.id)
+          const isInDID = recommendedWp?.hasDID || false
+          const isInAirport = recommendedWp?.hasAirport || false
+          const isInProhibited = recommendedWp?.hasProhibited || false
+
+          // Debug: ゾーン違反の確認（開発時のみ）
+          if (import.meta.env.DEV && recommendedWp && (isInDID || isInAirport || isInProhibited)) {
+            console.log(`[Map] WP${wp.index}: DID=${isInDID}, Airport=${isInAirport}, Prohibited=${isInProhibited}`, recommendedWp.issueTypes)
+          }
+
+          // Build zone class (priority: prohibited > airport > DID)
+          let zoneClass = ''
+          let zoneLabel = ''
+          if (isInProhibited) {
+            zoneClass = styles.inProhibited
+            zoneLabel = ' [禁止区域]'
+          } else if (isInAirport) {
+            zoneClass = styles.inAirport
+            zoneLabel = ' [空港制限]'
+          } else if (isInDID) {
+            zoneClass = styles.inDID
+            zoneLabel = ' [DID内]'
+          }
+
+          return (
+            <Marker
+              key={wp.id}
+              latitude={wp.lat}
+              longitude={wp.lng}
+              draggable={!editingPolygon}
+              onDragEnd={(e) => {
+                onWaypointMove?.(wp.id, e.lngLat.lat, e.lngLat.lng)
+              }}
+              onClick={(e) => {
+                if (editingPolygon) return
+                e.originalEvent.stopPropagation()
+                onWaypointClick?.(wp)
+              }}
             >
-              {wp.index}
-            </div>
-          </Marker>
-        ))}
+              <div
+                className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${selectedWaypointIds.has(wp.id) ? styles.selected : ''} ${isHighlighted ? styles.highlighted : ''} ${zoneClass}`}
+                style={editingPolygon ? { pointerEvents: 'none', opacity: 0.5 } : undefined}
+                title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}${zoneLabel}`}
+                onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
+              >
+                {wp.index}
+              </div>
+            </Marker>
+          )
+        })}
       </MapGL>
 
       {/* Selection box overlay */}
@@ -506,6 +871,56 @@ const Map = ({
         </div>
       )}
 
+      {/* API Info Overlay */}
+      {showApiOverlay && apiInfo && (
+        <div className={styles.apiOverlay}>
+          <div className={`${styles.apiOverlayHeader} ${apiInfo.mlitError ? styles.apiOverlayHeaderError : ''}`}>
+            <Database size={16} />
+            <span>国交省API情報</span>
+            <button className={styles.apiOverlayClose} onClick={() => setShowApiOverlay(false)}>×</button>
+          </div>
+          {apiInfo.mlitEnhanced && apiInfo.mlitInfo?.success ? (
+            <div className={styles.apiOverlayContent}>
+              {apiInfo.mlitInfo.useZone?.zoneName && (
+                <div className={styles.apiInfoRow}>
+                  <span className={styles.apiInfoLabel}>用途地域</span>
+                  <span className={styles.apiInfoValue}>{apiInfo.mlitInfo.useZone.zoneName}</span>
+                </div>
+              )}
+              {apiInfo.mlitInfo.urbanArea?.areaName && (
+                <div className={styles.apiInfoRow}>
+                  <span className={styles.apiInfoLabel}>都市計画</span>
+                  <span className={styles.apiInfoValue}>{apiInfo.mlitInfo.urbanArea.areaName}</span>
+                </div>
+              )}
+              {apiInfo.mlitInfo.riskLevel && (
+                <div className={styles.apiInfoRow}>
+                  <span className={styles.apiInfoLabel}>リスク</span>
+                  <span className={`${styles.apiInfoValue} ${styles[`risk${apiInfo.mlitInfo.riskLevel}`]}`}>
+                    <Circle size={10} fill="currentColor" style={{ marginRight: 4 }} />
+                    {apiInfo.mlitInfo.riskLevel === 'HIGH' ? '高' : apiInfo.mlitInfo.riskLevel === 'MEDIUM' ? '中' : '低'}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className={styles.apiOverlayError}>
+              <div className={styles.apiErrorIcon}><AlertTriangle size={24} /></div>
+              <div className={styles.apiErrorMessage}>{apiInfo.mlitError || 'データなし'}</div>
+              <div className={styles.apiErrorHint}>
+                {apiInfo.mlitError?.includes('403') ? (
+                  <>※ APIキーが無効または未設定です。設定画面でAPIキーを確認してください。</>
+                ) : apiInfo.mlitError?.includes('CORS') || apiInfo.mlitError?.includes('network') ? (
+                  <>※ CORS制限によりブラウザから直接APIを呼び出せません。サーバープロキシが必要です。</>
+                ) : (
+                  <>※ APIエラーが発生しました。ネットワーク接続を確認してください。</>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Map control buttons */}
       <div className={styles.mapControls}>
         <button
@@ -525,12 +940,28 @@ const Map = ({
           <Plane size={18} />
         </button>
         <button
-          className={`${styles.toggleButton} ${showNoFlyZones ? styles.activeNoFly : ''}`}
-          onClick={() => setShowNoFlyZones(!showNoFlyZones)}
-          data-tooltip={`飛行禁止区域 [N]`}
+          className={`${styles.toggleButton} ${showRedZones ? styles.activeRed : ''}`}
+          onClick={() => setShowRedZones(!showRedZones)}
+          data-tooltip={`レッドゾーン [R]`}
           data-tooltip-pos="left"
         >
           <ShieldAlert size={18} />
+        </button>
+        <button
+          className={`${styles.toggleButton} ${showYellowZones ? styles.activeYellow : ''}`}
+          onClick={() => setShowYellowZones(!showYellowZones)}
+          data-tooltip={`イエローゾーン [Y]`}
+          data-tooltip-pos="left"
+        >
+          <Building2 size={18} />
+        </button>
+        <button
+          className={`${styles.toggleButton} ${showHeliports ? styles.activeHeliport : ''}`}
+          onClick={() => setShowHeliports(!showHeliports)}
+          data-tooltip={`ヘリポート [H]`}
+          data-tooltip-pos="left"
+        >
+          <Landmark size={18} />
         </button>
         <button
           className={`${styles.toggleButton} ${is3D ? styles.active : ''}`}
@@ -540,6 +971,49 @@ const Map = ({
         >
           {is3D ? <Box size={18} /> : <Rotate3D size={18} />}
         </button>
+
+        {/* API情報トグル（データがある場合のみ表示） */}
+        {apiInfo && (
+          <button
+            className={`${styles.toggleButton} ${showApiOverlay ? styles.activeApi : ''} ${apiInfo.mlitEnhanced ? styles.apiConnected : apiInfo.mlitError ? styles.apiError : ''}`}
+            onClick={() => setShowApiOverlay(!showApiOverlay)}
+            data-tooltip={apiInfo.mlitEnhanced ? 'API情報 [I]' : `API: ${apiInfo.mlitError || '未接続'}`}
+            data-tooltip-pos="left"
+          >
+            <Database size={18} />
+          </button>
+        )}
+
+        {/* 地図スタイル切り替え */}
+        <div className={styles.stylePickerContainer}>
+          <button
+            className={`${styles.toggleButton} ${showStylePicker ? styles.active : ''}`}
+            onClick={() => setShowStylePicker(!showStylePicker)}
+            data-tooltip="地図スタイル [M]"
+            data-tooltip-pos="left"
+          >
+            <Layers size={18} />
+          </button>
+          {showStylePicker && (
+            <div className={styles.stylePicker}>
+              {Object.values(MAP_STYLES).map(styleOption => (
+                <button
+                  key={styleOption.id}
+                  className={`${styles.styleOption} ${mapStyleId === styleOption.id ? styles.activeStyle : ''}`}
+                  onClick={() => {
+                    setMapStyleId(styleOption.id)
+                    setShowStylePicker(false)
+                  }}
+                >
+                  <span className={styles.styleIcon}>
+                    {styleOption.id === 'gsi_photo' ? <Satellite size={16} /> : <MapIcon size={16} />}
+                  </span>
+                  <span className={styles.styleName}>{styleOption.shortName}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Instructions overlay */}

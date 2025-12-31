@@ -27,7 +27,7 @@ const decimalToDMS = (decimal, isLatitude = true) => {
 
 // Format coordinate pair in NOTAM style
 const formatCoordinateNOTAM = (lat, lng) => {
-  return `${decimalToDMS(lat, true)}　${decimalToDMS(lng, false)}`
+  return `${decimalToDMS(lat, true)} ${decimalToDMS(lng, false)}`
 }
 
 // Export waypoints to JSON
@@ -144,7 +144,7 @@ export const exportToNOTAM = (waypoints, polygons = [], altitudes = {}, filename
     const polygon = polygons.find(p => p.id === polygonId)
     const polygonName = polygon?.name || wps[0]?.polygonName || `範囲${index + 1}`
 
-    content += `【範囲${index + 1}　${polygonName}】\n`
+    content += `【範囲${index + 1} ${polygonName}】\n`
 
     wps.forEach(wp => {
       content += formatCoordinateNOTAM(wp.lat, wp.lng) + '\n'
@@ -159,9 +159,9 @@ export const exportToNOTAM = (waypoints, polygons = [], altitudes = {}, filename
     const polygon = polygons.find(p => p.id === polygonId)
     const polygonName = polygon?.name || `範囲${index + 1}`
     const altitude = altitudes[polygonId]
-    const altitudeStr = altitude ? `${altitude}` : '　　　　'
+    const altitudeStr = altitude ? `${altitude}` : '    '
 
-    content += `【範囲${index + 1}　${polygonName}】\n`
+    content += `【範囲${index + 1} ${polygonName}】\n`
     content += `下限：地表面、上限：海抜高度 ${altitudeStr} m\n\n`
   })
 
@@ -221,7 +221,7 @@ export const generateNOTAMPreview = (waypoints, polygons = [], altitudes = {}) =
     const polygon = polygons.find(p => p.id === polygonId)
     const polygonName = polygon?.name || wps[0]?.polygonName || `範囲${index + 1}`
 
-    content += `【範囲${index + 1}　${polygonName}】\n`
+    content += `【範囲${index + 1} ${polygonName}】\n`
 
     wps.forEach(wp => {
       content += formatCoordinateNOTAM(wp.lat, wp.lng) + '\n'
@@ -237,7 +237,7 @@ export const generateNOTAMPreview = (waypoints, polygons = [], altitudes = {}) =
     const altitude = altitudes[polygonId]
     const altitudeStr = altitude ? `${altitude}` : '____'
 
-    content += `【範囲${index + 1}　${polygonName}】\n`
+    content += `【範囲${index + 1} ${polygonName}】\n`
     content += `下限：地表面、上限：海抜高度 ${altitudeStr} m\n\n`
   })
 

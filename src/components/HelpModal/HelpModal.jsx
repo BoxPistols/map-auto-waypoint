@@ -316,12 +316,28 @@ const HelpModal = ({ onClose }) => {
                   <td>住所検索にフォーカス</td>
                 </tr>
                 <tr>
-                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>H</kbd> または <kbd>?</kbd></td>
+                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>/</kbd> または <kbd>?</kbd></td>
                   <td>ヘルプを開く / 閉じる</td>
                 </tr>
                 <tr>
                   <td><kbd>Escape</kbd></td>
                   <td>モーダルを閉じる</td>
+                </tr>
+                <tr>
+                  <td><kbd>C</kbd></td>
+                  <td>チャット（フライトアシスタント）を開く / 閉じる</td>
+                </tr>
+                <tr>
+                  <td><kbd>S</kbd></td>
+                  <td>サイドバーを開く / 閉じる</td>
+                </tr>
+                <tr>
+                  <td><kbd>P</kbd></td>
+                  <td>ポリゴンパネルに切り替え</td>
+                </tr>
+                <tr>
+                  <td><kbd>W</kbd></td>
+                  <td>Waypointパネルに切り替え</td>
                 </tr>
               </tbody>
             </table>
@@ -413,6 +429,7 @@ const HelpModal = ({ onClose }) => {
 
       <div className={styles.body}>
         <nav className={styles.nav}>
+          {/* eslint-disable-next-line no-unused-vars */}
           {sections.map(({ id, label, icon: Icon }) => (
             <button
               key={id}

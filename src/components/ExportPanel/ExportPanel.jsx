@@ -64,9 +64,11 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
         }
       })
       if (Object.keys(initialAltitudes).length > 0) {
+         
         setNotamAltitudes(prev => ({ ...prev, ...initialAltitudes }))
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [previewMode, notamPolygons])
 
   // Update altitude for a polygon
