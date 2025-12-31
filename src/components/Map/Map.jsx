@@ -804,6 +804,11 @@ const Map = ({
           const isInAirport = recommendedWp?.hasAirport || false
           const isInProhibited = recommendedWp?.hasProhibited || false
 
+          // Debug: ゾーン違反の確認（開発時のみ）
+          if (import.meta.env.DEV && recommendedWp && (isInDID || isInAirport || isInProhibited)) {
+            console.log(`[Map] WP${wp.index}: DID=${isInDID}, Airport=${isInAirport}, Prohibited=${isInProhibited}`, recommendedWp.issueTypes)
+          }
+
           // Build zone class (priority: prohibited > airport > DID)
           let zoneClass = ''
           let zoneLabel = ''
