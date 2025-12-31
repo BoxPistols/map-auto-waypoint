@@ -56,26 +56,25 @@ const callReinfolibApi = async (endpoint, params = {}) => {
     ? '/api/reinfolib'
     : 'https://www.reinfolib.mlit.go.jp/ex-api/external';
 
+  // 開発環境: APIキーをクエリパラメータで送信（プロキシがヘッダーに変換）
+  // 本番環境: ヘッダーで直接送信
   const queryParams = new URLSearchParams({
     response_format: 'geojson',
-    ...params
+    ...params,
+    ...(isDev ? { _apiKey: apiKey } : {})
   });
 
   const url = `${baseUrl}/${endpoint}?${queryParams}`;
 
-  // Debug: APIキーの最初と最後の4文字を表示
-  const keyPreview = apiKey.length > 8
-    ? `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}`
-    : '(短すぎ)';
-  console.log('[reinfolib] API call:', { isDev, url, keyPreview, keyLength: apiKey.length });
+  console.log('[reinfolib] API call:', { isDev, endpoint });
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Ocp-Apim-Subscription-Key': apiKey
-      }
-    });
+    const headers = {};
+    if (!isDev) {
+      headers['Ocp-Apim-Subscription-Key'] = apiKey;
+    }
+
+    const response = await fetch(url, { method: 'GET', headers });
 
     console.log('[reinfolib] Response status:', response.status);
 

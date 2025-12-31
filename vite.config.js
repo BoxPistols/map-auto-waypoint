@@ -19,14 +19,23 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/reinfolib/, '/ex-api/external'),
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
-            // Forward the API key header from client request
-            // Node.js normalizes header names to lowercase
-            const apiKey = req.headers['ocp-apim-subscription-key'];
-            console.log('[Proxy] Headers received:', Object.keys(req.headers));
-            console.log('[Proxy] API Key present:', !!apiKey, apiKey ? `(${apiKey.length} chars)` : '');
+            // Extract API key from query parameter and set as header
+            const url = new URL(req.url, 'http://localhost');
+            const apiKey = url.searchParams.get('_apiKey');
+
+            console.log('[Proxy] Request URL:', req.url);
+            console.log('[Proxy] API Key found:', !!apiKey, apiKey ? `(${apiKey.length} chars)` : '');
+
             if (apiKey) {
+              // Set the API key header
               proxyReq.setHeader('Ocp-Apim-Subscription-Key', apiKey);
-              console.log('[Proxy] Header set on proxy request');
+
+              // Remove _apiKey from the forwarded URL
+              url.searchParams.delete('_apiKey');
+              const cleanPath = url.pathname + url.search;
+              proxyReq.path = cleanPath.replace(/^\/api\/reinfolib/, '/ex-api/external');
+
+              console.log('[Proxy] Header set, clean path:', proxyReq.path);
             }
           });
         }
