@@ -1659,13 +1659,14 @@ export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) 
         waypointDetails: waypointDIDCheck
       };
     } else {
-      // 全WaypointがDID外
+      // 全WaypointがDID外（waypointDetailsも常に設定）
       didInfo = {
         isDID: false,
         area: null,
         certainty: 'confirmed',
         source: 'waypoint_check',
-        description: waypointDIDCheck.summary
+        description: waypointDIDCheck.summary,
+        waypointDetails: waypointDIDCheck
       };
     }
   } else if (center) {
