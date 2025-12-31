@@ -66,7 +66,8 @@ const callReinfolibApi = async (endpoint, params = {}) => {
 
   const url = `${baseUrl}/${endpoint}?${queryParams}`;
 
-  console.log('[reinfolib] API call:', { isDev, endpoint });
+  // Debug: Show full URL to verify _apiKey is included
+  console.log('[reinfolib] API call:', { isDev, endpoint, hasApiKey: queryParams.has('_apiKey'), url: url.substring(0, 80) + '...' });
 
   try {
     const headers = {};
