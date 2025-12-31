@@ -323,6 +323,22 @@ const HelpModal = ({ onClose }) => {
                   <td><kbd>Escape</kbd></td>
                   <td>モーダルを閉じる</td>
                 </tr>
+                <tr>
+                  <td><kbd>C</kbd></td>
+                  <td>チャット（フライトアシスタント）を開く / 閉じる</td>
+                </tr>
+                <tr>
+                  <td><kbd>S</kbd></td>
+                  <td>サイドバーを開く / 閉じる</td>
+                </tr>
+                <tr>
+                  <td><kbd>P</kbd></td>
+                  <td>ポリゴンパネルに切り替え</td>
+                </tr>
+                <tr>
+                  <td><kbd>W</kbd></td>
+                  <td>Waypointパネルに切り替え</td>
+                </tr>
               </tbody>
             </table>
 

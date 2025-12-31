@@ -56,8 +56,11 @@ import './FlightAssistant.scss';
  * - OpenAI連携による高度な分析
  * - 「判定！」ボタンで総合判定
  */
-function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect, onApiInfoUpdate }) {
-  const [isOpen, setIsOpen] = useState(false);
+function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect, onApiInfoUpdate, isOpen: controlledIsOpen, onOpenChange }) {
+  // Controlled or uncontrolled mode
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const setIsOpen = onOpenChange || setInternalIsOpen;
   const [hasKey, setHasKey] = useState(hasApiKey());
   const [hasMlitKey, setHasMlitKey] = useState(hasReinfolibApiKey());
   const [messages, setMessages] = useState([

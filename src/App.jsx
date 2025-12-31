@@ -61,6 +61,7 @@ function App() {
   const [showGridSettings, setShowGridSettings] = useState(null) // polygon for grid generation
   const [showHelp, setShowHelp] = useState(false)
   const [showApiSettings, setShowApiSettings] = useState(false)
+  const [showChat, setShowChat] = useState(false)
   const [notification, setNotification] = useState(null)
   const [theme, setThemeState] = useState(() => getTheme())
 
@@ -213,6 +214,10 @@ function App() {
             e.preventDefault()
             setActivePanel('waypoints')
             if (sidebarCollapsed) setSidebarCollapsed(false)
+            break
+          case 'c': // Toggle Chat (Flight Assistant)
+            e.preventDefault()
+            setShowChat(prev => !prev)
             break
         }
       }
@@ -1026,6 +1031,8 @@ function App() {
       <FlightAssistant
         polygons={polygons}
         waypoints={waypoints}
+        isOpen={showChat}
+        onOpenChange={setShowChat}
         onOptimizationUpdate={(optimizationPlan) => {
           // 推奨位置のオーバーレイ表示用
           if (optimizationPlan?.hasIssues && optimizationPlan.recommendedWaypoints) {
