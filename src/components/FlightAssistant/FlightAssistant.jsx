@@ -95,6 +95,17 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const panelRef = useRef(null);
   const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
 
+  // 設定変更の同期（他コンポーネントからの変更を反映）
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setAvoidanceDistance(getSetting('didAvoidanceDistance') || 100);
+      setDIDAvoidanceMode(isDIDAvoidanceModeEnabled());
+      setDIDWarningOnly(getSetting('didWarningOnlyMode') || false);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };

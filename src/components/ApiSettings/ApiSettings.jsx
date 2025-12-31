@@ -41,6 +41,17 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const [_airportMargin, _setAirportMargin] = useState(getSetting('airportAvoidanceMargin') || 300);
   const modalRef = useRef(null);
 
+  // 設定変更の同期（他コンポーネントからの変更を反映）
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setDidAvoidanceMode(getSetting('didAvoidanceMode'));
+      setDidWarningOnlyMode(getSetting('didWarningOnlyMode'));
+      setAvoidanceDistance(getSetting('didAvoidanceDistance') || 100);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   // 外部クリックで閉じる
   useEffect(() => {
     const handleClickOutside = (e) => {
