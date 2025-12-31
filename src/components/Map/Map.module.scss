@@ -64,6 +64,37 @@
     animation: highlightPulse 0.8s ease-in-out infinite;
     z-index: 1000 !important;
   }
+
+  // DID（人口集中地区）内のWP - 赤色で警告表示
+  &.inDID {
+    background: #FF4444;
+    border-color: #CC0000;
+    box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.4), 0 4px 12px rgba(255, 0, 0, 0.3);
+    animation: didPulse 2s ease-in-out infinite;
+  }
+
+  // 空港制限区域内のWP - オレンジ色
+  &.inAirport {
+    background: #FF8C00;
+    border-color: #CC6600;
+    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.4), 0 4px 12px rgba(255, 140, 0, 0.3);
+  }
+
+  // 飛行禁止区域内のWP - 紫色
+  &.inProhibited {
+    background: #9932CC;
+    border-color: #7B28A0;
+    box-shadow: 0 0 0 3px rgba(153, 50, 204, 0.4), 0 4px 12px rgba(153, 50, 204, 0.3);
+  }
+}
+
+@keyframes didPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.4), 0 4px 12px rgba(255, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 68, 68, 0.6), 0 4px 20px rgba(255, 0, 0, 0.5);
+  }
 }
 
 @keyframes highlightPulse {

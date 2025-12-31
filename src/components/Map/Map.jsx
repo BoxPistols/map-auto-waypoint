@@ -794,6 +794,9 @@ const Map = ({
         {/* Display waypoints as draggable markers (non-interactive during polygon edit) */}
         {waypoints.map((wp) => {
           const isHighlighted = highlightedWaypointIndex === wp.index
+          // Check if this waypoint is in a DID area
+          const recommendedWp = recommendedWaypoints?.find(rw => rw.id === wp.id)
+          const isInDID = recommendedWp?.hasDID || false
           return (
             <Marker
               key={wp.id}
@@ -810,9 +813,9 @@ const Map = ({
               }}
             >
               <div
-                className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${selectedWaypointIds.has(wp.id) ? styles.selected : ''} ${isHighlighted ? styles.highlighted : ''}`}
+                className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${selectedWaypointIds.has(wp.id) ? styles.selected : ''} ${isHighlighted ? styles.highlighted : ''} ${isInDID ? styles.inDID : ''}`}
                 style={editingPolygon ? { pointerEvents: 'none', opacity: 0.5 } : undefined}
-                title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}`}
+                title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}${isInDID ? ' [DID内]' : ''}`}
                 onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
               >
                 {wp.index}

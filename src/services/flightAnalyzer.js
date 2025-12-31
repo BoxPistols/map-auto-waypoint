@@ -1401,6 +1401,31 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     }
   }
 
+  // 3. 経路一貫性の維持: 移動するWPがある場合、DID内のWPも同じ方向に移動
+  // これによりDID回避モードがOFFでも、経路全体が一貫して移動する
+  if (wpOffsets.size > 0 && didWaypointIndices.size > 0) {
+    // 最大のオフセットを計算（経路全体を動かすため）
+    let maxOffset = null;
+    for (const offset of wpOffsets.values()) {
+      if (!maxOffset || offset.moveDistance > maxOffset.moveDistance) {
+        maxOffset = offset;
+      }
+    }
+
+    // DID内のWPで、まだオフセットがないものに適用
+    if (maxOffset) {
+      for (const wpIndex of didWaypointIndices) {
+        const wp = waypoints.find(w => {
+          const idx = w.index !== undefined ? w.index : waypoints.indexOf(w) + 1;
+          return idx === wpIndex;
+        });
+        if (wp && !wpOffsets.has(wp.id)) {
+          wpOffsets.set(wp.id, { ...maxOffset, isPathSync: true });
+        }
+      }
+    }
+  }
+
   // 推奨WPリストを生成
   const recommendedWaypoints = waypoints.map(wp => {
     const wpIndex = wp.index !== undefined ? wp.index : waypoints.indexOf(wp) + 1;
