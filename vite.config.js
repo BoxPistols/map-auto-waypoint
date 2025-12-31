@@ -26,6 +26,10 @@ export default defineConfig({
             const apiKey = url.searchParams.get('_apiKey');
 
             if (apiKey) {
+              // Remove browser headers that might cause 403
+              proxyReq.removeHeader('origin');
+              proxyReq.removeHeader('referer');
+
               // Remove _apiKey and rebuild path
               url.searchParams.delete('_apiKey');
               const newPath = '/ex-api/external' + url.pathname.replace('/api/reinfolib', '') + url.search;
