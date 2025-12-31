@@ -149,7 +149,7 @@ const Map = ({
   // Selection state for bulk operations
   const [selectionBox, setSelectionBox] = useState(null) // {startX, startY, endX, endY}
   const [selectedWaypointIds, setSelectedWaypointIds] = useState(new Set())
-  const isSelectingRef = useRef(false)
+  const [isSelecting, setIsSelecting] = useState(false)
 
   // Load map settings from localStorage (must be before viewState init)
   const initialSettings = useMemo(() => loadMapSettings(), [])
@@ -182,6 +182,7 @@ const Map = ({
   // Sync viewState when center/zoom props change from parent (e.g., WP click)
   useEffect(() => {
     if (center && zoom) {
+       
       setViewState(prev => ({
         ...prev,
         latitude: center.lat,
@@ -189,6 +190,7 @@ const Map = ({
         zoom: zoom
       }))
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center.lat, center.lng, zoom])
 
   // Memoize airspace GeoJSON data
@@ -251,14 +253,6 @@ const Map = ({
     }
   }, [recommendedWaypoints, waypoints])
 
-  // Update view when center changes
-  useEffect(() => {
-    setViewState(prev => ({
-      ...prev,
-      latitude: center.lat,
-      longitude: center.lng
-    }))
-  }, [center.lat, center.lng])
 
   // DID tile source configuration (令和2年国勢調査データ)
   // Note: GSI DID tiles have limited zoom range, maxzoom 14 is safe
@@ -410,7 +404,7 @@ const Map = ({
   const handleSelectionStart = useCallback((e) => {
     if (!e.originalEvent.shiftKey || drawMode || editingPolygon) return
 
-    isSelectingRef.current = true
+    setIsSelecting(true)
     const rect = e.target.getCanvas().getBoundingClientRect()
     const x = e.originalEvent.clientX - rect.left
     const y = e.originalEvent.clientY - rect.top
@@ -419,7 +413,7 @@ const Map = ({
   }, [drawMode, editingPolygon])
 
   const handleSelectionMove = useCallback((e) => {
-    if (!isSelectingRef.current || !selectionBox) return
+    if (!selectionBox) return
 
     const rect = e.target.getCanvas().getBoundingClientRect()
     const x = e.originalEvent.clientX - rect.left
@@ -428,8 +422,8 @@ const Map = ({
   }, [selectionBox])
 
   const handleSelectionEnd = useCallback(() => {
-    if (!isSelectingRef.current || !selectionBox || !mapRef.current) {
-      isSelectingRef.current = false
+    if (!selectionBox || !mapRef.current) {
+      setIsSelecting(false)
       setSelectionBox(null)
       return
     }
@@ -451,7 +445,7 @@ const Map = ({
     })
 
     setSelectedWaypointIds(selected)
-    isSelectingRef.current = false
+    setIsSelecting(false)
     setSelectionBox(null)
   }, [selectionBox, waypoints])
 
@@ -511,7 +505,7 @@ const Map = ({
         style={{ width: '100%', height: '100%' }}
         doubleClickZoom={false}
         maxZoom={20}
-        dragPan={!isSelectingRef.current}
+        dragPan={!isSelecting}
       >
         <NavigationControl position="top-right" visualizePitch={true} />
         <ScaleControl position="bottom-left" unit="metric" />

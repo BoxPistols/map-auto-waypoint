@@ -37,6 +37,23 @@ const latLngToTile = (lat, lng, zoom) => {
 };
 
 /**
+ * 実行環境を判定
+ * - dev: ローカル開発（Viteプロキシ使用）
+ * - vercel: Vercel（サーバーレス関数使用、APIキー不要）
+ * - github-pages: GitHub Pages（CORS制限あり、使用不可）
+ */
+const getEnvironment = () => {
+  if (import.meta.env.DEV) return 'dev';
+  // Vercelの場合はホスト名で判定
+  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
+    return 'vercel';
+  }
+  // カスタムドメインでもVercelの場合はAPI routeが存在する
+  // GitHub Pagesの場合はAPI routeがないのでエラーになる
+  return 'production';
+};
+
+/**
  * reinfolib APIを呼び出し
  *
  * @param {string} endpoint - エンドポイント（例: 'XKT002'）
@@ -44,34 +61,46 @@ const latLngToTile = (lat, lng, zoom) => {
  * @returns {Promise<Object>} GeoJSON形式のレスポンス
  */
 const callReinfolibApi = async (endpoint, params = {}) => {
+  const env = getEnvironment();
   const apiKey = getApiKey();
 
-  if (!apiKey) {
+  // Vercelではサーバー側にAPIキーがあるのでクライアント側は不要
+  // ローカル開発と直接アクセスの場合はAPIキーが必要
+  if (env !== 'vercel' && !apiKey) {
     throw new Error('国土交通省APIキーが設定されていません');
   }
 
-  // 開発環境ではViteプロキシを使用、本番環境では直接アクセス
-  const isDev = import.meta.env.DEV;
-  const baseUrl = isDev
-    ? '/api/reinfolib'
-    : 'https://www.reinfolib.mlit.go.jp/ex-api/external';
+  let baseUrl;
+  let useProxy = false;
 
-  // 開発環境: APIキーをクエリパラメータで送信（プロキシがヘッダーに変換）
-  // 本番環境: ヘッダーで直接送信
+  if (env === 'dev') {
+    // ローカル開発: Viteプロキシ経由
+    baseUrl = '/api/reinfolib';
+    useProxy = true;
+  } else if (env === 'vercel') {
+    // Vercel: サーバーレス関数経由（APIキーはサーバー側）
+    baseUrl = '/api/reinfolib';
+    useProxy = true;
+  } else {
+    // GitHub Pages等: 直接アクセス（CORS制限で失敗する可能性）
+    baseUrl = 'https://www.reinfolib.mlit.go.jp/ex-api/external';
+  }
+
   const queryParams = new URLSearchParams({
     response_format: 'geojson',
     ...params,
-    ...(isDev ? { _apiKey: apiKey } : {})
+    // ローカル開発時のみAPIキーをクエリパラメータで送信
+    ...(env === 'dev' && apiKey ? { _apiKey: apiKey } : {})
   });
 
   const url = `${baseUrl}/${endpoint}?${queryParams}`;
 
-  // Debug: Show full URL to verify _apiKey is included
-  console.log('[reinfolib] API call:', { isDev, endpoint, hasApiKey: queryParams.has('_apiKey'), url: url.substring(0, 80) + '...' });
+  console.log('[reinfolib] API call:', { env, endpoint, useProxy, url: url.substring(0, 80) + '...' });
 
   try {
     const headers = {};
-    if (!isDev) {
+    // 直接アクセスの場合のみヘッダーでAPIキーを送信
+    if (!useProxy && apiKey) {
       headers['Ocp-Apim-Subscription-Key'] = apiKey;
     }
 

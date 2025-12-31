@@ -38,7 +38,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const [didAvoidanceMode, setDidAvoidanceMode] = useState(getSetting('didAvoidanceMode'));
   const [didWarningOnlyMode, setDidWarningOnlyMode] = useState(getSetting('didWarningOnlyMode'));
   const [avoidanceDistance, setAvoidanceDistance] = useState(getSetting('didAvoidanceDistance') || 100);
-  const [airportMargin, setAirportMargin] = useState(getSetting('airportAvoidanceMargin') || 300);
+  const [_airportMargin, _setAirportMargin] = useState(getSetting('airportAvoidanceMargin') || 300);
   const modalRef = useRef(null);
 
   // 外部クリックで閉じる

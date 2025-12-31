@@ -100,8 +100,8 @@ export const createPolygonFromSearchResult = (searchResult, options = {}) => {
     size = 'medium',
     customRadius = null, // Custom radius in meters (takes priority)
     shape = 'rectangle', // 'rectangle' or 'circle'
-    useBoundingBox = false, // Default to false - use size presets by default
-    padding = 10
+    useBoundingBox: _useBoundingBox = false, // Default to false - use size presets by default
+    padding: _padding = 10
   } = options
 
   let geometry

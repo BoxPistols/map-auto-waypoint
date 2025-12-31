@@ -4,10 +4,9 @@
  * ギャップ分析・安全位置計算・最適化プラン生成のテスト
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   getPolygonCenter,
-  getPolygonArea,
   findNearestAirport,
   analyzeWaypointGaps,
   analyzePolygonGaps,

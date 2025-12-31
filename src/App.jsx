@@ -679,8 +679,8 @@ function App() {
     }
   }, [drawMode, waypoints.length, showNotification])
 
-  // Mobile detection
-  const isMobile = () => window.innerWidth <= 768
+  // Mobile detection (reserved for future use)
+  const _isMobile = () => window.innerWidth <= 768
 
   // Panel resize handlers
   const panelContentRef = useRef(null)

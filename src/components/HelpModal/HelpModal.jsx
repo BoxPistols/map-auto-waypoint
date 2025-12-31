@@ -429,6 +429,7 @@ const HelpModal = ({ onClose }) => {
 
       <div className={styles.body}>
         <nav className={styles.nav}>
+          {/* eslint-disable-next-line no-unused-vars */}
           {sections.map(({ id, label, icon: Icon }) => (
             <button
               key={id}

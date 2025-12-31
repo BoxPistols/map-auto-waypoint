@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { MapPin, Plane, X, Square, Circle, ChevronDown } from 'lucide-react'
 import { searchAddress, debounce } from '../../services/geocoding'
 import { POLYGON_SIZE_OPTIONS, POLYGON_SHAPE_OPTIONS } from '../../services/polygonGenerator'
@@ -23,8 +23,8 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const suggestionsRef = useRef(null)
 
   // Debounced search function
-  const debouncedSearch = useCallback(
-    debounce(async (value) => {
+  const debouncedSearch = useMemo(
+    () => debounce(async (value) => {
       if (value.length < 2) {
         setSuggestions([])
         return

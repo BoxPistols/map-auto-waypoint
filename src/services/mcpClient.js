@@ -65,7 +65,7 @@ class MCPClient {
   /**
    * MCPサーバーに接続（モック）
    */
-  async connect(serverConfig) {
+  async connect(_serverConfig) {
     this.connectionState = ConnectionState.CONNECTING;
     this._notifyStateChange();
 

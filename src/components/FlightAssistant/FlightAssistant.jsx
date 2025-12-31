@@ -75,7 +75,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [showAssessmentDetail, setShowAssessmentDetail] = useState(false);
   const [optimizationPlan, setOptimizationPlan] = useState(null);
   const [showOptimization, setShowOptimization] = useState(false);
-  const [proposedPlan, setProposedPlan] = useState({ altitude: 50, purpose: '点検飛行' });
+  const [proposedPlan, _setProposedPlan] = useState({ altitude: 50, purpose: '点検飛行' });
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -171,7 +171,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     if (typeof text !== 'string') return text;
 
     const parts = [];
-    let remaining = text;
+    let _remaining = text;
     let keyCounter = 0;
 
     // パターン1: WP + 番号（カンマ区切りの連続番号も含む）

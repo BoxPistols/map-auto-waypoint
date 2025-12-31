@@ -340,7 +340,7 @@ export const checkDIDArea = async (lat, lng) => {
  * @param {Object} prefecture - 都道府県データ（オプション）
  * @returns {Object} DID判定結果
  */
-const checkDIDAreaFallback = (lat, lng, prefecture = null) => {
+const checkDIDAreaFallback = (lat, lng, _prefecture = null) => {
   // 全国の主要DID地域（都道府県庁所在地・政令指定都市・主要都市）
   const MAJOR_DID_AREAS = [
     // 北海道・東北
@@ -862,7 +862,7 @@ const AIRCRAFT_DATABASE = [
  * @returns {Array} 推奨機体リスト
  */
 export const recommendAircraft = (purpose, requirements = {}) => {
-  const { flightTime = 30, altitude = 50, needsThermal = false, needsRTK = false } = requirements;
+  const { flightTime = 30, altitude: _altitude = 50, needsThermal = false, needsRTK = false } = requirements;
 
   const purposeLower = purpose.toLowerCase();
   let missionType = 'general';
@@ -1273,7 +1273,7 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
   // 各ゾーングループに対して、グループ全体を移動させるオフセットを計算
   const wpOffsets = new Map(); // wp.id -> {latOffset, lngOffset}
 
-  for (const [zoneName, group] of zoneGroups) {
+  for (const [_zoneName, group] of zoneGroups) {
     if (group.waypoints.length === 0) continue;
 
     const { zone, margin, waypoints: zoneWps, isDID, hasCentroid } = group;

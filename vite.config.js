@@ -44,7 +44,7 @@ export default defineConfig({
             }
           });
 
-          proxy.on('proxyRes', (proxyRes, req, res) => {
+          proxy.on('proxyRes', (proxyRes) => {
             console.log('[Proxy] Response status:', proxyRes.statusCode);
           });
 
