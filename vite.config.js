@@ -20,9 +20,13 @@ export default defineConfig({
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
             // Forward the API key header from client request
+            // Node.js normalizes header names to lowercase
             const apiKey = req.headers['ocp-apim-subscription-key'];
+            console.log('[Proxy] Headers received:', Object.keys(req.headers));
+            console.log('[Proxy] API Key present:', !!apiKey, apiKey ? `(${apiKey.length} chars)` : '');
             if (apiKey) {
               proxyReq.setHeader('Ocp-Apim-Subscription-Key', apiKey);
+              console.log('[Proxy] Header set on proxy request');
             }
           });
         }

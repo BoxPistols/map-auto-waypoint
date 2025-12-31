@@ -63,7 +63,11 @@ const callReinfolibApi = async (endpoint, params = {}) => {
 
   const url = `${baseUrl}/${endpoint}?${queryParams}`;
 
-  console.log('[reinfolib] Calling API:', { isDev, url });
+  // Debug: APIキーの最初と最後の4文字を表示
+  const keyPreview = apiKey.length > 8
+    ? `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}`
+    : '(短すぎ)';
+  console.log('[reinfolib] API call:', { isDev, url, keyPreview, keyLength: apiKey.length });
 
   try {
     const response = await fetch(url, {
@@ -73,7 +77,11 @@ const callReinfolibApi = async (endpoint, params = {}) => {
       }
     });
 
+    console.log('[reinfolib] Response status:', response.status);
+
     if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      console.error('[reinfolib] Error response:', errorText);
       throw new Error(`API Error: ${response.status}`);
     }
 
