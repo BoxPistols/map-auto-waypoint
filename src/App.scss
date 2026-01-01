@@ -607,23 +607,39 @@ body {
     width: 100%;
     height: auto;
     min-height: 0;
-    max-height: 40vh;
+    max-height: 35vh;
     border-right: none;
     border-bottom: 1px solid var(--color-border);
     overflow-y: auto;
+    overflow-x: hidden;
 
     &.collapsed {
       display: none;
     }
+
+    // モバイルでは検索セクションをコンパクトに
+    .search-section {
+      .search-section-content {
+        padding: 8px;
+      }
+    }
+
+    // パネルコンテンツをコンパクトに
+    .panel-content {
+      max-height: calc(35vh - 100px);
+      overflow-y: auto;
+    }
   }
 
   .sidebar-toggle {
-    right: 10px;
-    top: auto;
-    bottom: -32px;
-    width: 36px;
-    height: 24px;
-    border-radius: 0 0 6px 6px;
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    bottom: auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    z-index: 10;
   }
 
   .map-section {
@@ -755,7 +771,16 @@ body {
   }
 
   .sidebar {
-    max-height: 30vh;
+    max-height: 28vh;
+
+    // 検索セクションを非表示にしてスペース確保
+    .search-section-content {
+      padding: 6px;
+    }
+
+    .panel-content {
+      max-height: calc(28vh - 90px);
+    }
   }
 
   .panel-tabs {
@@ -792,7 +817,11 @@ body {
   }
 
   .sidebar {
-    max-height: 28vh;
+    max-height: 25vh;
+
+    .panel-content {
+      max-height: calc(25vh - 80px);
+    }
   }
 
   .tab {
@@ -826,7 +855,11 @@ body {
   }
 
   .sidebar {
-    max-height: 25vh;
+    max-height: 22vh;
+
+    .panel-content {
+      max-height: calc(22vh - 70px);
+    }
   }
 }
 
