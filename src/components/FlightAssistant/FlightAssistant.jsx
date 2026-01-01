@@ -29,8 +29,14 @@ import {
   Edit3,
   GripVertical,
   Settings,
-  Sliders
+  Sliders,
+  Cloud
 } from 'lucide-react';
+import WeatherPanel from '../WeatherPanel';
+import {
+  fetchWeatherData,
+  evaluateFlightConditions
+} from '../../services/weatherService';
 import {
   hasApiKey,
   getFlightAdvice
@@ -89,6 +95,11 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   // 回避設定
   const [showAvoidanceSettings, setShowAvoidanceSettings] = useState(false);
   const [avoidanceDistance, setAvoidanceDistance] = useState(getSetting('didAvoidanceDistance') || 100);
+  // 天候情報
+  const [showWeatherPanel, setShowWeatherPanel] = useState(false);
+  const [_weatherData, setWeatherData] = useState(null);
+  const [flightConditions, setFlightConditions] = useState(null);
+  const [_weatherLoading, setWeatherLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const panelRef = useRef(null);
   const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
@@ -343,6 +354,44 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     return () => window.removeEventListener('storage', checkApiStatus);
   }, []);
 
+  // 天候データを取得
+  const loadWeatherData = useCallback(async () => {
+    // ポリゴンまたはWaypointから中心座標を取得
+    let centerLat, centerLng;
+
+    if (polygons.length > 0 && polygons[0].coordinates?.length > 0) {
+      const coords = polygons[0].coordinates;
+      centerLat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
+      centerLng = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
+    } else if (waypoints.length > 0) {
+      centerLat = waypoints.reduce((sum, w) => sum + w.lat, 0) / waypoints.length;
+      centerLng = waypoints.reduce((sum, w) => sum + w.lng, 0) / waypoints.length;
+    } else {
+      return null;
+    }
+
+    setWeatherLoading(true);
+    try {
+      const data = await fetchWeatherData(centerLat, centerLng);
+      setWeatherData(data);
+      const conditions = evaluateFlightConditions(data);
+      setFlightConditions(conditions);
+      return { data, conditions };
+    } catch (error) {
+      console.error('[FlightAssistant] Weather fetch error:', error);
+      return null;
+    } finally {
+      setWeatherLoading(false);
+    }
+  }, [polygons, waypoints]);
+
+  // ポリゴン/Waypointが変わったら天候データを更新
+  useEffect(() => {
+    if (polygons.length > 0 || waypoints.length > 0) {
+      loadWeatherData();
+    }
+  }, [polygons.length, waypoints.length, loadWeatherData]);
+
   // メッセージ送信
   const handleSend = async () => {
     if (!input.trim() || isProcessing) return;
@@ -510,6 +559,51 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           });
         }
         response += '\n';
+      }
+
+      // 天候情報（リアルタイム）
+      const weatherResult = await loadWeatherData();
+      if (weatherResult?.conditions) {
+        const wc = weatherResult.conditions;
+        const weatherIcon = wc.weatherInfo?.icon || '🌤️';
+        const weatherLabel = wc.overall === 'good' ? '[OK]' :
+          wc.overall === 'fair' ? '[WARN]' :
+          wc.overall === 'poor' ? '[!]' : '[CRITICAL]';
+
+        response += `### ${weatherIcon} 天候情報\n`;
+        response += `${weatherLabel} ${wc.overallMessage}\n\n`;
+
+        if (weatherResult.data?.current) {
+          const curr = weatherResult.data.current;
+          response += `• 気温: ${curr.temperature?.toFixed(1)}°C\n`;
+          response += `• 風速: ${curr.windSpeed?.toFixed(1)}m/s（突風 ${curr.windGusts?.toFixed(1)}m/s）\n`;
+          response += `• 降水: ${curr.precipitation?.toFixed(1)}mm/h\n`;
+          response += `• 視程: ${curr.visibility >= 1000 ? (curr.visibility / 1000).toFixed(1) + 'km' : curr.visibility + 'm'}\n\n`;
+        }
+
+        // 飛行可能時間帯
+        if (wc.flyableHours?.length > 0) {
+          response += `**飛行推奨時間帯:**\n`;
+          wc.flyableHours.slice(0, 3).forEach(slot => {
+            response += `• ${slot.description}\n`;
+          });
+          response += '\n';
+        }
+
+        // 天候に関する警告
+        const weatherWarnings = wc.factors?.filter(f => f.level === 'poor' || f.level === 'dangerous');
+        if (weatherWarnings?.length > 0) {
+          response += `**天候警告:**\n`;
+          weatherWarnings.forEach(w => {
+            response += `• ${w.name}: ${w.message}\n`;
+          });
+          response += '\n';
+        }
+
+        // モックモード表示
+        if (weatherResult.data?.source === 'mock' || weatherResult.data?.source === 'mock-fallback') {
+          response += `*(デモデータ)*\n\n`;
+        }
       }
 
       // 機体推奨
@@ -870,8 +964,20 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           <Sparkles size={18} />
           <span>フライトアシスタント</span>
           {hasKey && <span className="ai-badge">AI</span>}
+          {flightConditions && (
+            <span className={`weather-badge ${flightConditions.overall}`} title={flightConditions.overallMessage}>
+              {flightConditions.weatherInfo?.icon || '🌤️'}
+            </span>
+          )}
         </div>
         <div className="header-actions">
+          <button
+            className={`weather-btn ${showWeatherPanel ? 'active' : ''}`}
+            onClick={() => setShowWeatherPanel(!showWeatherPanel)}
+            title="天候情報"
+          >
+            <Cloud size={16} />
+          </button>
           <button
             className="fullscreen-btn"
             onClick={toggleFullscreen}
@@ -992,6 +1098,33 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               ))
             )}
           </div>
+        </div>
+      )}
+
+      {/* 天候パネル */}
+      {showWeatherPanel && (
+        <div className="weather-panel-container">
+          <WeatherPanel
+            latitude={
+              polygons.length > 0 && polygons[0].coordinates?.length > 0
+                ? polygons[0].coordinates.reduce((sum, c) => sum + c[1], 0) / polygons[0].coordinates.length
+                : waypoints.length > 0
+                  ? waypoints.reduce((sum, w) => sum + w.lat, 0) / waypoints.length
+                  : null
+            }
+            longitude={
+              polygons.length > 0 && polygons[0].coordinates?.length > 0
+                ? polygons[0].coordinates.reduce((sum, c) => sum + c[0], 0) / polygons[0].coordinates.length
+                : waypoints.length > 0
+                  ? waypoints.reduce((sum, w) => sum + w.lng, 0) / waypoints.length
+                  : null
+            }
+            onConditionChange={(conditions) => {
+              setFlightConditions(conditions);
+            }}
+            compact={!isExpanded && !isFullscreen}
+            autoRefresh={true}
+          />
         </div>
       )}
 
