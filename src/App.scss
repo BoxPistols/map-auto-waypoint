@@ -966,7 +966,7 @@ body {
 .mobile-floating-stats {
   position: absolute;
   top: 10px;
-  left: 60px;
+  left: 10px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1061,11 +1061,12 @@ body {
     height: 40px;
   }
 
-  // フローティング統計の位置調整
+  // フローティング統計の位置調整（フルマップトグルの右側）
   .mobile-floating-stats {
     top: 8px;
-    left: 54px;
+    left: 52px;
     gap: 4px;
+    max-width: calc(100vw - 120px); // 右側のコントロールと干渉しないように
   }
 
   .floating-stat {
@@ -1098,8 +1099,9 @@ body {
   }
 
   .mobile-floating-stats {
-    left: 50px;
+    left: 48px;
     gap: 3px;
+    max-width: calc(100vw - 110px);
   }
 
   .floating-stat {

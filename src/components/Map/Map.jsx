@@ -529,8 +529,11 @@ const Map = ({
         doubleClickZoom={false}
         maxZoom={20}
         dragPan={!isSelecting}
+        touchZoomRotate={true}
+        touchPitch={true}
       >
-        <NavigationControl position="top-right" visualizePitch={true} />
+        {/* ナビゲーションコントロール - モバイルでは下に移動 */}
+        <NavigationControl position={isMobile ? "bottom-right" : "top-right"} visualizePitch={true} />
         <ScaleControl position="bottom-left" unit="metric" />
 
         <DrawControl
