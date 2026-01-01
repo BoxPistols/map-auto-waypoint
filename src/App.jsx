@@ -1009,14 +1009,25 @@ function App() {
             </div>
           )}
 
-          {/* Mobile Full Map Mode Toggle */}
-          {isMobile && (
+          {/* Mobile Full Map Mode Toggle - サイドバー折りたたみ時のみ表示 */}
+          {isMobile && sidebarCollapsed && !fullMapMode && (
             <button
-              className={`full-map-toggle ${fullMapMode ? 'active' : ''}`}
+              className="full-map-toggle"
               onClick={toggleFullMapMode}
-              title={fullMapMode ? 'UIを表示 [F]' : 'マップに集中 [F]'}
+              title="マップに集中 [F]"
             >
-              {fullMapMode ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+              <Maximize2 size={20} />
+            </button>
+          )}
+
+          {/* フルマップモード解除ボタン */}
+          {isMobile && fullMapMode && (
+            <button
+              className="full-map-toggle active"
+              onClick={toggleFullMapMode}
+              title="UIを表示 [F]"
+            >
+              <Minimize2 size={20} />
             </button>
           )}
 

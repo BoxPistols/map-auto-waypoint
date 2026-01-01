@@ -605,16 +605,15 @@ body {
   .sidebar {
     position: relative;
     width: 100%;
-    height: 45%;
-    min-height: 200px;
-    max-height: 50vh;
+    height: auto;
+    min-height: 0;
+    max-height: 40vh;
     border-right: none;
     border-bottom: 1px solid var(--color-border);
+    overflow-y: auto;
 
     &.collapsed {
-      height: auto;
-      min-height: auto;
-      max-height: none;
+      display: none;
     }
   }
 
@@ -703,7 +702,7 @@ body {
   }
 
   .sidebar {
-    height: 40%;
+    max-height: 35vh;
   }
 
   .search-section-title {
@@ -756,8 +755,7 @@ body {
   }
 
   .sidebar {
-    height: 35%;
-    min-height: 180px;
+    max-height: 30vh;
   }
 
   .panel-tabs {
@@ -794,8 +792,7 @@ body {
   }
 
   .sidebar {
-    height: 33%;
-    min-height: 160px;
+    max-height: 28vh;
   }
 
   .tab {
@@ -829,7 +826,7 @@ body {
   }
 
   .sidebar {
-    min-height: 140px;
+    max-height: 25vh;
   }
 }
 
@@ -1039,13 +1036,6 @@ body {
 
 // モバイル用サイドバー改善
 @media (max-width: 768px) {
-  // モバイルではサイドバーを完全に隠す（折りたたみ時）
-  .app.is-mobile {
-    .sidebar.collapsed {
-      display: none;
-    }
-  }
-
   // ヘッダーをコンパクトに
   .app-header {
     .header-divider {
