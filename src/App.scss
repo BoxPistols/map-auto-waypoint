@@ -602,16 +602,24 @@ body {
     flex-direction: column;
   }
 
+  // モバイルではサイドバーをフルスクリーンモーダルとして表示
   .sidebar {
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     width: 100%;
-    height: auto;
-    min-height: 0;
-    max-height: 35vh;
+    height: 100%;
+    max-height: none;
     border-right: none;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: none;
     overflow-y: auto;
     overflow-x: hidden;
+    z-index: 500;
+    background: var(--color-bg);
+    display: flex;
+    flex-direction: column;
 
     &.collapsed {
       display: none;
@@ -619,27 +627,52 @@ body {
 
     // モバイルでは検索セクションをコンパクトに
     .search-section {
+      flex-shrink: 0;
+
       .search-section-content {
-        padding: 8px;
+        padding: 8px 12px;
       }
     }
 
-    // パネルコンテンツをコンパクトに
+    // パネルタブを固定
+    .panel-tabs {
+      flex-shrink: 0;
+    }
+
+    // パネルコンテンツをスクロール可能に
     .panel-content {
-      max-height: calc(35vh - 100px);
+      flex: 1;
+      max-height: none;
       overflow-y: auto;
+      padding-bottom: 80px; // 閉じるボタンのスペース
     }
   }
 
+  // モバイル用閉じるボタン
   .sidebar-toggle {
-    position: absolute;
-    right: 8px;
-    top: 8px;
-    bottom: auto;
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    z-index: 10;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
+    top: auto;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    z-index: 510;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+    &:hover {
+      background: var(--color-primary-dark);
+    }
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
   }
 
   .map-section {
@@ -717,9 +750,7 @@ body {
     font-size: 10px;
   }
 
-  .sidebar {
-    max-height: 35vh;
-  }
+  // サイドバーはフルスクリーンモーダル（768pxで定義済み）
 
   .search-section-title {
     font-size: 12px;
@@ -770,16 +801,11 @@ body {
     height: 32px;
   }
 
+  // サイドバーはフルスクリーンモーダル（768pxで定義済み）
+  // 検索セクションのパディング調整
   .sidebar {
-    max-height: 28vh;
-
-    // 検索セクションを非表示にしてスペース確保
     .search-section-content {
-      padding: 6px;
-    }
-
-    .panel-content {
-      max-height: calc(28vh - 90px);
+      padding: 6px 10px;
     }
   }
 
@@ -816,13 +842,7 @@ body {
     max-width: 100px;
   }
 
-  .sidebar {
-    max-height: 25vh;
-
-    .panel-content {
-      max-height: calc(25vh - 80px);
-    }
-  }
+  // サイドバーはフルスクリーンモーダル（768pxで定義済み）
 
   .tab {
     font-size: 11px;
@@ -854,41 +874,21 @@ body {
     height: 28px;
   }
 
-  .sidebar {
-    max-height: 22vh;
-
-    .panel-content {
-      max-height: calc(22vh - 70px);
-    }
-  }
+  // サイドバーはフルスクリーンモーダル（768pxで定義済み）
 }
 
-// ランドスケープモード対応
+// ランドスケープモード対応 - フルスクリーンモーダルを維持
 @media (max-width: 768px) and (orientation: landscape) {
-  .app-main {
-    flex-direction: row;
-  }
-
-  .sidebar {
-    width: 40%;
-    height: 100%;
-    max-height: none;
-    border-right: 1px solid var(--color-border);
-    border-bottom: none;
-  }
-
+  // サイドバーはフルスクリーンモーダルのまま（768pxで定義済み）
+  // 閉じるボタンの位置調整
   .sidebar-toggle {
-    right: -32px;
-    top: 10px;
-    bottom: auto;
-    width: 24px;
-    height: 36px;
-    border-radius: 0 6px 6px 0;
+    bottom: 10px;
+    width: 50px;
+    height: 50px;
   }
 
-  .map-section {
-    flex: 1;
-    height: 100%;
+  .sidebar .panel-content {
+    padding-bottom: 70px;
   }
 }
 

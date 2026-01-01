@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2 } from 'lucide-react'
+import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X } from 'lucide-react'
 import { getTheme, toggleTheme, THEMES } from './services/themeService'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
@@ -842,11 +842,11 @@ function App() {
           {/* Sidebar Toggle Button - 展開時のみ表示 */}
           {!sidebarCollapsed && (
             <button
-              className="sidebar-toggle"
+              className={`sidebar-toggle ${isMobile ? 'mobile-close' : ''}`}
               onClick={toggleSidebar}
-              title="サイドバーを閉じる [S]"
+              title="閉じる [S]"
             >
-              <Menu size={20} />
+              {isMobile ? <X size={28} /> : <Menu size={20} />}
             </button>
           )}
 
