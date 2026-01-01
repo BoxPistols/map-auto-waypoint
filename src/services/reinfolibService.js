@@ -7,6 +7,7 @@
  * - 用途地域（住宅/商業/工業地域の判別）
  * - 都市計画区域（DID判定の参考）
  * - 立地適正化計画（居住誘導区域）
+ * - 災害履歴（水害・地震災害）
  */
 
 // APIキー（環境変数またはローカルストレージ）
@@ -222,20 +223,106 @@ export const getUrbanPlanningArea = async (lat, lng, zoom = 12) => {
 };
 
 /**
+ * 災害履歴を取得（水害・地震災害）
+ *
+ * @param {number} lat - 緯度
+ * @param {number} lng - 経度
+ * @param {number} zoom - ズームレベル（デフォルト: 14）
+ * @returns {Promise<Object>} 災害履歴情報
+ */
+export const getDisasterHistory = async (lat, lng, zoom = 14) => {
+  const tile = latLngToTile(lat, lng, zoom);
+
+  try {
+    const data = await callReinfolibApi('XST001', {
+      z: tile.z,
+      x: tile.x,
+      y: tile.y
+    });
+
+    if (data.features && data.features.length > 0) {
+      const disasters = data.features.map(feature => ({
+        type: getDisasterTypeName(feature.properties?.disaster_type),
+        date: feature.properties?.disaster_date || feature.properties?.date,
+        description: feature.properties?.description || feature.properties?.remarks,
+        severity: feature.properties?.severity || 'unknown',
+        rawData: feature.properties
+      }));
+
+      return {
+        success: true,
+        hasDisasterHistory: true,
+        disasters,
+        count: disasters.length,
+        summary: `過去${disasters.length}件の災害履歴があります`
+      };
+    }
+
+    return {
+      success: true,
+      hasDisasterHistory: false,
+      disasters: [],
+      count: 0,
+      summary: '災害履歴なし'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.message,
+      hasDisasterHistory: false,
+      disasters: [],
+      count: 0,
+      summary: '災害履歴取得エラー'
+    };
+  }
+};
+
+/**
+ * 災害種別コードから名称を取得
+ */
+const getDisasterTypeName = (code) => {
+  const types = {
+    '1': '水害（浸水）',
+    '2': '水害（洪水）',
+    '3': '水害（内水氾濫）',
+    '4': '水害（高潮）',
+    '5': '土砂災害',
+    '6': '地震災害',
+    '7': '津波災害',
+    '8': '火山災害',
+    'flood': '水害',
+    'earthquake': '地震災害',
+    'landslide': '土砂災害',
+    'tsunami': '津波災害'
+  };
+  return types[code] || `災害種別: ${code || '不明'}`;
+};
+
+/**
  * 複合的な地域情報を取得
  *
  * @param {number} lat - 緯度
  * @param {number} lng - 経度
  * @returns {Promise<Object>} 統合された地域情報
  */
-export const getLocationInfo = async (lat, lng) => {
-  const results = await Promise.allSettled([
+export const getLocationInfo = async (lat, lng, options = {}) => {
+  const { includeDisasterHistory = false } = options;
+
+  const apiCalls = [
     getUseZone(lat, lng),
     getUrbanPlanningArea(lat, lng)
-  ]);
+  ];
+
+  // オプションで災害履歴も取得
+  if (includeDisasterHistory) {
+    apiCalls.push(getDisasterHistory(lat, lng));
+  }
+
+  const results = await Promise.allSettled(apiCalls);
 
   const useZone = results[0].status === 'fulfilled' ? results[0].value : null;
   const urbanArea = results[1].status === 'fulfilled' ? results[1].value : null;
+  const disasterHistory = includeDisasterHistory && results[2]?.status === 'fulfilled' ? results[2].value : null;
 
   // 両方失敗した場合はエラーを返す
   const useZoneFailed = !useZone?.success || useZone?.zoneName === '取得エラー';
@@ -289,14 +376,29 @@ export const getLocationInfo = async (lat, lng) => {
     });
   }
 
+  // 災害履歴がある場合はリスク要因に追加
+  if (disasterHistory?.success && disasterHistory.hasDisasterHistory) {
+    riskFactors.push({
+      type: 'disaster_history',
+      description: disasterHistory.summary,
+      severity: disasterHistory.count >= 3 ? 'high' : 'medium',
+      details: disasterHistory.disasters
+    });
+    // 災害履歴が多い場合はリスクレベルを上げる
+    if (disasterHistory.count >= 3 && riskLevel !== 'HIGH') {
+      riskLevel = 'MEDIUM';
+    }
+  }
+
   return {
     success: !useZoneFailed || !urbanAreaFailed, // 少なくとも1つ成功すればtrue
     location: { lat, lng },
     useZone,
     urbanArea,
+    disasterHistory,
     riskLevel,
     riskFactors,
-    recommendations: generateRecommendations(riskLevel, riskFactors)
+    recommendations: generateRecommendations(riskLevel, riskFactors, disasterHistory)
   };
 };
 
@@ -337,7 +439,7 @@ const getAreaTypeName = (code) => {
 /**
  * 推奨事項を生成
  */
-const generateRecommendations = (riskLevel, factors) => {
+const generateRecommendations = (riskLevel, factors, disasterHistory = null) => {
   const recommendations = [];
 
   if (riskLevel === 'HIGH') {
@@ -354,6 +456,29 @@ const generateRecommendations = (riskLevel, factors) => {
     recommendations.push('商業地域のため、営業時間帯の飛行に注意してください');
   }
 
+  // 災害履歴に基づく推奨事項
+  if (disasterHistory?.hasDisasterHistory) {
+    const hasFlood = disasterHistory.disasters.some(d =>
+      d.type?.includes('水害') || d.type?.includes('浸水') || d.type?.includes('洪水')
+    );
+    const hasLandslide = disasterHistory.disasters.some(d =>
+      d.type?.includes('土砂')
+    );
+    const hasEarthquake = disasterHistory.disasters.some(d =>
+      d.type?.includes('地震')
+    );
+
+    if (hasFlood) {
+      recommendations.push('過去に水害履歴あり：河川・低地での飛行時は天候に注意');
+    }
+    if (hasLandslide) {
+      recommendations.push('過去に土砂災害履歴あり：山間部での飛行時は地盤状況を確認');
+    }
+    if (hasEarthquake) {
+      recommendations.push('過去に地震災害履歴あり：建物・構造物の損傷に注意');
+    }
+  }
+
   if (recommendations.length === 0) {
     recommendations.push('特段の制限は検出されませんでした');
     recommendations.push('ただし、現地での目視確認を推奨します');
@@ -368,5 +493,6 @@ export default {
   getReinfolibApiKey,
   getUseZone,
   getUrbanPlanningArea,
+  getDisasterHistory,
   getLocationInfo
 };

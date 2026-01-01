@@ -13,7 +13,7 @@
 import * as turf from '@turf/turf';
 import { checkAirspaceRestrictions, AIRPORT_ZONES, NO_FLY_ZONES } from './airspace';
 import { analyzeFlightPlan, getRecommendedParameters, hasApiKey } from './openaiService';
-import { getLocationInfo, hasReinfolibApiKey } from './reinfolibService';
+import { getLocationInfo, getDisasterHistory, hasReinfolibApiKey } from './reinfolibService';
 import { isDIDAvoidanceModeEnabled, getSetting } from './settingsService';
 
 // ===== ユーティリティ関数 =====
@@ -1894,7 +1894,8 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
       console.log('[FlightAnalyzer] Calling MLIT API...');
       mlitInfo = await getLocationInfo(
         localAnalysis.context.center.lat,
-        localAnalysis.context.center.lng
+        localAnalysis.context.center.lng,
+        { includeDisasterHistory: true }  // 災害履歴も取得
       );
       console.log('[FlightAnalyzer] MLIT API result:', mlitInfo);
 
