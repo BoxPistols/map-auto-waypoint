@@ -565,10 +565,15 @@ body {
   }
 }
 
-// Mobile styles
+// =============================================================================
+// モバイル対応スタイル
+// =============================================================================
+
+// タブレット (768px以下)
 @media (max-width: 768px) {
   .app-header {
-    padding: 5px 12px;
+    padding: 8px 12px;
+    min-height: 48px;
   }
 
   .app-title {
@@ -576,13 +581,21 @@ body {
   }
 
   .header-actions {
-    gap: 4px;
+    gap: 6px;
   }
 
   .mode-toggle,
   .action-button {
-    padding: 4px 8px;
+    padding: 6px 10px;
     font-size: 11px;
+    min-height: 36px;
+  }
+
+  // タッチターゲット確保
+  .icon-button,
+  .help-button {
+    width: 36px;
+    height: 36px;
   }
 
   .app-main {
@@ -590,19 +603,299 @@ body {
   }
 
   .sidebar {
+    position: relative;
     width: 100%;
-    height: 40%;
+    height: 45%;
+    min-height: 200px;
+    max-height: 50vh;
     border-right: none;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--color-border);
+
+    &.collapsed {
+      height: auto;
+      min-height: auto;
+      max-height: none;
+    }
+  }
+
+  .sidebar-toggle {
+    right: 10px;
+    top: auto;
+    bottom: -32px;
+    width: 36px;
+    height: 24px;
+    border-radius: 0 0 6px 6px;
   }
 
   .map-section {
-    height: 60%;
+    flex: 1;
+    height: auto;
+    min-height: 200px;
   }
 
   .draw-hint {
     top: 10px;
     padding: 10px 16px;
     font-size: 12px;
+    max-width: 90%;
+  }
+
+  // タブセクション
+  .tab {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .search-section-header {
+    padding: 8px 12px;
+  }
+
+  .search-section-content {
+    padding: 0 12px 12px;
+  }
+
+  // 通知
+  .notification {
+    left: 16px;
+    right: 16px;
+    transform: none;
+    text-align: center;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  // モーダル
+  .modal-overlay {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: 10vh;
+  }
+
+  // ツールチップ非表示（モバイルでは不要）
+  [data-tooltip] {
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
+}
+
+// 大型スマートフォン (600px以下)
+@media (max-width: 600px) {
+  .app-header {
+    padding: 6px 10px;
+    min-height: 44px;
+  }
+
+  .app-title {
+    font-size: 13px;
+  }
+
+  .header-divider {
+    margin: 0 2px;
+    height: 20px;
+  }
+
+  .mode-toggle,
+  .action-button {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  .sidebar {
+    height: 40%;
+  }
+
+  .search-section-title {
+    font-size: 12px;
+  }
+
+  .collapsed-stat {
+    font-size: 11px;
+    padding: 5px 3px;
+  }
+}
+
+// 標準スマートフォン (480px以下)
+@media (max-width: 480px) {
+  .app-header {
+    padding: 6px 8px;
+    gap: 4px;
+  }
+
+  .app-title {
+    font-size: 12px;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .header-actions {
+    gap: 3px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  // 一部のボタンを非表示にするオプション
+  .header-actions .action-button:not(.essential) {
+    display: none;
+  }
+
+  .mode-toggle,
+  .action-button {
+    padding: 4px 6px;
+    font-size: 10px;
+    min-height: 32px;
+  }
+
+  .icon-button,
+  .help-button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .sidebar {
+    height: 35%;
+    min-height: 180px;
+  }
+
+  .panel-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    .tab {
+      flex-shrink: 0;
+      padding: 8px 12px;
+    }
+  }
+
+  .notification {
+    bottom: 16px;
+    left: 8px;
+    right: 8px;
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+
+  .draw-hint {
+    top: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    border-radius: 6px;
+  }
+}
+
+// 小型スマートフォン (375px以下)
+@media (max-width: 375px) {
+  .app-title {
+    font-size: 11px;
+    max-width: 100px;
+  }
+
+  .sidebar {
+    height: 33%;
+    min-height: 160px;
+  }
+
+  .tab {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}
+
+// 超小型スマートフォン (320px以下)
+@media (max-width: 320px) {
+  .app-header {
+    padding: 4px 6px;
+    min-height: 40px;
+  }
+
+  .app-title {
+    font-size: 10px;
+    max-width: 80px;
+  }
+
+  .mode-toggle,
+  .action-button {
+    padding: 3px 5px;
+    font-size: 9px;
+  }
+
+  .icon-button,
+  .help-button {
+    width: 28px;
+    height: 28px;
+  }
+
+  .sidebar {
+    min-height: 140px;
+  }
+}
+
+// ランドスケープモード対応
+@media (max-width: 768px) and (orientation: landscape) {
+  .app-main {
+    flex-direction: row;
+  }
+
+  .sidebar {
+    width: 40%;
+    height: 100%;
+    max-height: none;
+    border-right: 1px solid var(--color-border);
+    border-bottom: none;
+  }
+
+  .sidebar-toggle {
+    right: -32px;
+    top: 10px;
+    bottom: auto;
+    width: 24px;
+    height: 36px;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .map-section {
+    flex: 1;
+    height: 100%;
+  }
+}
+
+// タッチデバイス最適化
+@media (hover: none) and (pointer: coarse) {
+  // ホバー効果を無効化
+  .icon-button:hover,
+  .mode-toggle:hover,
+  .action-button:hover,
+  .help-button:hover {
+    transform: none;
+  }
+
+  // タップ時のフィードバック
+  .icon-button:active,
+  .mode-toggle:active,
+  .action-button:active,
+  .help-button:active {
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+
+  // スクロール最適化
+  .panel-content {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+// セーフエリア対応 (ノッチ付きデバイス)
+@supports (padding: env(safe-area-inset-bottom)) {
+  .app {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .notification {
+    bottom: calc(16px + env(safe-area-inset-bottom));
   }
 }

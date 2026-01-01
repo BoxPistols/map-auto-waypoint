@@ -358,3 +358,305 @@
     transform: translateY(0);
   }
 }
+
+// =============================================================================
+// モバイル対応スタイル
+// =============================================================================
+
+// タブレット (768px以下)
+@media (max-width: 768px) {
+  .input {
+    padding: 12px 36px 12px 12px;
+    font-size: 16px; // ズーム防止
+    min-height: 44px;
+  }
+
+  .clearButton {
+    width: 32px;
+    height: 32px;
+  }
+
+  .suggestionItem {
+    padding: 12px;
+    min-height: 48px;
+  }
+
+  .suggestionName {
+    font-size: 14px;
+  }
+
+  .suggestionAddress {
+    font-size: 13px;
+  }
+
+  .panelHeader {
+    padding: 14px 12px;
+    min-height: 48px;
+  }
+
+  .shapeButton {
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+
+  .sizeButton {
+    padding: 8px 10px;
+    min-height: 36px;
+  }
+
+  .generateButton {
+    padding: 14px;
+    min-height: 48px;
+  }
+}
+
+// 大型スマートフォン (600px以下)
+@media (max-width: 600px) {
+  .input {
+    padding: 10px 32px 10px 10px;
+  }
+
+  .suggestions {
+    max-height: 250px;
+  }
+
+  .suggestionItem {
+    padding: 10px;
+  }
+
+  .suggestionName {
+    font-size: 13px;
+  }
+
+  .suggestionAddress {
+    font-size: 12px;
+  }
+
+  .panelHeader {
+    padding: 12px 10px;
+  }
+
+  .selectedLocation {
+    gap: 6px;
+  }
+
+  .locationName {
+    font-size: 13px;
+  }
+
+  .panelContent {
+    padding: 0 10px 10px;
+  }
+
+  .shapeSelector label,
+  .sizeSelector label,
+  .waypointSelector label {
+    font-size: 11px;
+  }
+
+  .shapeButton {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .sizeButton {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+}
+
+// 標準スマートフォン (480px以下)
+@media (max-width: 480px) {
+  .input {
+    padding: 10px 30px 10px 10px;
+    font-size: 16px; // ズーム防止
+    border-radius: 8px;
+  }
+
+  .clearButton {
+    width: 28px;
+    height: 28px;
+    right: 6px;
+  }
+
+  .suggestions {
+    max-height: 200px;
+    border-radius: 8px;
+  }
+
+  .suggestionItem {
+    padding: 10px 8px;
+  }
+
+  .generatePanel {
+    margin-top: 10px;
+    border-radius: 6px;
+  }
+
+  .panelHeader {
+    padding: 10px 8px;
+  }
+
+  .locationIcon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .locationName {
+    font-size: 12px;
+  }
+
+  .panelContent {
+    padding: 0 8px 8px;
+  }
+
+  .optionsRow {
+    margin-bottom: 10px;
+  }
+
+  .shapeButtons {
+    gap: 6px;
+  }
+
+  .shapeButton {
+    padding: 8px;
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .sizeButtons {
+    gap: 4px;
+  }
+
+  .sizeButton {
+    padding: 6px;
+    font-size: 9px;
+    min-height: 32px;
+  }
+
+  .sizeSelector,
+  .waypointSelector {
+    margin-bottom: 10px;
+  }
+
+  .sliderWrapper {
+    margin-top: 8px;
+    gap: 8px;
+  }
+
+  .slider {
+    &::-webkit-slider-thumb {
+      width: 20px;
+      height: 20px;
+    }
+
+    &::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .sliderValue {
+    font-size: 11px;
+    min-width: 45px;
+  }
+
+  .generateButton {
+    padding: 12px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+}
+
+// 小型スマートフォン (375px以下)
+@media (max-width: 375px) {
+  .input {
+    padding: 8px 28px 8px 8px;
+    font-size: 15px;
+  }
+
+  .suggestionItem {
+    padding: 8px 6px;
+  }
+
+  .suggestionName {
+    font-size: 12px;
+  }
+
+  .suggestionAddress {
+    font-size: 11px;
+  }
+
+  .shapeButton {
+    padding: 6px;
+    font-size: 9px;
+  }
+
+  .sizeButton {
+    font-size: 8px;
+    padding: 5px;
+  }
+
+  .generateButton {
+    padding: 10px;
+    font-size: 12px;
+  }
+}
+
+// 超小型スマートフォン (320px以下)
+@media (max-width: 320px) {
+  .shapeButtons {
+    flex-wrap: wrap;
+  }
+
+  .shapeButton {
+    flex: 1 1 45%;
+  }
+
+  .sizeButton {
+    font-size: 8px;
+    padding: 4px;
+  }
+}
+
+// タッチデバイス最適化
+@media (hover: none) and (pointer: coarse) {
+  .input:focus {
+    // タッチデバイスではフォーカス時のスタイルを調整
+    box-shadow: 0 0 0 2px var(--color-primary-bg);
+  }
+
+  .clearButton:active {
+    background: var(--color-bg-tertiary);
+    transform: scale(0.9);
+  }
+
+  .suggestionItem:active {
+    background: var(--color-primary-bg);
+  }
+
+  .shapeButton:active,
+  .sizeButton:active,
+  .generateButton:active {
+    transform: scale(0.98);
+    opacity: 0.8;
+  }
+
+  .slider {
+    height: 6px;
+
+    &::-webkit-slider-thumb {
+      width: 24px;
+      height: 24px;
+    }
+
+    &::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+    }
+  }
+
+  .suggestions {
+    -webkit-overflow-scrolling: touch;
+  }
+}
