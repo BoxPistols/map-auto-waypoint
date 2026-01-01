@@ -812,10 +812,11 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
 
-.hidden {
-  display: none !important;
+  // Mobile hidden state - use specific selector instead of !important
+  &.hidden {
+    display: none;
+  }
 }
 
 .mobileToggle {

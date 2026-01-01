@@ -712,12 +712,15 @@ function App() {
 
   // Toggle full map mode
   const toggleFullMapMode = useCallback(() => {
-    setFullMapMode(prev => !prev)
-    if (!fullMapMode) {
-      setSidebarCollapsed(true)
-      setShowChat(false)
-    }
-  }, [fullMapMode])
+    setFullMapMode(prev => {
+      if (!prev) {
+        // フルマップモードに入る時
+        setSidebarCollapsed(true)
+        setShowChat(false)
+      }
+      return !prev
+    })
+  }, [])
 
   // Panel resize handlers
   const panelContentRef = useRef(null)
@@ -976,6 +979,7 @@ function App() {
             recommendedWaypoints={recommendedWaypoints}
             highlightedWaypointIndex={highlightedWaypointIndex}
             apiInfo={apiInfo}
+            isMobile={isMobile}
             onPolygonCreate={handlePolygonCreate}
             onPolygonUpdate={handlePolygonUpdate}
             onPolygonDelete={handlePolygonDelete}

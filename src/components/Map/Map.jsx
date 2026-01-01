@@ -130,6 +130,7 @@ const Map = ({
   recommendedWaypoints = null,
   highlightedWaypointIndex = null,
   apiInfo = null,
+  isMobile = false,
   onPolygonCreate,
   onPolygonUpdate,
   onPolygonDelete,
@@ -172,17 +173,7 @@ const Map = ({
   const [showApiOverlay, setShowApiOverlay] = useState(false)
   const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false)
 
-  // Mobile detection
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
-
-  // Mobile detection with resize listener
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768)
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  // isMobile is now passed as a prop from App.jsx to avoid duplication
 
   // 現在の地図スタイル
   const currentMapStyle = MAP_STYLES[mapStyleId]?.style || MAP_STYLES.osm.style

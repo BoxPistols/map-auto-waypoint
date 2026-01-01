@@ -935,6 +935,7 @@ body {
 // =============================================================================
 
 // フルマップモード
+// 高い詳細度を持つセレクタで上書きを可能にするため、!importantを避ける
 .app.full-map-mode {
   .app-header.hidden {
     display: none;
@@ -948,10 +949,17 @@ body {
     height: 100vh;
   }
 
-  // FlightAssistantも隠す
-  .flight-assistant,
+  // FlightAssistantも隠す - 詳細度で上書き
+  .flight-assistant {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   .flight-assistant-fab {
-    display: none !important;
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
   }
 }
 
