@@ -3,6 +3,64 @@
  * CSS変数を使用してダーク/ライトモードを切り替え
  */
 
+// =============================================================================
+// レスポンシブ ブレークポイント
+// =============================================================================
+$breakpoint-xs: 320px;   // 小型スマートフォン
+$breakpoint-sm: 375px;   // 標準スマートフォン (iPhone SE)
+$breakpoint-md: 480px;   // 大型スマートフォン
+$breakpoint-lg: 600px;   // 小型タブレット
+$breakpoint-tablet: 768px;   // タブレット
+$breakpoint-desktop: 1024px; // デスクトップ
+
+// Mixins for responsive design
+@mixin mobile-xs {
+  @media (max-width: #{$breakpoint-xs}) {
+    @content;
+  }
+}
+
+@mixin mobile-sm {
+  @media (max-width: #{$breakpoint-sm}) {
+    @content;
+  }
+}
+
+@mixin mobile-md {
+  @media (max-width: #{$breakpoint-md}) {
+    @content;
+  }
+}
+
+@mixin mobile-lg {
+  @media (max-width: #{$breakpoint-lg}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: #{$breakpoint-tablet}) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (max-width: #{$breakpoint-desktop}) {
+    @content;
+  }
+}
+
+// タッチデバイス用
+@mixin touch-device {
+  @media (hover: none) and (pointer: coarse) {
+    @content;
+  }
+}
+
+// =============================================================================
+// モバイル用 CSS変数
+// =============================================================================
+
 // ライトモード（デフォルト）
 :root,
 [data-theme="light"] {
@@ -139,4 +197,67 @@
 // トランジション（テーマ切り替え時のアニメーション）
 * {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+// =============================================================================
+// モバイル用グローバルスタイル
+// =============================================================================
+
+// タッチターゲットの最小サイズ（44px推奨）
+$touch-target-min: 44px;
+$touch-target-sm: 36px;
+
+// モバイル用フォントサイズ
+$font-size-mobile-base: 14px;
+$font-size-mobile-sm: 12px;
+$font-size-mobile-xs: 11px;
+
+// モバイル用スペーシング
+$spacing-mobile-xs: 4px;
+$spacing-mobile-sm: 8px;
+$spacing-mobile-md: 12px;
+$spacing-mobile-lg: 16px;
+
+// タッチフレンドリーなボタンスタイル
+@mixin touch-friendly-button {
+  min-height: $touch-target-min;
+  min-width: $touch-target-min;
+
+  @include touch-device {
+    // タッチデバイスではタップ領域を広げる
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+    }
+  }
+}
+
+// スクロール可能なコンテナ（モバイル最適化）
+@mixin mobile-scroll-container {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+
+  // スクロールバーを細くする（モバイル）
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 2px;
+  }
+}
+
+// セーフエリア対応
+@mixin safe-area-inset {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
 }

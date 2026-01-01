@@ -188,3 +188,251 @@
   font-size: 12px;
   color: var(--color-text-secondary);
 }
+
+// =============================================================================
+// モバイル対応スタイル
+// =============================================================================
+
+// タブレット (768px以下)
+@media (max-width: 768px) {
+  .header {
+    padding: 10px 14px;
+  }
+
+  .count {
+    font-size: 12px;
+  }
+
+  .generateAllButton {
+    padding: 8px 14px;
+    font-size: 11px;
+    min-height: 36px;
+  }
+
+  .item {
+    padding: 10px 14px;
+  }
+
+  .actionButton {
+    width: 36px;
+    height: 36px;
+  }
+
+  .name {
+    font-size: 13px;
+  }
+
+  .stats {
+    gap: 6px 12px;
+    font-size: 11px;
+  }
+}
+
+// 大型スマートフォン (600px以下)
+@media (max-width: 600px) {
+  .header {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .count {
+    font-size: 11px;
+  }
+
+  .generateAllButton {
+    padding: 6px 10px;
+    font-size: 10px;
+  }
+
+  .item {
+    padding: 10px 12px;
+  }
+
+  .topRow {
+    margin-bottom: 6px;
+  }
+
+  .colorIndicator {
+    width: 10px;
+    height: 10px;
+  }
+
+  .actions {
+    gap: 3px;
+  }
+
+  .actionButton {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .content {
+    gap: 4px;
+  }
+
+  .index {
+    font-size: 11px;
+  }
+
+  .name {
+    font-size: 12px;
+  }
+
+  .nameInput {
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+
+  .stats {
+    gap: 4px 10px;
+    font-size: 10px;
+  }
+}
+
+// 標準スマートフォン (480px以下)
+@media (max-width: 480px) {
+  .emptyState {
+    padding: 16px;
+
+    p {
+      font-size: 13px;
+    }
+
+    .hint {
+      font-size: 11px;
+    }
+  }
+
+  .header {
+    padding: 8px 10px;
+  }
+
+  .count {
+    font-size: 11px;
+  }
+
+  .generateAllButton {
+    padding: 6px 8px;
+    font-size: 10px;
+    min-height: 32px;
+  }
+
+  .item {
+    padding: 8px 10px;
+
+    &.selected {
+      padding-left: 7px;
+    }
+  }
+
+  .topRow {
+    margin-bottom: 5px;
+  }
+
+  .colorIndicator {
+    width: 8px;
+    height: 8px;
+  }
+
+  .actionButton {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+    border-radius: 3px;
+  }
+
+  .index {
+    font-size: 10px;
+  }
+
+  .name {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  .nameInput {
+    font-size: 11px;
+    padding: 2px 5px;
+  }
+
+  .stats {
+    gap: 4px 8px;
+    font-size: 9px;
+  }
+}
+
+// 小型スマートフォン (375px以下)
+@media (max-width: 375px) {
+  .header {
+    padding: 6px 8px;
+  }
+
+  .generateAllButton {
+    font-size: 9px;
+    padding: 5px 6px;
+  }
+
+  .item {
+    padding: 6px 8px;
+  }
+
+  .actionButton {
+    width: 26px;
+    height: 26px;
+  }
+
+  .name {
+    font-size: 10px;
+  }
+
+  .stats {
+    font-size: 8px;
+    gap: 3px 6px;
+  }
+}
+
+// 超小型スマートフォン (320px以下)
+@media (max-width: 320px) {
+  .actions {
+    gap: 2px;
+  }
+
+  .actionButton {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .stats {
+    font-size: 8px;
+  }
+}
+
+// タッチデバイス最適化
+@media (hover: none) and (pointer: coarse) {
+  .item:active {
+    background: var(--color-primary-bg);
+  }
+
+  .actionButton:active {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+
+  .generateAllButton:active {
+    transform: scale(0.98);
+    opacity: 0.8;
+  }
+
+  .list {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  // タッチデバイスでは常にアクションボタンを表示
+  .actions {
+    opacity: 1;
+  }
+}

@@ -336,12 +336,30 @@
   font-style: italic;
 }
 
-// Mobile responsive
+// =============================================================================
+// モバイル対応スタイル
+// =============================================================================
+
+// タブレット (768px以下)
 @media (max-width: 768px) {
   .modal {
     width: 95vw;
     height: 90vh;
     max-height: none;
+    border-radius: 10px;
+  }
+
+  .header {
+    padding: 14px 20px;
+
+    h1 {
+      font-size: 16px;
+    }
+  }
+
+  .closeButton {
+    width: 36px;
+    height: 36px;
   }
 
   .body {
@@ -356,11 +374,13 @@
     display: flex;
     overflow-x: auto;
     flex-shrink: 0;
+    -webkit-overflow-scrolling: touch;
   }
 
   .navItem {
     padding: 10px 16px;
     white-space: nowrap;
+    min-height: 44px;
 
     .chevron {
       display: none;
@@ -369,10 +389,372 @@
 
   .content {
     padding: 20px;
+    -webkit-overflow-scrolling: touch;
   }
 
   .featureList {
     grid-template-columns: 1fr;
+  }
+
+  .section {
+    h2 {
+      font-size: 18px;
+    }
+
+    h3 {
+      font-size: 14px;
+    }
+  }
+
+  .table, .shortcutTable {
+    font-size: 12px;
+
+    th, td {
+      padding: 8px 10px;
+    }
+  }
+}
+
+// 大型スマートフォン (600px以下)
+@media (max-width: 600px) {
+  .modal {
+    width: 98vw;
+    height: 95vh;
+    border-radius: 8px;
+  }
+
+  .header {
+    padding: 12px 16px;
+
+    h1 {
+      font-size: 15px;
+    }
+  }
+
+  .nav {
+    padding: 6px 0;
+  }
+
+  .navItem {
+    padding: 8px 14px;
+    font-size: 13px;
+    min-height: 40px;
+  }
+
+  .content {
+    padding: 16px;
+  }
+
+  .section {
+    h2 {
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+
+    h3 {
+      font-size: 13px;
+      margin: 16px 0 10px;
+    }
+
+    p {
+      font-size: 13px;
+    }
+
+    ul, ol {
+      li {
+        font-size: 13px;
+      }
+    }
+  }
+
+  .lead {
+    font-size: 14px !important;
+    padding: 12px;
+  }
+
+  .featureList li {
+    padding: 12px;
+
+    strong {
+      font-size: 13px;
+    }
+
+    span {
+      font-size: 11px;
+    }
+  }
+
+  .table, .shortcutTable {
+    font-size: 11px;
+
+    th, td {
+      padding: 6px 8px;
+    }
+
+    kbd {
+      font-size: 10px;
+      padding: 3px 6px;
+    }
+  }
+
+  .shortcutTable td:first-child {
+    width: 120px;
+  }
+}
+
+// 標準スマートフォン (480px以下)
+@media (max-width: 480px) {
+  .modal {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .header {
+    padding: 10px 14px;
+    position: sticky;
+    top: 0;
+    background: var(--color-bg-secondary);
+    z-index: 10;
+
+    h1 {
+      font-size: 14px;
+    }
+  }
+
+  .closeButton {
+    width: 32px;
+    height: 32px;
+  }
+
+  .nav {
+    padding: 4px 0;
+    position: sticky;
+    top: 52px;
+    background: var(--color-bg-secondary);
+    z-index: 10;
+  }
+
+  .navItem {
+    padding: 8px 12px;
+    font-size: 12px;
+    min-height: 36px;
+  }
+
+  .content {
+    padding: 14px;
+  }
+
+  .section {
+    h2 {
+      font-size: 15px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+    }
+
+    h3 {
+      font-size: 12px;
+      margin: 14px 0 8px;
+    }
+
+    p {
+      font-size: 12px;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    ul, ol {
+      padding-left: 16px;
+      margin-bottom: 12px;
+
+      li {
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+    }
+  }
+
+  .lead {
+    font-size: 13px !important;
+    padding: 10px;
+    border-left-width: 3px;
+  }
+
+  .featureList {
+    gap: 8px;
+
+    li {
+      padding: 10px;
+      gap: 10px;
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      strong {
+        font-size: 12px;
+      }
+
+      span {
+        font-size: 10px;
+      }
+    }
+  }
+
+  .stepList li {
+    padding-left: 30px;
+    margin-bottom: 10px !important;
+
+    &::before {
+      width: 20px;
+      height: 20px;
+      font-size: 10px;
+    }
+  }
+
+  // テーブルを横スクロール可能に
+  .table, .shortcutTable {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 10px;
+
+    th, td {
+      padding: 5px 6px;
+    }
+
+    kbd {
+      font-size: 9px;
+      padding: 2px 4px;
+      margin-right: 2px;
+    }
+  }
+
+  .shortcutTable td:first-child {
+    width: 100px;
+    min-width: 100px;
+  }
+
+  .warning {
+    padding: 10px 12px;
+    font-size: 11px;
+  }
+
+  .hint {
+    font-size: 11px !important;
+  }
+}
+
+// 小型スマートフォン (375px以下)
+@media (max-width: 375px) {
+  .header {
+    padding: 8px 12px;
+
+    h1 {
+      font-size: 13px;
+    }
+  }
+
+  .navItem {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .content {
+    padding: 12px;
+  }
+
+  .section {
+    h2 {
+      font-size: 14px;
+    }
+
+    p, li {
+      font-size: 11px;
+    }
+  }
+
+  .featureList li {
+    padding: 8px;
+
+    strong {
+      font-size: 11px;
+    }
+
+    span {
+      font-size: 9px;
+    }
+  }
+
+  .table, .shortcutTable {
+    font-size: 9px;
+
+    th, td {
+      padding: 4px 5px;
+    }
+
+    kbd {
+      font-size: 8px;
+      padding: 1px 3px;
+    }
+  }
+}
+
+// 超小型スマートフォン (320px以下)
+@media (max-width: 320px) {
+  .header h1 {
+    font-size: 12px;
+  }
+
+  .navItem {
+    font-size: 10px;
+    padding: 5px 8px;
+  }
+
+  .section {
+    h2 {
+      font-size: 13px;
+    }
+
+    p, li {
+      font-size: 10px;
+    }
+  }
+
+  .table, .shortcutTable {
+    font-size: 8px;
+  }
+}
+
+// タッチデバイス最適化
+@media (hover: none) and (pointer: coarse) {
+  .navItem:active {
+    background: var(--color-primary-bg);
+  }
+
+  .closeButton:active {
+    background: var(--color-bg-tertiary);
+    transform: scale(0.95);
+  }
+
+  .content {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .nav {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+// セーフエリア対応
+@supports (padding: env(safe-area-inset-bottom)) {
+  @media (max-width: 480px) {
+    .content {
+      padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    }
   }
 }
 

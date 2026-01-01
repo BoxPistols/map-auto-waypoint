@@ -1370,17 +1370,580 @@
   }
 }
 
-// Responsive
-@media (max-width: 480px) {
+// =============================================================================
+// モバイル対応スタイル
+// =============================================================================
+
+// タブレット (768px以下)
+@media (max-width: 768px) {
   .flight-assistant {
-    width: calc(100vw - 32px);
-    max-height: calc(100vh - 100px);
+    width: 360px;
+    min-width: 320px;
+    max-height: calc(100vh - 80px);
+    bottom: 16px;
+    right: 16px;
+
+    &.expanded {
+      width: min(90vw, 600px);
+    }
+
+    &.fullscreen {
+      top: 50px;
+      width: 90vw !important;
+      max-width: none;
+      max-height: calc(100vh - 66px);
+    }
+  }
+
+  .flight-assistant-fab {
+    width: 52px;
+    height: 52px;
     bottom: 16px;
     right: 16px;
   }
 
+  .flight-assistant-header {
+    padding: 8px 10px;
+    min-height: 42px;
+
+    .header-title {
+      font-size: 12px;
+    }
+
+    .header-actions button {
+      width: 32px;
+      height: 32px;
+    }
+  }
+
+  .flight-assistant-messages {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .message .message-content {
+    max-width: 85%;
+    padding: 8px 12px;
+    font-size: 13px;
+
+    table {
+      font-size: 10px;
+    }
+  }
+
+  .flight-assistant-input {
+    padding: 6px 10px;
+
+    textarea {
+      font-size: 14px;
+      padding: 10px;
+    }
+
+    .send-btn {
+      width: 44px;
+      height: 44px;
+    }
+  }
+
+  .flight-assistant-actions {
+    padding: 6px 8px;
+    flex-wrap: wrap;
+    gap: 4px;
+
+    .assessment-btn {
+      padding: 8px 10px;
+      font-size: 11px;
+      flex: 1;
+      min-height: 36px;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+    }
+  }
+}
+
+// 大型スマートフォン (600px以下)
+@media (max-width: 600px) {
+  .flight-assistant {
+    width: calc(100vw - 24px);
+    min-width: auto;
+    right: 12px;
+    bottom: 12px;
+    max-height: calc(100vh - 70px);
+
+    &.expanded {
+      width: calc(100vw - 24px);
+    }
+
+    &.fullscreen {
+      top: 44px;
+      left: 8px;
+      right: 8px;
+      bottom: 8px;
+      width: auto !important;
+      max-height: none;
+      border-radius: 12px;
+    }
+  }
+
   .flight-assistant-fab {
-    bottom: 16px;
-    right: 16px;
+    width: 48px;
+    height: 48px;
+    bottom: 12px;
+    right: 12px;
+  }
+
+  .chat-logs-panel {
+    max-height: 160px;
+
+    .chat-log-item {
+      padding: 6px 10px;
+    }
+  }
+
+  .avoidance-settings {
+    padding: 8px 10px;
+
+    .avoidance-toggles {
+      gap: 8px;
+
+      .toggle-item {
+        font-size: 10px;
+      }
+    }
+  }
+
+  .settings-panel {
+    max-height: 180px;
+
+    .settings-header {
+      padding: 6px 10px;
+    }
+
+    .settings-content {
+      padding: 6px 10px;
+    }
+  }
+}
+
+// 標準スマートフォン (480px以下)
+@media (max-width: 480px) {
+  .flight-assistant {
+    width: calc(100vw - 16px);
+    right: 8px;
+    bottom: 8px;
+    border-radius: 12px;
+    max-height: calc(100vh - 80px);
+
+    &.fullscreen {
+      top: 40px;
+      left: 4px;
+      right: 4px;
+      bottom: 4px;
+      border-radius: 10px;
+    }
+  }
+
+  .flight-assistant-fab {
+    width: 44px;
+    height: 44px;
+    bottom: 10px;
+    right: 10px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .flight-assistant-header {
+    padding: 6px 8px;
+    min-height: 40px;
+
+    .drag-handle {
+      display: none;
+    }
+
+    .header-title {
+      font-size: 11px;
+      gap: 3px;
+
+      .ai-badge,
+      .mlit-badge {
+        font-size: 8px;
+        padding: 1px 3px;
+      }
+    }
+
+    .header-actions {
+      gap: 0;
+
+      button {
+        width: 28px;
+        height: 28px;
+        padding: 4px;
+      }
+    }
+  }
+
+  .flight-assistant-messages {
+    padding: 8px;
+    gap: 6px;
+
+    .message .message-content {
+      max-width: 90%;
+      padding: 6px 10px;
+      font-size: 12px;
+      line-height: 1.4;
+
+      h3 {
+        font-size: 13px;
+      }
+
+      h4 {
+        font-size: 12px;
+      }
+
+      .table-wrapper {
+        margin: 6px 0;
+      }
+
+      table {
+        font-size: 9px;
+
+        th, td {
+          padding: 4px 5px;
+        }
+      }
+
+      .apply-route-btn {
+        padding: 8px 10px;
+        font-size: 11px;
+      }
+
+      .wp-link {
+        padding: 0 4px;
+        font-size: 10px;
+      }
+    }
+
+    .message-avatar {
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
+    }
+  }
+
+  .flight-assistant-input {
+    padding: 6px 8px;
+    gap: 4px;
+
+    textarea {
+      font-size: 14px; // 16px以上でズーム防止
+      padding: 8px;
+      border-radius: 8px;
+      min-height: 40px;
+    }
+
+    .send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+    }
+  }
+
+  .flight-assistant-actions {
+    padding: 4px 6px;
+
+    .assessment-btn {
+      padding: 6px 8px;
+      font-size: 10px;
+      min-height: 32px;
+    }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+    }
+
+    .action-info {
+      font-size: 9px;
+    }
+  }
+
+  .assessment-summary {
+    .summary-header {
+      padding: 5px 8px;
+
+      > span:first-child {
+        font-size: 10px;
+      }
+
+      .score {
+        font-size: 9px;
+      }
+    }
+
+    .summary-detail {
+      padding: 3px 8px 6px;
+      gap: 4px 8px;
+
+      .detail-row {
+        font-size: 10px;
+      }
+    }
+  }
+
+  .risk-badge {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  .avoidance-settings {
+    padding: 6px 8px;
+
+    .avoidance-slider {
+      label {
+        font-size: 11px;
+
+        strong {
+          font-size: 12px;
+        }
+      }
+
+      .slider-ticks {
+        font-size: 8px;
+      }
+    }
+
+    .avoidance-toggles {
+      gap: 6px;
+
+      .toggle-item {
+        font-size: 9px;
+        gap: 3px;
+
+        input[type="checkbox"] {
+          width: 12px;
+          height: 12px;
+        }
+      }
+    }
+  }
+
+  .optimization-panel {
+    max-height: 100px;
+
+    .optimization-header {
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+
+    .optimization-content {
+      padding: 6px 10px;
+
+      .optimization-summary {
+        font-size: 10px;
+      }
+
+      .optimization-actions {
+        font-size: 10px;
+      }
+
+      .apply-optimization-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+    }
+  }
+
+  .chat-logs-panel {
+    max-height: 140px;
+
+    .chat-logs-header {
+      padding: 8px 12px;
+
+      h3 {
+        font-size: 12px;
+      }
+    }
+
+    .chat-log-item {
+      .log-info .log-name {
+        font-size: 11px;
+      }
+
+      .log-info .log-date {
+        font-size: 9px;
+      }
+    }
+  }
+
+  .settings-panel {
+    max-height: 150px;
+
+    .settings-section h4 {
+      font-size: 11px;
+    }
+
+    .api-key-input input {
+      font-size: 12px;
+      padding: 6px 8px;
+    }
+
+    .model-selector {
+      label {
+        font-size: 11px;
+      }
+
+      select {
+        font-size: 11px;
+        padding: 4px 8px;
+      }
+    }
+  }
+}
+
+// 小型スマートフォン (375px以下)
+@media (max-width: 375px) {
+  .flight-assistant {
+    width: calc(100vw - 12px);
+    right: 6px;
+    bottom: 6px;
+    border-radius: 10px;
+  }
+
+  .flight-assistant-fab {
+    width: 40px;
+    height: 40px;
+    bottom: 8px;
+    right: 8px;
+  }
+
+  .flight-assistant-header {
+    .header-title {
+      font-size: 10px;
+
+      .ai-badge,
+      .mlit-badge {
+        display: none;
+      }
+    }
+
+    .header-actions button {
+      width: 26px;
+      height: 26px;
+    }
+  }
+
+  .message .message-content {
+    font-size: 11px;
+    padding: 5px 8px;
+  }
+
+  .flight-assistant-input textarea {
+    font-size: 14px;
+    padding: 6px;
+  }
+}
+
+// 超小型スマートフォン (320px以下)
+@media (max-width: 320px) {
+  .flight-assistant {
+    width: calc(100vw - 8px);
+    right: 4px;
+    bottom: 4px;
+  }
+
+  .flight-assistant-fab {
+    width: 36px;
+    height: 36px;
+    bottom: 6px;
+    right: 6px;
+  }
+
+  .flight-assistant-header {
+    padding: 4px 6px;
+    min-height: 36px;
+
+    .header-actions button {
+      width: 24px;
+      height: 24px;
+    }
+  }
+}
+
+// ランドスケープモード対応
+@media (max-width: 768px) and (orientation: landscape) {
+  .flight-assistant {
+    max-height: calc(100vh - 32px);
+    width: 50vw;
+    min-width: 300px;
+
+    &.fullscreen {
+      top: 8px;
+      width: 70vw !important;
+    }
+  }
+
+  .flight-assistant-fab {
+    bottom: 12px;
+    right: 12px;
+  }
+}
+
+// タッチデバイス最適化
+@media (hover: none) and (pointer: coarse) {
+  .flight-assistant-fab:hover {
+    transform: none;
+  }
+
+  .flight-assistant-fab:active {
+    transform: scale(0.95);
+  }
+
+  .flight-assistant-header .header-actions button:active {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .flight-assistant-input .send-btn:active {
+    transform: scale(0.95);
+  }
+
+  // スクロール最適化
+  .flight-assistant-messages {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .chat-logs-panel .chat-logs-list {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+// セーフエリア対応
+@supports (padding: env(safe-area-inset-bottom)) {
+  .flight-assistant {
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    right: calc(16px + env(safe-area-inset-right));
+  }
+
+  .flight-assistant-fab {
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    right: calc(16px + env(safe-area-inset-right));
+  }
+
+  @media (max-width: 480px) {
+    .flight-assistant {
+      bottom: calc(8px + env(safe-area-inset-bottom));
+      right: calc(8px + env(safe-area-inset-right));
+    }
+
+    .flight-assistant-fab {
+      bottom: calc(10px + env(safe-area-inset-bottom));
+      right: calc(10px + env(safe-area-inset-right));
+    }
   }
 }

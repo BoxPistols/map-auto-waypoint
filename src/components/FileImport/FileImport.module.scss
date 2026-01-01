@@ -236,3 +236,254 @@
     background: var(--color-primary-dark);
   }
 }
+
+// =============================================================================
+// モバイル対応スタイル
+// =============================================================================
+
+// 大型スマートフォン (600px以下)
+@media (max-width: 600px) {
+  .fileImport {
+    border-radius: 10px;
+  }
+
+  .header {
+    padding: 12px 14px;
+
+    h3 {
+      font-size: 14px;
+    }
+  }
+
+  .closeButton {
+    width: 32px;
+    height: 32px;
+  }
+
+  .dropZone {
+    margin: 14px;
+    padding: 28px 20px;
+  }
+
+  .hint {
+    font-size: 12px;
+  }
+
+  .formats {
+    font-size: 11px;
+  }
+}
+
+// 標準スマートフォン (480px以下)
+@media (max-width: 480px) {
+  .fileImport {
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+
+  .header {
+    padding: 10px 12px;
+    position: sticky;
+    top: 0;
+    background: var(--color-bg-modal);
+    z-index: 10;
+
+    h3 {
+      font-size: 13px;
+    }
+  }
+
+  .closeButton {
+    width: 28px;
+    height: 28px;
+  }
+
+  .dropZone {
+    margin: 12px;
+    padding: 24px 16px;
+    border-radius: 6px;
+    min-height: 120px;
+  }
+
+  .dropContent p {
+    font-size: 13px;
+  }
+
+  .folderIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .hint {
+    font-size: 11px;
+  }
+
+  .formats {
+    font-size: 10px;
+    margin-top: 12px !important;
+  }
+
+  .loading {
+    padding: 16px;
+    font-size: 13px;
+  }
+
+  .error {
+    margin: 0 12px 12px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .preview {
+    padding: 12px;
+  }
+
+  .previewHeader {
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .filename {
+    font-size: 13px;
+    word-break: break-all;
+    flex: 1 1 100%;
+  }
+
+  .polygonCount {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .previewList {
+    max-height: 160px;
+  }
+
+  .previewItem {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .colorDot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .polygonName {
+    font-size: 12px;
+  }
+
+  .vertexCount {
+    font-size: 10px;
+  }
+
+  .moreItems {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+
+  .actions {
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .cancelButton,
+  .importButton {
+    padding: 12px;
+    font-size: 13px;
+    min-height: 48px;
+  }
+}
+
+// 小型スマートフォン (375px以下)
+@media (max-width: 375px) {
+  .header {
+    padding: 8px 10px;
+
+    h3 {
+      font-size: 12px;
+    }
+  }
+
+  .dropZone {
+    margin: 10px;
+    padding: 20px 12px;
+  }
+
+  .dropContent p {
+    font-size: 12px;
+  }
+
+  .folderIcon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .hint {
+    font-size: 10px;
+  }
+
+  .preview {
+    padding: 10px;
+  }
+
+  .filename {
+    font-size: 12px;
+  }
+
+  .cancelButton,
+  .importButton {
+    padding: 10px;
+    font-size: 12px;
+  }
+}
+
+// 超小型スマートフォン (320px以下)
+@media (max-width: 320px) {
+  .dropZone {
+    padding: 16px 10px;
+  }
+
+  .hint {
+    font-size: 9px;
+  }
+
+  .formats {
+    font-size: 9px;
+  }
+}
+
+// タッチデバイス最適化
+@media (hover: none) and (pointer: coarse) {
+  .dropZone {
+    // タッチでのアップロードを促すテキスト表示
+    min-height: 140px;
+  }
+
+  .dropZone:active {
+    background: var(--color-primary-bg);
+    border-color: var(--color-primary);
+  }
+
+  .cancelButton:active,
+  .importButton:active {
+    transform: scale(0.98);
+    opacity: 0.8;
+  }
+
+  .previewList {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
+// セーフエリア対応
+@supports (padding: env(safe-area-inset-bottom)) {
+  @media (max-width: 480px) {
+    .actions {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+  }
+}
