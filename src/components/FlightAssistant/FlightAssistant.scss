@@ -1981,27 +1981,39 @@
   }
 }
 
-// モバイルでのFAB位置調整（フローティング統計と被らないように）
+// モバイルでのFAB位置調整
 @media (max-width: 768px) {
   .flight-assistant-fab {
-    bottom: 70px; // 下部ツールバーを避ける
+    bottom: 16px;
+    right: 16px;
   }
 
   .flight-assistant {
-    bottom: 70px;
-    max-height: calc(100vh - 140px);
+    bottom: 16px;
+    right: 8px;
+    max-height: 50vh; // 画面の半分まで
+    width: calc(100vw - 16px);
   }
 }
 
 @media (max-width: 480px) {
   .flight-assistant-fab {
-    bottom: 60px;
-    width: 42px;
-    height: 42px;
+    bottom: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
   }
 
   .flight-assistant {
-    bottom: 60px;
-    max-height: calc(100vh - 130px);
+    bottom: 12px;
+    right: 6px;
+    left: 6px;
+    width: auto;
+    max-height: 45vh; // 画面の45%まで
+
+    // メッセージエリアをコンパクトに
+    .flight-assistant-messages {
+      max-height: 25vh;
+    }
   }
 }
