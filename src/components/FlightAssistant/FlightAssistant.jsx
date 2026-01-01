@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -391,6 +391,34 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       loadWeatherData();
     }
   }, [polygons.length, waypoints.length, loadWeatherData]);
+
+  // 全エリアの中心座標を計算（天候取得用）
+  const weatherCenter = useMemo(() => {
+    // すべてのポリゴンの座標を集約
+    const allCoords = [];
+    polygons.forEach(p => {
+      if (p.coordinates?.length > 0) {
+        p.coordinates.forEach(c => allCoords.push({ lat: c[1], lng: c[0] }));
+      }
+    });
+
+    // Waypointも追加
+    waypoints.forEach(w => allCoords.push({ lat: w.lat, lng: w.lng }));
+
+    if (allCoords.length === 0) {
+      return { lat: null, lng: null, areaCount: 0 };
+    }
+
+    const lat = allCoords.reduce((sum, c) => sum + c.lat, 0) / allCoords.length;
+    const lng = allCoords.reduce((sum, c) => sum + c.lng, 0) / allCoords.length;
+
+    return { lat, lng, areaCount: polygons.length };
+  }, [polygons, waypoints]);
+
+  // 天候条件変更のコールバック（メモ化して無限ループ防止）
+  const handleWeatherConditionChange = useCallback((conditions) => {
+    setFlightConditions(conditions);
+  }, []);
 
   // メッセージ送信
   const handleSend = async () => {
@@ -1104,24 +1132,15 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       {/* 天候パネル */}
       {showWeatherPanel && (
         <div className="weather-panel-container">
+          {weatherCenter.areaCount > 1 && (
+            <div className="weather-area-notice">
+              {weatherCenter.areaCount}エリアの中心地点の天候を表示
+            </div>
+          )}
           <WeatherPanel
-            latitude={
-              polygons.length > 0 && polygons[0].coordinates?.length > 0
-                ? polygons[0].coordinates.reduce((sum, c) => sum + c[1], 0) / polygons[0].coordinates.length
-                : waypoints.length > 0
-                  ? waypoints.reduce((sum, w) => sum + w.lat, 0) / waypoints.length
-                  : null
-            }
-            longitude={
-              polygons.length > 0 && polygons[0].coordinates?.length > 0
-                ? polygons[0].coordinates.reduce((sum, c) => sum + c[0], 0) / polygons[0].coordinates.length
-                : waypoints.length > 0
-                  ? waypoints.reduce((sum, w) => sum + w.lng, 0) / waypoints.length
-                  : null
-            }
-            onConditionChange={(conditions) => {
-              setFlightConditions(conditions);
-            }}
+            latitude={weatherCenter.lat}
+            longitude={weatherCenter.lng}
+            onConditionChange={handleWeatherConditionChange}
             compact={!isExpanded && !isFullscreen}
             autoRefresh={true}
           />

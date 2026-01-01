@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Cloud,
   Wind,
@@ -57,6 +57,12 @@ function WeatherPanel({
   const [simulationMode, setSimulationMode] = useState(false);
   const [simulationTime, setSimulationTime] = useState(0);
 
+  // コールバックをrefで保持（依存配列からの無限ループ防止）
+  const onConditionChangeRef = useRef(onConditionChange);
+  useEffect(() => {
+    onConditionChangeRef.current = onConditionChange;
+  }, [onConditionChange]);
+
   // 天候データを取得
   const loadWeather = useCallback(async () => {
     if (!latitude || !longitude) return;
@@ -71,9 +77,9 @@ function WeatherPanel({
       const conditions = evaluateFlightConditions(data);
       setFlightConditions(conditions);
 
-      // 親コンポーネントに通知
-      if (onConditionChange) {
-        onConditionChange(conditions);
+      // 親コンポーネントに通知（refを使用）
+      if (onConditionChangeRef.current) {
+        onConditionChangeRef.current(conditions);
       }
     } catch (err) {
       console.error('[WeatherPanel] Error:', err);
@@ -81,7 +87,7 @@ function WeatherPanel({
     } finally {
       setIsLoading(false);
     }
-  }, [latitude, longitude, onConditionChange]);
+  }, [latitude, longitude]);
 
   // 初期ロードと自動更新
   useEffect(() => {
@@ -103,13 +109,13 @@ function WeatherPanel({
       const conditions = evaluateFlightConditions(simulated);
       setFlightConditions(conditions);
 
-      if (onConditionChange) {
-        onConditionChange(conditions);
+      if (onConditionChangeRef.current) {
+        onConditionChangeRef.current(conditions);
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [simulationMode, weatherData, simulationTime, onConditionChange]);
+  }, [simulationMode, weatherData, simulationTime]);
 
   // モックモード切り替え
   const handleMockModeChange = (enabled, pattern) => {
