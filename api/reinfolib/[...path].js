@@ -1,4 +1,3 @@
-/* global process */
 /**
  * Vercel Serverless Function - 国土交通省 不動産情報ライブラリ API Proxy
  *
@@ -6,33 +5,60 @@
  * 環境変数 VITE_REINFOLIB_API_KEY が必要
  */
 
-export const config = {
-  runtime: 'edge',
-};
+export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-export default async function handler(request) {
-  const url = new URL(request.url);
-  const pathSegments = url.pathname.replace('/api/reinfolib/', '');
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Get path from URL directly (more reliable)
+  const urlPath = req.url.split('?')[0];
+  const pathSegments = urlPath.replace('/api/reinfolib/', '');
+
+  // Debug mode
+  if (req.query.debug === '1') {
+    return res.status(200).json({
+      url: req.url,
+      pathSegments,
+      query: req.query,
+      hasApiKey: !!process.env.VITE_REINFOLIB_API_KEY
+    });
+  }
 
   // Get API key from environment
   const apiKey = process.env.VITE_REINFOLIB_API_KEY;
 
   if (!apiKey) {
-    return new Response(
-      JSON.stringify({ error: 'API key not configured' }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    return res.status(500).json({
+      error: 'API key not configured',
+      debug: 'VITE_REINFOLIB_API_KEY not set in Vercel environment'
+    });
   }
 
+  // Build query string (exclude internal params)
+  const queryParams = new URLSearchParams();
+  const excludeKeys = ['path', '...path', 'debug'];
+  Object.entries(req.query).forEach(([key, value]) => {
+    if (!excludeKeys.includes(key)) {
+      queryParams.append(key, value);
+    }
+  });
+
   // Build target URL
-  const targetUrl = `https://www.reinfolib.mlit.go.jp/ex-api/external/${pathSegments}${url.search}`;
+  const targetUrl = `https://www.reinfolib.mlit.go.jp/ex-api/external/${pathSegments}${queryParams.toString() ? '?' + queryParams : ''}`;
+
+  console.log('[reinfolib-proxy] Target URL:', targetUrl);
+  console.log('[reinfolib-proxy] Path segments:', pathSegments);
+  console.log('[reinfolib-proxy] Query:', queryParams.toString());
 
   try {
     const response = await fetch(targetUrl, {
-      method: request.method,
+      method: 'GET',
       headers: {
         'Ocp-Apim-Subscription-Key': apiKey,
         'Accept': 'application/json',
@@ -40,23 +66,12 @@ export default async function handler(request) {
     });
 
     const data = await response.text();
+    const contentType = response.headers.get('Content-Type') || 'application/json';
 
-    return new Response(data, {
-      status: response.status,
-      headers: {
-        'Content-Type': response.headers.get('Content-Type') || 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    });
+    res.setHeader('Content-Type', contentType);
+    return res.status(response.status).send(data);
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    console.error('[reinfolib-proxy] Error:', error);
+    return res.status(500).json({ error: error.message });
   }
 }

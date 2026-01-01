@@ -44,13 +44,19 @@ const latLngToTile = (lat, lng, zoom) => {
  */
 const getEnvironment = () => {
   if (import.meta.env.DEV) return 'dev';
-  // Vercelの場合はホスト名で判定
-  if (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
-    return 'vercel';
+
+  if (typeof window === 'undefined') return 'production';
+
+  const hostname = window.location.hostname;
+
+  // GitHub Pages（API使用不可）
+  if (hostname.includes('github.io')) {
+    return 'github-pages';
   }
-  // カスタムドメインでもVercelの場合はAPI routeが存在する
-  // GitHub Pagesの場合はAPI routeがないのでエラーになる
-  return 'production';
+
+  // Vercel（vercel.appまたはカスタムドメイン）
+  // GitHub Pages以外のプロダクション環境はVercelと想定
+  return 'vercel';
 };
 
 /**
@@ -64,9 +70,13 @@ const callReinfolibApi = async (endpoint, params = {}) => {
   const env = getEnvironment();
   const apiKey = getApiKey();
 
-  // Vercelではサーバー側にAPIキーがあるのでクライアント側は不要
-  // ローカル開発と直接アクセスの場合はAPIキーが必要
-  if (env !== 'vercel' && !apiKey) {
+  // GitHub Pagesでは国交省APIは使用不可（CORS制限）
+  if (env === 'github-pages') {
+    throw new Error('GitHub Pagesでは国交省APIは使用できません。Vercel版をご利用ください。');
+  }
+
+  // ローカル開発時はAPIキーが必要
+  if (env === 'dev' && !apiKey) {
     throw new Error('国土交通省APIキーが設定されていません');
   }
 
@@ -82,7 +92,7 @@ const callReinfolibApi = async (endpoint, params = {}) => {
     baseUrl = '/api/reinfolib';
     useProxy = true;
   } else {
-    // GitHub Pages等: 直接アクセス（CORS制限で失敗する可能性）
+    // その他（想定外）: 直接アクセス試行
     baseUrl = 'https://www.reinfolib.mlit.go.jp/ex-api/external';
   }
 
