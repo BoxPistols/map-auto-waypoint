@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Database, AlertTriangle, Circle, Satellite } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Database, AlertTriangle, Circle, Satellite, Settings2, X } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import { getAirportZonesGeoJSON, getRedZonesGeoJSON, getYellowZonesGeoJSON, getHeliportsGeoJSON } from '../../services/airspace'
@@ -170,6 +170,19 @@ const Map = ({
   const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
   const [showStylePicker, setShowStylePicker] = useState(false)
   const [showApiOverlay, setShowApiOverlay] = useState(false)
+  const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false)
+
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
+
+  // Mobile detection with resize listener
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   // 現在の地図スタイル
   const currentMapStyle = MAP_STYLES[mapStyleId]?.style || MAP_STYLES.osm.style
@@ -922,97 +935,112 @@ const Map = ({
       )}
 
       {/* Map control buttons */}
-      <div className={styles.mapControls}>
-        <button
-          className={`${styles.toggleButton} ${showDID ? styles.activeDID : ''}`}
-          onClick={() => setShowDID(!showDID)}
-          data-tooltip={`DID 人口集中地区 [D]`}
-          data-tooltip-pos="left"
-        >
-          <Users size={18} />
-        </button>
-        <button
-          className={`${styles.toggleButton} ${showAirportZones ? styles.activeAirport : ''}`}
-          onClick={() => setShowAirportZones(!showAirportZones)}
-          data-tooltip={`空港制限区域 [A]`}
-          data-tooltip-pos="left"
-        >
-          <Plane size={18} />
-        </button>
-        <button
-          className={`${styles.toggleButton} ${showRedZones ? styles.activeRed : ''}`}
-          onClick={() => setShowRedZones(!showRedZones)}
-          data-tooltip={`レッドゾーン [R]`}
-          data-tooltip-pos="left"
-        >
-          <ShieldAlert size={18} />
-        </button>
-        <button
-          className={`${styles.toggleButton} ${showYellowZones ? styles.activeYellow : ''}`}
-          onClick={() => setShowYellowZones(!showYellowZones)}
-          data-tooltip={`イエローゾーン [Y]`}
-          data-tooltip-pos="left"
-        >
-          <Building2 size={18} />
-        </button>
-        <button
-          className={`${styles.toggleButton} ${showHeliports ? styles.activeHeliport : ''}`}
-          onClick={() => setShowHeliports(!showHeliports)}
-          data-tooltip={`ヘリポート [H]`}
-          data-tooltip-pos="left"
-        >
-          <Landmark size={18} />
-        </button>
-        <button
-          className={`${styles.toggleButton} ${is3D ? styles.active : ''}`}
-          onClick={toggle3D}
-          data-tooltip={is3D ? '2D表示 [3]' : '3D表示 [3]'}
-          data-tooltip-pos="left"
-        >
-          {is3D ? <Box size={18} /> : <Rotate3D size={18} />}
-        </button>
-
-        {/* API情報トグル（データがある場合のみ表示） */}
-        {apiInfo && (
+      <div className={`${styles.mapControls} ${isMobile ? styles.mobileControls : ''} ${mobileControlsExpanded ? styles.expanded : ''}`}>
+        {/* Mobile toggle button */}
+        {isMobile && (
           <button
-            className={`${styles.toggleButton} ${showApiOverlay ? styles.activeApi : ''} ${apiInfo.mlitEnhanced ? styles.apiConnected : apiInfo.mlitError ? styles.apiError : ''}`}
-            onClick={() => setShowApiOverlay(!showApiOverlay)}
-            data-tooltip={apiInfo.mlitEnhanced ? 'API情報 [I]' : `API: ${apiInfo.mlitError || '未接続'}`}
+            className={`${styles.toggleButton} ${styles.mobileToggle} ${mobileControlsExpanded ? styles.active : ''}`}
+            onClick={() => setMobileControlsExpanded(!mobileControlsExpanded)}
+            data-tooltip={mobileControlsExpanded ? '閉じる' : 'コントロール'}
             data-tooltip-pos="left"
           >
-            <Database size={18} />
+            {mobileControlsExpanded ? <X size={18} /> : <Settings2 size={18} />}
           </button>
         )}
 
-        {/* 地図スタイル切り替え */}
-        <div className={styles.stylePickerContainer}>
+        {/* Controls - always visible on desktop, togglable on mobile */}
+        <div className={`${styles.controlsGroup} ${isMobile && !mobileControlsExpanded ? styles.hidden : ''}`}>
           <button
-            className={`${styles.toggleButton} ${showStylePicker ? styles.active : ''}`}
-            onClick={() => setShowStylePicker(!showStylePicker)}
-            data-tooltip="地図スタイル [M]"
+            className={`${styles.toggleButton} ${showDID ? styles.activeDID : ''}`}
+            onClick={() => setShowDID(!showDID)}
+            data-tooltip={`DID 人口集中地区 [D]`}
             data-tooltip-pos="left"
           >
-            <Layers size={18} />
+            <Users size={18} />
           </button>
-          {showStylePicker && (
-            <div className={styles.stylePicker}>
-              {Object.values(MAP_STYLES).map(styleOption => (
-                <button
-                  key={styleOption.id}
-                  className={`${styles.styleOption} ${mapStyleId === styleOption.id ? styles.activeStyle : ''}`}
-                  onClick={() => {
-                    setMapStyleId(styleOption.id)
-                    setShowStylePicker(false)
-                  }}
-                >
-                  <span className={styles.styleIcon}>
-                    {styleOption.id === 'gsi_photo' ? <Satellite size={16} /> : <MapIcon size={16} />}
-                  </span>
-                  <span className={styles.styleName}>{styleOption.shortName}</span>
-                </button>
-              ))}
-            </div>
+          <button
+            className={`${styles.toggleButton} ${showAirportZones ? styles.activeAirport : ''}`}
+            onClick={() => setShowAirportZones(!showAirportZones)}
+            data-tooltip={`空港制限区域 [A]`}
+            data-tooltip-pos="left"
+          >
+            <Plane size={18} />
+          </button>
+          <button
+            className={`${styles.toggleButton} ${showRedZones ? styles.activeRed : ''}`}
+            onClick={() => setShowRedZones(!showRedZones)}
+            data-tooltip={`レッドゾーン [R]`}
+            data-tooltip-pos="left"
+          >
+            <ShieldAlert size={18} />
+          </button>
+          <button
+            className={`${styles.toggleButton} ${showYellowZones ? styles.activeYellow : ''}`}
+            onClick={() => setShowYellowZones(!showYellowZones)}
+            data-tooltip={`イエローゾーン [Y]`}
+            data-tooltip-pos="left"
+          >
+            <Building2 size={18} />
+          </button>
+          <button
+            className={`${styles.toggleButton} ${showHeliports ? styles.activeHeliport : ''}`}
+            onClick={() => setShowHeliports(!showHeliports)}
+            data-tooltip={`ヘリポート [H]`}
+            data-tooltip-pos="left"
+          >
+            <Landmark size={18} />
+          </button>
+          <button
+            className={`${styles.toggleButton} ${is3D ? styles.active : ''}`}
+            onClick={toggle3D}
+            data-tooltip={is3D ? '2D表示 [3]' : '3D表示 [3]'}
+            data-tooltip-pos="left"
+          >
+            {is3D ? <Box size={18} /> : <Rotate3D size={18} />}
+          </button>
+
+          {/* API情報トグル（データがある場合のみ表示） */}
+          {apiInfo && (
+            <button
+              className={`${styles.toggleButton} ${showApiOverlay ? styles.activeApi : ''} ${apiInfo.mlitEnhanced ? styles.apiConnected : apiInfo.mlitError ? styles.apiError : ''}`}
+              onClick={() => setShowApiOverlay(!showApiOverlay)}
+              data-tooltip={apiInfo.mlitEnhanced ? 'API情報 [I]' : `API: ${apiInfo.mlitError || '未接続'}`}
+              data-tooltip-pos="left"
+            >
+              <Database size={18} />
+            </button>
           )}
+
+          {/* 地図スタイル切り替え */}
+          <div className={styles.stylePickerContainer}>
+            <button
+              className={`${styles.toggleButton} ${showStylePicker ? styles.active : ''}`}
+              onClick={() => setShowStylePicker(!showStylePicker)}
+              data-tooltip="地図スタイル [M]"
+              data-tooltip-pos="left"
+            >
+              <Layers size={18} />
+            </button>
+            {showStylePicker && (
+              <div className={styles.stylePicker}>
+                {Object.values(MAP_STYLES).map(styleOption => (
+                  <button
+                    key={styleOption.id}
+                    className={`${styles.styleOption} ${mapStyleId === styleOption.id ? styles.activeStyle : ''}`}
+                    onClick={() => {
+                      setMapStyleId(styleOption.id)
+                      setShowStylePicker(false)
+                    }}
+                  >
+                    <span className={styles.styleIcon}>
+                      {styleOption.id === 'gsi_photo' ? <Satellite size={16} /> : <MapIcon size={16} />}
+                    </span>
+                    <span className={styles.styleName}>{styleOption.shortName}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

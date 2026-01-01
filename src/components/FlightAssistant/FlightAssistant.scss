@@ -1535,7 +1535,7 @@
     right: 8px;
     bottom: 8px;
     border-radius: 12px;
-    max-height: calc(100vh - 80px);
+    max-height: calc(100vh - 120px); // より小さく
 
     &.fullscreen {
       top: 40px;
@@ -1543,6 +1543,21 @@
       right: 4px;
       bottom: 4px;
       border-radius: 10px;
+    }
+
+    // モバイルでのコンパクト表示
+    &.minimized {
+      max-height: 50px;
+      overflow: hidden;
+
+      .flight-assistant-messages,
+      .flight-assistant-input,
+      .avoidance-settings,
+      .settings-panel,
+      .chat-logs-panel,
+      .optimization-panel {
+        display: none;
+      }
     }
   }
 
@@ -1656,20 +1671,38 @@
 
   .flight-assistant-actions {
     padding: 4px 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 3px;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
 
     .assessment-btn {
       padding: 6px 8px;
       font-size: 10px;
       min-height: 32px;
+      flex-shrink: 0;
     }
 
     .icon-btn {
       width: 32px;
       height: 32px;
+      flex-shrink: 0;
+    }
+
+    .optimize-btn {
+      padding: 6px 8px;
+      font-size: 10px;
+      flex-shrink: 0;
     }
 
     .action-info {
       font-size: 9px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
   }
 
@@ -1945,5 +1978,30 @@
       bottom: calc(10px + env(safe-area-inset-bottom));
       right: calc(10px + env(safe-area-inset-right));
     }
+  }
+}
+
+// モバイルでのFAB位置調整（フローティング統計と被らないように）
+@media (max-width: 768px) {
+  .flight-assistant-fab {
+    bottom: 70px; // 下部ツールバーを避ける
+  }
+
+  .flight-assistant {
+    bottom: 70px;
+    max-height: calc(100vh - 140px);
+  }
+}
+
+@media (max-width: 480px) {
+  .flight-assistant-fab {
+    bottom: 60px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .flight-assistant {
+    bottom: 60px;
+    max-height: calc(100vh - 130px);
   }
 }

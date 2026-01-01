@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route } from 'lucide-react'
+import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2 } from 'lucide-react'
 import { getTheme, toggleTheme, THEMES } from './services/themeService'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
@@ -52,8 +52,15 @@ function App() {
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
   const [panelHeight, setPanelHeight] = useState(null) // null = auto
   const [isSearchExpanded, setIsSearchExpanded] = useState(true)
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
+  const [fullMapMode, setFullMapMode] = useState(false)
+
+  // Auto-collapse sidebar on mobile
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebarCollapsed')
+    // Default to collapsed on mobile
+    if (window.innerWidth <= 768) return true
     return saved === 'true'
   })
   const [showImport, setShowImport] = useState(false)
@@ -218,6 +225,16 @@ function App() {
           case 'c': // Toggle Chat (Flight Assistant)
             e.preventDefault()
             setShowChat(prev => !prev)
+            break
+          case 'f': // Toggle Full Map Mode
+            e.preventDefault()
+            setFullMapMode(prev => {
+              if (!prev) {
+                setSidebarCollapsed(true)
+                setShowChat(false)
+              }
+              return !prev
+            })
             break
         }
       }
@@ -679,8 +696,28 @@ function App() {
     }
   }, [drawMode, waypoints.length, showNotification])
 
-  // Mobile detection (reserved for future use)
-  const _isMobile = () => window.innerWidth <= 768
+  // Mobile detection with resize listener
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768
+      setIsMobile(mobile)
+      // Auto-collapse sidebar when switching to mobile
+      if (mobile && !sidebarCollapsed) {
+        setSidebarCollapsed(true)
+      }
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [sidebarCollapsed])
+
+  // Toggle full map mode
+  const toggleFullMapMode = useCallback(() => {
+    setFullMapMode(prev => !prev)
+    if (!fullMapMode) {
+      setSidebarCollapsed(true)
+      setShowChat(false)
+    }
+  }, [fullMapMode])
 
   // Panel resize handlers
   const panelContentRef = useRef(null)
@@ -715,9 +752,9 @@ function App() {
   }, [])
 
   return (
-    <div className="app">
+    <div className={`app ${fullMapMode ? 'full-map-mode' : ''} ${isMobile ? 'is-mobile' : ''}`}>
       {/* Header */}
-      <header className="app-header">
+      <header className={`app-header ${fullMapMode ? 'hidden' : ''}`}>
         <h1 className="app-title">Drone Waypoint</h1>
         <div className="header-actions">
           <button
@@ -798,7 +835,7 @@ function App() {
       {/* Main content */}
       <main className="app-main">
         {/* Sidebar */}
-        <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+        <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${fullMapMode ? 'hidden' : ''}`}>
           {/* Sidebar Toggle Button - 展開時のみ表示 */}
           {!sidebarCollapsed && (
             <button
@@ -969,6 +1006,50 @@ function App() {
               「{editingPolygon.name}」を編集中
               <br />
               頂点をドラッグして変更 / 中点クリックで頂点追加
+            </div>
+          )}
+
+          {/* Mobile Full Map Mode Toggle */}
+          {isMobile && (
+            <button
+              className={`full-map-toggle ${fullMapMode ? 'active' : ''}`}
+              onClick={toggleFullMapMode}
+              title={fullMapMode ? 'UIを表示 [F]' : 'マップに集中 [F]'}
+            >
+              {fullMapMode ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            </button>
+          )}
+
+          {/* Mobile Floating Stats (when sidebar collapsed) */}
+          {isMobile && sidebarCollapsed && !fullMapMode && (
+            <div className="mobile-floating-stats">
+              <button
+                className="floating-stat"
+                onClick={() => { setActivePanel('polygons'); setSidebarCollapsed(false); }}
+              >
+                <Layers size={14} />
+                <span>{polygons.length}</span>
+              </button>
+              <button
+                className="floating-stat"
+                onClick={() => { setActivePanel('waypoints'); setSidebarCollapsed(false); }}
+              >
+                <MapIcon size={14} />
+                <span>{waypoints.length}</span>
+              </button>
+              {waypoints.length >= 2 && (
+                <div className="floating-stat distance">
+                  <Route size={12} />
+                  <span>{calcTotalDistance(waypoints).toFixed(1)}km</span>
+                </div>
+              )}
+              <button
+                className="floating-stat expand"
+                onClick={() => setSidebarCollapsed(false)}
+                title="サイドバーを開く"
+              >
+                <Menu size={16} />
+              </button>
             </div>
           )}
         </div>

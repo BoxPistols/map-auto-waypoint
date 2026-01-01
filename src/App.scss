@@ -899,3 +899,245 @@ body {
     bottom: calc(16px + env(safe-area-inset-bottom));
   }
 }
+
+// =============================================================================
+// モバイル専用UI改善
+// =============================================================================
+
+// フルマップモード
+.app.full-map-mode {
+  .app-header.hidden {
+    display: none;
+  }
+
+  .sidebar.hidden {
+    display: none;
+  }
+
+  .map-section {
+    height: 100vh;
+  }
+
+  // FlightAssistantも隠す
+  .flight-assistant,
+  .flight-assistant-fab {
+    display: none !important;
+  }
+}
+
+// フルマップモードトグルボタン
+.full-map-toggle {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  z-index: 200;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--color-primary-bg);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  &.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+// モバイルフローティング統計
+.mobile-floating-stats {
+  position: absolute;
+  top: 10px;
+  left: 60px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 200;
+}
+
+.floating-stat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: all 0.2s ease;
+
+  svg {
+    color: var(--color-primary);
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: var(--color-primary-bg);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &.distance {
+    cursor: default;
+    font-size: 11px;
+    padding: 6px 10px;
+    background: var(--color-bg-secondary);
+
+    svg {
+      color: var(--color-text-tertiary);
+    }
+
+    &:hover {
+      background: var(--color-bg-secondary);
+      border-color: var(--color-border);
+      color: var(--color-text-secondary);
+    }
+  }
+
+  &.expand {
+    padding: 8px 10px;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+
+    svg {
+      color: white;
+    }
+
+    &:hover {
+      background: var(--color-primary-dark);
+    }
+  }
+}
+
+// モバイル用サイドバー改善
+@media (max-width: 768px) {
+  // モバイルではサイドバーを完全に隠す（折りたたみ時）
+  .app.is-mobile {
+    .sidebar.collapsed {
+      display: none;
+    }
+  }
+
+  // ヘッダーをコンパクトに
+  .app-header {
+    .header-divider {
+      display: none;
+    }
+  }
+
+  // フルマップモードトグルの位置調整
+  .full-map-toggle {
+    top: 8px;
+    left: 8px;
+    width: 40px;
+    height: 40px;
+  }
+
+  // フローティング統計の位置調整
+  .mobile-floating-stats {
+    top: 8px;
+    left: 54px;
+    gap: 4px;
+  }
+
+  .floating-stat {
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 6px;
+
+    &.distance {
+      padding: 5px 8px;
+      font-size: 10px;
+    }
+
+    &.expand {
+      padding: 6px 8px;
+    }
+  }
+}
+
+// 480px以下でさらにコンパクト
+@media (max-width: 480px) {
+  .full-map-toggle {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .mobile-floating-stats {
+    left: 50px;
+    gap: 3px;
+  }
+
+  .floating-stat {
+    padding: 5px 8px;
+    font-size: 10px;
+    border-radius: 5px;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    &.distance {
+      display: none; // 最小サイズでは距離を非表示
+    }
+
+    &.expand {
+      padding: 5px 6px;
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
+}
+
+// 375px以下
+@media (max-width: 375px) {
+  .mobile-floating-stats {
+    left: 46px;
+  }
+
+  .floating-stat {
+    padding: 4px 6px;
+
+    span {
+      font-size: 9px;
+    }
+  }
+}
