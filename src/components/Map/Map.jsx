@@ -290,8 +290,8 @@ const Map = ({
     setDisasterHistoryLoading(true)
     setDisasterHistoryError(null)
 
+    let cancelled = false
     const timer = setTimeout(() => {
-      let cancelled = false
 
       const p = (async () => {
         disasterHistoryLastFetchAtRef.current = Date.now()
@@ -1228,18 +1228,16 @@ const Map = ({
           >
             <Users size={18} />
           </button>
-          {/* 災害履歴（XST001） - データがある場合のみ表示 */}
-          {disasterHistoryGeoJSON && (
-            <button
-              className={`${styles.toggleButton} ${showDisasterHistory ? styles.active : ''} ${disasterHistoryLoading ? styles.loading : ''}`}
-              onClick={() => setShowDisasterHistory(!showDisasterHistory)}
-              data-tooltip={disasterHistoryLoading ? '災害履歴 取得中...' : disasterHistoryError ? `災害履歴: ${disasterHistoryError}` : `災害履歴 [X]`}
-              data-tooltip-pos="left"
-              title="災害履歴（国土調査）を表示/非表示"
-            >
-              <AlertTriangle size={18} />
-            </button>
-          )}
+          {/* 災害履歴（XST001） */}
+          <button
+            className={`${styles.toggleButton} ${showDisasterHistory ? styles.activeDisasterHistory : ''} ${disasterHistoryLoading ? styles.loading : ''}`}
+            onClick={() => setShowDisasterHistory(!showDisasterHistory)}
+            data-tooltip={disasterHistoryLoading ? '災害履歴 取得中...' : disasterHistoryError ? `災害履歴: ${disasterHistoryError}` : `災害履歴 [X]`}
+            data-tooltip-pos="left"
+            title="災害履歴（国土調査）を表示/非表示"
+          >
+            <span className={styles.xButtonLabel}>X</span>
+          </button>
           <button
             className={`${styles.toggleButton} ${showAirportZones ? styles.activeAirport : ''}`}
             onClick={() => setShowAirportZones(!showAirportZones)}
