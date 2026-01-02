@@ -505,22 +505,61 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
       // 用途地域情報（国土交通省API）- エラーでないもののみ表示
       if (result.context?.mlitInfo?.success) {
-        const mlit = result.context.mlitInfo;
-        const useZoneName = mlit.useZone?.success && mlit.useZone?.zoneName && mlit.useZone.zoneName !== '取得エラー'
-          ? mlit.useZone.zoneName : null;
-        const urbanAreaName = mlit.urbanArea?.success && mlit.urbanArea?.areaName && mlit.urbanArea.areaName !== '取得エラー'
-          ? mlit.urbanArea.areaName : null;
+          const mlit = result.context.mlitInfo
+          const useZoneName =
+              mlit.useZone?.success &&
+              mlit.useZone?.zoneName &&
+              mlit.useZone.zoneName !== '取得エラー'
+                  ? mlit.useZone.zoneName
+                  : null
+          const urbanAreaName =
+              mlit.urbanArea?.success &&
+              mlit.urbanArea?.areaName &&
+              mlit.urbanArea.areaName !== '取得エラー'
+                  ? mlit.urbanArea.areaName
+                  : null
 
-        if (useZoneName || urbanAreaName) {
-          response += `### 用途地域情報\n`;
-          if (useZoneName) {
-            response += `• ${useZoneName}\n`;
+          if (useZoneName || urbanAreaName) {
+              response += `### 用途地域情報\n`
+              if (useZoneName) {
+                  response += `• ${useZoneName}\n`
+              }
+              if (urbanAreaName) {
+                  response += `• ${urbanAreaName}\n`
+              }
+              response += '\n'
           }
-          if (urbanAreaName) {
-            response += `• ${urbanAreaName}\n`;
+
+          // 災害履歴（XST001）
+          const dh = mlit.disasterHistory
+          const dhSummary = dh?.success ? dh.summary : null
+          if (dhSummary?.total > 0) {
+              response += `### 災害履歴（国土調査）\n`
+              response += `• 該当タイル内: ${dhSummary.total}件\n`
+              if (dhSummary.yearRange?.min || dhSummary.yearRange?.max) {
+                  const yMin = dhSummary.yearRange.min
+                  const yMax = dhSummary.yearRange.max
+                  const yText =
+                      yMin && yMax
+                          ? yMin === yMax
+                              ? `${yMin}年`
+                              : `${yMin}〜${yMax}年`
+                          : yMin
+                          ? `${yMin}年〜`
+                          : `〜${yMax}年`
+                  response += `• 年代: ${yText}\n`
+              }
+              if (
+                  Array.isArray(dhSummary.byType) &&
+                  dhSummary.byType.length > 0
+              ) {
+                  response += `• 内訳: ${dhSummary.byType
+                      .slice(0, 3)
+                      .map((t) => `${t.label}(${t.code}) ${t.count}件`)
+                      .join(' / ')}\n`
+              }
+              response += '\n'
           }
-          response += '\n';
-        }
       }
 
       // UTM干渉チェック
@@ -668,6 +707,23 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         if (mlitInfo.riskLevel) {
           const riskMarker = mlitInfo.riskLevel === 'HIGH' ? '[HIGH]' : mlitInfo.riskLevel === 'MEDIUM' ? '[MED]' : '[LOW]';
           response += `**土地利用リスク:** ${riskMarker} ${mlitInfo.riskLevel}\n`;
+        }
+        if (
+            mlitInfo.disasterHistory?.success &&
+            mlitInfo.disasterHistory.summary?.total > 0
+        ) {
+            const s = mlitInfo.disasterHistory.summary
+            const yMin = s.yearRange?.min
+            const yMax = s.yearRange?.max
+            const yText =
+                yMin && yMax
+                    ? yMin === yMax
+                        ? `${yMin}年`
+                        : `${yMin}〜${yMax}年`
+                    : null
+            response += `**災害履歴:** ${s.total}件${
+                yText ? ` / ${yText}` : ''
+            }\n`
         }
         if (mlitInfo.recommendations?.length > 0) {
           response += `**API推奨事項:**\n`;
