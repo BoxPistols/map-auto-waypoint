@@ -38,7 +38,7 @@
   width: 400px;
   min-width: 360px;
   max-height: min(600px, calc(100vh - 100px));
-  background: var(--color-bg-elevated);
+  background: rgba(var(--color-bg-elevated-rgb), 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 16px;
@@ -74,8 +74,8 @@
     bottom: 24px;
     right: 24px;
     top: 60px;
-    width: 70vw !important;
-    height: auto !important;
+    width: 70vw;
+    height: auto;
     max-width: 1000px;
     max-height: calc(100vh - 84px);
     border-radius: 16px;
@@ -165,7 +165,7 @@
     }
 
     .ai-badge, .mlit-badge {
-      font-size: 9px;
+      font-size: 12px;
       padding: 2px 4px;
       border-radius: 3px;
       font-weight: 600;
@@ -253,7 +253,7 @@
         min-width: 12px;
         height: 12px;
         padding: 0 2px;
-        font-size: 8px;
+        font-size: 12px;
         font-weight: 600;
         color: white;
         background: var(--color-primary);
@@ -334,7 +334,7 @@
     }
 
     .hint {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text-tertiary);
     }
   }
@@ -389,7 +389,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        font-size: 10px;
+        font-size: 12px;
         color: var(--color-text-tertiary);
       }
     }
@@ -552,7 +552,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 11px;
+      font-size: 12px;
       white-space: nowrap;
 
       th, td {
@@ -565,7 +565,7 @@
         background: var(--color-primary-bg);
         color: var(--color-primary);
         font-weight: 600;
-        font-size: 10px;
+        font-size: 12px;
         text-transform: uppercase;
       }
 
@@ -718,7 +718,7 @@
       display: flex;
       justify-content: space-between;
       margin-top: 4px;
-      font-size: 9px;
+      font-size: 12px;
       color: var(--color-text-tertiary);
     }
   }
@@ -733,7 +733,7 @@
       display: flex;
       align-items: center;
       gap: 5px;
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text-secondary);
       cursor: pointer;
 
@@ -747,7 +747,7 @@
       &.sub {
         padding-left: 8px;
         border-left: 2px solid var(--color-border);
-        font-size: 10px;
+        font-size: 12px;
         color: var(--color-text-tertiary);
       }
     }
@@ -837,7 +837,7 @@
     border-radius: 5px;
     color: var(--color-text-inverse);
     font-weight: 600;
-    font-size: 11px;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.15s ease;
 
@@ -851,7 +851,7 @@
     align-items: center;
     gap: 3px;
     margin-left: auto;
-    font-size: 10px;
+    font-size: 12px;
     color: var(--color-text-tertiary);
   }
 }
@@ -931,12 +931,12 @@
     }
 
     > span:first-child {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text-secondary);
     }
 
     .score {
-      font-size: 10px;
+      font-size: 12px;
       color: var(--color-text-tertiary);
       margin-left: auto;
     }
@@ -957,7 +957,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text-secondary);
 
       svg {
@@ -966,7 +966,7 @@
       }
 
       &.source {
-        font-size: 10px;
+        font-size: 12px;
         color: var(--color-text-tertiary);
       }
     }
@@ -979,7 +979,7 @@
   gap: 4px;
   padding: 4px 8px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 
   &.low {
@@ -1064,7 +1064,7 @@
   }
 
   .settings-info {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-text-secondary);
     margin-bottom: 8px;
 
@@ -1083,7 +1083,7 @@
   }
 
   .settings-note {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-text-tertiary);
     margin: 12px 0 0;
   }
@@ -1118,7 +1118,7 @@
       border: none;
       border-radius: 4px;
       color: var(--color-danger);
-      font-size: 11px;
+      font-size: 12px;
       cursor: pointer;
 
       &:hover {
@@ -1221,7 +1221,7 @@
       margin-bottom: 8px;
 
       label {
-        font-size: 11px;
+        font-size: 12px;
         color: var(--color-text-secondary);
       }
 
@@ -1232,7 +1232,7 @@
         border: 1px solid var(--color-border);
         border-radius: 4px;
         color: var(--color-text);
-        font-size: 11px;
+        font-size: 12px;
         font-family: monospace;
 
         &::placeholder {
@@ -1253,7 +1253,7 @@
         border: none;
         border-radius: 4px;
         color: var(--color-text-inverse);
-        font-size: 11px;
+        font-size: 12px;
         cursor: pointer;
 
         &:hover {
@@ -1264,7 +1264,7 @@
 
     .local-note {
       margin: 8px 0 0;
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-success);
     }
   }
@@ -1273,7 +1273,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 11px;
+    font-size: 12px;
 
     a {
       display: flex;
@@ -1294,7 +1294,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-tertiary);
   padding: 0 8px;
 }
@@ -1326,7 +1326,7 @@
     padding: 8px 12px;
 
     .optimization-summary {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text);
       margin: 0 0 6px;
     }
@@ -1334,7 +1334,7 @@
     .optimization-actions {
       margin: 0 0 8px;
       padding-left: 14px;
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text-secondary);
 
       li {
@@ -1377,22 +1377,34 @@
 // タブレット (768px以下)
 @media (max-width: 768px) {
   .flight-assistant {
-    width: 360px;
-    min-width: 320px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    min-width: auto;
     max-height: calc(100vh - 80px);
     bottom: 16px;
-    right: 16px;
 
     &.expanded {
-      width: min(90vw, 600px);
+      // モバイルでは横幅拡大なし - CSSで制御
+      left: 12px;
+      right: 12px;
     }
 
     &.fullscreen {
       top: 50px;
-      width: 90vw !important;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: auto;
       max-width: none;
-      max-height: calc(100vh - 66px);
+      max-height: none;
+      border-radius: 12px 12px 0 0;
     }
+  }
+
+  // リサイズハンドルを非表示
+  .resize-handle {
+    display: none;
   }
 
   .flight-assistant-fab {
@@ -1427,7 +1439,7 @@
     font-size: 13px;
 
     table {
-      font-size: 10px;
+      font-size: 12px;
     }
   }
 
@@ -1452,7 +1464,7 @@
 
     .assessment-btn {
       padding: 8px 10px;
-      font-size: 11px;
+      font-size: 12px;
       flex: 1;
       min-height: 36px;
     }
@@ -1467,24 +1479,27 @@
 // 大型スマートフォン (600px以下)
 @media (max-width: 600px) {
   .flight-assistant {
-    width: calc(100vw - 24px);
+    left: 10px;
+    right: 10px;
+    width: auto;
     min-width: auto;
-    right: 12px;
     bottom: 12px;
     max-height: calc(100vh - 70px);
 
     &.expanded {
-      width: calc(100vw - 24px);
+      left: 10px;
+      right: 10px;
     }
 
     &.fullscreen {
       top: 44px;
-      left: 8px;
-      right: 8px;
-      bottom: 8px;
-      width: auto !important;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: auto;
+      max-width: none;
       max-height: none;
-      border-radius: 12px;
+      border-radius: 12px 12px 0 0;
     }
   }
 
@@ -1510,7 +1525,7 @@
       gap: 8px;
 
       .toggle-item {
-        font-size: 10px;
+        font-size: 12px;
       }
     }
   }
@@ -1531,18 +1546,23 @@
 // 標準スマートフォン (480px以下)
 @media (max-width: 480px) {
   .flight-assistant {
-    width: calc(100vw - 16px);
+    left: 8px;
     right: 8px;
+    width: auto;
+    min-width: auto;
     bottom: 8px;
     border-radius: 12px;
-    max-height: calc(100vh - 120px); // より小さく
+    max-height: calc(100vh - 120px);
 
     &.fullscreen {
-      top: 40px;
-      left: 4px;
-      right: 4px;
-      bottom: 4px;
-      border-radius: 10px;
+      top: 48px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: auto;
+      max-width: none;
+      max-height: none;
+      border-radius: 12px 12px 0 0;
     }
 
     // モバイルでのコンパクト表示
@@ -1582,12 +1602,12 @@
     }
 
     .header-title {
-      font-size: 11px;
+      font-size: 12px;
       gap: 3px;
 
       .ai-badge,
       .mlit-badge {
-        font-size: 8px;
+        font-size: 12px;
         padding: 1px 3px;
       }
     }
@@ -1599,6 +1619,11 @@
         width: 28px;
         height: 28px;
         padding: 4px;
+      }
+
+      // モバイルでは横幅拡大ボタンのみ非表示（高さ切り替えは残す）
+      .expand-btn {
+        display: none;
       }
     }
   }
@@ -1626,7 +1651,7 @@
       }
 
       table {
-        font-size: 9px;
+        font-size: 12px;
 
         th, td {
           padding: 4px 5px;
@@ -1635,12 +1660,12 @@
 
       .apply-route-btn {
         padding: 8px 10px;
-        font-size: 11px;
+        font-size: 12px;
       }
 
       .wp-link {
         padding: 0 4px;
-        font-size: 10px;
+        font-size: 12px;
       }
     }
 
@@ -1654,18 +1679,21 @@
   .flight-assistant-input {
     padding: 6px 8px;
     gap: 4px;
+    overflow: hidden;
 
     textarea {
       font-size: 14px; // 16px以上でズーム防止
       padding: 8px;
       border-radius: 8px;
       min-height: 40px;
+      min-width: 0; // flex子要素のオーバーフロー防止
     }
 
     .send-btn {
       width: 40px;
       height: 40px;
       border-radius: 8px;
+      flex-shrink: 0;
     }
   }
 
@@ -1673,6 +1701,7 @@
     padding: 4px 6px;
     flex-wrap: nowrap;
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     gap: 3px;
 
@@ -1682,7 +1711,7 @@
 
     .assessment-btn {
       padding: 6px 8px;
-      font-size: 10px;
+      font-size: 12px;
       min-height: 32px;
       flex-shrink: 0;
     }
@@ -1695,12 +1724,12 @@
 
     .optimize-btn {
       padding: 6px 8px;
-      font-size: 10px;
+      font-size: 12px;
       flex-shrink: 0;
     }
 
     .action-info {
-      font-size: 9px;
+      font-size: 12px;
       white-space: nowrap;
       flex-shrink: 0;
     }
@@ -1711,11 +1740,11 @@
       padding: 5px 8px;
 
       > span:first-child {
-        font-size: 10px;
+        font-size: 12px;
       }
 
       .score {
-        font-size: 9px;
+        font-size: 12px;
       }
     }
 
@@ -1724,14 +1753,14 @@
       gap: 4px 8px;
 
       .detail-row {
-        font-size: 10px;
+        font-size: 12px;
       }
     }
   }
 
   .risk-badge {
     padding: 3px 6px;
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .avoidance-settings {
@@ -1739,7 +1768,7 @@
 
     .avoidance-slider {
       label {
-        font-size: 11px;
+        font-size: 12px;
 
         strong {
           font-size: 12px;
@@ -1747,7 +1776,7 @@
       }
 
       .slider-ticks {
-        font-size: 8px;
+        font-size: 12px;
       }
     }
 
@@ -1755,7 +1784,7 @@
       gap: 6px;
 
       .toggle-item {
-        font-size: 9px;
+        font-size: 12px;
         gap: 3px;
 
         input[type="checkbox"] {
@@ -1771,23 +1800,23 @@
 
     .optimization-header {
       padding: 6px 10px;
-      font-size: 11px;
+      font-size: 12px;
     }
 
     .optimization-content {
       padding: 6px 10px;
 
       .optimization-summary {
-        font-size: 10px;
+        font-size: 12px;
       }
 
       .optimization-actions {
-        font-size: 10px;
+        font-size: 12px;
       }
 
       .apply-optimization-btn {
         padding: 6px 10px;
-        font-size: 11px;
+        font-size: 12px;
       }
     }
   }
@@ -1805,11 +1834,11 @@
 
     .chat-log-item {
       .log-info .log-name {
-        font-size: 11px;
+        font-size: 12px;
       }
 
       .log-info .log-date {
-        font-size: 9px;
+        font-size: 12px;
       }
     }
   }
@@ -1818,7 +1847,7 @@
     max-height: 150px;
 
     .settings-section h4 {
-      font-size: 11px;
+      font-size: 12px;
     }
 
     .api-key-input input {
@@ -1828,11 +1857,11 @@
 
     .model-selector {
       label {
-        font-size: 11px;
+        font-size: 12px;
       }
 
       select {
-        font-size: 11px;
+        font-size: 12px;
         padding: 4px 8px;
       }
     }
@@ -1842,8 +1871,9 @@
 // 小型スマートフォン (375px以下)
 @media (max-width: 375px) {
   .flight-assistant {
-    width: calc(100vw - 12px);
+    left: 6px;
     right: 6px;
+    width: auto;
     bottom: 6px;
     border-radius: 10px;
   }
@@ -1857,7 +1887,7 @@
 
   .flight-assistant-header {
     .header-title {
-      font-size: 10px;
+      font-size: 12px;
 
       .ai-badge,
       .mlit-badge {
@@ -1872,7 +1902,7 @@
   }
 
   .message .message-content {
-    font-size: 11px;
+    font-size: 12px;
     padding: 5px 8px;
   }
 
@@ -1885,8 +1915,9 @@
 // 超小型スマートフォン (320px以下)
 @media (max-width: 320px) {
   .flight-assistant {
-    width: calc(100vw - 8px);
+    left: 4px;
     right: 4px;
+    width: auto;
     bottom: 4px;
   }
 
@@ -1912,12 +1943,16 @@
 @media (max-width: 768px) and (orientation: landscape) {
   .flight-assistant {
     max-height: calc(100vh - 32px);
+    left: auto;
+    right: 12px;
     width: 50vw;
     min-width: 300px;
 
     &.fullscreen {
       top: 8px;
-      width: 70vw !important;
+      left: 0;
+      right: 0;
+      width: auto;
     }
   }
 
@@ -1958,20 +1993,33 @@
 
 // セーフエリア対応
 @supports (padding: env(safe-area-inset-bottom)) {
-  .flight-assistant {
-    bottom: calc(16px + env(safe-area-inset-bottom));
-    right: calc(16px + env(safe-area-inset-right));
-  }
-
+  // FABのみsafe-area対応（パネルは左右固定のためleft/rightで調整済み）
   .flight-assistant-fab {
     bottom: calc(16px + env(safe-area-inset-bottom));
     right: calc(16px + env(safe-area-inset-right));
   }
 
+  @media (max-width: 768px) {
+    .flight-assistant {
+      left: calc(12px + env(safe-area-inset-left));
+      right: calc(12px + env(safe-area-inset-right));
+      bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .flight-assistant {
+      left: calc(10px + env(safe-area-inset-left));
+      right: calc(10px + env(safe-area-inset-right));
+      bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+  }
+
   @media (max-width: 480px) {
     .flight-assistant {
-      bottom: calc(8px + env(safe-area-inset-bottom));
+      left: calc(8px + env(safe-area-inset-left));
       right: calc(8px + env(safe-area-inset-right));
+      bottom: calc(8px + env(safe-area-inset-bottom));
     }
 
     .flight-assistant-fab {
@@ -1979,41 +2027,21 @@
       right: calc(10px + env(safe-area-inset-right));
     }
   }
-}
 
-// モバイルでのFAB位置調整
-@media (max-width: 768px) {
-  .flight-assistant-fab {
-    bottom: 16px;
-    right: 16px;
+  @media (max-width: 375px) {
+    .flight-assistant {
+      left: calc(6px + env(safe-area-inset-left));
+      right: calc(6px + env(safe-area-inset-right));
+      bottom: calc(6px + env(safe-area-inset-bottom));
+    }
   }
 
-  .flight-assistant {
-    bottom: 16px;
-    right: 8px;
-    max-height: 50vh; // 画面の半分まで
-    width: calc(100vw - 16px);
-  }
-}
-
-@media (max-width: 480px) {
-  .flight-assistant-fab {
-    bottom: 12px;
-    right: 12px;
-    width: 40px;
-    height: 40px;
-  }
-
-  .flight-assistant {
-    bottom: 12px;
-    right: 6px;
-    left: 6px;
-    width: auto;
-    max-height: 45vh; // 画面の45%まで
-
-    // メッセージエリアをコンパクトに
-    .flight-assistant-messages {
-      max-height: 25vh;
+  @media (max-width: 320px) {
+    .flight-assistant {
+      left: calc(4px + env(safe-area-inset-left));
+      right: calc(4px + env(safe-area-inset-right));
+      bottom: calc(4px + env(safe-area-inset-bottom));
     }
   }
 }
+

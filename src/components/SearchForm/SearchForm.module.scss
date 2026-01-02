@@ -257,7 +257,7 @@
 .sizeButton {
   flex: 1;
   padding: 6px 8px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-secondary);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -451,17 +451,17 @@
   .shapeSelector label,
   .sizeSelector label,
   .waypointSelector label {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .shapeButton {
     padding: 8px 10px;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .sizeButton {
     padding: 6px 8px;
-    font-size: 10px;
+    font-size: 12px;
   }
 }
 
@@ -520,7 +520,7 @@
 
   .shapeButton {
     padding: 8px;
-    font-size: 10px;
+    font-size: 12px;
     gap: 4px;
   }
 
@@ -530,7 +530,7 @@
 
   .sizeButton {
     padding: 6px;
-    font-size: 9px;
+    font-size: 12px;
     min-height: 32px;
   }
 
@@ -557,7 +557,7 @@
   }
 
   .sliderValue {
-    font-size: 11px;
+    font-size: 12px;
     min-width: 45px;
   }
 
@@ -584,16 +584,16 @@
   }
 
   .suggestionAddress {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .shapeButton {
     padding: 6px;
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .sizeButton {
-    font-size: 8px;
+    font-size: 12px;
     padding: 5px;
   }
 
@@ -614,7 +614,7 @@
   }
 
   .sizeButton {
-    font-size: 8px;
+    font-size: 12px;
     padding: 4px;
   }
 }

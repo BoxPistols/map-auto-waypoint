@@ -1,5 +1,8 @@
 .modal {
-  background: var(--color-bg-modal);
+  background: rgba(var(--color-bg-modal-rgb), 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   box-shadow: var(--shadow-xl);
   width: 90vw;
@@ -480,19 +483,19 @@
     }
 
     span {
-      font-size: 11px;
+      font-size: 12px;
     }
   }
 
   .table, .shortcutTable {
-    font-size: 11px;
+    font-size: 12px;
 
     th, td {
       padding: 6px 8px;
     }
 
     kbd {
-      font-size: 10px;
+      font-size: 12px;
       padding: 3px 6px;
     }
   }
@@ -598,7 +601,7 @@
       }
 
       span {
-        font-size: 10px;
+        font-size: 12px;
       }
     }
   }
@@ -610,7 +613,7 @@
     &::before {
       width: 20px;
       height: 20px;
-      font-size: 10px;
+      font-size: 12px;
     }
   }
 
@@ -619,14 +622,14 @@
     display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    font-size: 10px;
+    font-size: 12px;
 
     th, td {
       padding: 5px 6px;
     }
 
     kbd {
-      font-size: 9px;
+      font-size: 12px;
       padding: 2px 4px;
       margin-right: 2px;
     }
@@ -639,11 +642,11 @@
 
   .warning {
     padding: 10px 12px;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .hint {
-    font-size: 11px !important;
+    font-size: 12px !important;
   }
 }
 
@@ -659,7 +662,7 @@
 
   .navItem {
     padding: 6px 10px;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .content {
@@ -672,7 +675,7 @@
     }
 
     p, li {
-      font-size: 11px;
+      font-size: 12px;
     }
   }
 
@@ -680,23 +683,23 @@
     padding: 8px;
 
     strong {
-      font-size: 11px;
+      font-size: 12px;
     }
 
     span {
-      font-size: 9px;
+      font-size: 12px;
     }
   }
 
   .table, .shortcutTable {
-    font-size: 9px;
+    font-size: 12px;
 
     th, td {
       padding: 4px 5px;
     }
 
     kbd {
-      font-size: 8px;
+      font-size: 12px;
       padding: 1px 3px;
     }
   }
@@ -709,7 +712,7 @@
   }
 
   .navItem {
-    font-size: 10px;
+    font-size: 12px;
     padding: 5px 8px;
   }
 
@@ -719,12 +722,12 @@
     }
 
     p, li {
-      font-size: 10px;
+      font-size: 12px;
     }
   }
 
   .table, .shortcutTable {
-    font-size: 8px;
+    font-size: 12px;
   }
 }
 
