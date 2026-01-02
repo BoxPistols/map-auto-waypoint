@@ -1,5 +1,7 @@
 .exportPanel {
-  background: var(--color-bg-modal);
+  background: rgba(var(--color-bg-modal-rgb, 255, 255, 255), 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 12px;
   box-shadow: var(--shadow-xl);
   border: 1px solid var(--color-border);
@@ -202,7 +204,7 @@
     color: #d4d4d4;
     border-radius: 6px;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-all;
@@ -482,7 +484,7 @@
   }
 
   .hint {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .buttons {
@@ -491,7 +493,7 @@
 
   .exportButton {
     padding: 10px 12px;
-    font-size: 11px;
+    font-size: 12px;
     gap: 4px;
   }
 
@@ -501,14 +503,14 @@
   }
 
   .jsonPreview pre {
-    font-size: 10px;
+    font-size: 12px;
     padding: 10px;
   }
 
   .csvPreview {
     th, td {
       padding: 6px 8px;
-      font-size: 11px;
+      font-size: 12px;
     }
   }
 
@@ -572,12 +574,12 @@
   }
 
   .count {
-    font-size: 11px;
+    font-size: 12px;
     margin-bottom: 8px;
   }
 
   .hint {
-    font-size: 10px;
+    font-size: 12px;
     margin-bottom: 10px;
   }
 
@@ -601,14 +603,14 @@
   }
 
   .jsonPreview pre {
-    font-size: 9px;
+    font-size: 12px;
     padding: 8px;
     line-height: 1.4;
   }
 
   .csvPreview {
     table {
-      font-size: 10px;
+      font-size: 12px;
     }
 
     th, td {
@@ -645,7 +647,7 @@
   }
 
   .altitudeLabel {
-    font-size: 11px;
+    font-size: 12px;
     flex: 1 1 100%;
     order: 1;
   }
@@ -662,17 +664,17 @@
   }
 
   .altitudeUnit {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .notamContent pre {
     padding: 12px;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.6;
   }
 
   .truncateNote {
-    font-size: 11px;
+    font-size: 12px;
     padding: 6px 10px;
   }
 
@@ -707,21 +709,21 @@
   }
 
   .exportButton {
-    font-size: 11px;
+    font-size: 12px;
     padding: 10px;
   }
 
   .altitudeInput {
     width: 55px;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .jsonPreview pre {
-    font-size: 8px;
+    font-size: 12px;
   }
 
   .csvPreview {
-    font-size: 9px;
+    font-size: 12px;
 
     th, td {
       padding: 4px 5px;
@@ -732,22 +734,22 @@
 // 超小型スマートフォン (320px以下)
 @media (max-width: 320px) {
   .header h3 {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .exportButton {
-    font-size: 10px;
+    font-size: 12px;
     padding: 8px;
     min-height: 44px;
   }
 
   .altitudeLabel {
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .altitudeInput {
     width: 50px;
-    font-size: 10px;
+    font-size: 12px;
   }
 }
 

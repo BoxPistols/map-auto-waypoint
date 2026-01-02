@@ -266,7 +266,7 @@ body {
   }
 
   &.small {
-    font-size: 10px;
+    font-size: 12px;
     padding: 4px 3px;
 
     svg {
@@ -587,7 +587,7 @@ body {
   .mode-toggle,
   .action-button {
     padding: 6px 10px;
-    font-size: 11px;
+    font-size: 12px;
     min-height: 36px;
   }
 
@@ -747,7 +747,7 @@ body {
   .mode-toggle,
   .action-button {
     padding: 5px 8px;
-    font-size: 10px;
+    font-size: 12px;
   }
 
   // サイドバーはフルスクリーンモーダル（768pxで定義済み）
@@ -757,7 +757,7 @@ body {
   }
 
   .collapsed-stat {
-    font-size: 11px;
+    font-size: 12px;
     padding: 5px 3px;
   }
 }
@@ -791,7 +791,7 @@ body {
   .mode-toggle,
   .action-button {
     padding: 4px 6px;
-    font-size: 10px;
+    font-size: 12px;
     min-height: 32px;
   }
 
@@ -830,7 +830,7 @@ body {
   .draw-hint {
     top: 8px;
     padding: 8px 12px;
-    font-size: 11px;
+    font-size: 12px;
     border-radius: 6px;
   }
 }
@@ -838,14 +838,14 @@ body {
 // 小型スマートフォン (375px以下)
 @media (max-width: 375px) {
   .app-title {
-    font-size: 11px;
+    font-size: 12px;
     max-width: 100px;
   }
 
   // サイドバーはフルスクリーンモーダル（768pxで定義済み）
 
   .tab {
-    font-size: 11px;
+    font-size: 12px;
     padding: 6px 10px;
   }
 }
@@ -858,14 +858,14 @@ body {
   }
 
   .app-title {
-    font-size: 10px;
+    font-size: 12px;
     max-width: 80px;
   }
 
   .mode-toggle,
   .action-button {
     padding: 3px 5px;
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .icon-button,
@@ -1017,7 +1017,9 @@ body {
   justify-content: center;
   gap: 4px;
   padding: 8px 12px;
-  background: var(--color-bg-elevated);
+  background: rgba(var(--color-bg-elevated-rgb), 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   color: var(--color-text-secondary);
@@ -1044,7 +1046,7 @@ body {
 
   &.distance {
     cursor: default;
-    font-size: 11px;
+    font-size: 12px;
     padding: 6px 10px;
     background: var(--color-bg-secondary);
 
@@ -1117,12 +1119,12 @@ body {
 
   .floating-stat {
     padding: 6px 10px;
-    font-size: 11px;
+    font-size: 12px;
     border-radius: 6px;
 
     &.distance {
       padding: 5px 8px;
-      font-size: 10px;
+      font-size: 12px;
     }
 
     &.expand {
@@ -1152,7 +1154,7 @@ body {
 
   .floating-stat {
     padding: 5px 8px;
-    font-size: 10px;
+    font-size: 12px;
     border-radius: 5px;
 
     svg {
@@ -1185,7 +1187,7 @@ body {
     padding: 4px 6px;
 
     span {
-      font-size: 9px;
+      font-size: 12px;
     }
   }
 }

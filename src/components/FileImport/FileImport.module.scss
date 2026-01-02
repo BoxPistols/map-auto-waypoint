@@ -1,7 +1,10 @@
 .fileImport {
-  background: var(--color-bg-modal);
+  background: rgba(var(--color-bg-modal-rgb), 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-radius: 12px;
   box-shadow: var(--shadow-xl);
+  border: 1px solid var(--color-border);
   width: 420px;
   max-width: 90vw;
 
@@ -187,7 +190,7 @@
 }
 
 .vertexCount {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-tertiary);
 }
 
@@ -270,7 +273,7 @@
   }
 
   .formats {
-    font-size: 11px;
+    font-size: 12px;
   }
 }
 
@@ -317,11 +320,11 @@
   }
 
   .hint {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .formats {
-    font-size: 10px;
+    font-size: 12px;
     margin-top: 12px !important;
   }
 
@@ -353,7 +356,7 @@
   }
 
   .polygonCount {
-    font-size: 11px;
+    font-size: 12px;
     padding: 3px 8px;
   }
 
@@ -376,12 +379,12 @@
   }
 
   .vertexCount {
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .moreItems {
     padding: 8px 10px;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .actions {
@@ -422,7 +425,7 @@
   }
 
   .hint {
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .preview {
@@ -447,11 +450,11 @@
   }
 
   .hint {
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .formats {
-    font-size: 9px;
+    font-size: 12px;
   }
 }
 

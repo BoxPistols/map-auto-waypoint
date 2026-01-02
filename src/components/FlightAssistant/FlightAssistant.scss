@@ -38,7 +38,7 @@
   width: 400px;
   min-width: 360px;
   max-height: min(600px, calc(100vh - 100px));
-  background: var(--color-bg-elevated);
+  background: rgba(var(--color-bg-elevated-rgb), 0.88);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-radius: 16px;
@@ -165,7 +165,7 @@
     }
 
     .ai-badge, .mlit-badge {
-      font-size: 9px;
+      font-size: 12px;
       padding: 2px 4px;
       border-radius: 3px;
       font-weight: 600;
@@ -253,7 +253,7 @@
         min-width: 12px;
         height: 12px;
         padding: 0 2px;
-        font-size: 8px;
+        font-size: 12px;
         font-weight: 600;
         color: white;
         background: var(--color-primary);
@@ -334,7 +334,7 @@
     }
 
     .hint {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text-tertiary);
     }
   }
@@ -389,7 +389,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        font-size: 10px;
+        font-size: 12px;
         color: var(--color-text-tertiary);
       }
     }
@@ -552,7 +552,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 11px;
+      font-size: 12px;
       white-space: nowrap;
 
       th, td {
@@ -565,7 +565,7 @@
         background: var(--color-primary-bg);
         color: var(--color-primary);
         font-weight: 600;
-        font-size: 10px;
+        font-size: 12px;
         text-transform: uppercase;
       }
 
@@ -718,7 +718,7 @@
       display: flex;
       justify-content: space-between;
       margin-top: 4px;
-      font-size: 9px;
+      font-size: 12px;
       color: var(--color-text-tertiary);
     }
   }
@@ -733,7 +733,7 @@
       display: flex;
       align-items: center;
       gap: 5px;
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text-secondary);
       cursor: pointer;
 
@@ -747,7 +747,7 @@
       &.sub {
         padding-left: 8px;
         border-left: 2px solid var(--color-border);
-        font-size: 10px;
+        font-size: 12px;
         color: var(--color-text-tertiary);
       }
     }
@@ -837,7 +837,7 @@
     border-radius: 5px;
     color: var(--color-text-inverse);
     font-weight: 600;
-    font-size: 11px;
+    font-size: 12px;
     cursor: pointer;
     transition: all 0.15s ease;
 
@@ -851,7 +851,7 @@
     align-items: center;
     gap: 3px;
     margin-left: auto;
-    font-size: 10px;
+    font-size: 12px;
     color: var(--color-text-tertiary);
   }
 }
@@ -931,12 +931,12 @@
     }
 
     > span:first-child {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text-secondary);
     }
 
     .score {
-      font-size: 10px;
+      font-size: 12px;
       color: var(--color-text-tertiary);
       margin-left: auto;
     }
@@ -957,7 +957,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text-secondary);
 
       svg {
@@ -966,7 +966,7 @@
       }
 
       &.source {
-        font-size: 10px;
+        font-size: 12px;
         color: var(--color-text-tertiary);
       }
     }
@@ -979,7 +979,7 @@
   gap: 4px;
   padding: 4px 8px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 
   &.low {
@@ -1064,7 +1064,7 @@
   }
 
   .settings-info {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-text-secondary);
     margin-bottom: 8px;
 
@@ -1083,7 +1083,7 @@
   }
 
   .settings-note {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--color-text-tertiary);
     margin: 12px 0 0;
   }
@@ -1118,7 +1118,7 @@
       border: none;
       border-radius: 4px;
       color: var(--color-danger);
-      font-size: 11px;
+      font-size: 12px;
       cursor: pointer;
 
       &:hover {
@@ -1221,7 +1221,7 @@
       margin-bottom: 8px;
 
       label {
-        font-size: 11px;
+        font-size: 12px;
         color: var(--color-text-secondary);
       }
 
@@ -1232,7 +1232,7 @@
         border: 1px solid var(--color-border);
         border-radius: 4px;
         color: var(--color-text);
-        font-size: 11px;
+        font-size: 12px;
         font-family: monospace;
 
         &::placeholder {
@@ -1253,7 +1253,7 @@
         border: none;
         border-radius: 4px;
         color: var(--color-text-inverse);
-        font-size: 11px;
+        font-size: 12px;
         cursor: pointer;
 
         &:hover {
@@ -1264,7 +1264,7 @@
 
     .local-note {
       margin: 8px 0 0;
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-success);
     }
   }
@@ -1273,7 +1273,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 11px;
+    font-size: 12px;
 
     a {
       display: flex;
@@ -1294,7 +1294,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-tertiary);
   padding: 0 8px;
 }
@@ -1326,7 +1326,7 @@
     padding: 8px 12px;
 
     .optimization-summary {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text);
       margin: 0 0 6px;
     }
@@ -1334,7 +1334,7 @@
     .optimization-actions {
       margin: 0 0 8px;
       padding-left: 14px;
-      font-size: 11px;
+      font-size: 12px;
       color: var(--color-text-secondary);
 
       li {
@@ -1427,7 +1427,7 @@
     font-size: 13px;
 
     table {
-      font-size: 10px;
+      font-size: 12px;
     }
   }
 
@@ -1452,7 +1452,7 @@
 
     .assessment-btn {
       padding: 8px 10px;
-      font-size: 11px;
+      font-size: 12px;
       flex: 1;
       min-height: 36px;
     }
@@ -1510,7 +1510,7 @@
       gap: 8px;
 
       .toggle-item {
-        font-size: 10px;
+        font-size: 12px;
       }
     }
   }
@@ -1582,12 +1582,12 @@
     }
 
     .header-title {
-      font-size: 11px;
+      font-size: 12px;
       gap: 3px;
 
       .ai-badge,
       .mlit-badge {
-        font-size: 8px;
+        font-size: 12px;
         padding: 1px 3px;
       }
     }
@@ -1626,7 +1626,7 @@
       }
 
       table {
-        font-size: 9px;
+        font-size: 12px;
 
         th, td {
           padding: 4px 5px;
@@ -1635,12 +1635,12 @@
 
       .apply-route-btn {
         padding: 8px 10px;
-        font-size: 11px;
+        font-size: 12px;
       }
 
       .wp-link {
         padding: 0 4px;
-        font-size: 10px;
+        font-size: 12px;
       }
     }
 
@@ -1682,7 +1682,7 @@
 
     .assessment-btn {
       padding: 6px 8px;
-      font-size: 10px;
+      font-size: 12px;
       min-height: 32px;
       flex-shrink: 0;
     }
@@ -1695,12 +1695,12 @@
 
     .optimize-btn {
       padding: 6px 8px;
-      font-size: 10px;
+      font-size: 12px;
       flex-shrink: 0;
     }
 
     .action-info {
-      font-size: 9px;
+      font-size: 12px;
       white-space: nowrap;
       flex-shrink: 0;
     }
@@ -1711,11 +1711,11 @@
       padding: 5px 8px;
 
       > span:first-child {
-        font-size: 10px;
+        font-size: 12px;
       }
 
       .score {
-        font-size: 9px;
+        font-size: 12px;
       }
     }
 
@@ -1724,14 +1724,14 @@
       gap: 4px 8px;
 
       .detail-row {
-        font-size: 10px;
+        font-size: 12px;
       }
     }
   }
 
   .risk-badge {
     padding: 3px 6px;
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .avoidance-settings {
@@ -1739,7 +1739,7 @@
 
     .avoidance-slider {
       label {
-        font-size: 11px;
+        font-size: 12px;
 
         strong {
           font-size: 12px;
@@ -1747,7 +1747,7 @@
       }
 
       .slider-ticks {
-        font-size: 8px;
+        font-size: 12px;
       }
     }
 
@@ -1755,7 +1755,7 @@
       gap: 6px;
 
       .toggle-item {
-        font-size: 9px;
+        font-size: 12px;
         gap: 3px;
 
         input[type="checkbox"] {
@@ -1771,23 +1771,23 @@
 
     .optimization-header {
       padding: 6px 10px;
-      font-size: 11px;
+      font-size: 12px;
     }
 
     .optimization-content {
       padding: 6px 10px;
 
       .optimization-summary {
-        font-size: 10px;
+        font-size: 12px;
       }
 
       .optimization-actions {
-        font-size: 10px;
+        font-size: 12px;
       }
 
       .apply-optimization-btn {
         padding: 6px 10px;
-        font-size: 11px;
+        font-size: 12px;
       }
     }
   }
@@ -1805,11 +1805,11 @@
 
     .chat-log-item {
       .log-info .log-name {
-        font-size: 11px;
+        font-size: 12px;
       }
 
       .log-info .log-date {
-        font-size: 9px;
+        font-size: 12px;
       }
     }
   }
@@ -1818,7 +1818,7 @@
     max-height: 150px;
 
     .settings-section h4 {
-      font-size: 11px;
+      font-size: 12px;
     }
 
     .api-key-input input {
@@ -1828,11 +1828,11 @@
 
     .model-selector {
       label {
-        font-size: 11px;
+        font-size: 12px;
       }
 
       select {
-        font-size: 11px;
+        font-size: 12px;
         padding: 4px 8px;
       }
     }
@@ -1857,7 +1857,7 @@
 
   .flight-assistant-header {
     .header-title {
-      font-size: 10px;
+      font-size: 12px;
 
       .ai-badge,
       .mlit-badge {
@@ -1872,7 +1872,7 @@
   }
 
   .message .message-content {
-    font-size: 11px;
+    font-size: 12px;
     padding: 5px 8px;
   }
 

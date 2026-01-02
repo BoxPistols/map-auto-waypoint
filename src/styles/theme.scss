@@ -105,6 +105,10 @@ $breakpoint-desktop: 1024px; // デスクトップ
   --color-bg-elevated: #ffffff;
   --color-bg-overlay: rgba(0, 0, 0, 0.5);
   --color-bg-modal: #ffffff;
+  // RGB値（半透明用）
+  --color-bg-rgb: 255, 255, 255;
+  --color-bg-elevated-rgb: 255, 255, 255;
+  --color-bg-modal-rgb: 255, 255, 255;
 
   // テキスト
   --color-text: #1e293b;
@@ -171,6 +175,10 @@ $breakpoint-desktop: 1024px; // デスクトップ
   --color-bg-elevated: #1e293b;
   --color-bg-overlay: rgba(0, 0, 0, 0.7);
   --color-bg-modal: #1e293b;
+  // RGB値（半透明用）
+  --color-bg-rgb: 15, 23, 42;
+  --color-bg-elevated-rgb: 30, 41, 59;
+  --color-bg-modal-rgb: 30, 41, 59;
 
   // テキスト（コントラスト改善）
   --color-text: #ffffff;
