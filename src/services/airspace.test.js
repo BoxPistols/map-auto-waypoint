@@ -65,7 +65,8 @@ describe('airspace', () => {
     it('皇居が含まれている', () => {
       const kokyo = NO_FLY_ZONES.find(z => z.name === '皇居');
       expect(kokyo).toBeDefined();
-      expect(kokyo.type).toBe('prohibited');
+      // 重要施設上空はレッドゾーンとして扱う
+      expect(kokyo.type).toBe('red');
     });
 
     it('国会議事堂が含まれている', () => {
@@ -85,7 +86,8 @@ describe('airspace', () => {
         expect(zone).toHaveProperty('lng');
         expect(zone).toHaveProperty('radius');
         expect(zone).toHaveProperty('type');
-        expect(zone.type).toBe('prohibited');
+        // small-uav law zones: red（施設上空）/ yellow（周辺）
+        expect(['red', 'yellow']).toContain(zone.type);
       });
     });
   });
@@ -168,7 +170,7 @@ describe('airspace', () => {
       geojson.features.forEach(feature => {
         expect(feature.type).toBe('Feature');
         expect(feature.geometry.type).toBe('Polygon');
-        expect(feature.properties.type).toBe('prohibited');
+        expect(['red', 'yellow']).toContain(feature.properties.type);
       });
     });
   });

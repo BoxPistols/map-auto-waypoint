@@ -900,6 +900,20 @@ const Map = ({
                   <span className={styles.apiInfoValue}>{apiInfo.mlitInfo.urbanArea.areaName}</span>
                 </div>
               )}
+              {apiInfo.mlitInfo.disasterHistory?.success && apiInfo.mlitInfo.disasterHistory.summary?.total > 0 && (
+                <div className={styles.apiInfoRow}>
+                  <span className={styles.apiInfoLabel}>災害履歴</span>
+                  <span className={styles.apiInfoValue}>
+                    {apiInfo.mlitInfo.disasterHistory.summary.total}件
+                    {apiInfo.mlitInfo.disasterHistory.summary.yearRange?.min && apiInfo.mlitInfo.disasterHistory.summary.yearRange?.max && (
+                      <>（{apiInfo.mlitInfo.disasterHistory.summary.yearRange.min === apiInfo.mlitInfo.disasterHistory.summary.yearRange.max
+                        ? `${apiInfo.mlitInfo.disasterHistory.summary.yearRange.min}年`
+                        : `${apiInfo.mlitInfo.disasterHistory.summary.yearRange.min}〜${apiInfo.mlitInfo.disasterHistory.summary.yearRange.max}年`
+                      }）</>
+                    )}
+                  </span>
+                </div>
+              )}
               {apiInfo.mlitInfo.riskLevel && (
                 <div className={styles.apiInfoRow}>
                   <span className={styles.apiInfoLabel}>リスク</span>
