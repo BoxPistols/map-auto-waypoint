@@ -1532,7 +1532,9 @@
 @media (max-width: 480px) {
   .flight-assistant {
     width: calc(100vw - 16px);
+    min-width: auto; // モバイルではmin-widthを無効化
     right: 8px;
+    left: 8px;
     bottom: 8px;
     border-radius: 12px;
     max-height: calc(100vh - 120px); // より小さく
@@ -1600,6 +1602,12 @@
         height: 28px;
         padding: 4px;
       }
+
+      // モバイルでは拡大/縮小ボタンを非表示
+      .expand-btn,
+      .fullscreen-btn {
+        display: none;
+      }
     }
   }
 
@@ -1654,18 +1662,21 @@
   .flight-assistant-input {
     padding: 6px 8px;
     gap: 4px;
+    overflow: hidden;
 
     textarea {
       font-size: 14px; // 16px以上でズーム防止
       padding: 8px;
       border-radius: 8px;
       min-height: 40px;
+      min-width: 0; // flex子要素のオーバーフロー防止
     }
 
     .send-btn {
       width: 40px;
       height: 40px;
       border-radius: 8px;
+      flex-shrink: 0;
     }
   }
 
@@ -1673,6 +1684,7 @@
     padding: 4px 6px;
     flex-wrap: nowrap;
     overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     gap: 3px;
 
@@ -2009,6 +2021,7 @@
     right: 6px;
     left: 6px;
     width: auto;
+    min-width: auto;
     max-height: 45vh; // 画面の45%まで
 
     // メッセージエリアをコンパクトに
