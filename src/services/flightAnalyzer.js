@@ -1211,35 +1211,42 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
       const didAvoidanceEnabled = isDIDAvoidanceModeEnabled();
       const didWarningOnly = getSetting('didWarningOnlyMode');
 
-      // DID警告のみモードの場合は警告表示のみ（回避提案なし）
-      // DID回避モードがOFFでも警告は表示
-      hasIssues = true;
+      // DIDの3状態:
+      // 1. 両方OFF → DIDを完全に無視（ハイライトも提案もなし）
+      // 2. 警告のみON → ハイライトのみ（提案なし）
+      // 3. DID回避ON → ハイライト＋提案
 
-      // 重要度の決定:
-      // - 回避モード: high（回避提案あり）
-      // - 警告のみモード: low（情報提供のみ、許可申請前提）
-      // - どちらもOFF: medium（警告のみ）
-      let severity = 'medium';
-      let description = `人口集中地区（${didWpInfo?.area || 'DID'}）内`;
+      // 両方OFFの場合はスキップ
+      if (!didAvoidanceEnabled && !didWarningOnly) {
+        // DIDを無視 - 何もしない
+      } else {
+        hasIssues = true;
 
-      if (didAvoidanceEnabled) {
-        severity = 'high';
-        description += ' - 回避位置を提案';
-      } else if (didWarningOnly) {
-        severity = 'low';
-        description += ' - DIPS許可申請が必要';
+        // 重要度の決定:
+        // - 回避モード: high（回避提案あり）
+        // - 警告のみモード: low（情報提供のみ、許可申請前提）
+        let severity = 'low';
+        let description = `人口集中地区（${didWpInfo?.area || 'DID'}）内`;
+
+        if (didAvoidanceEnabled) {
+          severity = 'high';
+          description += ' - 回避位置を提案';
+        } else {
+          // 警告のみモード
+          description += ' - DIPS許可申請が必要';
+        }
+
+        issues.push({
+          type: 'did',
+          zone: didWpInfo?.area || 'DID区域',
+          currentDistance: 0,
+          requiredDistance: didAvoidanceEnabled ? getSetting('didAvoidanceDistance') : null,
+          severity,
+          description,
+          avoidanceEnabled: didAvoidanceEnabled,
+          warningOnly: didWarningOnly
+        });
       }
-
-      issues.push({
-        type: 'did',
-        zone: didWpInfo?.area || 'DID区域',
-        currentDistance: 0,
-        requiredDistance: didAvoidanceEnabled ? getSetting('didAvoidanceDistance') : null,
-        severity,
-        description,
-        avoidanceEnabled: didAvoidanceEnabled,
-        warningOnly: didWarningOnly
-      });
 
       // DID回避モードが有効な場合のみ、DID用のゾーングループを作成
       if (didAvoidanceEnabled) {
