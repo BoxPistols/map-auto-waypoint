@@ -343,10 +343,15 @@ export const getUseZone = async (lat, lng, zoom = 14) => {
     if (data.features && data.features.length > 0) {
       // 最初のフィーチャーを返す（より正確にはポイントが含まれるかチェックすべき）
       const feature = data.features[0];
+      // 仕様（APIマニュアル）上の代表キー:
+      // - youto_id: 用途地域分類（コード）
+      // - use_area_ja: 用途地域名（日本語）
+      const zoneCode = feature.properties?.youto_id ?? feature.properties?.A29_004 ?? null;
+      const zoneNameFromApi = feature.properties?.use_area_ja ?? null;
       return {
         success: true,
-        zoneCode: feature.properties?.A29_004,
-        zoneName: getZoneName(feature.properties?.A29_004),
+        zoneCode,
+        zoneName: zoneNameFromApi || (zoneCode ? getZoneName(zoneCode) : '用途地域指定なし'),
         rawData: feature.properties
       };
     }
@@ -387,10 +392,15 @@ export const getUrbanPlanningArea = async (lat, lng, zoom = 12) => {
 
     if (data.features && data.features.length > 0) {
       const feature = data.features[0];
+      // 仕様（APIマニュアル）上の代表キー:
+      // - kubun_id: 区分コード
+      // - area_classification_ja: 区域区分（日本語）
+      const areaType = feature.properties?.kubun_id ?? feature.properties?.A29_003 ?? null;
+      const areaNameFromApi = feature.properties?.area_classification_ja ?? null;
       return {
         success: true,
-        areaType: feature.properties?.A29_003,
-        areaName: getAreaTypeName(feature.properties?.A29_003),
+        areaType,
+        areaName: areaNameFromApi || (areaType ? getAreaTypeName(areaType) : '都市計画区域外'),
         rawData: feature.properties
       };
     }
@@ -549,6 +559,7 @@ export const getLocationInfo = async (lat, lng, options = {}) => {
  * 用途地域コードから名称を取得
  */
 const getZoneName = (code) => {
+  if (code === null || code === undefined || code === '') return '用途地域指定なし';
   const zones = {
     '1': '第一種低層住居専用地域',
     '2': '第二種低層住居専用地域',
@@ -571,6 +582,7 @@ const getZoneName = (code) => {
  * 区域区分コードから名称を取得
  */
 const getAreaTypeName = (code) => {
+  if (code === null || code === undefined || code === '') return '都市計画区域外';
   const areas = {
     '1': '市街化区域',
     '2': '市街化調整区域',

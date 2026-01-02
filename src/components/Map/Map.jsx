@@ -188,7 +188,9 @@ const Map = ({
   const [disasterHistoryLocal, setDisasterHistoryLocal] = useState(null) // GeoJSON FeatureCollection
   const [disasterHistoryLoading, setDisasterHistoryLoading] = useState(false)
   const [disasterHistoryError, setDisasterHistoryError] = useState(null)
-  const disasterHistoryCacheRef = useRef(new Map()) // tileKey -> GeoJSON
+  // NOTE: このファイルのコンポーネント名が `Map` なので、グローバルの Map と衝突する。
+  // `new Map()` だと「Mapコンポーネント」をnewしようとして落ちるため、明示的に globalThis.Map を使う。
+  const disasterHistoryCacheRef = useRef(new globalThis.Map()) // tileKey -> GeoJSON
 
   // isMobile is now passed as a prop from App.jsx to avoid duplication
 
@@ -801,7 +803,10 @@ const Map = ({
             <Layer
               id="disaster-history-fill"
               type="fill"
-              filter={['in', ['geometry-type'], 'Polygon', 'MultiPolygon']}
+              filter={['any',
+                ['==', ['geometry-type'], 'Polygon'],
+                ['==', ['geometry-type'], 'MultiPolygon']
+              ]}
               paint={{
                 'fill-color': [
                   'match',
@@ -832,7 +837,10 @@ const Map = ({
             <Layer
               id="disaster-history-outline"
               type="line"
-              filter={['in', ['geometry-type'], 'Polygon', 'MultiPolygon']}
+              filter={['any',
+                ['==', ['geometry-type'], 'Polygon'],
+                ['==', ['geometry-type'], 'MultiPolygon']
+              ]}
               paint={{
                 'line-color': [
                   'match',
@@ -859,7 +867,10 @@ const Map = ({
             <Layer
               id="disaster-history-points"
               type="circle"
-              filter={['in', ['geometry-type'], 'Point', 'MultiPoint']}
+              filter={['any',
+                ['==', ['geometry-type'], 'Point'],
+                ['==', ['geometry-type'], 'MultiPoint']
+              ]}
               paint={{
                 'circle-radius': [
                   'interpolate',
@@ -887,7 +898,10 @@ const Map = ({
               id="disaster-history-labels"
               type="symbol"
               minzoom={12}
-              filter={['in', ['geometry-type'], 'Point', 'MultiPoint']}
+              filter={['any',
+                ['==', ['geometry-type'], 'Point'],
+                ['==', ['geometry-type'], 'MultiPoint']
+              ]}
               layout={{
                 'text-field': ['coalesce', ['get', 'disaster_name_ja'], ['get', 'disastertype_code']],
                 'text-size': 10,
