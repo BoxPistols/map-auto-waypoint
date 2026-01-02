@@ -74,8 +74,8 @@
     bottom: 24px;
     right: 24px;
     top: 60px;
-    width: 70vw !important;
-    height: auto !important;
+    width: 70vw;
+    height: auto;
     max-width: 1000px;
     max-height: calc(100vh - 84px);
     border-radius: 16px;
@@ -1377,22 +1377,34 @@
 // タブレット (768px以下)
 @media (max-width: 768px) {
   .flight-assistant {
-    width: 360px;
-    min-width: 320px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    min-width: auto;
     max-height: calc(100vh - 80px);
     bottom: 16px;
-    right: 16px;
 
     &.expanded {
-      width: min(90vw, 600px);
+      // モバイルでは横幅拡大なし - CSSで制御
+      left: 12px;
+      right: 12px;
     }
 
     &.fullscreen {
       top: 50px;
-      width: 90vw !important;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: auto;
       max-width: none;
-      max-height: calc(100vh - 66px);
+      max-height: none;
+      border-radius: 12px 12px 0 0;
     }
+  }
+
+  // リサイズハンドルを非表示
+  .resize-handle {
+    display: none;
   }
 
   .flight-assistant-fab {
@@ -1467,24 +1479,27 @@
 // 大型スマートフォン (600px以下)
 @media (max-width: 600px) {
   .flight-assistant {
-    width: calc(100vw - 24px);
+    left: 10px;
+    right: 10px;
+    width: auto;
     min-width: auto;
-    right: 12px;
     bottom: 12px;
     max-height: calc(100vh - 70px);
 
     &.expanded {
-      width: calc(100vw - 24px);
+      left: 10px;
+      right: 10px;
     }
 
     &.fullscreen {
       top: 44px;
-      left: 8px;
-      right: 8px;
-      bottom: 8px;
-      width: auto !important;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: auto;
+      max-width: none;
       max-height: none;
-      border-radius: 12px;
+      border-radius: 12px 12px 0 0;
     }
   }
 
@@ -1531,20 +1546,23 @@
 // 標準スマートフォン (480px以下)
 @media (max-width: 480px) {
   .flight-assistant {
-    width: calc(100vw - 16px);
-    min-width: auto; // モバイルではmin-widthを無効化
-    right: 8px;
     left: 8px;
+    right: 8px;
+    width: auto;
+    min-width: auto;
     bottom: 8px;
     border-radius: 12px;
-    max-height: calc(100vh - 120px); // より小さく
+    max-height: calc(100vh - 120px);
 
     &.fullscreen {
-      top: 40px;
-      left: 4px;
-      right: 4px;
-      bottom: 4px;
-      border-radius: 10px;
+      top: 48px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: auto;
+      max-width: none;
+      max-height: none;
+      border-radius: 12px 12px 0 0;
     }
 
     // モバイルでのコンパクト表示
@@ -1853,8 +1871,9 @@
 // 小型スマートフォン (375px以下)
 @media (max-width: 375px) {
   .flight-assistant {
-    width: calc(100vw - 12px);
+    left: 6px;
     right: 6px;
+    width: auto;
     bottom: 6px;
     border-radius: 10px;
   }
@@ -1896,8 +1915,9 @@
 // 超小型スマートフォン (320px以下)
 @media (max-width: 320px) {
   .flight-assistant {
-    width: calc(100vw - 8px);
+    left: 4px;
     right: 4px;
+    width: auto;
     bottom: 4px;
   }
 
@@ -1923,12 +1943,16 @@
 @media (max-width: 768px) and (orientation: landscape) {
   .flight-assistant {
     max-height: calc(100vh - 32px);
+    left: auto;
+    right: 12px;
     width: 50vw;
     min-width: 300px;
 
     &.fullscreen {
       top: 8px;
-      width: 70vw !important;
+      left: 0;
+      right: 0;
+      width: auto;
     }
   }
 
@@ -1969,20 +1993,33 @@
 
 // セーフエリア対応
 @supports (padding: env(safe-area-inset-bottom)) {
-  .flight-assistant {
-    bottom: calc(16px + env(safe-area-inset-bottom));
-    right: calc(16px + env(safe-area-inset-right));
-  }
-
+  // FABのみsafe-area対応（パネルは左右固定のためleft/rightで調整済み）
   .flight-assistant-fab {
     bottom: calc(16px + env(safe-area-inset-bottom));
     right: calc(16px + env(safe-area-inset-right));
   }
 
+  @media (max-width: 768px) {
+    .flight-assistant {
+      left: calc(12px + env(safe-area-inset-left));
+      right: calc(12px + env(safe-area-inset-right));
+      bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .flight-assistant {
+      left: calc(10px + env(safe-area-inset-left));
+      right: calc(10px + env(safe-area-inset-right));
+      bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+  }
+
   @media (max-width: 480px) {
     .flight-assistant {
-      bottom: calc(8px + env(safe-area-inset-bottom));
+      left: calc(8px + env(safe-area-inset-left));
       right: calc(8px + env(safe-area-inset-right));
+      bottom: calc(8px + env(safe-area-inset-bottom));
     }
 
     .flight-assistant-fab {
@@ -1990,63 +2027,21 @@
       right: calc(10px + env(safe-area-inset-right));
     }
   }
-}
 
-// モバイルでのFAB位置調整
-@media (max-width: 768px) {
-  .flight-assistant-fab {
-    bottom: 16px;
-    right: 16px;
+  @media (max-width: 375px) {
+    .flight-assistant {
+      left: calc(6px + env(safe-area-inset-left));
+      right: calc(6px + env(safe-area-inset-right));
+      bottom: calc(6px + env(safe-area-inset-bottom));
+    }
   }
 
-  .flight-assistant {
-    bottom: 16px;
-    left: 8px;
-    right: 8px;
-    width: auto;
-    min-width: auto;
-    max-height: 50vh; // 通常は画面の半分
-
-    // 高さ拡張モード（fullscreenクラスを流用）
-    &.fullscreen {
-      top: 56px; // ヘッダー下から
-      max-height: none;
-      border-radius: 12px 12px 0 0;
+  @media (max-width: 320px) {
+    .flight-assistant {
+      left: calc(4px + env(safe-area-inset-left));
+      right: calc(4px + env(safe-area-inset-right));
+      bottom: calc(4px + env(safe-area-inset-bottom));
     }
   }
 }
 
-@media (max-width: 480px) {
-  .flight-assistant-fab {
-    bottom: 12px;
-    right: 12px;
-    width: 40px;
-    height: 40px;
-  }
-
-  .flight-assistant {
-    bottom: 12px;
-    left: 6px;
-    right: 6px;
-    max-height: 45vh;
-
-    &.fullscreen {
-      top: 50px;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      max-height: none;
-      border-radius: 12px 12px 0 0;
-    }
-
-    // メッセージエリアをコンパクトに
-    .flight-assistant-messages {
-      max-height: 25vh;
-    }
-
-    &.fullscreen .flight-assistant-messages {
-      max-height: none;
-      flex: 1;
-    }
-  }
-}

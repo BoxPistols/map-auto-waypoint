@@ -81,6 +81,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [isCopied, setIsCopied] = useState(false);
   const [panelSize, setPanelSize] = useState({ width: 400, height: 500 });
   const [isResizing, setIsResizing] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showChatLogs, setShowChatLogs] = useState(false);
   const [chatLogs, setChatLogs] = useState([]);
   const [currentLogId, setCurrentLogId] = useState(null);
@@ -104,6 +105,15 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // モバイル判定（リサイズ追従）
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const scrollToBottom = () => {
@@ -888,10 +898,11 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     );
   }
 
-  const panelStyle = isFullscreen ? {} : (isExpanded ? {} : {
+  // モバイルではインラインサイズを適用せず、CSSで制御
+  const panelStyle = (isMobile || isFullscreen || isExpanded) ? {} : {
     width: `${panelSize.width}px`,
     height: `${panelSize.height}px`
-  });
+  };
 
   return (
     <div
