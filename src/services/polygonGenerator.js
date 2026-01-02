@@ -56,9 +56,9 @@ export const generateCirclePolygon = (lat, lng, size = 'medium', steps = 8) => {
 }
 
 /**
- * Generate polygon from Nominatim bounding box
- * @param {Array<number>} boundingBox - [south, north, west, east] from Nominatim
- * @param {number} padding - Additional padding in meters (optional)
+ * 検索結果のバウンディングボックス等からポリゴンを生成
+ * @param {Array<number>} boundingBox - [south, north, west, east]
+ * @param {number} padding - 追加パディング（m）
  * @returns {object} GeoJSON Polygon geometry
  */
 export const generateFromBoundingBox = (boundingBox, padding = 0) => {

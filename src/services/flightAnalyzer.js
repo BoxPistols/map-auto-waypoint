@@ -13,7 +13,6 @@
 import * as turf from '@turf/turf';
 import { checkAirspaceRestrictions, AIRPORT_ZONES, NO_FLY_ZONES } from './airspace';
 import { analyzeFlightPlan, getRecommendedParameters, hasApiKey } from './openaiService';
-import { getLocationInfo, hasReinfolibApiKey } from './reinfolibService';
 import { isDIDAvoidanceModeEnabled, getSetting } from './settingsService';
 
 // ===== ユーティリティ関数 =====
@@ -128,42 +127,9 @@ const getPrefectureFromCoords = (lat, lng) => {
  * @param {string} prefName - 都道府県名（英語）
  * @returns {Promise<Object|null>} GeoJSONデータ
  */
-const fetchDIDFromGitHub = async (prefCode, prefName) => {
-  const cacheKey = `pref_${prefCode}`;
-
-  // キャッシュチェック
-  if (didPrefectureCache.has(cacheKey)) {
-    return didPrefectureCache.get(cacheKey);
-  }
-
-  if (typeof fetch === 'undefined') {
-    return null;
-  }
-
-  try {
-    // GitHub raw URL (CORS対応)
-    const url = `https://raw.githubusercontent.com/dronebird/DIDinJapan/master/GeoJSON/h22_did_${prefCode}_${prefName}.geojson`;
-
-    console.log(`[DID] Fetching from GitHub: ${prefName}`);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' }
-    });
-
-    if (!response || !response.ok) {
-      console.warn(`[DID] GitHub fetch failed: ${response?.status}`);
-      return null;
-    }
-
-    const geojson = await response.json();
-    didPrefectureCache.set(cacheKey, geojson);
-    console.log(`[DID] GitHub data loaded: ${prefName}, features: ${geojson.features?.length || 0}`);
-    return geojson;
-  } catch (error) {
-    console.warn(`[DID] GitHub fetch error: ${error.message}`);
-    return null;
-  }
+const fetchDIDFromGitHub = async (_prefCode, _prefName) => {
+  // 外部API/外部HTTP取得は削除（OpenAIのみ残す方針）
+  return null;
 };
 
 /**
@@ -297,30 +263,7 @@ export const checkDIDArea = async (lat, lng) => {
       };
     }
 
-    // 2. GitHub から都道府県のDIDデータを取得
-    const geojson = await fetchDIDFromGitHub(prefecture.code, prefecture.name);
-
-    if (geojson) {
-      // 3. 点がDID内かチェック（都道府県情報も渡す）
-      const result = checkPointInDIDGeoJSON(geojson, lat, lng, prefecture);
-
-      if (result) {
-        console.log(`[DID] Point is in DID: ${result.area}`);
-        return result;
-      }
-
-      // DID外と確認
-      return {
-        isDID: false,
-        area: null,
-        certainty: 'confirmed',
-        source: 'GitHub/DIDinJapan',
-        description: 'DID外（人口集中地区外）- GeoJSONデータ確認済'
-      };
-    }
-
-    // GitHub取得失敗時はフォールバック
-    console.log('[DID] GitHub unavailable, using fallback data');
+    // 外部取得は削除したため、常にフォールバック（推定）で判定する
     return checkDIDAreaFallback(lat, lng, prefecture);
 
   } catch (error) {
@@ -1873,10 +1816,10 @@ export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) 
 };
 
 /**
- * 総合フライト分析（OpenAI連携 + 国土交通省API連携）
+ * 総合フライト分析（OpenAI連携）
  */
 export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
-  const { altitude = 50, purpose = '', useAI = true, useMlit = true } = options;
+  const { altitude = 50, purpose = '', useAI = true } = options;
 
   // 新しい分析のためDIDキャッシュをクリア（新しい地域のデータを取得）
   clearDIDCache();
@@ -1884,66 +1827,12 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
   // まずローカル分析を実行
   const localAnalysis = await analyzeFlightPlanLocal(polygons, waypoints, { altitude, purpose });
 
-  // 国土交通省APIで用途地域情報を取得
-  let mlitInfo = null;
-  let mlitError = null;
-  const hasMlitKey = hasReinfolibApiKey();
-
-  if (useMlit && hasMlitKey && localAnalysis.context.center) {
-    try {
-      console.log('[FlightAnalyzer] Calling MLIT API...');
-      mlitInfo = await getLocationInfo(
-        localAnalysis.context.center.lat,
-        localAnalysis.context.center.lng
-      );
-      console.log('[FlightAnalyzer] MLIT API result:', mlitInfo);
-
-      if (mlitInfo.success) {
-        // 国土交通省データからのリスクを追加
-        mlitInfo.riskFactors.forEach(factor => {
-          localAnalysis.risks.push(factor);
-        });
-
-        // リスクスコアを調整
-        if (mlitInfo.riskLevel === 'HIGH') {
-          localAnalysis.riskScore = Math.min(100, localAnalysis.riskScore + 30);
-        } else if (mlitInfo.riskLevel === 'MEDIUM') {
-          localAnalysis.riskScore = Math.min(100, localAnalysis.riskScore + 15);
-        }
-
-        // リスクレベルを再判定
-        if (localAnalysis.riskScore >= 80) localAnalysis.riskLevel = 'CRITICAL';
-        else if (localAnalysis.riskScore >= 50) localAnalysis.riskLevel = 'HIGH';
-        else if (localAnalysis.riskScore >= 20) localAnalysis.riskLevel = 'MEDIUM';
-
-        // 推奨事項を追加
-        localAnalysis.recommendations = [
-          ...mlitInfo.recommendations,
-          ...localAnalysis.recommendations
-        ];
-      } else {
-        mlitError = mlitInfo.error || 'API応答エラー';
-      }
-    } catch (error) {
-      console.warn('[FlightAnalyzer] MLIT API error:', error);
-      mlitError = error.message || 'ネットワークエラー（CORS制限の可能性）';
-    }
-  } else if (useMlit && !hasMlitKey) {
-    mlitError = 'APIキー未設定';
-  }
-
-  // コンテキストに国土交通省データを追加
-  localAnalysis.context.mlitInfo = mlitInfo;
-  localAnalysis.context.mlitError = mlitError;
-
   // OpenAI APIキーがない、またはuseAI=falseの場合はローカル結果のみ
   if (!useAI || !hasApiKey()) {
     return {
       ...localAnalysis,
-      source: hasMlitKey ? 'local+mlit' : 'local',
-      aiEnhanced: false,
-      mlitEnhanced: !!mlitInfo?.success,
-      mlitError: mlitError
+      source: 'local',
+      aiEnhanced: false
     };
   }
 
@@ -1980,9 +1869,7 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
       safetyChecklist: aiAnalysis.safetyChecklist || localAnalysis.safetyChecklist,
       context: localAnalysis.context,
       source: 'openai',
-      aiEnhanced: true,
-      mlitEnhanced: !!mlitInfo?.success,
-      mlitError: mlitError
+      aiEnhanced: true
     };
   } catch (error) {
     console.error('[FlightAnalyzer] AI analysis failed, using local:', error);
@@ -1990,9 +1877,7 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
       ...localAnalysis,
       source: 'local',
       aiEnhanced: false,
-      aiError: error.message,
-      mlitEnhanced: !!mlitInfo?.success,
-      mlitError: mlitError
+      aiError: error.message
     };
   }
 };

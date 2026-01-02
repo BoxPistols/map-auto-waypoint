@@ -36,7 +36,6 @@ import {
   getFlightAdvice
 } from '../../services/openaiService';
 import { runFullAnalysis, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
-import { hasReinfolibApiKey } from '../../services/reinfolibService';
 import {
   getAllChatLogs,
   saveChatLog,
@@ -56,13 +55,13 @@ import './FlightAssistant.scss';
  * - OpenAI連携による高度な分析
  * - 「判定！」ボタンで総合判定
  */
-function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect, onApiInfoUpdate, isOpen: controlledIsOpen, onOpenChange }) {
+function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect, isOpen: controlledIsOpen, onOpenChange }) {
   // Controlled or uncontrolled mode
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const setIsOpen = onOpenChange || setInternalIsOpen;
   const [hasKey, setHasKey] = useState(hasApiKey());
-  const [hasMlitKey, setHasMlitKey] = useState(hasReinfolibApiKey());
+  // OpenAI以外の外部API連携は削除（OpenAIのみ残す）
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -342,7 +341,6 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   useEffect(() => {
     const checkApiStatus = () => {
       setHasKey(hasApiKey());
-      setHasMlitKey(hasReinfolibApiKey());
     };
     // localStorageの変更を検知
     window.addEventListener('storage', checkApiStatus);
@@ -503,65 +501,6 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         response += '\n';
       }
 
-      // 用途地域情報（国土交通省API）- エラーでないもののみ表示
-      if (result.context?.mlitInfo?.success) {
-          const mlit = result.context.mlitInfo
-          const useZoneName =
-              mlit.useZone?.success &&
-              mlit.useZone?.zoneName &&
-              mlit.useZone.zoneName !== '取得エラー'
-                  ? mlit.useZone.zoneName
-                  : null
-          const urbanAreaName =
-              mlit.urbanArea?.success &&
-              mlit.urbanArea?.areaName &&
-              mlit.urbanArea.areaName !== '取得エラー'
-                  ? mlit.urbanArea.areaName
-                  : null
-
-          if (useZoneName || urbanAreaName) {
-              response += `### 用途地域情報\n`
-              if (useZoneName) {
-                  response += `• ${useZoneName}\n`
-              }
-              if (urbanAreaName) {
-                  response += `• ${urbanAreaName}\n`
-              }
-              response += '\n'
-          }
-
-          // 災害履歴（XST001）
-          const dh = mlit.disasterHistory
-          const dhSummary = dh?.success ? dh.summary : null
-          if (dhSummary?.total > 0) {
-              response += `### 災害履歴（国土調査）\n`
-              response += `• 該当タイル内: ${dhSummary.total}件\n`
-              if (dhSummary.yearRange?.min || dhSummary.yearRange?.max) {
-                  const yMin = dhSummary.yearRange.min
-                  const yMax = dhSummary.yearRange.max
-                  const yText =
-                      yMin && yMax
-                          ? yMin === yMax
-                              ? `${yMin}年`
-                              : `${yMin}〜${yMax}年`
-                          : yMin
-                          ? `${yMin}年〜`
-                          : `〜${yMax}年`
-                  response += `• 年代: ${yText}\n`
-              }
-              if (
-                  Array.isArray(dhSummary.byType) &&
-                  dhSummary.byType.length > 0
-              ) {
-                  response += `• 内訳: ${dhSummary.byType
-                      .slice(0, 3)
-                      .map((t) => `${t.label}(${t.code}) ${t.count}件`)
-                      .join(' / ')}\n`
-              }
-              response += '\n'
-          }
-      }
-
       // UTM干渉チェック
       if (result.utmCheck?.checked) {
         const utm = result.utmCheck;
@@ -681,66 +620,12 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       // 連携状態
       response += `\n---\n`;
       const sources = [];
-      if (result.mlitEnhanced) sources.push('[MLIT] 国交省API');
       if (result.aiEnhanced) sources.push('[AI] OpenAI');
       if (sources.length === 0) sources.push('[LOCAL] ローカル分析');
       response += `データソース: ${sources.join(' + ')}`;
 
-      // APIエラー情報を表示
-      if (result.mlitError) {
-        response += `\n[WARN] 国交省API: ${result.mlitError}`;
-      }
       if (result.aiError) {
         response += `\n[WARN] OpenAI: ${result.aiError}`;
-      }
-
-      // 国交省API情報を詳細表示（成功時）
-      const mlitInfo = result.context?.mlitInfo;
-      if (mlitInfo?.success) {
-        response += `\n\n### 国交省API情報\n`;
-        if (mlitInfo.useZone?.zoneName) {
-          response += `**用途地域:** ${mlitInfo.useZone.zoneName}\n`;
-        }
-        if (mlitInfo.urbanArea?.areaName) {
-          response += `**都市計画:** ${mlitInfo.urbanArea.areaName}\n`;
-        }
-        if (mlitInfo.riskLevel) {
-          const riskMarker = mlitInfo.riskLevel === 'HIGH' ? '[HIGH]' : mlitInfo.riskLevel === 'MEDIUM' ? '[MED]' : '[LOW]';
-          response += `**土地利用リスク:** ${riskMarker} ${mlitInfo.riskLevel}\n`;
-        }
-        if (
-            mlitInfo.disasterHistory?.success &&
-            mlitInfo.disasterHistory.summary?.total > 0
-        ) {
-            const s = mlitInfo.disasterHistory.summary
-            const yMin = s.yearRange?.min
-            const yMax = s.yearRange?.max
-            const yText =
-                yMin && yMax
-                    ? yMin === yMax
-                        ? `${yMin}年`
-                        : `${yMin}〜${yMax}年`
-                    : null
-            response += `**災害履歴:** ${s.total}件${
-                yText ? ` / ${yText}` : ''
-            }\n`
-        }
-        if (mlitInfo.recommendations?.length > 0) {
-          response += `**API推奨事項:**\n`;
-          mlitInfo.recommendations.forEach(rec => {
-            response += `- ${rec}\n`;
-          });
-        }
-      }
-
-      // 親コンポーネントにAPI情報を通知（マップオーバーレイ用）
-      if (onApiInfoUpdate) {
-        onApiInfoUpdate({
-          mlitInfo: mlitInfo,
-          mlitError: result.mlitError,
-          mlitEnhanced: result.mlitEnhanced,
-          center: result.context?.center
-        });
       }
 
       setMessages(prev => {
@@ -988,7 +873,6 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         <div className="header-title">
           <Sparkles size={18} />
           <span>フライトアシスタント</span>
-          {hasMlitKey && <span className="mlit-badge">国交省</span>}
           {hasKey && <span className="ai-badge">AI</span>}
         </div>
         <div className="header-actions">

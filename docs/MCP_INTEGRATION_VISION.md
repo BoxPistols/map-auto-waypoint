@@ -366,3 +366,11 @@ UIは既存の地図コンポーネントに「判定」ボタンを追加し、
 2. **データ収集**: 過去フライトデータのフォーマット定義
 3. **ステークホルダー確認**: UTMプロバイダーとのAPI連携可否
 4. **優先度決定**: どのPhaseから着手するか
+
+---
+
+## PR4: 欧州 U-space の UTM 設計パターンレビュー
+
+UTM統合（`utm-integration-server`）の設計を先に安定させるため、EU U-spaceの一般的パターン（USSP/CISP分離、U1〜U4の段階、4D Flight Intent、状態遷移、購読/再評価）を本プロジェクト向けに整理しました。
+
+- 参照: `docs/UTM_U_SPACE_DESIGN_PATTERNS.md`

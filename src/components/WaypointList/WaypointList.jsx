@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Trash2, Mountain, RefreshCw, Settings2, Pencil, Check, X } from 'lucide-react'
-import { formatElevation } from '../../services/elevation'
+import { Trash2, RefreshCw, Settings2, Pencil, Check, X } from 'lucide-react'
 import styles from './WaypointList.module.scss'
 
 const WaypointList = ({
@@ -9,12 +8,9 @@ const WaypointList = ({
   onDelete,
   onClear,
   onUpdate,
-  onFetchElevation,
   onRegenerateGrid,
   gridSpacing = 30,
-  onGridSpacingChange,
-  isLoadingElevation = false,
-  elevationProgress = null
+  onGridSpacingChange
 }) => {
   const [showSettings, setShowSettings] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -119,6 +115,12 @@ const WaypointList = ({
 
   const hasGridWaypoints = waypoints.some(wp => wp.type === 'grid')
 
+  const formatElevation = (elevation) => {
+    if (elevation === null || elevation === undefined) return 'N/A'
+    if (typeof elevation !== 'number' || Number.isNaN(elevation)) return 'N/A'
+    return `${elevation.toFixed(1)}m`
+  }
+
   return (
     <div className={styles.waypointList}>
       <div className={styles.header}>
@@ -134,14 +136,6 @@ const WaypointList = ({
           </button>
           <button
             className={styles.iconButton}
-            onClick={onFetchElevation}
-            disabled={isLoadingElevation || waypoints.length === 0}
-            data-tooltip="標高を取得（国土地理院API）"
-            data-tooltip-pos="bottom"
-          >
-            <Mountain size={16} />
-          </button>
-          <button
             className={styles.clearButton}
             onClick={() => {
               if (confirm('すべてのWaypointを削除しますか？')) {
@@ -155,17 +149,6 @@ const WaypointList = ({
           </button>
         </div>
       </div>
-
-      {/* 進捗表示 */}
-      {isLoadingElevation && elevationProgress && (
-        <div className={styles.progress}>
-          <div
-            className={styles.progressBar}
-            style={{ width: `${(elevationProgress.current / elevationProgress.total) * 100}%` }}
-          />
-          <span>標高取得中 {elevationProgress.current}/{elevationProgress.total}</span>
-        </div>
-      )}
 
       {/* 設定パネル */}
       {showSettings && (
