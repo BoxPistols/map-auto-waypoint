@@ -174,6 +174,10 @@ const callReinfolibApi = async (endpoint, params = {}) => {
     if (!response.ok) {
       const errorText = await response.text().catch(() => '');
       console.error('[reinfolib] Error response:', errorText);
+      // WAF等でブロックされた場合（HTMLが返ってくる）
+      if (response.status === 403 && typeof errorText === 'string' && errorText.includes('The request is blocked')) {
+        throw new Error('国交省APIがブロックしました(403)。短時間の連続アクセスが原因の可能性があります。数分待って再試行してください。');
+      }
       throw new Error(`API Error: ${response.status}`);
     }
 

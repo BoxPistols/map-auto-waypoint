@@ -191,6 +191,10 @@ const Map = ({
   // NOTE: このファイルのコンポーネント名が `Map` なので、グローバルの Map と衝突する。
   // `new Map()` だと「Mapコンポーネント」をnewしようとして落ちるため、明示的に globalThis.Map を使う。
   const disasterHistoryCacheRef = useRef(new globalThis.Map()) // tileKey -> GeoJSON
+  const disasterHistoryInFlightRef = useRef(new globalThis.Map()) // tileKey -> Promise
+  const disasterHistoryLastFetchAtRef = useRef(0)
+  const disasterHistoryCooldownUntilRef = useRef(0)
+  const disasterHistoryCooldownMsRef = useRef(60_000)
 
   // isMobile is now passed as a prop from App.jsx to avoid duplication
 
@@ -261,12 +265,36 @@ const Map = ({
       return
     }
 
+    // 403等でクールダウン中はリトライしない
+    const now = Date.now()
+    if (now < disasterHistoryCooldownUntilRef.current) {
+      const sec = Math.ceil((disasterHistoryCooldownUntilRef.current - now) / 1000)
+      setDisasterHistoryLoading(false)
+      setDisasterHistoryError(`ブロック回避のため待機中（あと${sec}秒）`)
+      return
+    }
+
+    // 最低取得間隔（ブロック回避）
+    const minIntervalMs = 5000
+    if (now - disasterHistoryLastFetchAtRef.current < minIntervalMs) {
+      return
+    }
+
+    // 同タイルのin-flightがあればそれに乗る
+    const inFlight = disasterHistoryInFlightRef.current.get(tileKey)
+    if (inFlight) {
+      setDisasterHistoryLoading(true)
+      return
+    }
+
     setDisasterHistoryLoading(true)
     setDisasterHistoryError(null)
 
     const timer = setTimeout(() => {
       let cancelled = false
-      ;(async () => {
+
+      const p = (async () => {
+        disasterHistoryLastFetchAtRef.current = Date.now()
         try {
           const result = await getDisasterHistory(baseLat, baseLng, z)
           if (cancelled) return
@@ -274,23 +302,35 @@ const Map = ({
             disasterHistoryCacheRef.current.set(tileKey, result.geojson)
             setDisasterHistoryLocal(result.geojson)
             setDisasterHistoryError(null)
+            // 成功したらクールダウンをリセット
+            disasterHistoryCooldownMsRef.current = 60_000
           } else {
             setDisasterHistoryError(result?.error || '災害履歴の取得に失敗しました')
           }
         } catch (e) {
           const msg = e instanceof Error ? e.message : '災害履歴の取得に失敗しました'
           if (!cancelled) setDisasterHistoryError(msg)
+
+          // 403等のブロックが疑われる場合は指数バックオフでクールダウン
+          if (msg.includes('403') || msg.includes('ブロック')) {
+            const cooldownMs = disasterHistoryCooldownMsRef.current
+            disasterHistoryCooldownUntilRef.current = Date.now() + cooldownMs
+            // 1分→2分→4分…（最大10分）
+            disasterHistoryCooldownMsRef.current = Math.min(600_000, cooldownMs * 2)
+          }
         } finally {
           if (!cancelled) setDisasterHistoryLoading(false)
+          disasterHistoryInFlightRef.current.delete(tileKey)
         }
       })()
 
-      return () => { cancelled = true }
+      disasterHistoryInFlightRef.current.set(tileKey, p)
     }, 350)
 
     return () => {
       clearTimeout(timer)
       // 注: fetch 자체のabortはしていないが、state反映はキャンセルする
+      cancelled = true
     }
   }, [
     showDisasterHistory,
