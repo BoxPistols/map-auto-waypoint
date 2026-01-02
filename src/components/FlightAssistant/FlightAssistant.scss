@@ -1603,9 +1603,8 @@
         padding: 4px;
       }
 
-      // モバイルでは拡大/縮小ボタンを非表示
-      .expand-btn,
-      .fullscreen-btn {
+      // モバイルでは横幅拡大ボタンのみ非表示（高さ切り替えは残す）
+      .expand-btn {
         display: none;
       }
     }
@@ -2002,9 +2001,18 @@
 
   .flight-assistant {
     bottom: 16px;
+    left: 8px;
     right: 8px;
-    max-height: 50vh; // 画面の半分まで
-    width: calc(100vw - 16px);
+    width: auto;
+    min-width: auto;
+    max-height: 50vh; // 通常は画面の半分
+
+    // 高さ拡張モード（fullscreenクラスを流用）
+    &.fullscreen {
+      top: 56px; // ヘッダー下から
+      max-height: none;
+      border-radius: 12px 12px 0 0;
+    }
   }
 }
 
@@ -2018,15 +2026,27 @@
 
   .flight-assistant {
     bottom: 12px;
-    right: 6px;
     left: 6px;
-    width: auto;
-    min-width: auto;
-    max-height: 45vh; // 画面の45%まで
+    right: 6px;
+    max-height: 45vh;
+
+    &.fullscreen {
+      top: 50px;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      max-height: none;
+      border-radius: 12px 12px 0 0;
+    }
 
     // メッセージエリアをコンパクトに
     .flight-assistant-messages {
       max-height: 25vh;
+    }
+
+    &.fullscreen .flight-assistant-messages {
+      max-height: none;
+      flex: 1;
     }
   }
 }
