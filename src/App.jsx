@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X } from 'lucide-react'
+import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getTheme, toggleTheme, THEMES } from './services/themeService'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
@@ -1058,6 +1058,13 @@ function App() {
                   <span>{calcTotalDistance(waypoints).toFixed(1)}km</span>
                 </div>
               )}
+              <button
+                className="floating-stat export"
+                onClick={() => setShowExport(true)}
+                title="エクスポート"
+              >
+                <Download size={14} />
+              </button>
               <button
                 className="floating-stat expand"
                 onClick={() => setSidebarCollapsed(false)}

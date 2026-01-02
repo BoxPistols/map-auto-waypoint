@@ -1073,6 +1073,21 @@ body {
       background: var(--color-primary-dark);
     }
   }
+
+  &.export {
+    padding: 8px 10px;
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: white;
+
+    svg {
+      color: white;
+    }
+
+    &:hover {
+      background: var(--color-success-dark);
+    }
+  }
 }
 
 // モバイル用サイドバー改善
