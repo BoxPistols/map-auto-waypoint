@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Trash2, RefreshCw, Settings2, Pencil, Check, X } from 'lucide-react'
+import { Trash2, RefreshCw, Settings2, Pencil, Check } from 'lucide-react'
 import styles from './WaypointList.module.scss'
 
 const WaypointList = ({
@@ -135,7 +135,6 @@ const WaypointList = ({
             <Settings2 size={16} />
           </button>
           <button
-            className={styles.iconButton}
             className={styles.clearButton}
             onClick={() => {
               if (confirm('すべてのWaypointを削除しますか？')) {

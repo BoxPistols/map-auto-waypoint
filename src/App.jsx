@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getTheme, toggleTheme, THEMES } from './services/themeService'
+import { getSetting, isDIDAvoidanceModeEnabled } from './services/settingsService'
 import Map from './components/Map/Map'
 import PolygonList from './components/PolygonList/PolygonList'
 import WaypointList from './components/WaypointList/WaypointList'
@@ -79,6 +80,10 @@ function App() {
 
   // Optimization overlay state
   const [recommendedWaypoints, setRecommendedWaypoints] = useState(null)
+  // DID warning highlight (indices) - shown even when recommended overlay is suppressed
+  const [didHighlightedWaypointIndices, setDidHighlightedWaypointIndices] = useState(() => new Set())
+  // Per-waypoint issue flags (airport/prohibited/did) for marker highlighting (recommendedWaypointsと独立)
+  const [waypointIssueFlagsById, setWaypointIssueFlagsById] = useState(() => ({}))
 
   // Highlighted waypoint (for FlightAssistant WP click)
   const [highlightedWaypointIndex, setHighlightedWaypointIndex] = useState(null)
@@ -879,6 +884,8 @@ function App() {
             polygons={polygons}
             waypoints={waypoints}
             recommendedWaypoints={recommendedWaypoints}
+            didHighlightedWaypointIndices={didHighlightedWaypointIndices}
+            waypointIssueFlagsById={waypointIssueFlagsById}
             highlightedWaypointIndex={highlightedWaypointIndex}
             isMobile={isMobile}
             onPolygonCreate={handlePolygonCreate}
@@ -1038,9 +1045,45 @@ function App() {
         isOpen={showChat}
         onOpenChange={setShowChat}
         onOptimizationUpdate={(optimizationPlan) => {
-          // 推奨位置のオーバーレイ表示用
+          // DIDハイライトは、推奨オーバーレイとは独立に保持する（警告のみでも点滅させるため）
+          const didSet = new Set()
+          /** @type {Record<string, { hasDID: boolean, hasAirport: boolean, hasProhibited: boolean }>} */
+          const flagsById = {}
+          const gaps = optimizationPlan?.waypointAnalysis?.gaps
+          if (Array.isArray(gaps)) {
+            for (const gap of gaps) {
+              if (!gap?.issues) continue
+              const types = new Set(gap.issues.map(i => i?.type).filter(Boolean))
+              const hasDID = types.has('did')
+              const hasAirport = types.has('airport')
+              const hasProhibited = types.has('prohibited')
+
+              if (hasDID && typeof gap.waypointIndex === 'number') didSet.add(gap.waypointIndex)
+              if (typeof gap.waypointId === 'string') {
+                flagsById[gap.waypointId] = { hasDID, hasAirport, hasProhibited }
+              }
+            }
+          }
+          setDidHighlightedWaypointIndices(didSet)
+          setWaypointIssueFlagsById(flagsById)
+
+          // 推奨位置のオーバーレイ表示:
+          // - DID「警告のみ」の場合でも、空港/禁止などで移動（modified）があるなら推奨を表示する
+          // - DIDのみでmodifiedがない場合は推奨を出さない（従来挙動）
+          const didWarningOnly = getSetting('didWarningOnlyMode')
+          const didAvoidance = isDIDAvoidanceModeEnabled()
+          const warningOnlyMode = didWarningOnly && !didAvoidance
+
+          const hasModified =
+            Array.isArray(optimizationPlan?.recommendedWaypoints) &&
+            optimizationPlan.recommendedWaypoints.some(rw => rw?.modified)
+
           if (optimizationPlan?.hasIssues && optimizationPlan.recommendedWaypoints) {
-            setRecommendedWaypoints(optimizationPlan.recommendedWaypoints)
+            if (warningOnlyMode) {
+              setRecommendedWaypoints(hasModified ? optimizationPlan.recommendedWaypoints : null)
+            } else {
+              setRecommendedWaypoints(optimizationPlan.recommendedWaypoints)
+            }
           } else {
             setRecommendedWaypoints(null)
           }
@@ -1080,6 +1123,8 @@ function App() {
 
           // オーバーレイをクリア
           setRecommendedWaypoints(null)
+          setDidHighlightedWaypointIndices(new Set())
+          setWaypointIssueFlagsById({})
           showNotification('プランを安全な位置に最適化しました', 'success')
         }}
         onWaypointSelect={(wpIndex) => {

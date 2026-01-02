@@ -122,125 +122,8 @@ const getPrefectureFromCoords = (lat, lng) => {
 };
 
 /**
- * GitHub dronebird/DIDinJapan からDIDデータを取得
- * @param {string} prefCode - 都道府県コード
- * @param {string} prefName - 都道府県名（英語）
- * @returns {Promise<Object|null>} GeoJSONデータ
- */
-const fetchDIDFromGitHub = async (_prefCode, _prefName) => {
-  // 外部API/外部HTTP取得は削除（OpenAIのみ残す方針）
-  return null;
-};
-
-/**
- * GeoJSONのプロパティから地名を取得
- * @param {Object} properties - GeoJSON feature properties
- * @param {Object} prefecture - 都道府県データ
- * @returns {string} 地名
- */
-const extractAreaName = (properties, prefecture) => {
-  if (!properties) return prefecture?.nameJa || prefecture?.name || '人口集中地区';
-
-  // 市区町村名の候補（優先順位順）
-  const cityName = properties.CITY_NAME ||
-                   properties.city_name ||
-                   properties.SIKUCHOSON ||
-                   properties.S_NAME ||
-                   properties.MOJI ||
-                   properties.N03_004 ||  // 国土数値情報の市区町村名
-                   properties.N03_003 ||  // 国土数値情報の郡名
-                   null;
-
-  // 都道府県名の候補
-  const prefName = properties.PREF_NAME ||
-                   properties.pref_name ||
-                   properties.KEN_NAME ||
-                   properties.ken_name ||
-                   properties.N03_001 ||  // 国土数値情報の都道府県名
-                   null;
-
-  // 市区町村名があれば使用
-  if (cityName) {
-    return cityName;
-  }
-
-  // GeoJSONに都道府県名があれば使用
-  if (prefName) {
-    return prefName;
-  }
-
-  // 都道府県データから日本語名を使用
-  if (prefecture?.nameJa) {
-    return `${prefecture.nameJa}DID`;
-  }
-
-  return '人口集中地区';
-};
-
-/**
- * GeoJSONから点がDID内かチェック
- * @param {Object} geojson - GeoJSONデータ
- * @param {number} lat - 緯度
- * @param {number} lng - 経度
- * @param {Object} prefecture - 都道府県データ
- * @returns {Object|null} マッチした場合の結果
- */
-const checkPointInDIDGeoJSON = (geojson, lat, lng, prefecture) => {
-  if (!geojson?.features || geojson.features.length === 0) {
-    return null;
-  }
-
-  const point = turf.point([lng, lat]);
-
-  for (const feature of geojson.features) {
-    if (!feature.geometry) continue;
-    if (feature.geometry.type !== 'Polygon' && feature.geometry.type !== 'MultiPolygon') continue;
-
-    try {
-      if (turf.booleanPointInPolygon(point, feature)) {
-        const areaName = extractAreaName(feature.properties, prefecture);
-        const population = feature.properties?.JINKO ||
-                          feature.properties?.POP ||
-                          feature.properties?.POPULATION ||
-                          feature.properties?.jinko ||
-                          null;
-
-        // DIDポリゴンのcentroidを計算（回避位置計算用）
-        let centroid = null;
-        try {
-          const centroidPoint = turf.centroid(feature);
-          if (centroidPoint?.geometry?.coordinates) {
-            centroid = {
-              lng: centroidPoint.geometry.coordinates[0],
-              lat: centroidPoint.geometry.coordinates[1]
-            };
-          }
-        } catch {
-          // centroid計算失敗時はnull
-        }
-
-        return {
-          isDID: true,
-          area: areaName,
-          certainty: 'confirmed',
-          source: 'GitHub/DIDinJapan',
-          description: `${areaName}のDID内（人口集中地区）`,
-          population,
-          centroid
-        };
-      }
-    } catch {
-      continue;
-    }
-  }
-
-  return null;
-};
-
-/**
- * DID（人口集中地区）判定 - 動的API取得
- * 1. GitHub dronebird/DIDinJapan から都道府県単位でGeoJSON取得
- * 2. 取得失敗時は静的フォールバックデータを使用
+ * DID（人口集中地区）判定
+ * 外部API取得は削除したため、フォールバックデータ（主要都市の推定）で判定
  *
  * @param {number} lat - 緯度
  * @param {number} lng - 経度
@@ -300,6 +183,10 @@ const checkDIDAreaFallback = (lat, lng, _prefecture = null) => {
     { name: 'いわき市', lat: 37.0504, lng: 140.8879, radius: 3500 },
 
     // 関東
+    // 注: 外部GeoJSONを取得しない構成ではDID境界の厳密判定ができないため、
+    // 「過去挙動（首都圏でDID警告が出る）」を優先して首都圏を広めに推定する。
+    // 厚木/相模原/川崎/横浜/東京湾岸なども包含させる。
+    { name: '首都圏（推定）', lat: 35.6812, lng: 139.7671, radius: 60000 },
     { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 20000 },
     { name: '横浜市', lat: 35.4437, lng: 139.6380, radius: 12000 },
     { name: '川崎市', lat: 35.5308, lng: 139.7030, radius: 6000 },
@@ -1387,6 +1274,14 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     }
   }
 
+  // DIDの表示/提案は設定に従う（3状態）
+  // 1) DID回避OFF & 警告のみOFF: DIDは無視（点滅もしない、推奨も出さない）
+  // 2) DID回避OFF & 警告のみON : DIDは警告のみ（点滅する、推奨は出さない）
+  // 3) DID回避ON                 : 点滅 + 推奨も出す
+  const didAvoidanceEnabled = isDIDAvoidanceModeEnabled();
+  const didWarningOnly = getSetting('didWarningOnlyMode');
+  const shouldFlagDID = didAvoidanceEnabled || didWarningOnly;
+
   // 推奨WPリストを生成
   const recommendedWaypoints = waypoints.map(wp => {
     const wpIndex = wp.index !== undefined ? wp.index : waypoints.indexOf(wp) + 1;
@@ -1414,7 +1309,7 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
         lat: offset ? wp.lat + offset.latOffset : wp.lat,
         lng: offset ? wp.lng + offset.lngOffset : wp.lng,
         modified: !!offset,
-        hasDID: didWaypointIndices.has(wpIndex),
+        hasDID: shouldFlagDID ? didWaypointIndices.has(wpIndex) : false,
         hasAirport: issueTypes.includes('airport'),
         hasProhibited: issueTypes.includes('prohibited'),
         issueTypes
@@ -1436,7 +1331,15 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
       };
     }
 
-    return { ...wp, modified: false, hasDID: false, hasAirport: false, hasProhibited: false, issueTypes: [] };
+    // DIDは設定に従って表示/非表示を決める（上と同様）
+    return {
+      ...wp,
+      modified: false,
+      hasDID: shouldFlagDID ? didWaypointIndices.has(wpIndex) : false,
+      hasAirport: false,
+      hasProhibited: false,
+      issueTypes: []
+    };
   });
 
   return {

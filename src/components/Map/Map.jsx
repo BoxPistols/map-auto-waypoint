@@ -128,6 +128,8 @@ const Map = ({
   polygons = [],
   waypoints = [],
   recommendedWaypoints = null,
+  didHighlightedWaypointIndices = null,
+  waypointIssueFlagsById = null,
   highlightedWaypointIndex = null,
   isMobile = false,
   onPolygonCreate,
@@ -798,57 +800,94 @@ const Map = ({
 
         {/* Display waypoints as draggable markers (non-interactive during polygon edit) */}
         {waypoints.map((wp) => {
-          const isHighlighted = highlightedWaypointIndex === wp.index
-          // Check zone violations for this waypoint
-          const recommendedWp = recommendedWaypoints?.find(rw => rw.id === wp.id)
-          const isInDID = recommendedWp?.hasDID || false
-          const isInAirport = recommendedWp?.hasAirport || false
-          const isInProhibited = recommendedWp?.hasProhibited || false
+            const isHighlighted = highlightedWaypointIndex === wp.index
+            // Check zone violations for this waypoint
+            const recommendedWp = recommendedWaypoints?.find(
+                (rw) => rw.id === wp.id
+            )
+            const flags = waypointIssueFlagsById && wp.id ? waypointIssueFlagsById[wp.id] : null
+            const isInDID =
+                (didHighlightedWaypointIndices instanceof Set
+                    ? didHighlightedWaypointIndices.has(wp.index)
+                    : false) ||
+                (flags?.hasDID || false) ||
+                (recommendedWp?.hasDID || false)
+            const isInAirport = (flags?.hasAirport || false) || (recommendedWp?.hasAirport || false)
+            const isInProhibited = (flags?.hasProhibited || false) || (recommendedWp?.hasProhibited || false)
 
-          // Debug: ゾーン違反の確認（開発時のみ）
-          if (import.meta.env.DEV && recommendedWp && (isInDID || isInAirport || isInProhibited)) {
-            console.log(`[Map] WP${wp.index}: DID=${isInDID}, Airport=${isInAirport}, Prohibited=${isInProhibited}`, recommendedWp.issueTypes)
-          }
+            // Debug: ゾーン違反の確認（開発時のみ）
+            if (
+                import.meta.env.DEV &&
+                recommendedWp &&
+                (isInDID || isInAirport || isInProhibited)
+            ) {
+                console.log(
+                    `[Map] WP${wp.index}: DID=${isInDID}, Airport=${isInAirport}, Prohibited=${isInProhibited}`,
+                    recommendedWp.issueTypes
+                )
+            }
 
-          // Build zone class (priority: prohibited > airport > DID)
-          let zoneClass = ''
-          let zoneLabel = ''
-          if (isInProhibited) {
-            zoneClass = styles.inProhibited
-            zoneLabel = ' [禁止区域]'
-          } else if (isInAirport) {
-            zoneClass = styles.inAirport
-            zoneLabel = ' [空港制限]'
-          } else if (isInDID) {
-            zoneClass = styles.inDID
-            zoneLabel = ' [DID内]'
-          }
+            // Build zone class (priority: prohibited > airport > DID)
+            let zoneClass = ''
+            let zoneLabel = ''
+            if (isInProhibited) {
+                zoneClass = styles.inProhibited
+                zoneLabel = ' [禁止区域]'
+            } else if (isInAirport) {
+                zoneClass = styles.inAirport
+                zoneLabel = ' [空港制限]'
+            } else if (isInDID) {
+                zoneClass = styles.inDID
+                zoneLabel = ' [DID内]'
+            }
 
-          return (
-            <Marker
-              key={wp.id}
-              latitude={wp.lat}
-              longitude={wp.lng}
-              draggable={!editingPolygon}
-              onDragEnd={(e) => {
-                onWaypointMove?.(wp.id, e.lngLat.lat, e.lngLat.lng)
-              }}
-              onClick={(e) => {
-                if (editingPolygon) return
-                e.originalEvent.stopPropagation()
-                onWaypointClick?.(wp)
-              }}
-            >
-              <div
-                className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${selectedWaypointIds.has(wp.id) ? styles.selected : ''} ${isHighlighted ? styles.highlighted : ''} ${zoneClass}`}
-                style={editingPolygon ? { pointerEvents: 'none', opacity: 0.5 } : undefined}
-                title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}${zoneLabel}`}
-                onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
-              >
-                {wp.index}
-              </div>
-            </Marker>
-          )
+            // DIDは他の制限（空港/禁止）と併存しうるため、視認性のためリング表示も付与する
+            // DIDは「警告のみ」でも「回避」でも点滅させたい（他の警告と独立）
+            const didRingClass = isInDID ? styles.didRing : ''
+            const multiLabel =
+                isInDID && zoneLabel && !zoneLabel.includes('DID')
+                    ? `${zoneLabel} [DID内]`
+                    : zoneLabel
+
+            return (
+                <Marker
+                    key={wp.id}
+                    latitude={wp.lat}
+                    longitude={wp.lng}
+                    draggable={!editingPolygon}
+                    onDragEnd={(e) => {
+                        onWaypointMove?.(wp.id, e.lngLat.lat, e.lngLat.lng)
+                    }}
+                    onClick={(e) => {
+                        if (editingPolygon) return
+                        e.originalEvent.stopPropagation()
+                        onWaypointClick?.(wp)
+                    }}
+                >
+                    <div
+                        className={`${styles.waypointMarker} ${
+                            wp.type === 'grid' ? styles.gridMarker : ''
+                        } ${
+                            selectedWaypointIds.has(wp.id)
+                                ? styles.selected
+                                : ''
+                        } ${
+                            isHighlighted ? styles.highlighted : ''
+                        } ${zoneClass} ${didRingClass}`}
+                        style={
+                            editingPolygon
+                                ? { pointerEvents: 'none', opacity: 0.5 }
+                                : undefined
+                        }
+                        title={`#${wp.index} - ${
+                            wp.polygonName || 'Waypoint'
+                        }${multiLabel}`}
+                        onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
+                    >
+                        {wp.index}
+                    </div>
+                </Marker>
+            )
         })}
       </MapGL>
 
