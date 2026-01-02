@@ -237,8 +237,9 @@ const Map = ({
     const baseLat = apiInfo?.center?.lat ?? viewState.latitude
     const baseLng = apiInfo?.center?.lng ?? viewState.longitude
 
-    // XST001は z=9〜15。表示ズームを丸めて範囲内にクランプ
-    const z = Math.min(15, Math.max(9, Math.round(viewState.zoom || 14)))
+    // XST001は z=9〜15 だが、低ズーム(広域タイル)はレスポンスが巨大になりやすく
+    // WAFにブロックされるケースがあるため、ここでは 14〜15 にクランプして軽量化する。
+    const z = Math.min(15, Math.max(14, Math.round(viewState.zoom || 14)))
     const tile = latLngToTile(baseLat, baseLng, z)
     const tileKey = `${tile.z}/${tile.x}/${tile.y}`
 
