@@ -237,9 +237,31 @@
   color: white;
 }
 
+.toggleButton.activeDisasterHistory {
+  background: #8b5cf6;
+  color: white;
+}
+
+.xButtonLabel {
+  font-weight: 900;
+  font-size: 14px;
+  line-height: 1;
+}
+
 .toggleButton.activeApi {
   background: #10b981;
   color: white;
+}
+
+.toggleButton.activeDisasterHistory {
+  background: #ef4444;
+  color: white;
+}
+
+.xButtonLabel {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .toggleButton.apiConnected {

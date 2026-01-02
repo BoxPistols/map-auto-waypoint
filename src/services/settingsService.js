@@ -56,7 +56,7 @@ export const saveSettings = (settings) => {
 /**
  * 特定の設定値を取得
  * @param {string} key - 設定キー
- * @returns {any} 設定値
+ * @returns {unknown} 設定値
  */
 export const getSetting = (key) => {
   const settings = getSettings();
@@ -66,7 +66,7 @@ export const getSetting = (key) => {
 /**
  * 特定の設定値を保存
  * @param {string} key - 設定キー
- * @param {any} value - 設定値
+ * @param {unknown} value - 設定値
  */
 export const setSetting = (key, value) => {
   return saveSettings({ [key]: value });
