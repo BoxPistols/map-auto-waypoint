@@ -873,7 +873,7 @@ function App() {
               onClick={toggleSidebar}
               title="閉じる [S]"
             >
-              {isMobile ? <X size={28} /> : <Menu size={20} />}
+              {isMobile ? <X size={28} /> : <Menu size={22} />}
             </button>
           )}
 

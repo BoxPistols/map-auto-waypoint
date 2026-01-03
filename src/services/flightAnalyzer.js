@@ -1404,8 +1404,8 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
             });
           }
 
-          // 距離を段階的に増やして試す（100m, 200m, 300m, ..., 1000m）
-          const distancesToTry = [100, 200, 300, 400, 500, 600, 800, 1000];
+          // 距離を段階的に増やして試す（100m〜2000m）
+          const distancesToTry = [100, 200, 300, 400, 500, 600, 800, 1000, 1200, 1500, 2000];
 
           for (const bearing of directions) {
             for (const testDistance of distancesToTry) {
@@ -1426,8 +1426,8 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
                   break;
                 }
 
-                // 空港/禁止区域チェック（DID以外）
-                const restricted = isPositionInRestrictedZone(newLat, newLng, margin, false);
+                // 空港/禁止区域チェック（DID回避時はマージンなしで純粋な制限区域のみ確認）
+                const restricted = isPositionInRestrictedZone(newLat, newLng, 0, false);
                 if (restricted) {
                   anyInRestrictedZone = true;
                   break;
