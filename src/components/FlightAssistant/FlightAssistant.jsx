@@ -43,7 +43,7 @@ import {
   getChatLog,
   updateChatLog
 } from '../../services/chatLogService';
-import { getSetting, setSetting, isDIDAvoidanceModeEnabled } from '../../services/settingsService';
+import { getSetting, setSetting } from '../../services/settingsService';
 import './FlightAssistant.scss';
 
 /**
@@ -89,8 +89,6 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   // 回避設定
   const [showAvoidanceSettings, setShowAvoidanceSettings] = useState(false);
   const [avoidanceDistance, setAvoidanceDistance] = useState(getSetting('didAvoidanceDistance') || 100);
-  const [didAvoidanceMode, setDIDAvoidanceMode] = useState(isDIDAvoidanceModeEnabled());
-  const [didWarningOnly, setDIDWarningOnly] = useState(getSetting('didWarningOnlyMode') || false);
   const messagesEndRef = useRef(null);
   const panelRef = useRef(null);
   const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
@@ -99,8 +97,6 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   useEffect(() => {
     const handleStorageChange = () => {
       setAvoidanceDistance(getSetting('didAvoidanceDistance') || 100);
-      setDIDAvoidanceMode(isDIDAvoidanceModeEnabled());
-      setDIDWarningOnly(getSetting('didWarningOnlyMode') || false);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -1069,37 +1065,9 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               <span>300</span>
             </div>
           </div>
-          <div className="avoidance-toggles">
-            <label className="toggle-item">
-              <input
-                type="checkbox"
-                checked={didAvoidanceMode}
-                onChange={(e) => {
-                  const enabled = e.target.checked;
-                  setDIDAvoidanceMode(enabled);
-                  setSetting('didAvoidanceMode', enabled);
-                  if (enabled) {
-                    setDIDWarningOnly(false);
-                    setSetting('didWarningOnlyMode', false);
-                  }
-                }}
-              />
-              <span>DID回避</span>
-            </label>
-            {!didAvoidanceMode && (
-              <label className="toggle-item sub">
-                <input
-                  type="checkbox"
-                  checked={didWarningOnly}
-                  onChange={(e) => {
-                    const enabled = e.target.checked;
-                    setDIDWarningOnly(enabled);
-                    setSetting('didWarningOnlyMode', enabled);
-                  }}
-                />
-                <span>警告のみ</span>
-              </label>
-            )}
+          {/* DID自動判定は無効化 - 地図オーバーレイで目視確認 */}
+          <div className="avoidance-note">
+            <span>※ DIDは地図オーバーレイで目視確認</span>
           </div>
         </div>
       )}

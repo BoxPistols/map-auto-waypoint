@@ -1707,40 +1707,23 @@ export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) 
   // 最寄り空港
   const nearestAirport = center ? findNearestAirport(center.lat, center.lng) : null;
 
-  // DID判定 - 全Waypointをチェック
-  let didInfo = null;
-  let waypointDIDCheck = null;
-
-  if (waypoints.length > 0) {
-    // 全WaypointのDIDチェック
-    waypointDIDCheck = await checkAllWaypointsDID(waypoints);
-
-    if (waypointDIDCheck.hasDIDWaypoints) {
-      // DID内のWaypointがある場合
-      const firstDIDWp = waypointDIDCheck.didWaypoints[0];
-      didInfo = {
-        isDID: true,
-        area: firstDIDWp.area,
-        certainty: firstDIDWp.certainty,
-        source: firstDIDWp.source,
-        description: waypointDIDCheck.summary,
-        waypointDetails: waypointDIDCheck
-      };
-    } else {
-      // 全WaypointがDID外（waypointDetailsも常に設定）
-      didInfo = {
-        isDID: false,
-        area: null,
-        certainty: 'confirmed',
-        source: 'waypoint_check',
-        description: waypointDIDCheck.summary,
-        waypointDetails: waypointDIDCheck
-      };
+  // DID判定 - 無効化（GitHub DIDデータの精度問題のため）
+  // DIDエリアは地図オーバーレイ（国土地理院タイル・令和2年）で目視確認してください
+  // 空港・禁止区域の判定は引き続き有効です
+  const didInfo = {
+    isDID: false,
+    area: null,
+    certainty: 'disabled',
+    source: 'disabled',
+    description: 'DID自動判定は無効化されています。地図上のDIDオーバーレイで目視確認してください。',
+    waypointDetails: {
+      hasDIDWaypoints: false,
+      didWaypoints: [],
+      totalChecked: waypoints.length,
+      didCount: 0
     }
-  } else if (center) {
-    // Waypointがない場合は中心点でチェック
-    didInfo = await checkDIDArea(center.lat, center.lng);
-  }
+  };
+  const waypointDIDCheck = didInfo.waypointDetails;
 
   // リスクスコア計算
   let riskScore = 0;

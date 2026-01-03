@@ -744,6 +744,12 @@
       }
     }
   }
+
+  .avoidance-note {
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    padding: 4px 0;
+  }
 }
 
 .flight-assistant-actions {
