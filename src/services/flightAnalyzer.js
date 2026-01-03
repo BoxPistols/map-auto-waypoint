@@ -1726,19 +1726,52 @@ export const generateOptimizationPlan = (polygons, waypoints, didInfo = null) =>
   }
 
   // ポリゴンジオメトリをウェイポイント移動に合わせて更新
-  // polygonOffsetsはウェイポイント分析から取得（同じポリゴンに属するWPが移動する場合のオフセット）
-  const { polygonOffsets } = waypointAnalysis;
+  // 各WPの推奨位置に基づいて、対応するポリゴン頂点も個別に更新
   let recommendedPolygons = null;
 
-  if (polygonOffsets && polygonOffsets.size > 0 && polygons.length > 0) {
-    recommendedPolygons = polygons.map(polygon => {
-      const offset = polygonOffsets.get(polygon.id);
-      if (offset && polygon.geometry?.coordinates?.[0]) {
-        // ポリゴンの全座標にオフセットを適用
-        const updatedCoords = polygon.geometry.coordinates[0].map(([lng, lat]) => [
-          lng + offset.lngOffset,
-          lat + offset.latOffset
-        ]);
+  if (waypointAnalysis.recommendedWaypoints?.length > 0 && polygons.length > 0) {
+    // 移動するWPのマップを作成（元の位置 → 新しい位置）
+    const wpMoveMap = new Map();
+    for (const recWp of waypointAnalysis.recommendedWaypoints) {
+      if (recWp.modified && recWp.polygonId) {
+        // 元のWPを見つける
+        const origWp = waypoints.find(w => w.id === recWp.id);
+        if (origWp) {
+          wpMoveMap.set(recWp.id, {
+            origLat: origWp.lat,
+            origLng: origWp.lng,
+            newLat: recWp.lat,
+            newLng: recWp.lng,
+            polygonId: recWp.polygonId
+          });
+        }
+      }
+    }
+
+    if (wpMoveMap.size > 0) {
+      recommendedPolygons = polygons.map(polygon => {
+        if (!polygon.geometry?.coordinates?.[0]) return polygon;
+
+        // このポリゴンに属するWPの移動情報を取得
+        const movedWps = Array.from(wpMoveMap.values()).filter(m => m.polygonId === polygon.id);
+        if (movedWps.length === 0) return polygon;
+
+        // ポリゴン頂点を更新（移動したWPに対応する頂点を更新）
+        const updatedCoords = polygon.geometry.coordinates[0].map(([lng, lat]) => {
+          // この頂点に対応する移動WPを探す（位置が近いもの）
+          const matchingMove = movedWps.find(m => {
+            const dist = Math.sqrt(
+              Math.pow(lat - m.origLat, 2) + Math.pow(lng - m.origLng, 2)
+            );
+            return dist < 0.0001; // 約10m以内
+          });
+
+          if (matchingMove) {
+            return [matchingMove.newLng, matchingMove.newLat];
+          }
+          return [lng, lat];
+        });
+
         return {
           ...polygon,
           geometry: {
@@ -1746,9 +1779,8 @@ export const generateOptimizationPlan = (polygons, waypoints, didInfo = null) =>
             coordinates: [updatedCoords]
           }
         };
-      }
-      return polygon;
-    });
+      });
+    }
   }
 
   // 推奨ポリゴン: まずウェイポイント移動に連動したもの、なければポリゴン分析結果
