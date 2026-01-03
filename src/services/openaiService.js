@@ -76,20 +76,17 @@ const buildChatCompletionsBody = ({ model, messages, temperature, maxTokens, use
   return body;
 };
 
-// 利用可能なモデル一覧（nano/miniのみ・コスト効率重視）
+// 利用可能なモデル一覧（GPT-4.1系のみ・コスト効率重視）
 export const AVAILABLE_MODELS = [
-  // GPT-5 系（2025年8月リリース）
-  { id: 'gpt-5-nano', name: 'GPT-5 Nano', description: '最速・最安', cost: '$', type: 'openai' },
-  { id: 'gpt-5-mini', name: 'GPT-5 Mini', description: '高速・低コスト', cost: '$', type: 'openai' },
   // GPT-4.1 系（2025年4月リリース、1Mコンテキスト）
-  { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', description: '1Mコンテキスト', cost: '$', type: 'openai' },
-  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', description: '1Mコンテキスト', cost: '$', type: 'openai' },
+  { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano', description: '最速・最安', cost: '$', type: 'openai' },
+  { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', description: '高速・低コスト', cost: '$', type: 'openai' },
   // ローカルLLM
   { id: 'local-default', name: 'ローカルLLM', description: 'LM Studio等', cost: '無料', type: 'local' }
 ];
 
 // デフォルトモデル
-const DEFAULT_MODEL = 'gpt-5-nano';
+const DEFAULT_MODEL = 'gpt-4.1-nano';
 
 // 環境変数からAPIキーを取得（Vite経由）
 const getApiKey = () => {
