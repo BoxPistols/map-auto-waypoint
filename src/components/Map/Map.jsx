@@ -210,16 +210,31 @@ const Map = ({
     const features = []
 
     recommendedWaypoints.forEach(rw => {
+      // Determine warning type
+      let warningType = 'optimization'
+      if (rw.hasProhibited) warningType = 'prohibited'
+      else if (rw.hasAirport) warningType = 'airport'
+      else if (rw.hasDID) warningType = 'did'
+
+      // Add zone warning at current position if there are issues
+      if (rw.hasProhibited || rw.hasAirport || rw.hasDID) {
+        const original = waypoints.find(w => w.id === rw.id)
+        if (original) {
+          features.push({
+            type: 'Feature',
+            properties: { type: 'zone-warning-point', index: rw.index, warningType },
+            geometry: {
+              type: 'Point',
+              coordinates: [original.lng, original.lat]
+            }
+          })
+        }
+      }
+
       if (rw.modified) {
         // Find original waypoint
         const original = waypoints.find(w => w.id === rw.id)
         if (original) {
-          // Determine warning type for line color
-          let warningType = 'optimization'
-          if (rw.hasProhibited) warningType = 'prohibited'
-          else if (rw.hasAirport) warningType = 'airport'
-          else if (rw.hasDID) warningType = 'did'
-
           // Line from original to recommended position
           features.push({
             type: 'Feature',
@@ -242,20 +257,6 @@ const Map = ({
             }
           })
         }
-      } else if (rw.hasProhibited || rw.hasAirport || rw.hasDID) {
-        // Warning point (no move needed, but visual indicator)
-        let warningType = 'did'
-        if (rw.hasProhibited) warningType = 'prohibited'
-        else if (rw.hasAirport) warningType = 'airport'
-
-        features.push({
-          type: 'Feature',
-          properties: { type: 'zone-warning-point', index: rw.index, warningType },
-          geometry: {
-            type: 'Point',
-            coordinates: [rw.lng, rw.lat]
-          }
-        })
       }
     })
 
@@ -735,32 +736,47 @@ const Map = ({
                 'text-halo-width': 1
               }}
             />
-            {/* DID warning circles (green - same style as optimization) */}
+            {/* Zone warning circles - color based on warningType */}
             <Layer
-              id="did-warning-points"
+              id="zone-warning-points"
               type="circle"
-              filter={['==', ['get', 'type'], 'did-warning-point']}
+              filter={['==', ['get', 'type'], 'zone-warning-point']}
               paint={{
                 'circle-radius': 18,
                 'circle-color': 'transparent',
-                'circle-stroke-color': '#10b981',
+                'circle-stroke-color': [
+                  'case',
+                  ['==', ['get', 'warningType'], 'prohibited'], '#9932CC',
+                  ['==', ['get', 'warningType'], 'airport'], '#FF8C00',
+                  '#FF4444' // DID - red
+                ],
                 'circle-stroke-width': 3,
                 'circle-opacity': 1
               }}
             />
-            {/* DID warning labels */}
+            {/* Zone warning labels */}
             <Layer
-              id="did-warning-labels"
+              id="zone-warning-labels"
               type="symbol"
-              filter={['==', ['get', 'type'], 'did-warning-point']}
+              filter={['==', ['get', 'type'], 'zone-warning-point']}
               layout={{
-                'text-field': 'DID',
+                'text-field': [
+                  'case',
+                  ['==', ['get', 'warningType'], 'prohibited'], '禁止',
+                  ['==', ['get', 'warningType'], 'airport'], '空港',
+                  'DID'
+                ],
                 'text-size': 9,
                 'text-offset': [0, 2.2],
                 'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold']
               }}
               paint={{
-                'text-color': '#10b981',
+                'text-color': [
+                  'case',
+                  ['==', ['get', 'warningType'], 'prohibited'], '#9932CC',
+                  ['==', ['get', 'warningType'], 'airport'], '#FF8C00',
+                  '#FF4444'
+                ],
                 'text-halo-color': '#000000',
                 'text-halo-width': 1
               }}
