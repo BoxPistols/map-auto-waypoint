@@ -20,6 +20,16 @@ const requiresMaxCompletionTokens = (modelId) => {
 };
 
 /**
+ * カスタム temperature をサポートしないモデルかどうか。
+ * ※ GPT-5 系は temperature=1（デフォルト）のみ対応、カスタム値は Unsupported error になる。
+ * @param {string} modelId
+ * @returns {boolean}
+ */
+const requiresDefaultTemperature = (modelId) => {
+  return /^gpt-5(-|$)/.test(modelId);
+};
+
+/**
  * @typedef {{role: 'system'|'user'|'assistant', content: string}} ChatMessage
  */
 
@@ -41,12 +51,17 @@ const requiresMaxCompletionTokens = (modelId) => {
 const buildChatCompletionsBody = ({ model, messages, temperature, maxTokens, useLocal }) => {
   /** @type {ChatCompletionsBody} */
   const body = { model, messages };
-  if (typeof temperature === 'number') body.temperature = temperature;
 
-  // ローカルLLMは互換実装が多いため max_tokens を優先
+  // ローカルLLMは互換実装が多いため max_tokens を優先、temperature も許容
   if (useLocal) {
+    if (typeof temperature === 'number') body.temperature = temperature;
     if (typeof maxTokens === 'number') body.max_tokens = maxTokens;
     return body;
+  }
+
+  // GPT-5系: temperature はデフォルト(1)のみ対応、カスタム値は送らない
+  if (typeof temperature === 'number' && !requiresDefaultTemperature(model)) {
+    body.temperature = temperature;
   }
 
   if (typeof maxTokens === 'number') {
