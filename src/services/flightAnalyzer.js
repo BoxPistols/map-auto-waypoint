@@ -451,6 +451,91 @@ const checkDIDAreaFallback = (lat, lng, _prefecture = null) => {
   };
 };
 
+/**
+ * キャッシュ済みDIDデータを使って同期的にDID判定
+ * 推奨位置生成時に使用（非同期fetchを避けるため）
+ * @param {number} lat - 緯度
+ * @param {number} lng - 経度
+ * @returns {boolean} DID内ならtrue
+ */
+const isPositionInDIDSync = (lat, lng) => {
+  const prefecture = getPrefectureFromCoords(lat, lng);
+  if (!prefecture) return false;
+
+  const cacheKey = `pref_${prefecture.code}`;
+
+  // キャッシュ済みGeoJSONがあればそれを使用
+  if (didPrefectureCache.has(cacheKey)) {
+    const geojson = didPrefectureCache.get(cacheKey);
+    if (geojson?.features) {
+      const point = turf.point([lng, lat]);
+      for (const feature of geojson.features) {
+        if (!feature.geometry) continue;
+        if (feature.geometry.type !== 'Polygon' && feature.geometry.type !== 'MultiPolygon') continue;
+        try {
+          if (turf.booleanPointInPolygon(point, feature)) {
+            return true;
+          }
+        } catch {
+          // ポリゴンチェック失敗時はスキップ
+        }
+      }
+      return false;
+    }
+  }
+
+  // キャッシュがない場合はフォールバックデータを使用
+  const MAJOR_DID_FALLBACK = [
+    { lat: 35.6812, lng: 139.7671, radius: 25000 }, // 東京
+    { lat: 35.4437, lng: 139.6380, radius: 15000 }, // 横浜
+    { lat: 34.6937, lng: 135.5023, radius: 15000 }, // 大阪
+    { lat: 35.1815, lng: 136.9066, radius: 12000 }, // 名古屋
+    { lat: 43.0618, lng: 141.3545, radius: 12000 }, // 札幌
+    { lat: 33.5902, lng: 130.4017, radius: 12000 }, // 福岡
+    { lat: 38.2682, lng: 140.8694, radius: 8000 },  // 仙台
+    { lat: 34.3853, lng: 132.4553, radius: 8000 },  // 広島
+    { lat: 35.0116, lng: 135.7681, radius: 10000 }, // 京都
+    { lat: 34.6851, lng: 135.8050, radius: 8000 },  // 奈良
+  ];
+  for (const area of MAJOR_DID_FALLBACK) {
+    const distance = getDistanceMeters(lat, lng, area.lat, area.lng);
+    if (distance < area.radius) {
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
+ * 位置が制限区域内にあるかチェック（空港・飛行禁止区域・DID）
+ * @param {number} lat - 緯度
+ * @param {number} lng - 経度
+ * @param {number} margin - 追加マージン（デフォルト0）
+ * @param {boolean} checkDID - DIDもチェックするか（デフォルトtrue）
+ * @returns {Object|null} 制限区域情報、または安全ならnull
+ */
+const isPositionInRestrictedZone = (lat, lng, margin = 0, checkDID = true) => {
+  // 空港制限区域チェック
+  for (const airport of AIRPORT_ZONES) {
+    const distance = getDistanceMeters(lat, lng, airport.lat, airport.lng);
+    if (distance < airport.radius + margin) {
+      return { type: 'airport', zone: airport, distance };
+    }
+  }
+  // 飛行禁止区域チェック
+  for (const zone of NO_FLY_ZONES) {
+    const distance = getDistanceMeters(lat, lng, zone.lat, zone.lng);
+    if (distance < zone.radius + margin) {
+      return { type: 'prohibited', zone, distance };
+    }
+  }
+  // DIDチェック（キャッシュ使用）
+  if (checkDID && isPositionInDIDSync(lat, lng)) {
+    return { type: 'did', distance: 0 };
+  }
+  return null;
+};
+
 // ===== 申請コスト・タイムライン計算 =====
 
 /**
@@ -1299,150 +1384,147 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
 
     if (shouldCalculateAvoidance) {
       if (isDID) {
-        // DID回避: 経路に対して垂直方向に移動（経路形状を保持）
-        // 重要: 全WPを同じ方向に移動させる（交差を防ぐ）
-        const moveDistance = margin + 50;
+        // DID回避: 複数の方向と距離を試して、DID外への最適な移動を見つける
+        // 8方向 × 複数距離（100m〜1000m）を試行
 
-        // 1. 全WPの平均経路方向を計算
-        let totalBearingX = 0;
-        let totalBearingY = 0;
-        for (const wp of zoneWps) {
-          const wpIdx = waypoints.findIndex(w => w.id === wp.id);
-          const prevWp = wpIdx > 0 ? waypoints[wpIdx - 1] : null;
-          const nextWp = wpIdx < waypoints.length - 1 ? waypoints[wpIdx + 1] : null;
-
-          let pathBearing;
-          if (prevWp && nextWp) {
-            pathBearing = Math.atan2(nextWp.lng - prevWp.lng, nextWp.lat - prevWp.lat);
-          } else if (prevWp) {
-            pathBearing = Math.atan2(wp.lng - prevWp.lng, wp.lat - prevWp.lat);
-          } else if (nextWp) {
-            pathBearing = Math.atan2(nextWp.lng - wp.lng, nextWp.lat - wp.lat);
-          } else {
-            pathBearing = Math.PI / 4;
+        const tryFindDIDEscapeOffset = () => {
+          // 8方向を試す
+          const directions = [];
+          for (let i = 0; i < 8; i++) {
+            directions.push((i * Math.PI) / 4);
           }
-          totalBearingX += Math.cos(pathBearing);
-          totalBearingY += Math.sin(pathBearing);
-        }
-        const avgPathBearing = Math.atan2(totalBearingY, totalBearingX);
 
-        // 2. 垂直方向（左右）を計算
-        const perpLeft = avgPathBearing + Math.PI / 2;
-        const perpRight = avgPathBearing - Math.PI / 2;
-
-        // 3. 全WPに対してどちらの方向が良いか投票
-        let leftVotes = 0;
-        let rightVotes = 0;
-        for (const wp of zoneWps) {
+          // centroidがある場合は、centroidから離れる方向を優先
           if (hasCentroid) {
-            const toCentroid = Math.atan2(zone.lng - wp.lng, zone.lat - wp.lat);
-            const leftDiff = Math.abs(((perpLeft - toCentroid + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-            const rightDiff = Math.abs(((perpRight - toCentroid + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-            if (leftDiff > rightDiff) leftVotes++;
-            else rightVotes++;
-          } else {
-            leftVotes++;
+            const awayFromCentroid = Math.atan2(centerLng - zone.lng, centerLat - zone.lat);
+            directions.sort((a, b) => {
+              const diffA = Math.abs(((a - awayFromCentroid + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+              const diffB = Math.abs(((b - awayFromCentroid + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
+              return diffA - diffB;
+            });
+          }
+
+          // 距離を段階的に増やして試す（100m, 200m, 300m, ..., 1000m）
+          const distancesToTry = [100, 200, 300, 400, 500, 600, 800, 1000];
+
+          for (const bearing of directions) {
+            for (const testDistance of distancesToTry) {
+              const latOffset = (testDistance * Math.cos(bearing)) / 111320;
+              const lngOffset = (testDistance * Math.sin(bearing)) / (111320 * Math.cos(centerLat * Math.PI / 180));
+
+              // 全WPの新位置がDID外かチェック
+              let allOutsideDID = true;
+              let anyInRestrictedZone = false;
+
+              for (const wp of zoneWps) {
+                const newLat = wp.lat + latOffset;
+                const newLng = wp.lng + lngOffset;
+
+                // DID内かチェック
+                if (isPositionInDIDSync(newLat, newLng)) {
+                  allOutsideDID = false;
+                  break;
+                }
+
+                // 空港/禁止区域チェック（DID以外）
+                const restricted = isPositionInRestrictedZone(newLat, newLng, margin, false);
+                if (restricted) {
+                  anyInRestrictedZone = true;
+                  break;
+                }
+              }
+
+              if (allOutsideDID && !anyInRestrictedZone) {
+                return { latOffset, lngOffset, moveDistance: testDistance, safe: true };
+              }
+            }
+          }
+
+          return null; // DID外への安全な方向が見つからない
+        };
+
+        const safeOffset = tryFindDIDEscapeOffset();
+
+        if (safeOffset) {
+          for (const wp of zoneWps) {
+            const existing = wpOffsets.get(wp.id);
+            if (!existing || safeOffset.moveDistance > (existing.moveDistance || 0)) {
+              wpOffsets.set(wp.id, {
+                latOffset: safeOffset.latOffset,
+                lngOffset: safeOffset.lngOffset,
+                moveDistance: safeOffset.moveDistance,
+                isDIDAvoidance: true
+              });
+            }
           }
         }
-
-        // 4. 多数決で方向を決定（全WPが同じ方向に移動）
-        const chosenPerpBearing = leftVotes >= rightVotes ? perpLeft : perpRight;
-
-        // 5. 全WPに同じオフセットを適用
-        const latOffset = (moveDistance * Math.cos(chosenPerpBearing)) / 111320;
-        const lngOffset = (moveDistance * Math.sin(chosenPerpBearing)) / (111320 * Math.cos(centerLat * Math.PI / 180));
-
-        for (const wp of zoneWps) {
-          const existing = wpOffsets.get(wp.id);
-          if (!existing || Math.abs(latOffset) + Math.abs(lngOffset) > Math.abs(existing.latOffset) + Math.abs(existing.lngOffset)) {
-            wpOffsets.set(wp.id, { latOffset, lngOffset, moveDistance: Math.round(moveDistance), isDIDAvoidance: true });
-          }
-        }
+        // DID外への安全な方向が見つからない場合は推奨を出さない
       } else {
-        // 空港/禁止区域: 従来通りcentroidから離れる方向
-        let bearing;
-        let moveDistance;
+        // 空港/禁止区域: centroidから離れる方向を試行
+        // 安全な方向が見つかるまで複数方向を試す
+        const safetyMargin = getSetting('airportAvoidanceMargin') || 100;
 
-        if (distToZone < 1) {
-          bearing = Math.PI / 4;
-          moveDistance = requiredDistance + 100;
-        } else {
-          bearing = Math.atan2(centerLng - zone.lng, centerLat - zone.lat);
-          moveDistance = requiredDistance - distToZone + 100;
-        }
+        const tryFindSafeOffset = () => {
+          // 8方向を試す（最初は元の方向、次に45度ずつ回転）
+          const baseBearing = distToZone < 1
+            ? Math.PI / 4
+            : Math.atan2(centerLng - zone.lng, centerLat - zone.lat);
+          const baseMoveDistance = distToZone < 1
+            ? requiredDistance + 100
+            : requiredDistance - distToZone + 100;
 
-        const latOffset = (moveDistance * Math.cos(bearing)) / 111320;
-        const lngOffset = (moveDistance * Math.sin(bearing)) / (111320 * Math.cos(centerLat * Math.PI / 180));
+          for (let angleOffset = 0; angleOffset < 8; angleOffset++) {
+            const bearing = baseBearing + (angleOffset * Math.PI / 4);
+            const moveDistance = baseMoveDistance;
 
-        for (const wp of zoneWps) {
-          const existing = wpOffsets.get(wp.id);
-          if (!existing || Math.abs(latOffset) + Math.abs(lngOffset) > Math.abs(existing.latOffset) + Math.abs(existing.lngOffset)) {
-            wpOffsets.set(wp.id, { latOffset, lngOffset, moveDistance: Math.round(moveDistance), isDIDAvoidance: false });
+            const latOffset = (moveDistance * Math.cos(bearing)) / 111320;
+            const lngOffset = (moveDistance * Math.sin(bearing)) / (111320 * Math.cos(centerLat * Math.PI / 180));
+
+            // 全WPの推奨位置が安全かチェック（空港/禁止区域のみ、DIDは別途処理）
+            let allSafe = true;
+            for (const wp of zoneWps) {
+              const newLat = wp.lat + latOffset;
+              const newLng = wp.lng + lngOffset;
+              // checkDID=false: DIDは別のアルゴリズムで処理するため、ここでは除外
+              const conflict = isPositionInRestrictedZone(newLat, newLng, safetyMargin, false);
+              if (conflict) {
+                allSafe = false;
+                break;
+              }
+            }
+
+            if (allSafe) {
+              return { latOffset, lngOffset, moveDistance: Math.round(moveDistance), safe: true };
+            }
+          }
+          return null; // 安全な方向が見つからない
+        };
+
+        const safeOffset = tryFindSafeOffset();
+
+        if (safeOffset) {
+          for (const wp of zoneWps) {
+            const existing = wpOffsets.get(wp.id);
+            if (!existing || safeOffset.moveDistance > (existing.moveDistance || 0)) {
+              wpOffsets.set(wp.id, {
+                latOffset: safeOffset.latOffset,
+                lngOffset: safeOffset.lngOffset,
+                moveDistance: safeOffset.moveDistance,
+                isDIDAvoidance: false
+              });
+            }
           }
         }
+        // 安全な方向が見つからない場合は推奨を出さない
       }
     }
   }
 
-  // ポリゴン整合性の維持: 同じポリゴンに属する全WPを一緒に移動
-  // 一部のWPだけ移動するとポリゴンが分離するため
-  const polygonOffsets = new Map(); // polygonId -> {latOffset, lngOffset, moveDistance}
-
-  // 1. 移動が必要なWPからポリゴンごとの最大オフセットを特定
-  for (const [wpId, offset] of wpOffsets) {
-    const wp = waypoints.find(w => w.id === wpId);
-    if (wp?.polygonId) {
-      const existing = polygonOffsets.get(wp.polygonId);
-      if (!existing || offset.moveDistance > existing.moveDistance) {
-        polygonOffsets.set(wp.polygonId, offset);
-      }
-    }
-  }
-
-  // 2. 同じポリゴンの全WPに同じオフセットを適用
-  // ただしDID回避OFFの場合、DID-onlyのWPにはポリゴン同期を適用しない
-  const didAvoidanceForPolygonSync = isDIDAvoidanceModeEnabled();
-  for (const [polygonId, offset] of polygonOffsets) {
-    for (const wp of waypoints) {
-      if (wp.polygonId === polygonId && !wpOffsets.has(wp.id)) {
-        const wpIndex = wp.index !== undefined ? wp.index : waypoints.indexOf(wp) + 1;
-        const isDIDOnly = didWaypointIndices.has(wpIndex) &&
-          !wpIssuesMap.get(wp.id)?.issues.some(i => i.type === 'airport' || i.type === 'prohibited');
-
-        // DID回避OFFでDID-onlyのWPの場合はスキップ
-        if (!didAvoidanceForPolygonSync && isDIDOnly) {
-          continue;
-        }
-        wpOffsets.set(wp.id, { ...offset, isPolygonSync: true });
-      }
-    }
-  }
-
-  // 3. 経路一貫性の維持: DID回避モードONの場合のみ、DID内WPも同じ方向に移動
-  // DID警告のみモードの場合は、DID内WPは移動させない
-  const didAvoidanceEnabledForPath = isDIDAvoidanceModeEnabled();
-  if (didAvoidanceEnabledForPath && wpOffsets.size > 0 && didWaypointIndices.size > 0) {
-    // 最大のオフセットを計算（経路全体を動かすため）
-    let maxOffset = null;
-    for (const offset of wpOffsets.values()) {
-      if (!maxOffset || offset.moveDistance > maxOffset.moveDistance) {
-        maxOffset = offset;
-      }
-    }
-
-    // DID内のWPで、まだオフセットがないものに適用
-    if (maxOffset) {
-      for (const wpIndex of didWaypointIndices) {
-        const wp = waypoints.find(w => {
-          const idx = w.index !== undefined ? w.index : waypoints.indexOf(w) + 1;
-          return idx === wpIndex;
-        });
-        if (wp && !wpOffsets.has(wp.id)) {
-          wpOffsets.set(wp.id, { ...maxOffset, isPathSync: true });
-        }
-      }
-    }
-  }
+  // 注意: ポリゴン同期は削除
+  // 理由: 問題のないWPに推奨を出すべきではない
+  // 各WPは個別に判定し、問題があるWPのみに推奨を出す
+  // ユーザーが推奨を適用する際に、ポリゴン全体の移動は別途検討する
+  const polygonOffsets = new Map(); // 空のMap（後方互換性のため）
 
   // DIDの表示/提案は設定に従う（3状態）
   // 1) DID回避OFF & 警告のみOFF: DIDは無視（点滅もしない、推奨も出さない）
@@ -1707,23 +1789,34 @@ export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) 
   // 最寄り空港
   const nearestAirport = center ? findNearestAirport(center.lat, center.lng) : null;
 
-  // DID判定 - 無効化（GitHub DIDデータの精度問題のため）
-  // DIDエリアは地図オーバーレイ（国土地理院タイル・令和2年）で目視確認してください
-  // 空港・禁止区域の判定は引き続き有効です
-  const didInfo = {
-    isDID: false,
-    area: null,
-    certainty: 'disabled',
-    source: 'disabled',
-    description: 'DID自動判定は無効化されています。地図上のDIDオーバーレイで目視確認してください。',
-    waypointDetails: {
-      hasDIDWaypoints: false,
-      didWaypoints: [],
-      totalChecked: waypoints.length,
-      didCount: 0
-    }
-  };
-  const waypointDIDCheck = didInfo.waypointDetails;
+  // DID判定（警告のみモード - 回避推奨は出さない）
+  // GitHub DIDデータは参考情報として使用（国土地理院タイルで最終確認推奨）
+  const waypointDIDCheck = waypoints.length > 0
+    ? await checkAllWaypointsDID(waypoints)
+    : null;
+
+  const didInfo = waypointDIDCheck?.hasDIDWaypoints
+    ? {
+        isDID: true,
+        area: waypointDIDCheck.areaSummaries?.map(a => a.area).join(', ') || 'DID区域',
+        certainty: 'estimated',
+        source: 'github-did',
+        description: 'DID内のWPがあります。地図オーバーレイで確認してください。',
+        waypointDetails: waypointDIDCheck
+      }
+    : {
+        isDID: false,
+        area: null,
+        certainty: 'clear',
+        source: 'github-did',
+        description: 'DID外です',
+        waypointDetails: {
+          hasDIDWaypoints: false,
+          didWaypoints: [],
+          totalChecked: waypoints.length,
+          didCount: 0
+        }
+      };
 
   // リスクスコア計算
   let riskScore = 0;

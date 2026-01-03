@@ -287,7 +287,8 @@ function App() {
     const polygon = createPolygonFromSearchResult(searchResult, options)
     setPolygons(prev => [...prev, polygon])
 
-    const newWaypoints = polygonToWaypoints(polygon, waypointCount)
+    // Use generatePerimeterWaypoints to distribute waypoints evenly along the perimeter
+    const newWaypoints = generatePerimeterWaypoints(polygon, waypointCount)
     setWaypoints(prev => [...prev, ...newWaypoints])
 
     const center = getPolygonCenter(polygon.geometry)
@@ -296,7 +297,7 @@ function App() {
       setZoom(16)
     }
 
-    showNotification(`ポリゴンとWaypoint(${waypointCount}個)を生成しました`)
+    showNotification(`ポリゴンとWaypoint(${newWaypoints.length}個)を生成しました`)
   }, [showNotification])
 
   // Handle elevation fetch

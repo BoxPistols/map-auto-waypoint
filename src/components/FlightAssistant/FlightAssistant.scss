@@ -649,24 +649,138 @@
 
 // 回避設定パネル
 .avoidance-settings {
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-top: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
 
+  .avoidance-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+
+  .did-checkboxes {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    background: var(--color-bg);
+    border-radius: 4px;
+    flex-shrink: 0;
+
+    .did-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--color-text-tertiary);
+
+      input[type="checkbox"] {
+        width: 12px;
+        height: 12px;
+        accent-color: var(--color-primary);
+        cursor: pointer;
+
+        &:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+      }
+
+      &:has(input:checked) span {
+        color: var(--color-primary);
+        font-weight: 500;
+      }
+
+      &:has(input:disabled) span {
+        opacity: 0.5;
+      }
+    }
+  }
+
+  .distance-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+
+    .distance-input {
+      width: 50px;
+      padding: 2px 4px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-primary);
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      text-align: right;
+      -moz-appearance: textfield;
+
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: var(--color-primary);
+      }
+    }
+
+    .unit {
+      font-weight: 500;
+      color: var(--color-text-tertiary);
+    }
+  }
+
   .avoidance-slider {
-    margin-bottom: 10px;
+    margin-bottom: 4px;
 
     label {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       font-size: 12px;
       color: var(--color-text-secondary);
-      margin-bottom: 6px;
+      margin-bottom: 4px;
 
-      strong {
+      .distance-input {
+        width: 50px;
+        padding: 2px 4px;
+        font-size: 13px;
+        font-weight: 600;
         color: var(--color-primary);
-        font-size: 14px;
+        background: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        text-align: right;
+        -moz-appearance: textfield;
+
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        &:focus {
+          outline: none;
+          border-color: var(--color-primary);
+        }
+      }
+
+      .unit {
+        font-weight: 500;
+        color: var(--color-text-tertiary);
       }
     }
 
@@ -709,8 +823,8 @@
     .slider-ticks {
       display: flex;
       justify-content: space-between;
-      margin-top: 4px;
-      font-size: 12px;
+      margin-top: 2px;
+      font-size: 10px;
       color: var(--color-text-tertiary);
     }
   }
@@ -746,9 +860,132 @@
   }
 
   .avoidance-note {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--color-text-tertiary);
-    padding: 4px 0;
+    padding: 2px 0 0;
+  }
+}
+
+// 推奨位置の個別選択リスト
+.recommendation-list {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  padding: 6px 10px;
+  flex-shrink: 0;
+
+  .recommendation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-bottom: 6px;
+
+    .recommendation-count {
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+  }
+
+  .recommendation-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .recommendation-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 11px;
+
+    &.included {
+      background: var(--color-success-bg);
+      border: 1px solid var(--color-success);
+      color: var(--color-success);
+
+      .item-toggle {
+        color: var(--color-success);
+      }
+    }
+
+    &.excluded {
+      background: var(--color-bg-tertiary);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-tertiary);
+      opacity: 0.7;
+
+      .item-toggle {
+        color: var(--color-text-tertiary);
+      }
+
+      .wp-label, .zone-type, .move-distance {
+        text-decoration: line-through;
+      }
+    }
+
+    &:hover {
+      transform: scale(1.02);
+    }
+
+    .item-toggle {
+      display: flex;
+      align-items: center;
+    }
+
+    .item-info {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .wp-label {
+      font-weight: 600;
+    }
+
+    .zone-type {
+      font-size: 10px;
+      padding: 1px 4px;
+      border-radius: 3px;
+
+      &.airport {
+        background: rgba(255, 140, 0, 0.2);
+        color: #FF8C00;
+      }
+
+      &.prohibited {
+        background: rgba(153, 50, 204, 0.2);
+        color: #9932CC;
+      }
+
+      &.did {
+        background: rgba(255, 68, 68, 0.2);
+        color: #FF4444;
+      }
+    }
+
+    .move-distance {
+      color: var(--color-text-tertiary);
+    }
+
+    .no-safe {
+      font-size: 9px;
+      color: var(--color-text-tertiary);
+      font-style: italic;
+    }
+
+    &.no-recommendation {
+      opacity: 0.5;
+      cursor: not-allowed;
+
+      .item-toggle {
+        color: var(--color-danger);
+      }
+    }
   }
 }
 
@@ -1761,19 +1998,20 @@
   }
 
   .avoidance-settings {
-    padding: 6px 8px;
+    padding: 4px 8px;
 
     .avoidance-slider {
       label {
-        font-size: 12px;
+        font-size: 11px;
 
-        strong {
+        .distance-input {
+          width: 45px;
           font-size: 12px;
         }
       }
 
       .slider-ticks {
-        font-size: 12px;
+        font-size: 9px;
       }
     }
 
