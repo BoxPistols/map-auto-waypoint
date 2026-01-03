@@ -13,7 +13,6 @@
 import * as turf from '@turf/turf';
 import { checkAirspaceRestrictions, AIRPORT_ZONES, NO_FLY_ZONES } from './airspace';
 import { analyzeFlightPlan, getRecommendedParameters, hasApiKey } from './openaiService';
-import { getLocationInfo, hasReinfolibApiKey } from './reinfolibService';
 import { isDIDAvoidanceModeEnabled, getSetting } from './settingsService';
 
 // ===== ユーティリティ関数 =====
@@ -357,7 +356,8 @@ const checkDIDAreaFallback = (lat, lng, _prefecture = null) => {
     { name: 'いわき市', lat: 37.0504, lng: 140.8879, radius: 3500 },
 
     // 関東
-    { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 20000 },
+    // GitHub DIDデータが取得できない場合のフォールバック
+    { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 15000 },
     { name: '横浜市', lat: 35.4437, lng: 139.6380, radius: 12000 },
     { name: '川崎市', lat: 35.5308, lng: 139.7030, radius: 6000 },
     { name: 'さいたま市', lat: 35.8617, lng: 139.6455, radius: 8000 },
@@ -1444,6 +1444,14 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     }
   }
 
+  // DIDの表示/提案は設定に従う（3状態）
+  // 1) DID回避OFF & 警告のみOFF: DIDは無視（点滅もしない、推奨も出さない）
+  // 2) DID回避OFF & 警告のみON : DIDは警告のみ（点滅する、推奨は出さない）
+  // 3) DID回避ON                 : 点滅 + 推奨も出す
+  const didAvoidanceEnabled = isDIDAvoidanceModeEnabled();
+  const didWarningOnly = getSetting('didWarningOnlyMode');
+  const shouldFlagDID = didAvoidanceEnabled || didWarningOnly;
+
   // 推奨WPリストを生成
   const recommendedWaypoints = waypoints.map(wp => {
     const wpIndex = wp.index !== undefined ? wp.index : waypoints.indexOf(wp) + 1;
@@ -1471,7 +1479,7 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
         lat: offset ? wp.lat + offset.latOffset : wp.lat,
         lng: offset ? wp.lng + offset.lngOffset : wp.lng,
         modified: !!offset,
-        hasDID: didWaypointIndices.has(wpIndex),
+        hasDID: shouldFlagDID ? didWaypointIndices.has(wpIndex) : false,
         hasAirport: issueTypes.includes('airport'),
         hasProhibited: issueTypes.includes('prohibited'),
         issueTypes
@@ -1493,7 +1501,15 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
       };
     }
 
-    return { ...wp, modified: false, hasDID: false, hasAirport: false, hasProhibited: false, issueTypes: [] };
+    // DIDは設定に従って表示/非表示を決める（上と同様）
+    return {
+      ...wp,
+      modified: false,
+      hasDID: shouldFlagDID ? didWaypointIndices.has(wpIndex) : false,
+      hasAirport: false,
+      hasProhibited: false,
+      issueTypes: []
+    };
   });
 
   return {
@@ -1873,10 +1889,10 @@ export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) 
 };
 
 /**
- * 総合フライト分析（OpenAI連携 + 国土交通省API連携）
+ * 総合フライト分析（OpenAI連携）
  */
 export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
-  const { altitude = 50, purpose = '', useAI = true, useMlit = true } = options;
+  const { altitude = 50, purpose = '', useAI = true } = options;
 
   // 新しい分析のためDIDキャッシュをクリア（新しい地域のデータを取得）
   clearDIDCache();
@@ -1884,66 +1900,12 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
   // まずローカル分析を実行
   const localAnalysis = await analyzeFlightPlanLocal(polygons, waypoints, { altitude, purpose });
 
-  // 国土交通省APIで用途地域情報を取得
-  let mlitInfo = null;
-  let mlitError = null;
-  const hasMlitKey = hasReinfolibApiKey();
-
-  if (useMlit && hasMlitKey && localAnalysis.context.center) {
-    try {
-      console.log('[FlightAnalyzer] Calling MLIT API...');
-      mlitInfo = await getLocationInfo(
-        localAnalysis.context.center.lat,
-        localAnalysis.context.center.lng
-      );
-      console.log('[FlightAnalyzer] MLIT API result:', mlitInfo);
-
-      if (mlitInfo.success) {
-        // 国土交通省データからのリスクを追加
-        mlitInfo.riskFactors.forEach(factor => {
-          localAnalysis.risks.push(factor);
-        });
-
-        // リスクスコアを調整
-        if (mlitInfo.riskLevel === 'HIGH') {
-          localAnalysis.riskScore = Math.min(100, localAnalysis.riskScore + 30);
-        } else if (mlitInfo.riskLevel === 'MEDIUM') {
-          localAnalysis.riskScore = Math.min(100, localAnalysis.riskScore + 15);
-        }
-
-        // リスクレベルを再判定
-        if (localAnalysis.riskScore >= 80) localAnalysis.riskLevel = 'CRITICAL';
-        else if (localAnalysis.riskScore >= 50) localAnalysis.riskLevel = 'HIGH';
-        else if (localAnalysis.riskScore >= 20) localAnalysis.riskLevel = 'MEDIUM';
-
-        // 推奨事項を追加
-        localAnalysis.recommendations = [
-          ...mlitInfo.recommendations,
-          ...localAnalysis.recommendations
-        ];
-      } else {
-        mlitError = mlitInfo.error || 'API応答エラー';
-      }
-    } catch (error) {
-      console.warn('[FlightAnalyzer] MLIT API error:', error);
-      mlitError = error.message || 'ネットワークエラー（CORS制限の可能性）';
-    }
-  } else if (useMlit && !hasMlitKey) {
-    mlitError = 'APIキー未設定';
-  }
-
-  // コンテキストに国土交通省データを追加
-  localAnalysis.context.mlitInfo = mlitInfo;
-  localAnalysis.context.mlitError = mlitError;
-
   // OpenAI APIキーがない、またはuseAI=falseの場合はローカル結果のみ
   if (!useAI || !hasApiKey()) {
     return {
       ...localAnalysis,
-      source: hasMlitKey ? 'local+mlit' : 'local',
-      aiEnhanced: false,
-      mlitEnhanced: !!mlitInfo?.success,
-      mlitError: mlitError
+      source: 'local',
+      aiEnhanced: false
     };
   }
 
@@ -1980,9 +1942,7 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
       safetyChecklist: aiAnalysis.safetyChecklist || localAnalysis.safetyChecklist,
       context: localAnalysis.context,
       source: 'openai',
-      aiEnhanced: true,
-      mlitEnhanced: !!mlitInfo?.success,
-      mlitError: mlitError
+      aiEnhanced: true
     };
   } catch (error) {
     console.error('[FlightAnalyzer] AI analysis failed, using local:', error);
@@ -1990,9 +1950,7 @@ export const runFullAnalysis = async (polygons, waypoints, options = {}) => {
       ...localAnalysis,
       source: 'local',
       aiEnhanced: false,
-      aiError: error.message,
-      mlitEnhanced: !!mlitInfo?.success,
-      mlitError: mlitError
+      aiError: error.message
     };
   }
 };

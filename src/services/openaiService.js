@@ -9,6 +9,58 @@
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1/chat/completions';
 
+/**
+ * Chat Completionsで `max_tokens` ではなく `max_completion_tokens` を要求するモデルかどうか。
+ * ※ GPT-5 / GPT-4.1 系は `max_tokens` を弾くケースがある。
+ * @param {string} modelId
+ * @returns {boolean}
+ */
+const requiresMaxCompletionTokens = (modelId) => {
+  return /^gpt-5(-|$)/.test(modelId) || /^gpt-4\.1(-|$)/.test(modelId);
+};
+
+/**
+ * @typedef {{role: 'system'|'user'|'assistant', content: string}} ChatMessage
+ */
+
+/**
+ * @typedef {{
+ *  model: string,
+ *  messages: ChatMessage[],
+ *  temperature?: number,
+ *  max_tokens?: number,
+ *  max_completion_tokens?: number
+ * }} ChatCompletionsBody
+ */
+
+/**
+ * リクエストボディを生成（OpenAI / ローカルで互換性を吸収）
+ * @param {{model: string, messages: ChatMessage[], temperature?: number, maxTokens?: number, useLocal: boolean}} params
+ * @returns {ChatCompletionsBody}
+ */
+const buildChatCompletionsBody = ({ model, messages, temperature, maxTokens, useLocal }) => {
+  /** @type {ChatCompletionsBody} */
+  const body = { model, messages };
+  if (typeof temperature === 'number') body.temperature = temperature;
+
+  // ローカルLLMは互換実装が多いため max_tokens を優先
+  if (useLocal) {
+    if (typeof maxTokens === 'number') body.max_tokens = maxTokens;
+    return body;
+  }
+
+  if (typeof maxTokens === 'number') {
+    if (requiresMaxCompletionTokens(model)) {
+      // GPT-5/4.1系: max_tokens ではなく max_completion_tokens を要求する場合がある
+      // max_tokens は送らない（Unsupported parameter を避ける）
+      body.max_completion_tokens = maxTokens;
+    } else {
+      body.max_tokens = maxTokens;
+    }
+  }
+  return body;
+};
+
 // 利用可能なモデル一覧（nano/miniのみ・コスト効率重視）
 export const AVAILABLE_MODELS = [
   // GPT-5 系（2025年8月リリース）
@@ -68,11 +120,12 @@ export const testApiConnection = async () => {
         'Content-Type': 'application/json',
         ...(useLocal ? {} : { 'Authorization': `Bearer ${apiKey}` })
       },
-      body: JSON.stringify({
+      body: JSON.stringify(buildChatCompletionsBody({
         model: actualModel,
         messages: [{ role: 'user', content: 'test' }],
-        max_tokens: 5
-      })
+        maxTokens: 5,
+        useLocal
+      }))
     });
 
     if (!response.ok) {
@@ -169,12 +222,13 @@ export const callOpenAI = async (messages, options = {}) => {
     const response = await fetch(endpoint, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
+      body: JSON.stringify(buildChatCompletionsBody({
         model: modelName,
         messages,
         temperature,
-        max_tokens: maxTokens
-      })
+        maxTokens,
+        useLocal
+      }))
     });
 
     if (!response.ok) {

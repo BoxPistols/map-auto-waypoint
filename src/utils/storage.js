@@ -126,7 +126,6 @@ export const loadMapSettings = () => {
       showDID: false,
       showAirportZones: false,
       showNoFlyZones: false,
-      showDisasterHistory: false,
       mapStyleId: 'osm'
     }
   } catch (error) {
@@ -136,7 +135,6 @@ export const loadMapSettings = () => {
       showDID: false,
       showAirportZones: false,
       showNoFlyZones: false,
-      showDisasterHistory: false,
       mapStyleId: 'osm'
     }
   }

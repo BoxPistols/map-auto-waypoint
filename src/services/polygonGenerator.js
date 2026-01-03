@@ -56,9 +56,9 @@ export const generateCirclePolygon = (lat, lng, size = 'medium', steps = 8) => {
 }
 
 /**
- * Generate polygon from Nominatim bounding box
- * @param {Array<number>} boundingBox - [south, north, west, east] from Nominatim
- * @param {number} padding - Additional padding in meters (optional)
+ * 検索結果のバウンディングボックス等からポリゴンを生成
+ * @param {Array<number>} boundingBox - [south, north, west, east]
+ * @param {number} padding - 追加パディング（m）
  * @returns {object} GeoJSON Polygon geometry
  */
 export const generateFromBoundingBox = (boundingBox, padding = 0) => {
@@ -89,77 +89,49 @@ export const generateFromBoundingBox = (boundingBox, padding = 0) => {
   }
 }
 
-/**
- * Create a full polygon object from search result
- * @param {object} searchResult - Geocoding search result
- * @param {object} options - Generation options
- * @returns {object} Complete polygon object ready for storage
- */
-export const createPolygonFromSearchResult = (searchResult, options = {}) => {
-  const {
-    size = 'medium',
-    customRadius = null, // Custom radius in meters (takes priority)
-    shape = 'rectangle', // 'rectangle' or 'circle'
-    useBoundingBox: _useBoundingBox = false, // Default to false - use size presets by default
-    padding: _padding = 10
-  } = options
-
-  let geometry
-
-  // If custom radius is specified, always use generated shape
-  if (customRadius) {
-    if (shape === 'circle') {
-      geometry = generateCirclePolygon(searchResult.lat, searchResult.lng, customRadius)
-    } else {
-      geometry = generateRectanglePolygon(searchResult.lat, searchResult.lng, customRadius)
-    }
-  }
-  // Use size preset to generate shape
-  else {
-    if (shape === 'circle') {
-      geometry = generateCirclePolygon(searchResult.lat, searchResult.lng, size)
-    } else {
-      geometry = generateRectanglePolygon(searchResult.lat, searchResult.lng, size)
-    }
-  }
-
-  // Extract name from display name (first part before comma)
-  const name = searchResult.displayName
-    ? searchResult.displayName.split(',')[0].trim()
-    : `エリア ${Date.now()}`
-
-  return {
-    id: crypto.randomUUID(),
-    name: `${name} 周辺`,
-    geometry,
-    createdAt: Date.now(),
-    color: getRandomColor(),
-    source: 'auto-generated',
-    center: { lat: searchResult.lat, lng: searchResult.lng }
-  }
-}
-
-/**
- * Generate random color for polygon (青系で統一、DIDカラーとの被りを防ぐ)
- */
-const getRandomColor = () => {
-  const colors = [
-    '#45B7D1', '#4ECDC4', '#5DADE2', '#48C9B0',
-    '#85C1E9', '#76D7C4', '#3498DB', '#1ABC9C',
-    '#5499C7', '#45B39D', '#00CED1', '#17A2B8'
-  ]
-  return colors[Math.floor(Math.random() * colors.length)]
-}
-
-// Export size presets for UI
 export const POLYGON_SIZE_OPTIONS = [
-  { value: 'small', label: '小 (50m)', description: '小型建物向け' },
-  { value: 'medium', label: '中 (100m)', description: '一般的な建物・施設' },
-  { value: 'large', label: '大 (200m)', description: '大型施設・工場' },
-  { value: 'xlarge', label: '特大 (500m)', description: '広域エリア' }
+  { value: 'small', label: '小 (50m)' },
+  { value: 'medium', label: '中 (100m)' },
+  { value: 'large', label: '大 (200m)' },
+  { value: 'xlarge', label: '特大 (500m)' }
 ]
 
 export const POLYGON_SHAPE_OPTIONS = [
   { value: 'rectangle', label: '矩形' },
   { value: 'circle', label: '円形' }
 ]
+
+export const createPolygonFromSearchResult = (searchResult, options = {}) => {
+  if (!searchResult) return null
+  const shape = options.shape || 'rectangle'
+  const sizePreset = options.size || 'medium'
+  const useCustomSize = options.useCustomSize || false
+  const customRadius = options.customRadius
+  const padding = options.padding || 0
+
+  const lat = parseFloat(searchResult.lat)
+  const lng = parseFloat(searchResult.lng)
+
+  const radius = useCustomSize
+    ? (typeof customRadius === 'number' ? customRadius : SIZE_PRESETS.medium)
+    : (SIZE_PRESETS[sizePreset] || SIZE_PRESETS.medium)
+
+  let geometry = null
+  if (searchResult.boundingBox && !useCustomSize) {
+    geometry = generateFromBoundingBox(searchResult.boundingBox, padding)
+  }
+
+  if (!geometry) {
+    geometry = shape === 'circle'
+      ? generateCirclePolygon(lat, lng, radius)
+      : generateRectanglePolygon(lat, lng, radius)
+  }
+
+  return {
+    id: crypto.randomUUID(),
+    name: searchResult.displayName?.split(',')[0] || '検索エリア',
+    geometry,
+    color: '#45B7D1',
+    createdAt: Date.now()
+  }
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getTheme, toggleTheme, THEMES } from './services/themeService'
+import { getSetting, isDIDAvoidanceModeEnabled } from './services/settingsService'
 import Map from './components/Map/Map'
 import SearchForm from './components/SearchForm/SearchForm'
 import PolygonList from './components/PolygonList/PolygonList'
@@ -12,8 +13,8 @@ import HelpModal from './components/HelpModal/HelpModal'
 import { loadPolygons, savePolygons, loadWaypoints, saveWaypoints, saveSearchHistory } from './utils/storage'
 import { searchAddress } from './services/geocoding'
 import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints } from './services/waypointGenerator'
-import { addElevationToWaypoints } from './services/elevation'
 import { createPolygonFromSearchResult } from './services/polygonGenerator'
+import { addElevationToWaypoints } from './services/elevation'
 import FlightAssistant from './components/FlightAssistant'
 import ApiSettings from './components/ApiSettings'
 import './App.scss'
@@ -86,9 +87,10 @@ function App() {
 
   // Optimization overlay state
   const [recommendedWaypoints, setRecommendedWaypoints] = useState(null)
-
-  // API info overlay state (from FlightAssistant)
-  const [apiInfo, setApiInfo] = useState(null)
+  // DID warning highlight (indices) - shown even when recommended overlay is suppressed
+  const [didHighlightedWaypointIndices, setDidHighlightedWaypointIndices] = useState(() => new Set())
+  // Per-waypoint issue flags (airport/prohibited/did) for marker highlighting (recommendedWaypointsと独立)
+  const [waypointIssueFlagsById, setWaypointIssueFlagsById] = useState(() => ({}))
 
   // Highlighted waypoint (for FlightAssistant WP click)
   const [highlightedWaypointIndex, setHighlightedWaypointIndex] = useState(null)
@@ -261,39 +263,63 @@ function App() {
     const results = await searchAddress(query)
     if (results.length > 0) {
       const first = results[0]
-      setCenter({ lat: first.lat, lng: first.lng })
-      setZoom(15)
       saveSearchHistory(query, results)
-      showNotification(`「${first.displayName.split(',')[0]}」に移動しました`)
+      setCenter({ lat: first.lat, lng: first.lng })
+      setZoom(16)
+      showNotification(`「${first.displayName.split(',')[0]}」を表示しました`)
     } else {
-      showNotification('検索結果が見つかりませんでした', 'error')
+      showNotification('検索結果が見つかりませんでした', 'warning')
     }
   }, [showNotification])
 
   // Handle search select
   const handleSearchSelect = useCallback((result) => {
+    if (!result) return
     setCenter({ lat: result.lat, lng: result.lng })
     setZoom(16)
-  }, [])
+    showNotification(`「${result.displayName.split(',')[0]}」を表示しました`)
+  }, [showNotification])
 
-  // Generate polygon from search result (auto-generation)
+  // Generate polygon from search result
   const handleGeneratePolygon = useCallback((searchResult, options = {}) => {
+    if (!searchResult) return
     const { waypointCount = 8 } = options
     const polygon = createPolygonFromSearchResult(searchResult, options)
     setPolygons(prev => [...prev, polygon])
 
-    // Focus on the new polygon
-    setCenter({ lat: searchResult.lat, lng: searchResult.lng })
-    setZoom(17)
-    setSelectedPolygonId(polygon.id)
-
-    showNotification(`「${polygon.name}」エリアを生成しました`)
-
-    // Auto-generate waypoints along perimeter with specified count
-    const newWaypoints = generatePerimeterWaypoints(polygon, waypointCount)
+    const newWaypoints = polygonToWaypoints(polygon, waypointCount)
     setWaypoints(prev => [...prev, ...newWaypoints])
-    showNotification(`${newWaypoints.length} Waypointを自動生成しました`, 'success')
+
+    const center = getPolygonCenter(polygon.geometry)
+    if (center) {
+      setCenter(center)
+      setZoom(16)
+    }
+
+    showNotification(`ポリゴンとWaypoint(${waypointCount}個)を生成しました`)
   }, [showNotification])
+
+  // Handle elevation fetch
+  const handleFetchElevation = useCallback(async () => {
+    if (waypoints.length === 0) return
+    setIsLoadingElevation(true)
+    setElevationProgress({ current: 0, total: waypoints.length })
+
+    try {
+      const waypointsWithElevation = await addElevationToWaypoints(
+        waypoints,
+        (current, total) => setElevationProgress({ current, total })
+      )
+      setWaypoints(waypointsWithElevation)
+      showNotification('標高データを取得しました')
+    } catch (error) {
+      console.error('Elevation fetch error:', error)
+      showNotification('標高取得に失敗しました', 'error')
+    } finally {
+      setIsLoadingElevation(false)
+      setElevationProgress(null)
+    }
+  }, [waypoints, showNotification])
 
   // Handle polygon create
   const handlePolygonCreate = useCallback((polygon) => {
@@ -621,29 +647,6 @@ function App() {
     showNotification('すべてのWaypointを削除しました')
   }, [showNotification])
 
-  // Handle elevation fetch
-  const handleFetchElevation = useCallback(async () => {
-    if (waypoints.length === 0) return
-
-    setIsLoadingElevation(true)
-    setElevationProgress({ current: 0, total: waypoints.length })
-
-    try {
-      const waypointsWithElevation = await addElevationToWaypoints(
-        waypoints,
-        (current, total) => setElevationProgress({ current, total })
-      )
-      setWaypoints(waypointsWithElevation)
-      showNotification(`${waypoints.length} 地点の標高を取得しました`)
-    } catch (error) {
-      console.error('Elevation fetch error:', error)
-      showNotification('標高取得中にエラーが発生しました', 'error')
-    } finally {
-      setIsLoadingElevation(false)
-      setElevationProgress(null)
-    }
-  }, [waypoints, showNotification])
-
   // Handle grid regeneration with new spacing
   const handleRegenerateGrid = useCallback(() => {
     // Find polygons that have grid waypoints
@@ -907,13 +910,15 @@ function App() {
                     className={`search-chevron ${isSearchExpanded ? 'expanded' : ''}`}
                   />
                 </div>
-                <div className="search-section-content">
-                  <SearchForm
-                    onSearch={handleSearch}
-                    onSelect={handleSearchSelect}
-                    onGeneratePolygon={handleGeneratePolygon}
-                  />
-                </div>
+                {isSearchExpanded && (
+                  <div className="search-section-content">
+                    <SearchForm
+                      onSearch={handleSearch}
+                      onSelect={handleSearchSelect}
+                      onGeneratePolygon={handleGeneratePolygon}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="panel-tabs">
@@ -977,8 +982,9 @@ function App() {
             polygons={polygons}
             waypoints={waypoints}
             recommendedWaypoints={recommendedWaypoints}
+            didHighlightedWaypointIndices={didHighlightedWaypointIndices}
+            waypointIssueFlagsById={waypointIssueFlagsById}
             highlightedWaypointIndex={highlightedWaypointIndex}
-            apiInfo={apiInfo}
             isMobile={isMobile}
             onPolygonCreate={handlePolygonCreate}
             onPolygonUpdate={handlePolygonUpdate}
@@ -1137,9 +1143,45 @@ function App() {
         isOpen={showChat}
         onOpenChange={setShowChat}
         onOptimizationUpdate={(optimizationPlan) => {
-          // 推奨位置のオーバーレイ表示用
+          // DIDハイライトは、推奨オーバーレイとは独立に保持する（警告のみでも点滅させるため）
+          const didSet = new Set()
+          /** @type {Record<string, { hasDID: boolean, hasAirport: boolean, hasProhibited: boolean }>} */
+          const flagsById = {}
+          const gaps = optimizationPlan?.waypointAnalysis?.gaps
+          if (Array.isArray(gaps)) {
+            for (const gap of gaps) {
+              if (!gap?.issues) continue
+              const types = new Set(gap.issues.map(i => i?.type).filter(Boolean))
+              const hasDID = types.has('did')
+              const hasAirport = types.has('airport')
+              const hasProhibited = types.has('prohibited')
+
+              if (hasDID && typeof gap.waypointIndex === 'number') didSet.add(gap.waypointIndex)
+              if (typeof gap.waypointId === 'string') {
+                flagsById[gap.waypointId] = { hasDID, hasAirport, hasProhibited }
+              }
+            }
+          }
+          setDidHighlightedWaypointIndices(didSet)
+          setWaypointIssueFlagsById(flagsById)
+
+          // 推奨位置のオーバーレイ表示:
+          // - DID「警告のみ」の場合でも、空港/禁止などで移動（modified）があるなら推奨を表示する
+          // - DIDのみでmodifiedがない場合は推奨を出さない（従来挙動）
+          const didWarningOnly = getSetting('didWarningOnlyMode')
+          const didAvoidance = isDIDAvoidanceModeEnabled()
+          const warningOnlyMode = didWarningOnly && !didAvoidance
+
+          const hasModified =
+            Array.isArray(optimizationPlan?.recommendedWaypoints) &&
+            optimizationPlan.recommendedWaypoints.some(rw => rw?.modified)
+
           if (optimizationPlan?.hasIssues && optimizationPlan.recommendedWaypoints) {
-            setRecommendedWaypoints(optimizationPlan.recommendedWaypoints)
+            if (warningOnlyMode) {
+              setRecommendedWaypoints(hasModified ? optimizationPlan.recommendedWaypoints : null)
+            } else {
+              setRecommendedWaypoints(optimizationPlan.recommendedWaypoints)
+            }
           } else {
             setRecommendedWaypoints(null)
           }
@@ -1179,6 +1221,8 @@ function App() {
 
           // オーバーレイをクリア
           setRecommendedWaypoints(null)
+          setDidHighlightedWaypointIndices(new Set())
+          setWaypointIssueFlagsById({})
           showNotification('プランを安全な位置に最適化しました', 'success')
         }}
         onWaypointSelect={(wpIndex) => {
@@ -1197,7 +1241,6 @@ function App() {
             showNotification(`WP${wpIndex}が見つかりません`, 'warning')
           }
         }}
-        onApiInfoUpdate={setApiInfo}
       />
 
       {/* Notification */}

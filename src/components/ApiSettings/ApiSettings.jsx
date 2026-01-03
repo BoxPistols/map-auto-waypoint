@@ -7,7 +7,8 @@ import {
   ExternalLink,
   Zap,
   AlertCircle,
-  Loader
+  Loader,
+  Info
 } from 'lucide-react';
 import {
   hasApiKey,
@@ -15,26 +16,18 @@ import {
   AVAILABLE_MODELS,
   getSelectedModel,
   setSelectedModel,
-  getLocalEndpoint,
-  setLocalEndpoint,
-  getLocalModelName,
-  setLocalModelName,
-  isLocalModel,
   testApiConnection
 } from '../../services/openaiService';
-import { hasReinfolibApiKey, setReinfolibApiKey } from '../../services/reinfolibService';
 import { getSetting, setSetting } from '../../services/settingsService';
+import ModelHelpModal from './ModelHelpModal';
 import './ApiSettings.scss';
 
 function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [hasKey, setHasKey] = useState(hasApiKey());
-  const [mlitKeyInput, setMlitKeyInput] = useState('');
-  const [hasMlitKey, setHasMlitKey] = useState(hasReinfolibApiKey());
   const [selectedModelId, setSelectedModelId] = useState(getSelectedModel());
-  const [localEndpoint, setLocalEndpointState] = useState(getLocalEndpoint());
-  const [localModelName, setLocalModelNameState] = useState(getLocalModelName());
   const [testStatus, setTestStatus] = useState(null); // null | 'testing' | {success, message}
+  const [isModelHelpOpen, setIsModelHelpOpen] = useState(false);
   const [didAvoidanceMode, setDidAvoidanceMode] = useState(getSetting('didAvoidanceMode'));
   const [didWarningOnlyMode, setDidWarningOnlyMode] = useState(getSetting('didWarningOnlyMode'));
   const [avoidanceDistance, setAvoidanceDistance] = useState(getSetting('didAvoidanceDistance') || 100);
@@ -103,42 +96,11 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
     }
   };
 
-  // 国土交通省APIキー保存
-  const handleSaveMlitKey = () => {
-    if (mlitKeyInput.trim()) {
-      setReinfolibApiKey(mlitKeyInput.trim());
-      setHasMlitKey(true);
-      setMlitKeyInput('');
-      notifyStatusChange('mlit', 'saved');
-    }
-  };
-
-  // 国土交通省APIキー削除
-  const handleDeleteMlitKey = () => {
-    if (confirm('国土交通省APIキーを削除しますか？')) {
-      localStorage.removeItem('reinfolib_api_key');
-      setHasMlitKey(false);
-      notifyStatusChange('mlit', 'deleted');
-    }
-  };
-
   // モデル変更
   const handleModelChange = (modelId) => {
     setSelectedModel(modelId);
     setSelectedModelId(modelId);
     notifyStatusChange('model', modelId);
-  };
-
-  // ローカルLLMエンドポイント保存
-  const handleSaveLocalEndpoint = () => {
-    setLocalEndpoint(localEndpoint);
-    notifyStatusChange('localEndpoint', localEndpoint);
-  };
-
-  // ローカルLLMモデル名保存
-  const handleSaveLocalModelName = () => {
-    setLocalModelName(localModelName);
-    notifyStatusChange('localModel', localModelName);
   };
 
   // 接続テスト
@@ -165,65 +127,6 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
               </div>
 
               <div className='modal-content'>
-                  {/* 国土交通省API */}
-                  <div className='settings-section'>
-                      <h3>国土交通省 不動産情報ライブラリ</h3>
-                      <div className='settings-info'>
-                          <p>用途地域・都市計画情報を取得できます：</p>
-                          <ul>
-                              <li>住居/商業/工業地域の判定</li>
-                              <li>市街化区域/調整区域の判定</li>
-                              <li>DID（人口集中地区）の参考情報</li>
-                              <li>国土調査（災害履歴）の参考情報</li>
-                          </ul>
-                      </div>
-
-                      {hasMlitKey ? (
-                          <div className='api-key-status'>
-                              <div className='status-row'>
-                                  <CheckCircle size={16} className='success' />
-                                  <span>設定済み</span>
-                              </div>
-                              <button
-                                  className='delete-btn'
-                                  onClick={handleDeleteMlitKey}
-                              >
-                                  <Trash2 size={14} /> 削除
-                              </button>
-                          </div>
-                      ) : (
-                          <div className='api-key-input'>
-                              <input
-                                  type='text'
-                                  value={mlitKeyInput}
-                                  onChange={(e) =>
-                                      setMlitKeyInput(e.target.value)
-                                  }
-                                  placeholder='APIキー'
-                              />
-                              <button
-                                  className='save-btn'
-                                  onClick={handleSaveMlitKey}
-                                  disabled={!mlitKeyInput.trim()}
-                              >
-                                  保存
-                              </button>
-                          </div>
-                      )}
-
-                      <div className='settings-links'>
-                          <a
-                              href='https://www.reinfolib.mlit.go.jp/api/request/'
-                              target='_blank'
-                              rel='noopener noreferrer'
-                          >
-                              <ExternalLink size={12} /> APIキーを申請
-                          </a>
-                      </div>
-                  </div>
-
-                  <hr className='settings-divider' />
-
                   {/* OpenAI API */}
                   <div className='settings-section'>
                       <h3>OpenAI API（オプション）</h3>
@@ -237,7 +140,17 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
 
                       {/* モデル選択 */}
                       <div className='model-selector'>
-                          <label>AIモデル:</label>
+                          <div className='model-label'>
+                              <label>AIモデル:</label>
+                              <button
+                                  type='button'
+                                  className='model-help-btn'
+                                  onClick={() => setIsModelHelpOpen(true)}
+                                  aria-label='AIモデルの違いを表示'
+                              >
+                                  <Info size={16} />
+                              </button>
+                          </div>
                           <select
                               value={selectedModelId}
                               onChange={(e) =>
@@ -253,105 +166,46 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                           </select>
                       </div>
 
-                      {/* ローカルLLM設定 */}
-                      {isLocalModel(selectedModelId) ? (
-                          <div className='local-llm-settings'>
-                              <div className='settings-info'>
-                                  <p>
-                                      LM Studio等のローカルLLMサーバーを使用：
-                                  </p>
+                      {hasKey ? (
+                          <div className='api-key-status'>
+                              <div className='status-row'>
+                                  <CheckCircle size={16} className='success' />
+                                  <span>APIキー設定済み</span>
                               </div>
-                              <div className='local-input-group'>
-                                  <label>エンドポイント:</label>
-                                  <input
-                                      type='text'
-                                      value={localEndpoint}
-                                      onChange={(e) =>
-                                          setLocalEndpointState(e.target.value)
-                                      }
-                                      placeholder='http://localhost:1234/v1/chat/completions'
-                                  />
-                                  <button
-                                      className='save-btn'
-                                      onClick={handleSaveLocalEndpoint}
-                                  >
-                                      保存
-                                  </button>
-                              </div>
-                              <div className='local-input-group'>
-                                  <label>モデル名:</label>
-                                  <input
-                                      type='text'
-                                      value={localModelName}
-                                      onChange={(e) =>
-                                          setLocalModelNameState(e.target.value)
-                                      }
-                                      placeholder='local-model'
-                                  />
-                                  <button
-                                      className='save-btn'
-                                      onClick={handleSaveLocalModelName}
-                                  >
-                                      保存
-                                  </button>
-                              </div>
-                              <p className='settings-note local-note'>
-                                  ※ LM
-                                  Studioを起動し、サーバーを開始してください
-                              </p>
+                              <button className='delete-btn' onClick={handleDeleteApiKey}>
+                                  <Trash2 size={14} /> 削除
+                              </button>
                           </div>
                       ) : (
-                          <>
-                              {hasKey ? (
-                                  <div className='api-key-status'>
-                                      <div className='status-row'>
-                                          <CheckCircle
-                                              size={16}
-                                              className='success'
-                                          />
-                                          <span>APIキー設定済み</span>
-                                      </div>
-                                      <button
-                                          className='delete-btn'
-                                          onClick={handleDeleteApiKey}
-                                      >
-                                          <Trash2 size={14} /> 削除
-                                      </button>
-                                  </div>
-                              ) : (
-                                  <div className='api-key-input'>
-                                      <input
-                                          type='password'
-                                          value={apiKeyInput}
-                                          onChange={(e) =>
-                                              setApiKeyInput(e.target.value)
-                                          }
-                                          placeholder='sk-...'
-                                      />
-                                      <button
-                                          className='save-btn'
-                                          onClick={handleSaveApiKey}
-                                          disabled={!apiKeyInput.trim()}
-                                      >
-                                          保存
-                                      </button>
-                                  </div>
-                              )}
-
-                              <div className='settings-links'>
-                                  <a
-                                      href='https://platform.openai.com/api-keys'
-                                      target='_blank'
-                                      rel='noopener noreferrer'
-                                  >
-                                      <ExternalLink size={12} /> APIキーを取得
-                                  </a>
-                              </div>
-                          </>
+                          <div className='api-key-input'>
+                              <input
+                                  type='password'
+                                  value={apiKeyInput}
+                                  onChange={(e) => setApiKeyInput(e.target.value)}
+                                  placeholder='sk-...'
+                              />
+                              <button
+                                  className='save-btn'
+                                  onClick={handleSaveApiKey}
+                                  disabled={!apiKeyInput.trim()}
+                              >
+                                  保存
+                              </button>
+                          </div>
                       )}
 
+                      <div className='settings-links'>
+                          <a
+                              href='https://platform.openai.com/api-keys'
+                              target='_blank'
+                              rel='noopener noreferrer'
+                          >
+                              <ExternalLink size={12} /> APIキーを取得
+                          </a>
+                      </div>
+
                       {/* 接続テストボタン */}
-                      {(hasKey || isLocalModel(selectedModelId)) && (
+                      {hasKey && (
                           <div className='connection-test'>
                               <button
                                   className={`test-btn ${
@@ -526,6 +380,9 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                   </p>
               </div>
           </div>
+          {isModelHelpOpen && (
+              <ModelHelpModal onClose={() => setIsModelHelpOpen(false)} />
+          )}
       </div>
   )
 }

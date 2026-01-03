@@ -1,662 +1,200 @@
 .searchForm {
-  position: relative;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+  color: var(--color-text);
 }
 
 .inputWrapper {
   position: relative;
   display: flex;
   align-items: center;
-}
 
-.input {
-  width: 100%;
-  padding: 10px 36px 10px 12px;
-  font-size: 14px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  outline: none;
-  background: var(--color-bg);
-  color: var(--color-text);
-  transition: border-color 0.2s, box-shadow 0.2s;
-
-  &:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px var(--color-primary-bg);
-  }
-
-  &::placeholder {
-    color: var(--color-text-tertiary);
+  input {
+    width: 100%;
+    padding: 8px 32px 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-secondary);
+    color: inherit;
   }
 }
 
 .spinner {
   position: absolute;
-  right: 12px;
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--color-border);
+  right: 34px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid transparent;
   border-top-color: var(--color-primary);
+  border-left-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .clearButton {
   position: absolute;
-  right: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  font-size: 16px;
-  color: var(--color-text-tertiary);
+  right: 6px;
   background: transparent;
   border: none;
-  border-radius: 50%;
+  padding: 4px;
+  color: var(--color-muted);
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
-
-  &:hover {
-    background: var(--color-bg-tertiary);
-    color: var(--color-text-secondary);
-  }
 }
 
 .suggestions {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin: 4px 0 0;
-  padding: 0;
   list-style: none;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
+  margin: 0;
+  padding: 6px 0;
+  background: var(--color-bg-secondary);
   border-radius: 6px;
-  box-shadow: var(--shadow-lg);
-  max-height: 300px;
+  border: 1px solid var(--color-border);
+  max-height: 220px;
   overflow-y: auto;
-  z-index: 100;
 }
 
 .suggestionItem {
-  padding: 10px 12px;
+  padding: 6px 10px;
   cursor: pointer;
-  transition: background-color 0.15s;
-  border-bottom: 1px solid var(--color-border-light);
 
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover,
-  &.selected {
-    background: var(--color-bg-secondary);
+  &.selected,
+  &:hover {
+    background: var(--color-primary-bg);
   }
 }
 
 .suggestionName {
+  font-weight: 600;
   display: block;
-  font-weight: 500;
-  color: var(--color-text);
-  margin-bottom: 2px;
 }
 
 .suggestionAddress {
-  display: block;
   font-size: 12px;
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--color-muted);
 }
 
-// Polygon generation panel
 .generatePanel {
-  margin-top: 12px;
-  background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: 8px;
+  background: var(--color-bg-secondary);
   overflow: hidden;
 
-  &.collapsed {
-    .panelContent {
-      max-height: 0;
-      padding-top: 0;
-      padding-bottom: 0;
-      opacity: 0;
-    }
+  &.collapsed .panelContent {
+    display: none;
   }
 }
 
 .panelHeader {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 12px;
+  align-items: center;
+  padding: 10px 12px;
   cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: var(--color-bg-tertiary);
-  }
-}
-
-.chevron {
-  color: var(--color-text-secondary);
-  transition: transform 0.3s ease;
-  flex-shrink: 0;
-
-  &.expanded {
-    transform: rotate(180deg);
-  }
-}
-
-.panelContent {
-  padding: 0 12px 12px;
-  max-height: 500px;
-  opacity: 1;
-  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
 }
 
 .selectedLocation {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
+  gap: 6px;
+  font-weight: 600;
 }
 
-.locationIcon {
-  color: var(--color-primary);
-  flex-shrink: 0;
-}
-
-.locationName {
-  font-weight: 500;
-  color: var(--color-text);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.panelContent {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .optionsRow {
-  margin-bottom: 12px;
-}
-
-.shapeSelector {
-  label {
-    display: block;
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    margin-bottom: 6px;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .shapeButtons {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .shapeButton {
-  flex: 1;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 12px;
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  background: var(--color-bg);
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  background: var(--color-bg-tertiary);
   cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-  }
+  font-size: 12px;
+  color: inherit;
 
   &.active {
     background: var(--color-primary);
     border-color: var(--color-primary);
-    color: var(--color-text-inverse);
-
-    .shapeIcon {
-      border-color: var(--color-text-inverse);
-    }
+    color: #fff;
   }
 }
 
-
-.sizeSelector,
-.waypointSelector {
-  margin-bottom: 12px;
-
-  label {
-    display: block;
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    margin-bottom: 6px;
-  }
-}
-
-.sizeButtons {
+.customSizeControls {
   display: flex;
+  flex-direction: column;
   gap: 6px;
 }
 
-.sizeButton {
-  flex: 1;
-  padding: 6px 8px;
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-  }
-
-  &.active {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
-    color: var(--color-text-inverse);
-  }
-}
-
-.sliderWrapper {
+.customSizeToggle {
+  font-size: 13px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 6px;
 }
 
-.slider {
-  flex: 1;
-  height: 4px;
-  appearance: none;
-  background: var(--color-border);
-  border-radius: 2px;
-  cursor: pointer;
-
-  &::-webkit-slider-thumb {
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    background: var(--color-primary);
-    border-radius: 50%;
-    cursor: grab;
-    transition: transform 0.15s;
-
-    &:hover {
-      transform: scale(1.2);
-    }
-
-    &:active {
-      cursor: grabbing;
-    }
-  }
-
-  &::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    background: var(--color-primary);
-    border: none;
-    border-radius: 50%;
-    cursor: grab;
-  }
-}
-
-.sliderValue {
-  min-width: 50px;
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-  text-align: right;
-
-  &.active {
-    color: var(--color-primary);
-    font-weight: 500;
-  }
-}
-
-.generateButton {
+.customSizeFields {
   display: flex;
+  gap: 12px;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-inverse);
-  background: var(--color-primary);
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
 
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-    background: var(--color-primary-dark);
+  input[type='range'] {
+    width: 160px;
   }
 
-  &:active {
-    transform: translateY(0);
-  }
-}
-
-// =============================================================================
-// モバイル対応スタイル
-// =============================================================================
-
-// タブレット (768px以下)
-@media (max-width: 768px) {
-  .input {
-    padding: 12px 36px 12px 12px;
-    font-size: 16px; // ズーム防止
-    min-height: 44px;
-  }
-
-  .clearButton {
-    width: 32px;
-    height: 32px;
-  }
-
-  .suggestionItem {
-    padding: 12px;
-    min-height: 48px;
-  }
-
-  .suggestionName {
-    font-size: 14px;
-  }
-
-  .suggestionAddress {
-    font-size: 13px;
-  }
-
-  .panelHeader {
-    padding: 14px 12px;
-    min-height: 48px;
-  }
-
-  .shapeButton {
-    padding: 10px 12px;
-    min-height: 44px;
-  }
-
-  .sizeButton {
-    padding: 8px 10px;
-    min-height: 36px;
-  }
-
-  .generateButton {
-    padding: 14px;
-    min-height: 48px;
-  }
-}
-
-// 大型スマートフォン (600px以下)
-@media (max-width: 600px) {
-  .input {
-    padding: 10px 32px 10px 10px;
-  }
-
-  .suggestions {
-    max-height: 250px;
-  }
-
-  .suggestionItem {
-    padding: 10px;
-  }
-
-  .suggestionName {
-    font-size: 13px;
-  }
-
-  .suggestionAddress {
-    font-size: 12px;
-  }
-
-  .panelHeader {
-    padding: 12px 10px;
-  }
-
-  .selectedLocation {
-    gap: 6px;
-  }
-
-  .locationName {
-    font-size: 13px;
-  }
-
-  .panelContent {
-    padding: 0 10px 10px;
-  }
-
-  .shapeSelector label,
-  .sizeSelector label,
-  .waypointSelector label {
-    font-size: 12px;
-  }
-
-  .shapeButton {
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-
-  .sizeButton {
-    padding: 6px 8px;
-    font-size: 12px;
-  }
-}
-
-// 標準スマートフォン (480px以下)
-@media (max-width: 480px) {
-  .input {
-    padding: 10px 30px 10px 10px;
-    font-size: 16px; // ズーム防止
-    border-radius: 8px;
-  }
-
-  .clearButton {
-    width: 28px;
-    height: 28px;
-    right: 6px;
-  }
-
-  .suggestions {
-    max-height: 200px;
-    border-radius: 8px;
-  }
-
-  .suggestionItem {
-    padding: 10px 8px;
-  }
-
-  .generatePanel {
-    margin-top: 10px;
-    border-radius: 6px;
-  }
-
-  .panelHeader {
-    padding: 10px 8px;
-  }
-
-  .locationIcon {
-    width: 16px;
-    height: 16px;
-  }
-
-  .locationName {
-    font-size: 12px;
-  }
-
-  .panelContent {
-    padding: 0 8px 8px;
-  }
-
-  .optionsRow {
-    margin-bottom: 10px;
-  }
-
-  .shapeButtons {
-    gap: 6px;
-  }
-
-  .shapeButton {
-    padding: 8px;
-    font-size: 12px;
-    gap: 4px;
-  }
-
-  .sizeButtons {
-    gap: 4px;
-  }
-
-  .sizeButton {
-    padding: 6px;
-    font-size: 12px;
-    min-height: 32px;
-  }
-
-  .sizeSelector,
-  .waypointSelector {
-    margin-bottom: 10px;
-  }
-
-  .sliderWrapper {
-    margin-top: 8px;
-    gap: 8px;
-  }
-
-  .slider {
-    &::-webkit-slider-thumb {
-      width: 20px;
-      height: 20px;
-    }
-
-    &::-moz-range-thumb {
-      width: 20px;
-      height: 20px;
-    }
-  }
-
-  .sliderValue {
-    font-size: 12px;
-    min-width: 45px;
-  }
-
-  .generateButton {
-    padding: 12px;
-    font-size: 13px;
-    border-radius: 8px;
-  }
-}
-
-// 小型スマートフォン (375px以下)
-@media (max-width: 375px) {
-  .input {
-    padding: 8px 28px 8px 8px;
-    font-size: 15px;
-  }
-
-  .suggestionItem {
-    padding: 8px 6px;
-  }
-
-  .suggestionName {
-    font-size: 12px;
-  }
-
-  .suggestionAddress {
-    font-size: 12px;
-  }
-
-  .shapeButton {
-    padding: 6px;
-    font-size: 12px;
-  }
-
-  .sizeButton {
-    font-size: 12px;
-    padding: 5px;
-  }
-
-  .generateButton {
-    padding: 10px;
-    font-size: 12px;
-  }
-}
-
-// 超小型スマートフォン (320px以下)
-@media (max-width: 320px) {
-  .shapeButtons {
-    flex-wrap: wrap;
-  }
-
-  .shapeButton {
-    flex: 1 1 45%;
-  }
-
-  .sizeButton {
-    font-size: 12px;
+  input[type='number'] {
+    width: 70px;
     padding: 4px;
   }
 }
 
-// タッチデバイス最適化
-@media (hover: none) and (pointer: coarse) {
-  .input:focus {
-    // タッチデバイスではフォーカス時のスタイルを調整
-    box-shadow: 0 0 0 2px var(--color-primary-bg);
+.panelFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.primaryButton,
+.secondaryButton {
+  border-radius: 6px;
+  padding: 6px 12px;
+  border: none;
+  cursor: pointer;
+}
+
+.primaryButton {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.secondaryButton {
+  background: var(--color-bg-tertiary);
+  color: inherit;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
   }
-
-  .clearButton:active {
-    background: var(--color-bg-tertiary);
-    transform: scale(0.9);
-  }
-
-  .suggestionItem:active {
-    background: var(--color-primary-bg);
-  }
-
-  .shapeButton:active,
-  .sizeButton:active,
-  .generateButton:active {
-    transform: scale(0.98);
-    opacity: 0.8;
-  }
-
-  .slider {
-    height: 6px;
-
-    &::-webkit-slider-thumb {
-      width: 24px;
-      height: 24px;
-    }
-
-    &::-moz-range-thumb {
-      width: 24px;
-      height: 24px;
-    }
-  }
-
-  .suggestions {
-    -webkit-overflow-scrolling: touch;
+  to {
+    transform: rotate(360deg);
   }
 }

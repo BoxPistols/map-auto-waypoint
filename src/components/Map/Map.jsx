@@ -1,10 +1,9 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Database, AlertTriangle, Circle, Satellite, Settings2, X } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import { getAirportZonesGeoJSON, getRedZonesGeoJSON, getYellowZonesGeoJSON, getHeliportsGeoJSON } from '../../services/airspace'
-import { getDisasterHistory } from '../../services/reinfolibService'
 import { loadMapSettings, saveMapSettings } from '../../utils/storage'
 import styles from './Map.module.scss'
 
@@ -123,23 +122,15 @@ const MAP_STYLE = MAP_STYLES.osm.style
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
 const DEFAULT_ZOOM = 12
 
-// 緯度経度 → XYZタイル
-const latLngToTile = (lat, lng, zoom) => {
-  const n = Math.pow(2, zoom)
-  const x = Math.floor((lng + 180) / 360 * n)
-  const latRad = lat * Math.PI / 180
-  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n)
-  return { x, y, z: zoom }
-}
-
 const Map = ({
   center = DEFAULT_CENTER,
   zoom = DEFAULT_ZOOM,
   polygons = [],
   waypoints = [],
   recommendedWaypoints = null,
+  didHighlightedWaypointIndices = null,
+  waypointIssueFlagsById = null,
   highlightedWaypointIndex = null,
-  apiInfo = null,
   isMobile = false,
   onPolygonCreate,
   onPolygonUpdate,
@@ -178,23 +169,9 @@ const Map = ({
   const [showYellowZones, setShowYellowZones] = useState(initialSettings.showYellowZones ?? false)
   const [showHeliports, setShowHeliports] = useState(initialSettings.showHeliports ?? false)
   const [showDID, setShowDID] = useState(initialSettings.showDID)
-  const [showDisasterHistory, setShowDisasterHistory] = useState(initialSettings.showDisasterHistory ?? false)
   const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
   const [showStylePicker, setShowStylePicker] = useState(false)
-  const [showApiOverlay, setShowApiOverlay] = useState(false)
   const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false)
-
-  // 災害履歴（XST001）: 自動取得状態
-  const [disasterHistoryLocal, setDisasterHistoryLocal] = useState(null) // GeoJSON FeatureCollection
-  const [disasterHistoryLoading, setDisasterHistoryLoading] = useState(false)
-  const [disasterHistoryError, setDisasterHistoryError] = useState(null)
-  // NOTE: このファイルのコンポーネント名が `Map` なので、グローバルの Map と衝突する。
-  // `new Map()` だと「Mapコンポーネント」をnewしようとして落ちるため、明示的に globalThis.Map を使う。
-  const disasterHistoryCacheRef = useRef(new globalThis.Map()) // tileKey -> GeoJSON
-  const disasterHistoryInFlightRef = useRef(new globalThis.Map()) // tileKey -> Promise
-  const disasterHistoryLastFetchAtRef = useRef(0)
-  const disasterHistoryCooldownUntilRef = useRef(0)
-  const disasterHistoryCooldownMsRef = useRef(60_000)
 
   // isMobile is now passed as a prop from App.jsx to avoid duplication
 
@@ -203,8 +180,8 @@ const Map = ({
 
   // Save map settings when they change
   useEffect(() => {
-    saveMapSettings({ is3D, showAirportZones, showRedZones, showYellowZones, showHeliports, showDID, showDisasterHistory, mapStyleId })
-  }, [is3D, showAirportZones, showRedZones, showYellowZones, showHeliports, showDID, showDisasterHistory, mapStyleId])
+    saveMapSettings({ is3D, showAirportZones, showRedZones, showYellowZones, showHeliports, showDID, mapStyleId })
+  }, [is3D, showAirportZones, showRedZones, showYellowZones, showHeliports, showDID, mapStyleId])
 
   // Sync viewState when center/zoom props change from parent (e.g., WP click)
   useEffect(() => {
@@ -225,120 +202,6 @@ const Map = ({
   const redZonesGeoJSON = useMemo(() => getRedZonesGeoJSON(), [])
   const yellowZonesGeoJSON = useMemo(() => getYellowZonesGeoJSON(), [])
   const heliportsGeoJSON = useMemo(() => getHeliportsGeoJSON(), [])
-
-  // Disaster history (XST001) GeoJSON - provided from FlightAssistant via apiInfo
-  const disasterHistoryGeoJSON = useMemo(() => {
-    const dh = apiInfo?.mlitInfo?.disasterHistory
-    if (dh?.success && dh.geojson) return dh.geojson
-    return disasterHistoryLocal
-  }, [apiInfo])
-
-  // 災害履歴（XST001）: レイヤON時、表示中心タイルを自動取得（デバウンス）
-  useEffect(() => {
-    if (!showDisasterHistory) return
-
-    // 取得の基準座標（優先: FlightAssistantが渡す中心、次に現在のviewState）
-    const baseLat = apiInfo?.center?.lat ?? viewState.latitude
-    const baseLng = apiInfo?.center?.lng ?? viewState.longitude
-
-    // XST001は z=9〜15 だが、低ズーム(広域タイル)はレスポンスが巨大になりやすく
-    // WAFにブロックされるケースがあるため、ここでは 14〜15 にクランプして軽量化する。
-    const z = Math.min(15, Math.max(14, Math.round(viewState.zoom || 14)))
-    const tile = latLngToTile(baseLat, baseLng, z)
-    const tileKey = `${tile.z}/${tile.x}/${tile.y}`
-
-    // FlightAssistantが既に供給している場合は不要
-    const dhFromAssistant = apiInfo?.mlitInfo?.disasterHistory
-    if (dhFromAssistant?.success && dhFromAssistant.geojson) {
-      setDisasterHistoryError(null)
-      setDisasterHistoryLoading(false)
-      setDisasterHistoryLocal(null)
-      return
-    }
-
-    // キャッシュヒット
-    const cached = disasterHistoryCacheRef.current.get(tileKey)
-    if (cached) {
-      setDisasterHistoryLocal(cached)
-      setDisasterHistoryError(null)
-      setDisasterHistoryLoading(false)
-      return
-    }
-
-    // 403等でクールダウン中はリトライしない
-    const now = Date.now()
-    if (now < disasterHistoryCooldownUntilRef.current) {
-      const sec = Math.ceil((disasterHistoryCooldownUntilRef.current - now) / 1000)
-      setDisasterHistoryLoading(false)
-      setDisasterHistoryError(`ブロック回避のため待機中（あと${sec}秒）`)
-      return
-    }
-
-    // 最低取得間隔（ブロック回避）
-    const minIntervalMs = 5000
-    if (now - disasterHistoryLastFetchAtRef.current < minIntervalMs) {
-      return
-    }
-
-    // 同タイルのin-flightがあればそれに乗る
-    const inFlight = disasterHistoryInFlightRef.current.get(tileKey)
-    if (inFlight) {
-      setDisasterHistoryLoading(true)
-      return
-    }
-
-    setDisasterHistoryLoading(true)
-    setDisasterHistoryError(null)
-
-    let cancelled = false
-    const timer = setTimeout(() => {
-
-      const p = (async () => {
-        disasterHistoryLastFetchAtRef.current = Date.now()
-        try {
-          const result = await getDisasterHistory(baseLat, baseLng, z)
-          if (cancelled) return
-          if (result?.success && result.geojson) {
-            disasterHistoryCacheRef.current.set(tileKey, result.geojson)
-            setDisasterHistoryLocal(result.geojson)
-            setDisasterHistoryError(null)
-            // 成功したらクールダウンをリセット
-            disasterHistoryCooldownMsRef.current = 60_000
-          } else {
-            setDisasterHistoryError(result?.error || '災害履歴の取得に失敗しました')
-          }
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : '災害履歴の取得に失敗しました'
-          if (!cancelled) setDisasterHistoryError(msg)
-
-          // 403等のブロックが疑われる場合は指数バックオフでクールダウン
-          if (msg.includes('403') || msg.includes('ブロック')) {
-            const cooldownMs = disasterHistoryCooldownMsRef.current
-            disasterHistoryCooldownUntilRef.current = Date.now() + cooldownMs
-            // 1分→2分→4分…（最大10分）
-            disasterHistoryCooldownMsRef.current = Math.min(600_000, cooldownMs * 2)
-          }
-        } finally {
-          if (!cancelled) setDisasterHistoryLoading(false)
-          disasterHistoryInFlightRef.current.delete(tileKey)
-        }
-      })()
-
-      disasterHistoryInFlightRef.current.set(tileKey, p)
-    }, 350)
-
-    return () => {
-      clearTimeout(timer)
-      // 注: fetch 자체のabortはしていないが、state反映はキャンセルする
-      cancelled = true
-    }
-  }, [
-    showDisasterHistory,
-    apiInfo,
-    viewState.latitude,
-    viewState.longitude,
-    viewState.zoom
-  ])
 
   // Memoize optimization overlay GeoJSON (lines from current to recommended positions + zone warnings)
   const optimizationOverlayGeoJSON = useMemo(() => {
@@ -448,10 +311,6 @@ const Map = ({
           e.preventDefault()
           setShowDID(prev => !prev)
           break
-        case 'x': // Disaster history toggle (XST001)
-          e.preventDefault()
-          setShowDisasterHistory(prev => !prev)
-          break
         case 'a': // Airport zones toggle
           e.preventDefault()
           setShowAirportZones(prev => !prev)
@@ -471,10 +330,6 @@ const Map = ({
         case 'm': // Map style picker toggle
           e.preventDefault()
           setShowStylePicker(prev => !prev)
-          break
-        case 'i': // API info overlay toggle
-          e.preventDefault()
-          setShowApiOverlay(prev => !prev)
           break
         case '3': // 3D toggle
           e.preventDefault()
@@ -837,127 +692,6 @@ const Map = ({
           </Source>
         )}
 
-        {/* Disaster history (XST001) overlay */}
-        {showDisasterHistory && disasterHistoryGeoJSON && (
-          <Source id="disaster-history" type="geojson" data={disasterHistoryGeoJSON}>
-            {/* Polygon fill */}
-            <Layer
-              id="disaster-history-fill"
-              type="fill"
-              filter={['any',
-                ['==', ['geometry-type'], 'Polygon'],
-                ['==', ['geometry-type'], 'MultiPolygon']
-              ]}
-              paint={{
-                'fill-color': [
-                  'match',
-                  ['get', 'disastertype_code'],
-                  // Flood / storm surge
-                  '11', '#2563eb',
-                  '12', '#1d4ed8',
-                  '13', '#0ea5e9',
-                  '14', '#0284c7',
-                  // Landslide / debris
-                  '21', '#a16207',
-                  '22', '#92400e',
-                  '23', '#b45309',
-                  '24', '#78350f',
-                  // Earthquake-related
-                  '33', '#7c3aed',
-                  '34', '#6d28d9',
-                  // Tsunami
-                  '37', '#06b6d4',
-                  '38', '#0891b2',
-                  // default
-                  '#ef4444'
-                ],
-                'fill-opacity': 0.22
-              }}
-            />
-            {/* Polygon outline */}
-            <Layer
-              id="disaster-history-outline"
-              type="line"
-              filter={['any',
-                ['==', ['geometry-type'], 'Polygon'],
-                ['==', ['geometry-type'], 'MultiPolygon']
-              ]}
-              paint={{
-                'line-color': [
-                  'match',
-                  ['get', 'disastertype_code'],
-                  '11', '#1d4ed8',
-                  '12', '#1e40af',
-                  '13', '#0284c7',
-                  '14', '#0369a1',
-                  '21', '#92400e',
-                  '22', '#78350f',
-                  '23', '#92400e',
-                  '24', '#713f12',
-                  '33', '#6d28d9',
-                  '34', '#5b21b6',
-                  '37', '#0891b2',
-                  '38', '#0e7490',
-                  '#dc2626'
-                ],
-                'line-width': 2,
-                'line-opacity': 0.85
-              }}
-            />
-            {/* Point markers */}
-            <Layer
-              id="disaster-history-points"
-              type="circle"
-              filter={['any',
-                ['==', ['geometry-type'], 'Point'],
-                ['==', ['geometry-type'], 'MultiPoint']
-              ]}
-              paint={{
-                'circle-radius': [
-                  'interpolate',
-                  ['linear'],
-                  ['zoom'],
-                  8, 2,
-                  12, 4,
-                  16, 7
-                ],
-                'circle-color': [
-                  'match',
-                  ['get', 'disastertype_code'],
-                  '12', '#1e40af',
-                  '23', '#b45309',
-                  '37', '#06b6d4',
-                  '#ef4444'
-                ],
-                'circle-stroke-color': '#ffffff',
-                'circle-stroke-width': 1.5,
-                'circle-opacity': 0.85
-              }}
-            />
-            {/* Labels (high zoom only) */}
-            <Layer
-              id="disaster-history-labels"
-              type="symbol"
-              minzoom={12}
-              filter={['any',
-                ['==', ['geometry-type'], 'Point'],
-                ['==', ['geometry-type'], 'MultiPoint']
-              ]}
-              layout={{
-                'text-field': ['coalesce', ['get', 'disaster_name_ja'], ['get', 'disastertype_code']],
-                'text-size': 10,
-                'text-offset': [0, 1.2],
-                'text-anchor': 'top'
-              }}
-              paint={{
-                'text-color': '#111827',
-                'text-halo-color': '#ffffff',
-                'text-halo-width': 1
-              }}
-            />
-          </Source>
-        )}
-
         {/* Optimization overlay - recommended positions */}
         {optimizationOverlayGeoJSON && (
           <Source id="optimization-overlay" type="geojson" data={optimizationOverlayGeoJSON}>
@@ -1066,57 +800,94 @@ const Map = ({
 
         {/* Display waypoints as draggable markers (non-interactive during polygon edit) */}
         {waypoints.map((wp) => {
-          const isHighlighted = highlightedWaypointIndex === wp.index
-          // Check zone violations for this waypoint
-          const recommendedWp = recommendedWaypoints?.find(rw => rw.id === wp.id)
-          const isInDID = recommendedWp?.hasDID || false
-          const isInAirport = recommendedWp?.hasAirport || false
-          const isInProhibited = recommendedWp?.hasProhibited || false
+            const isHighlighted = highlightedWaypointIndex === wp.index
+            // Check zone violations for this waypoint
+            const recommendedWp = recommendedWaypoints?.find(
+                (rw) => rw.id === wp.id
+            )
+            const flags = waypointIssueFlagsById && wp.id ? waypointIssueFlagsById[wp.id] : null
+            const isInDID =
+                (didHighlightedWaypointIndices instanceof Set
+                    ? didHighlightedWaypointIndices.has(wp.index)
+                    : false) ||
+                (flags?.hasDID || false) ||
+                (recommendedWp?.hasDID || false)
+            const isInAirport = (flags?.hasAirport || false) || (recommendedWp?.hasAirport || false)
+            const isInProhibited = (flags?.hasProhibited || false) || (recommendedWp?.hasProhibited || false)
 
-          // Debug: ゾーン違反の確認（開発時のみ）
-          if (import.meta.env.DEV && recommendedWp && (isInDID || isInAirport || isInProhibited)) {
-            console.log(`[Map] WP${wp.index}: DID=${isInDID}, Airport=${isInAirport}, Prohibited=${isInProhibited}`, recommendedWp.issueTypes)
-          }
+            // Debug: ゾーン違反の確認（開発時のみ）
+            if (
+                import.meta.env.DEV &&
+                recommendedWp &&
+                (isInDID || isInAirport || isInProhibited)
+            ) {
+                console.log(
+                    `[Map] WP${wp.index}: DID=${isInDID}, Airport=${isInAirport}, Prohibited=${isInProhibited}`,
+                    recommendedWp.issueTypes
+                )
+            }
 
-          // Build zone class (priority: prohibited > airport > DID)
-          let zoneClass = ''
-          let zoneLabel = ''
-          if (isInProhibited) {
-            zoneClass = styles.inProhibited
-            zoneLabel = ' [禁止区域]'
-          } else if (isInAirport) {
-            zoneClass = styles.inAirport
-            zoneLabel = ' [空港制限]'
-          } else if (isInDID) {
-            zoneClass = styles.inDID
-            zoneLabel = ' [DID内]'
-          }
+            // Build zone class (priority: prohibited > airport > DID)
+            let zoneClass = ''
+            let zoneLabel = ''
+            if (isInProhibited) {
+                zoneClass = styles.inProhibited
+                zoneLabel = ' [禁止区域]'
+            } else if (isInAirport) {
+                zoneClass = styles.inAirport
+                zoneLabel = ' [空港制限]'
+            } else if (isInDID) {
+                zoneClass = styles.inDID
+                zoneLabel = ' [DID内]'
+            }
 
-          return (
-            <Marker
-              key={wp.id}
-              latitude={wp.lat}
-              longitude={wp.lng}
-              draggable={!editingPolygon}
-              onDragEnd={(e) => {
-                onWaypointMove?.(wp.id, e.lngLat.lat, e.lngLat.lng)
-              }}
-              onClick={(e) => {
-                if (editingPolygon) return
-                e.originalEvent.stopPropagation()
-                onWaypointClick?.(wp)
-              }}
-            >
-              <div
-                className={`${styles.waypointMarker} ${wp.type === 'grid' ? styles.gridMarker : ''} ${selectedWaypointIds.has(wp.id) ? styles.selected : ''} ${isHighlighted ? styles.highlighted : ''} ${zoneClass}`}
-                style={editingPolygon ? { pointerEvents: 'none', opacity: 0.5 } : undefined}
-                title={`#${wp.index} - ${wp.polygonName || 'Waypoint'}${zoneLabel}`}
-                onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
-              >
-                {wp.index}
-              </div>
-            </Marker>
-          )
+            // DIDは他の制限（空港/禁止）と併存しうるため、視認性のためリング表示も付与する
+            // DIDは「警告のみ」でも「回避」でも点滅させたい（他の警告と独立）
+            const didRingClass = isInDID ? styles.didRing : ''
+            const multiLabel =
+                isInDID && zoneLabel && !zoneLabel.includes('DID')
+                    ? `${zoneLabel} [DID内]`
+                    : zoneLabel
+
+            return (
+                <Marker
+                    key={wp.id}
+                    latitude={wp.lat}
+                    longitude={wp.lng}
+                    draggable={!editingPolygon}
+                    onDragEnd={(e) => {
+                        onWaypointMove?.(wp.id, e.lngLat.lat, e.lngLat.lng)
+                    }}
+                    onClick={(e) => {
+                        if (editingPolygon) return
+                        e.originalEvent.stopPropagation()
+                        onWaypointClick?.(wp)
+                    }}
+                >
+                    <div
+                        className={`${styles.waypointMarker} ${
+                            wp.type === 'grid' ? styles.gridMarker : ''
+                        } ${
+                            selectedWaypointIds.has(wp.id)
+                                ? styles.selected
+                                : ''
+                        } ${
+                            isHighlighted ? styles.highlighted : ''
+                        } ${zoneClass} ${didRingClass}`}
+                        style={
+                            editingPolygon
+                                ? { pointerEvents: 'none', opacity: 0.5 }
+                                : undefined
+                        }
+                        title={`#${wp.index} - ${
+                            wp.polygonName || 'Waypoint'
+                        }${multiLabel}`}
+                        onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
+                    >
+                        {wp.index}
+                    </div>
+                </Marker>
+            )
         })}
       </MapGL>
 
@@ -1137,70 +908,6 @@ const Map = ({
       {selectedWaypointIds.size > 0 && (
         <div className={styles.selectionInfo}>
           {selectedWaypointIds.size} 個選択中 - Delete/Backspaceで削除 / Escでキャンセル
-        </div>
-      )}
-
-      {/* API Info Overlay */}
-      {showApiOverlay && apiInfo && (
-        <div className={styles.apiOverlay}>
-          <div className={`${styles.apiOverlayHeader} ${apiInfo.mlitError ? styles.apiOverlayHeaderError : ''}`}>
-            <Database size={16} />
-            <span>国交省API情報</span>
-            <button className={styles.apiOverlayClose} onClick={() => setShowApiOverlay(false)}>×</button>
-          </div>
-          {apiInfo.mlitEnhanced && apiInfo.mlitInfo?.success ? (
-            <div className={styles.apiOverlayContent}>
-              {apiInfo.mlitInfo.useZone?.zoneName && (
-                <div className={styles.apiInfoRow}>
-                  <span className={styles.apiInfoLabel}>用途地域</span>
-                  <span className={styles.apiInfoValue}>{apiInfo.mlitInfo.useZone.zoneName}</span>
-                </div>
-              )}
-              {apiInfo.mlitInfo.urbanArea?.areaName && (
-                <div className={styles.apiInfoRow}>
-                  <span className={styles.apiInfoLabel}>都市計画</span>
-                  <span className={styles.apiInfoValue}>{apiInfo.mlitInfo.urbanArea.areaName}</span>
-                </div>
-              )}
-              {apiInfo.mlitInfo.disasterHistory?.success && apiInfo.mlitInfo.disasterHistory.summary?.total > 0 && (
-                <div className={styles.apiInfoRow}>
-                  <span className={styles.apiInfoLabel}>災害履歴</span>
-                  <span className={styles.apiInfoValue}>
-                    {apiInfo.mlitInfo.disasterHistory.summary.total}件
-                    {apiInfo.mlitInfo.disasterHistory.summary.yearRange?.min && apiInfo.mlitInfo.disasterHistory.summary.yearRange?.max && (
-                      <>（{apiInfo.mlitInfo.disasterHistory.summary.yearRange.min === apiInfo.mlitInfo.disasterHistory.summary.yearRange.max
-                        ? `${apiInfo.mlitInfo.disasterHistory.summary.yearRange.min}年`
-                        : `${apiInfo.mlitInfo.disasterHistory.summary.yearRange.min}〜${apiInfo.mlitInfo.disasterHistory.summary.yearRange.max}年`
-                      }）</>
-                    )}
-                  </span>
-                </div>
-              )}
-              {apiInfo.mlitInfo.riskLevel && (
-                <div className={styles.apiInfoRow}>
-                  <span className={styles.apiInfoLabel}>リスク</span>
-                  <span className={`${styles.apiInfoValue} ${styles[`risk${apiInfo.mlitInfo.riskLevel}`]}`}>
-                    <Circle size={10} fill="currentColor" style={{ marginRight: 4 }} />
-                    {apiInfo.mlitInfo.riskLevel === 'HIGH' ? '高' : apiInfo.mlitInfo.riskLevel === 'MEDIUM' ? '中' : '低'}
-                  </span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className={styles.apiOverlayError}>
-              <div className={styles.apiErrorIcon}><AlertTriangle size={24} /></div>
-              <div className={styles.apiErrorMessage}>{apiInfo.mlitError || 'データなし'}</div>
-              <div className={styles.apiErrorHint}>
-                {apiInfo.mlitError?.includes('403') ? (
-                  <>※ APIキーが無効または未設定です。設定画面でAPIキーを確認してください。</>
-                ) : apiInfo.mlitError?.includes('CORS') || apiInfo.mlitError?.includes('network') ? (
-                  <>※ CORS制限によりブラウザから直接APIを呼び出せません。サーバープロキシが必要です。</>
-                ) : (
-                  <>※ APIエラーが発生しました。ネットワーク接続を確認してください。</>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -1227,16 +934,6 @@ const Map = ({
             data-tooltip-pos="left"
           >
             <Users size={18} />
-          </button>
-          {/* 災害履歴（XST001） */}
-          <button
-            className={`${styles.toggleButton} ${showDisasterHistory ? styles.activeDisasterHistory : ''} ${disasterHistoryLoading ? styles.loading : ''}`}
-            onClick={() => setShowDisasterHistory(!showDisasterHistory)}
-            data-tooltip={disasterHistoryLoading ? '災害履歴 取得中...' : disasterHistoryError ? `災害履歴: ${disasterHistoryError}` : `災害履歴 [X]`}
-            data-tooltip-pos="left"
-            title="災害履歴（国土調査）を表示/非表示"
-          >
-            <span className={styles.xButtonLabel}>X</span>
           </button>
           <button
             className={`${styles.toggleButton} ${showAirportZones ? styles.activeAirport : ''}`}
@@ -1278,18 +975,6 @@ const Map = ({
           >
             {is3D ? <Box size={18} /> : <Rotate3D size={18} />}
           </button>
-
-          {/* API情報トグル（データがある場合のみ表示） */}
-          {apiInfo && (
-            <button
-              className={`${styles.toggleButton} ${showApiOverlay ? styles.activeApi : ''} ${apiInfo.mlitEnhanced ? styles.apiConnected : apiInfo.mlitError ? styles.apiError : ''}`}
-              onClick={() => setShowApiOverlay(!showApiOverlay)}
-              data-tooltip={apiInfo.mlitEnhanced ? 'API情報 [I]' : `API: ${apiInfo.mlitError || '未接続'}`}
-              data-tooltip-pos="left"
-            >
-              <Database size={18} />
-            </button>
-          )}
 
           {/* 地図スタイル切り替え */}
           <div className={styles.stylePickerContainer}>

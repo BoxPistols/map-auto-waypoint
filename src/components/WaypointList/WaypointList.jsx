@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Trash2, Mountain, RefreshCw, Settings2, Pencil, Check, X } from 'lucide-react'
+import { Trash2, Mountain, RefreshCw, Settings2, Pencil, Check } from 'lucide-react'
 import { formatElevation } from '../../services/elevation'
 import styles from './WaypointList.module.scss'
 
@@ -161,9 +161,13 @@ const WaypointList = ({
         <div className={styles.progress}>
           <div
             className={styles.progressBar}
-            style={{ width: `${(elevationProgress.current / elevationProgress.total) * 100}%` }}
+            style={{
+              width: `${(elevationProgress.current / elevationProgress.total) * 100}%`
+            }}
           />
-          <span>標高取得中 {elevationProgress.current}/{elevationProgress.total}</span>
+          <span>
+            標高取得中 {elevationProgress.current}/{elevationProgress.total}
+          </span>
         </div>
       )}
 

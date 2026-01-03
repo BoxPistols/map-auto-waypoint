@@ -164,23 +164,15 @@
       text-overflow: ellipsis;
     }
 
-    .ai-badge, .mlit-badge {
+    .ai-badge {
       font-size: 12px;
       padding: 2px 4px;
       border-radius: 3px;
       font-weight: 600;
       white-space: nowrap;
       flex-shrink: 0;
-    }
-
-    .ai-badge {
       background: rgba(16, 185, 129, 0.3);
       color: var(--color-success-light);
-    }
-
-    .mlit-badge {
-      background: rgba(59, 130, 246, 0.3);
-      color: var(--color-info-light);
     }
   }
 
@@ -1605,8 +1597,7 @@
       font-size: 12px;
       gap: 3px;
 
-      .ai-badge,
-      .mlit-badge {
+      .ai-badge {
         font-size: 12px;
         padding: 1px 3px;
       }
@@ -1889,8 +1880,7 @@
     .header-title {
       font-size: 12px;
 
-      .ai-badge,
-      .mlit-badge {
+      .ai-badge {
         display: none;
       }
     }
