@@ -8,8 +8,10 @@ const SETTINGS_KEY = 'drone_waypoint_settings';
 // デフォルト設定
 const DEFAULT_SETTINGS = {
   // DID回避モード: DID内のWPに対して回避位置をサジェストするか
+  // デフォルトfalse: ユーザーが明示的に有効化する必要あり
   didAvoidanceMode: false,
   // DID警告のみモード: 回避位置を提案せず警告のみ表示（許可申請前提）
+  // デフォルトfalse: 両方OFFでDIDは無視される
   didWarningOnlyMode: false,
   // DID回避距離（メートル）: DID境界からどれだけ離れた位置を推奨するか
   didAvoidanceDistance: 100,

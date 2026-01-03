@@ -8,7 +8,8 @@ import {
   Zap,
   AlertCircle,
   Loader,
-  Info
+  Info,
+  RotateCcw
 } from 'lucide-react';
 import {
   hasApiKey,
@@ -16,9 +17,14 @@ import {
   AVAILABLE_MODELS,
   getSelectedModel,
   setSelectedModel,
-  testApiConnection
+  testApiConnection,
+  getLocalEndpoint,
+  setLocalEndpoint,
+  getLocalModelName,
+  setLocalModelName,
+  isLocalModel
 } from '../../services/openaiService';
-import { getSetting, setSetting } from '../../services/settingsService';
+import { getSetting, setSetting, resetSettings } from '../../services/settingsService';
 import ModelHelpModal from './ModelHelpModal';
 import './ApiSettings.scss';
 
@@ -28,18 +34,22 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const [selectedModelId, setSelectedModelId] = useState(getSelectedModel());
   const [testStatus, setTestStatus] = useState(null); // null | 'testing' | {success, message}
   const [isModelHelpOpen, setIsModelHelpOpen] = useState(false);
-  const [didAvoidanceMode, setDidAvoidanceMode] = useState(getSetting('didAvoidanceMode'));
-  const [didWarningOnlyMode, setDidWarningOnlyMode] = useState(getSetting('didWarningOnlyMode'));
   const [avoidanceDistance, setAvoidanceDistance] = useState(getSetting('didAvoidanceDistance') || 100);
-  const [_airportMargin, _setAirportMargin] = useState(getSetting('airportAvoidanceMargin') || 300);
+  const [didAvoidanceMode, setDidAvoidanceMode] = useState(getSetting('didAvoidanceMode') ?? false);
+  const [didWarningOnly, setDidWarningOnly] = useState(getSetting('didWarningOnlyMode') ?? false);
+  const [localEndpoint, setLocalEndpointState] = useState(getLocalEndpoint());
+  const [localModelName, setLocalModelNameState] = useState(getLocalModelName());
   const modalRef = useRef(null);
+
+  // ローカルLLMが選択されているかどうか
+  const isLocalSelected = isLocalModel(selectedModelId);
 
   // 設定変更の同期（他コンポーネントからの変更を反映）
   useEffect(() => {
     const handleStorageChange = () => {
-      setDidAvoidanceMode(getSetting('didAvoidanceMode'));
-      setDidWarningOnlyMode(getSetting('didWarningOnlyMode'));
       setAvoidanceDistance(getSetting('didAvoidanceDistance') || 100);
+      setDidAvoidanceMode(getSetting('didAvoidanceMode') ?? false);
+      setDidWarningOnly(getSetting('didWarningOnlyMode') ?? false);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -119,7 +129,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
           <div className='api-settings-modal' ref={modalRef}>
               <div className='modal-header'>
                   <h2>
-                      <Settings size={18} /> API設定
+                      <Settings size={18} /> 設定
                   </h2>
                   <button className='close-btn' onClick={onClose}>
                       <X size={18} />
@@ -166,6 +176,45 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                           </select>
                       </div>
 
+                      {/* ローカルLLM設定 */}
+                      {isLocalSelected && (
+                          <div className='local-llm-settings'>
+                              <div className='local-setting-row'>
+                                  <label>エンドポイント:</label>
+                                  <input
+                                      type='text'
+                                      value={localEndpoint}
+                                      onChange={(e) => {
+                                          setLocalEndpointState(e.target.value);
+                                          setLocalEndpoint(e.target.value);
+                                      }}
+                                      placeholder='http://localhost:1234/v1/chat/completions'
+                                  />
+                              </div>
+                              <div className='local-setting-row'>
+                                  <label>モデル名（任意）:</label>
+                                  <input
+                                      type='text'
+                                      value={localModelName}
+                                      onChange={(e) => {
+                                          setLocalModelNameState(e.target.value);
+                                          setLocalModelName(e.target.value);
+                                      }}
+                                      placeholder='local-model'
+                                  />
+                              </div>
+                              <div className='settings-links'>
+                                  <a
+                                      href='https://lmstudio.ai/docs/developer'
+                                      target='_blank'
+                                      rel='noopener noreferrer'
+                                  >
+                                      <ExternalLink size={12} /> LM Studio ドキュメント
+                                  </a>
+                              </div>
+                          </div>
+                      )}
+
                       {hasKey ? (
                           <div className='api-key-status'>
                               <div className='status-row'>
@@ -205,7 +254,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                       </div>
 
                       {/* 接続テストボタン */}
-                      {hasKey && (
+                      {(hasKey || isLocalSelected) && (
                           <div className='connection-test'>
                               <button
                                   className={`test-btn ${
@@ -257,127 +306,126 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                   <div className='settings-section'>
                       <h3>回避設定</h3>
 
-                      {/* 回避距離スライダー */}
-                      <div className='slider-setting'>
-                          <label className='slider-label'>
-                              <span>
-                                  回避距離:{' '}
-                                  <strong>{avoidanceDistance}m</strong>
-                              </span>
-                          </label>
-                          <input
-                              type='range'
-                              min='50'
-                              max='300'
-                              step='10'
-                              value={avoidanceDistance}
-                              onChange={(e) => {
-                                  const value = parseInt(e.target.value)
-                                  setAvoidanceDistance(value)
-                                  setSetting('didAvoidanceDistance', value)
-                                  setSetting('airportAvoidanceMargin', value)
-                              }}
-                              className='distance-slider'
-                          />
-                          <div className='slider-labels'>
-                              <span>最小 50m</span>
-                              <span>標準 100m</span>
-                              <span>安全 200m</span>
-                              <span>300m</span>
-                          </div>
-                          <p className='slider-description'>
-                              制限区域境界からの推奨離隔距離
-                          </p>
-                      </div>
-
-                      <hr className='settings-sub-divider' />
-
-                      {/* DID設定 */}
-                      <div className='toggle-setting'>
-                          <label className='toggle-label'>
+                      {/* 回避距離スライダー + DIDチェックボックス */}
+                      <div className='avoidance-controls'>
+                          <div className='slider-section'>
+                              <label className='slider-label'>
+                                  <span>回避距離:</span>
+                                  <input
+                                      type='number'
+                                      min='5'
+                                      max='300'
+                                      step='5'
+                                      value={avoidanceDistance}
+                                      onChange={(e) => {
+                                          const value = Math.min(300, Math.max(5, parseInt(e.target.value) || 5))
+                                          setAvoidanceDistance(value)
+                                          setSetting('didAvoidanceDistance', value)
+                                          setSetting('airportAvoidanceMargin', value)
+                                      }}
+                                      className='distance-input'
+                                  />
+                                  <span className='unit'>m</span>
+                              </label>
                               <input
-                                  type='checkbox'
-                                  checked={didAvoidanceMode}
+                                  type='range'
+                                  min='5'
+                                  max='300'
+                                  step='5'
+                                  value={avoidanceDistance}
                                   onChange={(e) => {
-                                      const enabled = e.target.checked
-                                      setDidAvoidanceMode(enabled)
-                                      setSetting('didAvoidanceMode', enabled)
-                                      if (enabled) {
-                                          setDidWarningOnlyMode(false)
-                                          setSetting(
-                                              'didWarningOnlyMode',
-                                              false
-                                          )
-                                      }
-                                      notifyStatusChange(
-                                          'didAvoidance',
-                                          enabled
-                                      )
+                                      const value = parseInt(e.target.value)
+                                      setAvoidanceDistance(value)
+                                      setSetting('didAvoidanceDistance', value)
+                                      setSetting('airportAvoidanceMargin', value)
                                   }}
+                                  className='distance-slider'
                               />
-                              <span className='toggle-text'>DID回避モード</span>
-                          </label>
-                          <p className='toggle-description'>
-                              DID内のWPに対して回避位置をサジェスト
-                          </p>
-                      </div>
+                              <div className='slider-labels'>
+                                  <span>5m</span>
+                                  <span>100m</span>
+                                  <span>200m</span>
+                                  <span>300m</span>
+                              </div>
+                          </div>
 
-                      {!didAvoidanceMode && (
-                          <div className='toggle-setting sub-setting'>
-                              <label className='toggle-label'>
+                          <div className='did-checkboxes'>
+                              <span className='did-label'>🏘️ DID:</span>
+                              <label className='checkbox-item'>
                                   <input
                                       type='checkbox'
-                                      checked={didWarningOnlyMode}
+                                      checked={didAvoidanceMode}
                                       onChange={(e) => {
-                                          const enabled = e.target.checked
-                                          setDidWarningOnlyMode(enabled)
-                                          setSetting(
-                                              'didWarningOnlyMode',
-                                              enabled
-                                          )
+                                          const checked = e.target.checked;
+                                          setDidAvoidanceMode(checked);
+                                          setSetting('didAvoidanceMode', checked);
+                                          if (checked) {
+                                              setDidWarningOnly(false);
+                                              setSetting('didWarningOnlyMode', false);
+                                          }
                                       }}
                                   />
-                                  <span className='toggle-text'>
-                                      DID警告のみ
-                                  </span>
+                                  <span>回避</span>
                               </label>
-                              <p className='toggle-description'>
-                                  回避提案なし（DIPS許可申請前提）
-                              </p>
-                          </div>
-                      )}
-
-                      <hr className='settings-sub-divider' />
-
-                      {/* 空港回避（常にON） */}
-                      <div className='info-setting'>
-                          <span className='setting-icon'>✈️</span>
-                          <div className='setting-content'>
-                              <span className='setting-title'>
-                                  空港制限区域
-                              </span>
-                              <p className='setting-description'>
-                                  回避必須（{avoidanceDistance}m離隔）
-                              </p>
+                              <label className='checkbox-item'>
+                                  <input
+                                      type='checkbox'
+                                      checked={didWarningOnly}
+                                      disabled={didAvoidanceMode}
+                                      onChange={(e) => {
+                                          const checked = e.target.checked;
+                                          setDidWarningOnly(checked);
+                                          setSetting('didWarningOnlyMode', checked);
+                                      }}
+                                  />
+                                  <span>警告のみ</span>
+                              </label>
                           </div>
                       </div>
 
-                      <div className='info-setting'>
-                          <span className='setting-icon'>⛔</span>
-                          <div className='setting-content'>
-                              <span className='setting-title'>
-                                  飛行禁止区域
+                      <hr className='settings-sub-divider' />
+
+                      {/* 区域一覧 */}
+                      <div className='zone-list'>
+                          <div className='zone-item'>
+                              <span className='zone-icon'>✈️</span>
+                              <span className='zone-name'>空港制限</span>
+                              <span className='zone-status mandatory'>回避必須</span>
+                          </div>
+                          <div className='zone-item'>
+                              <span className='zone-icon'>⛔</span>
+                              <span className='zone-name'>飛行禁止</span>
+                              <span className='zone-status mandatory'>回避必須</span>
+                          </div>
+                          <div className='zone-item'>
+                              <span className='zone-icon'>🏘️</span>
+                              <span className='zone-name'>DID</span>
+                              <span className={`zone-status ${didAvoidanceMode ? 'avoidance' : didWarningOnly ? 'warning' : 'off'}`}>
+                                  {didAvoidanceMode ? '回避推奨' : didWarningOnly ? '警告のみ' : 'OFF'}
                               </span>
-                              <p className='setting-description'>
-                                  回避必須（{avoidanceDistance}m離隔）
-                              </p>
                           </div>
                       </div>
                   </div>
 
-                  <p className='settings-note'>
-                      ※ 設定はブラウザに保存（サーバー送信なし）
-                  </p>
+                  <div className='settings-footer'>
+                      <p className='settings-note'>
+                          ※ 設定はブラウザに保存（サーバー送信なし）
+                      </p>
+                      <button
+                          className='reset-btn'
+                          onClick={() => {
+                              if (confirm('判定設定をデフォルトに戻しますか？\n（APIキーは削除されません）')) {
+                                  resetSettings();
+                                  setAvoidanceDistance(100);
+                                  setDidAvoidanceMode(false);
+                                  setDidWarningOnly(false);
+                              }
+                          }}
+                      >
+                          <RotateCcw size={12} />
+                          設定リセット
+                      </button>
+                  </div>
               </div>
           </div>
           {isModelHelpOpen && (

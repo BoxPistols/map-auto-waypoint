@@ -89,6 +89,10 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   // 回避設定
   const [showAvoidanceSettings, setShowAvoidanceSettings] = useState(false);
   const [avoidanceDistance, setAvoidanceDistance] = useState(getSetting('didAvoidanceDistance') || 100);
+  const [didAvoidanceMode, setDidAvoidanceMode] = useState(getSetting('didAvoidanceMode') ?? false);
+  const [didWarningOnly, setDidWarningOnly] = useState(getSetting('didWarningOnlyMode') ?? false);
+  // 個別推奨の除外設定（拒否されたwaypointId）
+  const [excludedRecommendations, setExcludedRecommendations] = useState(new Set());
   const messagesEndRef = useRef(null);
   const panelRef = useRef(null);
   const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
@@ -97,6 +101,8 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   useEffect(() => {
     const handleStorageChange = () => {
       setAvoidanceDistance(getSetting('didAvoidanceDistance') || 100);
+      setDidAvoidanceMode(getSetting('didAvoidanceMode') ?? false);
+      setDidWarningOnly(getSetting('didWarningOnlyMode') ?? false);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -387,6 +393,10 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   };
 
   const handleKeyPress = (e) => {
+    // IME変換中は無視（日本語入力の確定Enterでsubmitしないように）
+    if (e.nativeEvent.isComposing || e.keyCode === 229) {
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -394,25 +404,59 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   };
 
   /**
-   * 推奨プランを適用
+   * 個別推奨のトグル（受け入れ/拒否）
+   */
+  const toggleRecommendation = (waypointId) => {
+    setExcludedRecommendations(prev => {
+      const next = new Set(prev);
+      if (next.has(waypointId)) {
+        next.delete(waypointId);
+      } else {
+        next.add(waypointId);
+      }
+      return next;
+    });
+  };
+
+  /**
+   * 推奨プランを適用（除外設定を考慮）
    */
   const handleApplyOptimization = () => {
     if (!optimizationPlan?.hasIssues) return;
 
+    // 除外されたWPは元の位置を保持
+    const filteredWaypoints = optimizationPlan.recommendedWaypoints.map(wp => {
+      if (excludedRecommendations.has(wp.id)) {
+        // 除外されたWPは元のwaypointsから取得
+        const originalWp = waypoints.find(w => w.id === wp.id);
+        return originalWp ? { ...originalWp, modified: false } : wp;
+      }
+      return wp;
+    });
+
     const plan = {
-      waypoints: optimizationPlan.recommendedWaypoints,
+      waypoints: filteredWaypoints,
       polygon: optimizationPlan.recommendedPolygon,
-      polygons: optimizationPlan.recommendedPolygons // 複数ポリゴン対応
+      polygons: optimizationPlan.recommendedPolygons
     };
 
     // 適用前に確認
     const modifiedCount = plan.waypoints.filter(w => w.modified).length;
+    if (modifiedCount === 0) {
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: '[!] 適用する推奨がありません。'
+      }]);
+      return;
+    }
+
     const message = `${modifiedCount}個のWaypointを安全な位置に移動します。適用しますか？`;
 
     if (confirm(message)) {
       onApplyPlan(plan);
       setOptimizationPlan(null);
       setShowOptimization(false);
+      setExcludedRecommendations(new Set()); // リセット
 
       setMessages(prev => [...prev, {
         role: 'system',
@@ -953,7 +997,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
                         value={editingLogName}
                         onChange={(e) => setEditingLogName(e.target.value)}
                         onBlur={() => handleUpdateLogName(log.id)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleUpdateLogName(log.id)}
+                        onKeyDown={(e) => !e.nativeEvent.isComposing && e.keyCode !== 229 && e.key === 'Enter' && handleUpdateLogName(log.id)}
                         onClick={(e) => e.stopPropagation()}
                         autoFocus
                       />
@@ -1040,16 +1084,64 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       {/* 回避設定パネル（折りたたみ式） */}
       {showAvoidanceSettings && (
         <div className="avoidance-settings">
-          <div className="avoidance-slider">
-            <label>
+          <div className="avoidance-header">
+            <div className="did-checkboxes">
+              <span className="did-label">DID:</span>
+              <label className="checkbox-item" title="DID内WPを点滅 + 回避位置を推奨">
+                <input
+                  type="checkbox"
+                  checked={didAvoidanceMode}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setDidAvoidanceMode(checked);
+                    setSetting('didAvoidanceMode', checked);
+                    if (checked) {
+                      setDidWarningOnly(false);
+                      setSetting('didWarningOnlyMode', false);
+                    }
+                  }}
+                />
+                <span>回避</span>
+              </label>
+              <label className="checkbox-item" title="DID内WPを点滅（推奨なし）">
+                <input
+                  type="checkbox"
+                  checked={didWarningOnly}
+                  disabled={didAvoidanceMode}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setDidWarningOnly(checked);
+                    setSetting('didWarningOnlyMode', checked);
+                  }}
+                />
+                <span>警告</span>
+              </label>
+            </div>
+            <label className="distance-label">
               <span>回避距離:</span>
-              <strong>{avoidanceDistance}m</strong>
+              <input
+                type="number"
+                min="5"
+                max="300"
+                step="5"
+                value={avoidanceDistance}
+                onChange={(e) => {
+                  const value = Math.min(300, Math.max(5, parseInt(e.target.value) || 5));
+                  setAvoidanceDistance(value);
+                  setSetting('didAvoidanceDistance', value);
+                  setSetting('airportAvoidanceMargin', value);
+                }}
+                className="distance-input"
+              />
+              <span className="unit">m</span>
             </label>
+          </div>
+          <div className="avoidance-slider">
             <input
               type="range"
-              min="50"
+              min="5"
               max="300"
-              step="10"
+              step="5"
               value={avoidanceDistance}
               onChange={(e) => {
                 const value = parseInt(e.target.value);
@@ -1059,15 +1151,14 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               }}
             />
             <div className="slider-ticks">
-              <span>50</span>
+              <span>5</span>
               <span>100</span>
               <span>200</span>
               <span>300</span>
             </div>
           </div>
-          {/* DID自動判定は無効化 - 地図オーバーレイで目視確認 */}
           <div className="avoidance-note">
-            <span>※ DIDは地図オーバーレイで目視確認</span>
+            <span>※ DIDは地図オーバーレイ<kbd>D</kbd>で目視確認</span>
           </div>
         </div>
       )}
@@ -1145,6 +1236,53 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 推奨位置の個別選択 */}
+      {showOptimization && optimizationPlan?.waypointAnalysis?.gaps?.length > 0 && (
+        <div className="recommendation-list">
+          <div className="recommendation-header">
+            <span>WP問題一覧</span>
+            <span className="recommendation-count">
+              適用: {optimizationPlan.waypointAnalysis.gaps.filter(g => g.recommended && !excludedRecommendations.has(g.waypointId)).length}
+              /{optimizationPlan.waypointAnalysis.gaps.length}
+            </span>
+          </div>
+          <div className="recommendation-items">
+            {optimizationPlan.waypointAnalysis.gaps.map(gap => {
+              const hasRecommendation = !!gap.recommended;
+              const isExcluded = !hasRecommendation || excludedRecommendations.has(gap.waypointId);
+              const issue = gap.issues[0];
+              const zoneLabel = issue?.type === 'airport' ? '空港'
+                : issue?.type === 'prohibited' ? '禁止'
+                : issue?.type === 'did' ? 'DID'
+                : '警告';
+              return (
+                <div
+                  key={gap.waypointId}
+                  className={`recommendation-item ${isExcluded ? 'excluded' : 'included'} ${!hasRecommendation ? 'no-recommendation' : ''}`}
+                  onClick={() => hasRecommendation && toggleRecommendation(gap.waypointId)}
+                  title={hasRecommendation ? 'クリックで適用/除外を切替' : '安全な推奨位置なし'}
+                >
+                  <div className="item-toggle">
+                    {isExcluded ? <X size={14} /> : <Check size={14} />}
+                  </div>
+                  <div className="item-info">
+                    <span className="wp-label">WP{gap.waypointIndex}</span>
+                    <span className={`zone-type ${issue?.type || 'warning'}`}>
+                      {zoneLabel}
+                    </span>
+                    {hasRecommendation ? (
+                      <span className="move-distance">{Math.round(gap.moveDistance)}m</span>
+                    ) : (
+                      <span className="no-safe">推奨なし</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 

@@ -168,84 +168,6 @@ function App() {
     }
   }, [])
 
-  // Keyboard shortcuts for Undo/Redo, Help, and Panel switching
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Ignore shortcuts when typing in input fields
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
-        return
-      }
-
-      // Cmd+/ (Mac) or Ctrl+/ (Win) for Help
-      // Also support ? key (Shift+/ on most keyboards)
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
-        e.preventDefault()
-        setShowHelp(prev => !prev)
-        return
-      }
-
-      // ? key alone for Help (works on all keyboard layouts)
-      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        e.preventDefault()
-        setShowHelp(prev => !prev)
-        return
-      }
-
-      // Cmd+Z (Mac) or Ctrl+Z (Win) for Undo
-      // Cmd+Shift+Z (Mac) or Ctrl+Shift+Z (Win) for Redo
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
-        e.preventDefault()
-        if (e.shiftKey) {
-          handleRedo()
-        } else {
-          handleUndo()
-        }
-        return
-      }
-
-      // Single key shortcuts (no modifier keys)
-      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
-        switch (e.key.toLowerCase()) {
-          case 's': // Toggle sidebar
-            e.preventDefault()
-            setSidebarCollapsed(prev => {
-              const newValue = !prev
-              localStorage.setItem('sidebarCollapsed', String(newValue))
-              return newValue
-            })
-            break
-          case 'p': // Switch to Polygon panel
-            e.preventDefault()
-            setActivePanel('polygons')
-            if (sidebarCollapsed) setSidebarCollapsed(false)
-            break
-          case 'w': // Switch to Waypoint panel
-            e.preventDefault()
-            setActivePanel('waypoints')
-            if (sidebarCollapsed) setSidebarCollapsed(false)
-            break
-          case 'c': // Toggle Chat (Flight Assistant)
-            e.preventDefault()
-            setShowChat(prev => !prev)
-            break
-          case 'f': // Toggle Full Map Mode
-            e.preventDefault()
-            setFullMapMode(prev => {
-              if (!prev) {
-                setSidebarCollapsed(true)
-                setShowChat(false)
-              }
-              return !prev
-            })
-            break
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleUndo, handleRedo, sidebarCollapsed])
-
   // Auto-save polygons and push to history
   useEffect(() => {
     savePolygons(polygons)
@@ -287,7 +209,8 @@ function App() {
     const polygon = createPolygonFromSearchResult(searchResult, options)
     setPolygons(prev => [...prev, polygon])
 
-    const newWaypoints = polygonToWaypoints(polygon, waypointCount)
+    // Use generatePerimeterWaypoints to distribute waypoints evenly along the perimeter
+    const newWaypoints = generatePerimeterWaypoints(polygon, waypointCount)
     setWaypoints(prev => [...prev, ...newWaypoints])
 
     const center = getPolygonCenter(polygon.geometry)
@@ -296,7 +219,7 @@ function App() {
       setZoom(16)
     }
 
-    showNotification(`ポリゴンとWaypoint(${waypointCount}個)を生成しました`)
+    showNotification(`ポリゴンとWaypoint(${newWaypoints.length}個)を生成しました`)
   }, [showNotification])
 
   // Handle elevation fetch
@@ -375,6 +298,107 @@ function App() {
     }
     showNotification('ポリゴンを編集中です。頂点をドラッグして変更してください。')
   }, [showNotification])
+
+  // Keyboard shortcuts for Undo/Redo, Help, and Panel switching
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ignore shortcuts when typing in input fields
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+        return
+      }
+
+      // Cmd+Shift+K (Mac) or Ctrl+Shift+K (Win) for Settings modal
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setShowApiSettings(prev => !prev)
+        return
+      }
+
+      // Cmd+Shift+D (Mac) or Ctrl+Shift+D (Win) for Theme toggle
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault()
+        handleToggleTheme()
+        return
+      }
+
+      // Cmd+/ (Mac) or Ctrl+/ (Win) for Help
+      // Also support ? key (Shift+/ on most keyboards)
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault()
+        setShowHelp(prev => !prev)
+        return
+      }
+
+      // ? key alone for Help (works on all keyboard layouts)
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault()
+        setShowHelp(prev => !prev)
+        return
+      }
+
+      // Cmd+Z (Mac) or Ctrl+Z (Win) for Undo
+      // Cmd+Shift+Z (Mac) or Ctrl+Shift+Z (Win) for Redo
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) {
+          handleRedo()
+        } else {
+          handleUndo()
+        }
+        return
+      }
+
+      // Single key shortcuts (no modifier keys)
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case 's': // Toggle sidebar
+            e.preventDefault()
+            setSidebarCollapsed(prev => {
+              const newValue = !prev
+              localStorage.setItem('sidebarCollapsed', String(newValue))
+              return newValue
+            })
+            break
+          case 'p': // Switch to Polygon panel
+            e.preventDefault()
+            setActivePanel('polygons')
+            if (sidebarCollapsed) setSidebarCollapsed(false)
+            break
+          case 'w': // Switch to Waypoint panel
+            e.preventDefault()
+            setActivePanel('waypoints')
+            if (sidebarCollapsed) setSidebarCollapsed(false)
+            break
+          case 'c': // Toggle Chat (Flight Assistant)
+            e.preventDefault()
+            setShowChat(prev => !prev)
+            break
+          case 'f': // Toggle Full Map Mode
+            e.preventDefault()
+            setFullMapMode(prev => {
+              if (!prev) {
+                setSidebarCollapsed(true)
+                setShowChat(false)
+              }
+              return !prev
+            })
+            break
+          case 'v': // Edit polygon shape
+            e.preventDefault()
+            if (selectedPolygonId) {
+              const polygon = polygons.find(p => p.id === selectedPolygonId)
+              if (polygon) {
+                handleEditPolygonShape(polygon)
+              }
+            }
+            break
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleUndo, handleRedo, sidebarCollapsed, selectedPolygonId, polygons, handleEditPolygonShape, handleToggleTheme])
 
   // Handle polygon shape edit complete
   const handlePolygonEditComplete = useCallback((updatedFeature) => {
@@ -822,7 +846,7 @@ function App() {
           <button
             className="icon-button settings-button"
             onClick={() => setShowApiSettings(true)}
-            data-tooltip="API設定"
+            data-tooltip="設定 (⌘⇧K)"
             data-tooltip-pos="bottom"
           >
             <Settings size={18} />
@@ -849,7 +873,7 @@ function App() {
               onClick={toggleSidebar}
               title="閉じる [S]"
             >
-              {isMobile ? <X size={28} /> : <Menu size={20} />}
+              {isMobile ? <X size={28} /> : <Menu size={22} />}
             </button>
           )}
 

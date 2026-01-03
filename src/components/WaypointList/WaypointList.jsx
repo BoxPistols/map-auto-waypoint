@@ -89,6 +89,10 @@ const WaypointList = ({
   }
 
   const handleKeyDown = (e) => {
+    // IME変換中は無視（日本語入力の確定Enterでsubmitしないように）
+    if (e.nativeEvent.isComposing || e.keyCode === 229) {
+      return
+    }
     if (e.key === 'Enter') {
       saveEdit()
     } else if (e.key === 'Escape') {
