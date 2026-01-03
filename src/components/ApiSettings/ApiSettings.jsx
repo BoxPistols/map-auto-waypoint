@@ -7,7 +7,8 @@ import {
   ExternalLink,
   Zap,
   AlertCircle,
-  Loader
+  Loader,
+  Info
 } from 'lucide-react';
 import {
   hasApiKey,
@@ -18,6 +19,7 @@ import {
   testApiConnection
 } from '../../services/openaiService';
 import { getSetting, setSetting } from '../../services/settingsService';
+import ModelHelpModal from './ModelHelpModal';
 import './ApiSettings.scss';
 
 function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
@@ -25,6 +27,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const [hasKey, setHasKey] = useState(hasApiKey());
   const [selectedModelId, setSelectedModelId] = useState(getSelectedModel());
   const [testStatus, setTestStatus] = useState(null); // null | 'testing' | {success, message}
+  const [isModelHelpOpen, setIsModelHelpOpen] = useState(false);
   const [didAvoidanceMode, setDidAvoidanceMode] = useState(getSetting('didAvoidanceMode'));
   const [didWarningOnlyMode, setDidWarningOnlyMode] = useState(getSetting('didWarningOnlyMode'));
   const [avoidanceDistance, setAvoidanceDistance] = useState(getSetting('didAvoidanceDistance') || 100);
@@ -137,7 +140,17 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
 
                       {/* モデル選択 */}
                       <div className='model-selector'>
-                          <label>AIモデル:</label>
+                          <div className='model-label'>
+                              <label>AIモデル:</label>
+                              <button
+                                  type='button'
+                                  className='model-help-btn'
+                                  onClick={() => setIsModelHelpOpen(true)}
+                                  aria-label='AIモデルの違いを表示'
+                              >
+                                  <Info size={16} />
+                              </button>
+                          </div>
                           <select
                               value={selectedModelId}
                               onChange={(e) =>
@@ -367,6 +380,9 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                   </p>
               </div>
           </div>
+          {isModelHelpOpen && (
+              <ModelHelpModal onClose={() => setIsModelHelpOpen(false)} />
+          )}
       </div>
   )
 }

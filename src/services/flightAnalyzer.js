@@ -122,8 +122,158 @@ const getPrefectureFromCoords = (lat, lng) => {
 };
 
 /**
- * DID（人口集中地区）判定
- * 外部API取得は削除したため、フォールバックデータ（主要都市の推定）で判定
+ * GitHub dronebird/DIDinJapan からDIDデータを取得
+ * @param {string} prefCode - 都道府県コード
+ * @param {string} prefName - 都道府県名（英語）
+ * @returns {Promise<Object|null>} GeoJSONデータ
+ */
+const fetchDIDFromGitHub = async (prefCode, prefName) => {
+  const cacheKey = `pref_${prefCode}`;
+
+  // キャッシュチェック
+  if (didPrefectureCache.has(cacheKey)) {
+    return didPrefectureCache.get(cacheKey);
+  }
+
+  if (typeof fetch === 'undefined') {
+    return null;
+  }
+
+  try {
+    // GitHub raw URL (CORS対応)
+    const url = `https://raw.githubusercontent.com/dronebird/DIDinJapan/master/GeoJSON/h22_did_${prefCode}_${prefName}.geojson`;
+
+    console.log(`[DID] Fetching from GitHub: ${prefName}`);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!response || !response.ok) {
+      console.warn(`[DID] GitHub fetch failed: ${response?.status}`);
+      return null;
+    }
+
+    const geojson = await response.json();
+    didPrefectureCache.set(cacheKey, geojson);
+    console.log(`[DID] GitHub data loaded: ${prefName}, features: ${geojson.features?.length || 0}`);
+    return geojson;
+  } catch (error) {
+    console.warn(`[DID] GitHub fetch error: ${error.message}`);
+    return null;
+  }
+};
+
+/**
+ * GeoJSONのプロパティから地名を取得
+ * @param {Object} properties - GeoJSON feature properties
+ * @param {Object} prefecture - 都道府県データ
+ * @returns {string} 地名
+ */
+const extractAreaName = (properties, prefecture) => {
+  if (!properties) return prefecture?.nameJa || prefecture?.name || '人口集中地区';
+
+  // 市区町村名の候補（優先順位順）
+  const cityName = properties.CITY_NAME ||
+                   properties.city_name ||
+                   properties.SIKUCHOSON ||
+                   properties.S_NAME ||
+                   properties.MOJI ||
+                   properties.N03_004 ||  // 国土数値情報の市区町村名
+                   properties.N03_003 ||  // 国土数値情報の郡名
+                   null;
+
+  // 都道府県名の候補
+  const prefName = properties.PREF_NAME ||
+                   properties.pref_name ||
+                   properties.KEN_NAME ||
+                   properties.ken_name ||
+                   properties.N03_001 ||  // 国土数値情報の都道府県名
+                   null;
+
+  // 市区町村名があれば使用
+  if (cityName) {
+    return cityName;
+  }
+
+  // GeoJSONに都道府県名があれば使用
+  if (prefName) {
+    return prefName;
+  }
+
+  // 都道府県データから日本語名を使用
+  if (prefecture?.nameJa) {
+    return `${prefecture.nameJa}DID`;
+  }
+
+  return '人口集中地区';
+};
+
+/**
+ * GeoJSONから点がDID内かチェック
+ * @param {Object} geojson - GeoJSONデータ
+ * @param {number} lat - 緯度
+ * @param {number} lng - 経度
+ * @param {Object} prefecture - 都道府県データ
+ * @returns {Object|null} マッチした場合の結果
+ */
+const checkPointInDIDGeoJSON = (geojson, lat, lng, prefecture) => {
+  if (!geojson?.features || geojson.features.length === 0) {
+    return null;
+  }
+
+  const point = turf.point([lng, lat]);
+
+  for (const feature of geojson.features) {
+    if (!feature.geometry) continue;
+    if (feature.geometry.type !== 'Polygon' && feature.geometry.type !== 'MultiPolygon') continue;
+
+    try {
+      if (turf.booleanPointInPolygon(point, feature)) {
+        const areaName = extractAreaName(feature.properties, prefecture);
+        const population = feature.properties?.JINKO ||
+                          feature.properties?.POP ||
+                          feature.properties?.POPULATION ||
+                          feature.properties?.jinko ||
+                          null;
+
+        // DIDポリゴンのcentroidを計算（回避位置計算用）
+        let centroid = null;
+        try {
+          const centroidPoint = turf.centroid(feature);
+          if (centroidPoint?.geometry?.coordinates) {
+            centroid = {
+              lng: centroidPoint.geometry.coordinates[0],
+              lat: centroidPoint.geometry.coordinates[1]
+            };
+          }
+        } catch {
+          // centroid計算失敗時はnull
+        }
+
+        return {
+          isDID: true,
+          area: areaName,
+          certainty: 'confirmed',
+          source: 'GitHub/DIDinJapan',
+          description: `${areaName}のDID内（人口集中地区）`,
+          population,
+          centroid
+        };
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+};
+
+/**
+ * DID（人口集中地区）判定 - 動的API取得
+ * 1. GitHub dronebird/DIDinJapan から都道府県単位でGeoJSON取得
+ * 2. 取得失敗時は静的フォールバックデータを使用
  *
  * @param {number} lat - 緯度
  * @param {number} lng - 経度
@@ -146,7 +296,30 @@ export const checkDIDArea = async (lat, lng) => {
       };
     }
 
-    // 外部取得は削除したため、常にフォールバック（推定）で判定する
+    // 2. GitHub から都道府県のDIDデータを取得
+    const geojson = await fetchDIDFromGitHub(prefecture.code, prefecture.name);
+
+    if (geojson) {
+      // 3. 点がDID内かチェック（都道府県情報も渡す）
+      const result = checkPointInDIDGeoJSON(geojson, lat, lng, prefecture);
+
+      if (result) {
+        console.log(`[DID] Point is in DID: ${result.area}`);
+        return result;
+      }
+
+      // DID外と確認
+      return {
+        isDID: false,
+        area: null,
+        certainty: 'confirmed',
+        source: 'GitHub/DIDinJapan',
+        description: 'DID外（人口集中地区外）- GeoJSONデータ確認済'
+      };
+    }
+
+    // GitHub取得失敗時はフォールバック
+    console.log('[DID] GitHub unavailable, using fallback data');
     return checkDIDAreaFallback(lat, lng, prefecture);
 
   } catch (error) {
@@ -183,11 +356,8 @@ const checkDIDAreaFallback = (lat, lng, _prefecture = null) => {
     { name: 'いわき市', lat: 37.0504, lng: 140.8879, radius: 3500 },
 
     // 関東
-    // 注: 外部GeoJSONを取得しない構成ではDID境界の厳密判定ができないため、
-    // 「過去挙動（首都圏でDID警告が出る）」を優先して首都圏を広めに推定する。
-    // 厚木/相模原/川崎/横浜/東京湾岸なども包含させる。
-    { name: '首都圏（推定）', lat: 35.6812, lng: 139.7671, radius: 60000 },
-    { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 20000 },
+    // GitHub DIDデータが取得できない場合のフォールバック
+    { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 15000 },
     { name: '横浜市', lat: 35.4437, lng: 139.6380, radius: 12000 },
     { name: '川崎市', lat: 35.5308, lng: 139.7030, radius: 6000 },
     { name: 'さいたま市', lat: 35.8617, lng: 139.6455, radius: 8000 },

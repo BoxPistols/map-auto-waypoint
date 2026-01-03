@@ -89,3 +89,49 @@ export const generateFromBoundingBox = (boundingBox, padding = 0) => {
   }
 }
 
+export const POLYGON_SIZE_OPTIONS = [
+  { value: 'small', label: '小 (50m)' },
+  { value: 'medium', label: '中 (100m)' },
+  { value: 'large', label: '大 (200m)' },
+  { value: 'xlarge', label: '特大 (500m)' }
+]
+
+export const POLYGON_SHAPE_OPTIONS = [
+  { value: 'rectangle', label: '矩形' },
+  { value: 'circle', label: '円形' }
+]
+
+export const createPolygonFromSearchResult = (searchResult, options = {}) => {
+  if (!searchResult) return null
+  const shape = options.shape || 'rectangle'
+  const sizePreset = options.size || 'medium'
+  const useCustomSize = options.useCustomSize || false
+  const customRadius = options.customRadius
+  const padding = options.padding || 0
+
+  const lat = parseFloat(searchResult.lat)
+  const lng = parseFloat(searchResult.lng)
+
+  const radius = useCustomSize
+    ? (typeof customRadius === 'number' ? customRadius : SIZE_PRESETS.medium)
+    : (SIZE_PRESETS[sizePreset] || SIZE_PRESETS.medium)
+
+  let geometry = null
+  if (searchResult.boundingBox && !useCustomSize) {
+    geometry = generateFromBoundingBox(searchResult.boundingBox, padding)
+  }
+
+  if (!geometry) {
+    geometry = shape === 'circle'
+      ? generateCirclePolygon(lat, lng, radius)
+      : generateRectanglePolygon(lat, lng, radius)
+  }
+
+  return {
+    id: crypto.randomUUID(),
+    name: searchResult.displayName?.split(',')[0] || '検索エリア',
+    geometry,
+    color: '#45B7D1',
+    createdAt: Date.now()
+  }
+}

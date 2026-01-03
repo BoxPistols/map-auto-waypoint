@@ -1,16 +1,20 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
+import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getTheme, toggleTheme, THEMES } from './services/themeService'
 import { getSetting, isDIDAvoidanceModeEnabled } from './services/settingsService'
 import Map from './components/Map/Map'
+import SearchForm from './components/SearchForm/SearchForm'
 import PolygonList from './components/PolygonList/PolygonList'
 import WaypointList from './components/WaypointList/WaypointList'
 import FileImport from './components/FileImport/FileImport'
 import ExportPanel from './components/ExportPanel/ExportPanel'
 import GridSettingsDialog from './components/GridSettingsDialog/GridSettingsDialog'
 import HelpModal from './components/HelpModal/HelpModal'
-import { loadPolygons, savePolygons, loadWaypoints, saveWaypoints } from './utils/storage'
+import { loadPolygons, savePolygons, loadWaypoints, saveWaypoints, saveSearchHistory } from './utils/storage'
+import { searchAddress } from './services/geocoding'
 import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints } from './services/waypointGenerator'
+import { createPolygonFromSearchResult } from './services/polygonGenerator'
+import { addElevationToWaypoints } from './services/elevation'
 import FlightAssistant from './components/FlightAssistant'
 import ApiSettings from './components/ApiSettings'
 import './App.scss'
@@ -48,6 +52,7 @@ function App() {
   const [drawMode, setDrawMode] = useState(false)
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
   const [panelHeight, setPanelHeight] = useState(null) // null = auto
+  const [isSearchExpanded, setIsSearchExpanded] = useState(true)
   // Mobile detection
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
   const [fullMapMode, setFullMapMode] = useState(false)
@@ -77,6 +82,8 @@ function App() {
 
   // Waypoint settings
   const [gridSpacing, setGridSpacing] = useState(30)
+  const [isLoadingElevation, setIsLoadingElevation] = useState(false)
+  const [elevationProgress, setElevationProgress] = useState(null)
 
   // Optimization overlay state
   const [recommendedWaypoints, setRecommendedWaypoints] = useState(null)
@@ -250,6 +257,69 @@ function App() {
     saveWaypoints(waypoints)
     pushToHistory()
   }, [waypoints])
+
+  // Handle search
+  const handleSearch = useCallback(async (query) => {
+    const results = await searchAddress(query)
+    if (results.length > 0) {
+      const first = results[0]
+      saveSearchHistory(query, results)
+      setCenter({ lat: first.lat, lng: first.lng })
+      setZoom(16)
+      showNotification(`「${first.displayName.split(',')[0]}」を表示しました`)
+    } else {
+      showNotification('検索結果が見つかりませんでした', 'warning')
+    }
+  }, [showNotification])
+
+  // Handle search select
+  const handleSearchSelect = useCallback((result) => {
+    if (!result) return
+    setCenter({ lat: result.lat, lng: result.lng })
+    setZoom(16)
+    showNotification(`「${result.displayName.split(',')[0]}」を表示しました`)
+  }, [showNotification])
+
+  // Generate polygon from search result
+  const handleGeneratePolygon = useCallback((searchResult, options = {}) => {
+    if (!searchResult) return
+    const { waypointCount = 8 } = options
+    const polygon = createPolygonFromSearchResult(searchResult, options)
+    setPolygons(prev => [...prev, polygon])
+
+    const newWaypoints = polygonToWaypoints(polygon, waypointCount)
+    setWaypoints(prev => [...prev, ...newWaypoints])
+
+    const center = getPolygonCenter(polygon.geometry)
+    if (center) {
+      setCenter(center)
+      setZoom(16)
+    }
+
+    showNotification(`ポリゴンとWaypoint(${waypointCount}個)を生成しました`)
+  }, [showNotification])
+
+  // Handle elevation fetch
+  const handleFetchElevation = useCallback(async () => {
+    if (waypoints.length === 0) return
+    setIsLoadingElevation(true)
+    setElevationProgress({ current: 0, total: waypoints.length })
+
+    try {
+      const waypointsWithElevation = await addElevationToWaypoints(
+        waypoints,
+        (current, total) => setElevationProgress({ current, total })
+      )
+      setWaypoints(waypointsWithElevation)
+      showNotification('標高データを取得しました')
+    } catch (error) {
+      console.error('Elevation fetch error:', error)
+      showNotification('標高取得に失敗しました', 'error')
+    } finally {
+      setIsLoadingElevation(false)
+      setElevationProgress(null)
+    }
+  }, [waypoints, showNotification])
 
   // Handle polygon create
   const handlePolygonCreate = useCallback((polygon) => {
@@ -826,6 +896,31 @@ function App() {
           {/* Full Sidebar Content */}
           {!sidebarCollapsed && (
             <>
+              <div className={`search-section ${!isSearchExpanded ? 'collapsed' : ''}`}>
+                <div
+                  className="search-section-header"
+                  onClick={() => setIsSearchExpanded(!isSearchExpanded)}
+                >
+                  <div className="search-section-title">
+                    <Search size={16} />
+                    <span>住所検索</span>
+                  </div>
+                  <ChevronDown
+                    size={18}
+                    className={`search-chevron ${isSearchExpanded ? 'expanded' : ''}`}
+                  />
+                </div>
+                {isSearchExpanded && (
+                  <div className="search-section-content">
+                    <SearchForm
+                      onSearch={handleSearch}
+                      onSelect={handleSearchSelect}
+                      onGeneratePolygon={handleGeneratePolygon}
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="panel-tabs">
                 <button
                   className={`tab ${activePanel === 'polygons' ? 'active' : ''}`}
@@ -866,9 +961,12 @@ function App() {
                     onDelete={handleWaypointDelete}
                     onUpdate={handleWaypointUpdate}
                     onClear={handleWaypointClear}
+                    onFetchElevation={handleFetchElevation}
                     onRegenerateGrid={handleRegenerateGrid}
                     gridSpacing={gridSpacing}
                     onGridSpacingChange={setGridSpacing}
+                    isLoadingElevation={isLoadingElevation}
+                    elevationProgress={elevationProgress}
                   />
                 )}
               </div>
