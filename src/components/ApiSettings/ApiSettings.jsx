@@ -17,7 +17,12 @@ import {
   AVAILABLE_MODELS,
   getSelectedModel,
   setSelectedModel,
-  testApiConnection
+  testApiConnection,
+  getLocalEndpoint,
+  setLocalEndpoint,
+  getLocalModelName,
+  setLocalModelName,
+  isLocalModel
 } from '../../services/openaiService';
 import { getSetting, setSetting, resetSettings } from '../../services/settingsService';
 import ModelHelpModal from './ModelHelpModal';
@@ -32,7 +37,12 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const [avoidanceDistance, setAvoidanceDistance] = useState(getSetting('didAvoidanceDistance') || 100);
   const [didAvoidanceMode, setDidAvoidanceMode] = useState(getSetting('didAvoidanceMode') ?? false);
   const [didWarningOnly, setDidWarningOnly] = useState(getSetting('didWarningOnlyMode') ?? false);
+  const [localEndpoint, setLocalEndpointState] = useState(getLocalEndpoint());
+  const [localModelName, setLocalModelNameState] = useState(getLocalModelName());
   const modalRef = useRef(null);
+
+  // ローカルLLMが選択されているかどうか
+  const isLocalSelected = isLocalModel(selectedModelId);
 
   // 設定変更の同期（他コンポーネントからの変更を反映）
   useEffect(() => {
@@ -166,6 +176,45 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                           </select>
                       </div>
 
+                      {/* ローカルLLM設定 */}
+                      {isLocalSelected && (
+                          <div className='local-llm-settings'>
+                              <div className='local-setting-row'>
+                                  <label>エンドポイント:</label>
+                                  <input
+                                      type='text'
+                                      value={localEndpoint}
+                                      onChange={(e) => {
+                                          setLocalEndpointState(e.target.value);
+                                          setLocalEndpoint(e.target.value);
+                                      }}
+                                      placeholder='http://localhost:1234/v1/chat/completions'
+                                  />
+                              </div>
+                              <div className='local-setting-row'>
+                                  <label>モデル名（任意）:</label>
+                                  <input
+                                      type='text'
+                                      value={localModelName}
+                                      onChange={(e) => {
+                                          setLocalModelNameState(e.target.value);
+                                          setLocalModelName(e.target.value);
+                                      }}
+                                      placeholder='local-model'
+                                  />
+                              </div>
+                              <div className='settings-links'>
+                                  <a
+                                      href='https://lmstudio.ai/docs/developer'
+                                      target='_blank'
+                                      rel='noopener noreferrer'
+                                  >
+                                      <ExternalLink size={12} /> LM Studio ドキュメント
+                                  </a>
+                              </div>
+                          </div>
+                      )}
+
                       {hasKey ? (
                           <div className='api-key-status'>
                               <div className='status-row'>
@@ -205,7 +254,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                       </div>
 
                       {/* 接続テストボタン */}
-                      {hasKey && (
+                      {(hasKey || isLocalSelected) && (
                           <div className='connection-test'>
                               <button
                                   className={`test-btn ${
