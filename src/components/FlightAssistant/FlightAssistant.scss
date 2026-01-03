@@ -7,7 +7,7 @@
   border-radius: 50%;
   background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
   border: none;
-  color: var(--color-text-inverse);
+  color: #fff;
   cursor: pointer;
   box-shadow: var(--shadow-lg);
   display: flex;
@@ -497,7 +497,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-text-inverse);
+    color: #fff;
   }
 
   .message-content {
@@ -1104,7 +1104,7 @@
     background: var(--color-primary);
     border: none;
     border-radius: 8px;
-    color: var(--color-text-inverse);
+    color: #fff;
     cursor: pointer;
     display: flex;
     align-items: center;

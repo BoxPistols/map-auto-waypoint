@@ -320,6 +320,14 @@ const HelpModal = ({ onClose }) => {
                   <td>ヘルプを開く / 閉じる</td>
                 </tr>
                 <tr>
+                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd></td>
+                  <td>設定を開く / 閉じる</td>
+                </tr>
+                <tr>
+                  <td><kbd>Cmd/Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>D</kbd></td>
+                  <td>ライト / ダークモード切替</td>
+                </tr>
+                <tr>
                   <td><kbd>Escape</kbd></td>
                   <td>モーダルを閉じる</td>
                 </tr>
@@ -332,12 +340,20 @@ const HelpModal = ({ onClose }) => {
                   <td>サイドバーを開く / 閉じる</td>
                 </tr>
                 <tr>
+                  <td><kbd>F</kbd></td>
+                  <td>フルマップモード 切り替え</td>
+                </tr>
+                <tr>
                   <td><kbd>P</kbd></td>
                   <td>ポリゴンパネルに切り替え</td>
                 </tr>
                 <tr>
                   <td><kbd>W</kbd></td>
                   <td>Waypointパネルに切り替え</td>
+                </tr>
+                <tr>
+                  <td><kbd>V</kbd></td>
+                  <td>選択ポリゴンの形状を編集</td>
                 </tr>
               </tbody>
             </table>

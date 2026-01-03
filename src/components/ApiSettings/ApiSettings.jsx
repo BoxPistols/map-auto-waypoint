@@ -119,7 +119,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
           <div className='api-settings-modal' ref={modalRef}>
               <div className='modal-header'>
                   <h2>
-                      <Settings size={18} /> API設定
+                      <Settings size={18} /> 設定
                   </h2>
                   <button className='close-btn' onClick={onClose}>
                       <X size={18} />
