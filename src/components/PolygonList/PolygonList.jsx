@@ -79,7 +79,7 @@ const PolygonList = ({
           return (
             <li
               key={polygon.id}
-              className={`${styles.item} ${isSelected ? styles.selected : ''}`}
+              className={`${styles.item} ${isSelected ? styles.selected : ''} ${isEditing ? styles.editing : ''}`}
               onClick={() => !isEditing && onSelect?.(polygon)}
             >
               {/* Top row: color indicator + action buttons */}
