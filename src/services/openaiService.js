@@ -85,7 +85,7 @@ export const AVAILABLE_MODELS = [
 ];
 
 // デフォルトモデル
-const DEFAULT_MODEL = 'gpt-4o-mini';
+const DEFAULT_MODEL = 'gpt-4.1-nano';
 
 // 環境変数からAPIキーを取得（Vite経由）
 const getApiKey = () => {
