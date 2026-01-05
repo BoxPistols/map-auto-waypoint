@@ -3,11 +3,41 @@
  *
  * GPT-5/GPT-4.1 ファミリー、またはローカルLLM (LM Studio等) を使用して
  * ドローン経路の危険度判定・推奨を生成
+ *
+ * Vercel などのサーバーレス環境では、サーバーサイドプロキシ（/api/chat）経由で
+ * APIキーを安全に管理することを想定（GitHub Pages のような静的ホスティングでは非対応）
  */
 
 // APIエンドポイント設定
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1/chat/completions';
+const VERCEL_PROXY_ENDPOINT = '/api/chat';
+
+// サーバーサイドプロキシ環境かどうかを判定（キャッシュ）
+let _isProxyEnv = null;
+
+/**
+ * サーバーサイドプロキシ環境かどうかを判定
+ * ビルド時の環境変数 VITE_USE_PROXY_API で明示的に指定
+ * @returns {boolean}
+ */
+const isProxyEnvironment = () => {
+  if (_isProxyEnv !== null) return _isProxyEnv;
+
+  // ビルド時の環境変数を使用（Vercel等のデプロイ設定で VITE_USE_PROXY_API=true を設定）
+  _isProxyEnv = import.meta.env.VITE_USE_PROXY_API === 'true';
+
+  return _isProxyEnv;
+};
+
+/**
+ * プリセットAPI（サーバー側で設定済み）が利用可能か
+ * UIでの表示用
+ * @returns {boolean}
+ */
+export const isPreConfiguredApi = () => {
+  return isProxyEnvironment();
+};
 
 /**
  * Chat Completionsで `max_tokens` ではなく `max_completion_tokens` を要求するモデルかどうか。
@@ -85,7 +115,7 @@ export const AVAILABLE_MODELS = [
 ];
 
 // デフォルトモデル
-const DEFAULT_MODEL = 'gpt-4o-mini';
+const DEFAULT_MODEL = 'gpt-4.1-nano';
 
 // 環境変数からAPIキーを取得（Vite経由）
 const getApiKey = () => {
@@ -102,8 +132,12 @@ export const setApiKey = (key) => {
   localStorage.setItem('openai_api_key', key);
 };
 
-// APIキーが設定されているか確認
+// APIキーが設定されているか確認（Vercelプロキシも考慮）
 export const hasApiKey = () => {
+  // Vercel環境ではプロキシ経由でAPIキーが利用可能
+  if (isProxyEnvironment()) {
+    return true;
+  }
   return !!getApiKey();
 };
 
@@ -196,7 +230,7 @@ export const isLocalModel = (modelId) => {
 };
 
 /**
- * OpenAI Chat Completion APIを呼び出し（ローカルLLM対応）
+ * OpenAI Chat Completion APIを呼び出し（ローカルLLM対応・Vercelプロキシ対応）
  *
  * @param {Array} messages - チャットメッセージ配列
  * @param {Object} options - オプション
@@ -210,22 +244,31 @@ export const callOpenAI = async (messages, options = {}) => {
   } = options;
 
   const useLocal = isLocalModel(model);
+  const useProxy = isProxyEnvironment() && !useLocal;
   const apiKey = getApiKey();
 
-  // OpenAIモデルの場合はAPIキーが必要
-  if (!useLocal && !apiKey) {
+  // OpenAIモデルの場合はAPIキーまたはプロキシが必要
+  if (!useLocal && !useProxy && !apiKey) {
     throw new Error('OpenAI APIキーが設定されていません。設定画面からAPIキーを入力してください。');
   }
 
   // エンドポイントとモデル名を決定
-  const endpoint = useLocal ? getLocalEndpoint() : OPENAI_ENDPOINT;
+  let endpoint;
+  if (useLocal) {
+    endpoint = getLocalEndpoint();
+  } else if (useProxy) {
+    endpoint = VERCEL_PROXY_ENDPOINT;
+  } else {
+    endpoint = OPENAI_ENDPOINT;
+  }
   const modelName = useLocal ? getLocalModelName() : model;
 
   // ヘッダーを構築
   const headers = {
     'Content-Type': 'application/json'
   };
-  if (!useLocal) {
+  // プロキシ経由の場合は認証ヘッダー不要（サーバー側で設定）
+  if (!useLocal && !useProxy) {
     headers['Authorization'] = `Bearer ${apiKey}`;
   }
 
@@ -246,17 +289,19 @@ export const callOpenAI = async (messages, options = {}) => {
       let errorMessage = 'API呼び出しに失敗しました';
       try {
         const error = await response.json();
-        errorMessage = error.error?.message || errorMessage;
+        errorMessage = error.error?.message || error.error || errorMessage;
       } catch {
         errorMessage = `HTTP ${response.status}: ${response.statusText}`;
       }
-      throw new Error(useLocal ? `ローカルLLMエラー: ${errorMessage}` : errorMessage);
+      const prefix = useLocal ? 'ローカルLLMエラー' : useProxy ? 'プロキシエラー' : '';
+      throw new Error(prefix ? `${prefix}: ${errorMessage}` : errorMessage);
     }
 
     const data = await response.json();
     return data.choices[0].message.content;
   } catch (error) {
-    console.error(useLocal ? '[LocalLLM] API Error:' : '[OpenAI] API Error:', error);
+    const source = useLocal ? '[LocalLLM]' : useProxy ? '[Proxy]' : '[OpenAI]';
+    console.error(`${source} API Error:`, error);
     throw error;
   }
 };
@@ -445,6 +490,7 @@ export default {
   AVAILABLE_MODELS,
   setApiKey,
   hasApiKey,
+  isPreConfiguredApi,
   getSelectedModel,
   setSelectedModel,
   getLocalEndpoint,
