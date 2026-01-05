@@ -854,6 +854,16 @@ function App() {
             エクスポート
           </button>
           <button
+            className={`action-button ${showFlightPlanner ? 'active' : ''}`}
+            onClick={() => setShowFlightPlanner(true)}
+            disabled={!!editingPolygon}
+            data-tooltip="フライトプランナー (G)"
+            data-tooltip-pos="bottom"
+          >
+            <Route size={16} style={{ marginRight: '4px' }} />
+            プランナー
+          </button>
+          <button
             className="icon-button theme-button"
             onClick={handleToggleTheme}
             data-tooltip={theme === THEMES.DARK ? 'ライトモード' : 'ダークモード'}
