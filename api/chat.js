@@ -8,15 +8,42 @@
 
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 
+// 許可するオリジンを環境変数から取得（カンマ区切り）
+const getAllowedOrigins = () => {
+  const origins = process.env.CORS_ALLOWED_ORIGINS || '';
+  return origins.split(',').map(o => o.trim()).filter(o => o.length > 0);
+};
+
 export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const allowedOrigins = getAllowedOrigins();
+  const requestOrigin = req.headers.origin || '';
+
+  // オリジン検証（環境変数未設定の場合は拒否）
+  if (allowedOrigins.length === 0) {
+    return res.status(403).json({
+      error: 'CORS not configured. Set CORS_ALLOWED_ORIGINS environment variable.',
+      code: 'CORS_NOT_CONFIGURED'
+    });
+  }
+
+  const isOriginAllowed = allowedOrigins.includes(requestOrigin);
+  if (!isOriginAllowed && req.method !== 'OPTIONS') {
+    return res.status(403).json({ error: 'Origin not allowed', code: 'ORIGIN_NOT_ALLOWED' });
+  }
+
+  // CORS headers（許可されたオリジンのみ）
+  if (isOriginAllowed) {
+    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   // Handle preflight request
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    if (isOriginAllowed) {
+      return res.status(200).end();
+    }
+    return res.status(403).end();
   }
 
   // Only allow POST
@@ -36,6 +63,14 @@ export default async function handler(req, res) {
 
   try {
     const { model, messages, temperature, max_tokens, max_completion_tokens } = req.body;
+
+    // Validate required fields
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({
+        error: 'The `messages` field is required and must be a non-empty array.',
+        code: 'INVALID_REQUEST'
+      });
+    }
 
     // Build request body
     const requestBody = {

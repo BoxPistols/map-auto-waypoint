@@ -4,7 +4,8 @@
  * GPT-5/GPT-4.1 ファミリー、またはローカルLLM (LM Studio等) を使用して
  * ドローン経路の危険度判定・推奨を生成
  *
- * Vercel環境では、サーバーサイドプロキシ経由でAPIキーを安全に管理
+ * Vercel などのサーバーレス環境では、サーバーサイドプロキシ（/api/chat）経由で
+ * APIキーを安全に管理することを想定（GitHub Pages のような静的ホスティングでは非対応）
  */
 
 // APIエンドポイント設定
@@ -12,50 +13,21 @@ const OPENAI_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 const DEFAULT_LOCAL_ENDPOINT = 'http://localhost:1234/v1/chat/completions';
 const VERCEL_PROXY_ENDPOINT = '/api/chat';
 
-// Vercel環境かどうかを判定（キャッシュ）
-let _isVercelEnv = null;
-let _proxyAvailable = null;
+// サーバーサイドプロキシ環境かどうかを判定（キャッシュ）
+let _isProxyEnv = null;
 
 /**
- * Vercel環境かどうかを判定
+ * サーバーサイドプロキシ環境かどうかを判定
+ * ビルド時の環境変数 VITE_USE_PROXY_API で明示的に指定
  * @returns {boolean}
  */
-const isVercelEnvironment = () => {
-  if (_isVercelEnv !== null) return _isVercelEnv;
+const isProxyEnvironment = () => {
+  if (_isProxyEnv !== null) return _isProxyEnv;
 
-  // Vercel特有のホスト名パターンをチェック
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  _isVercelEnv = hostname.includes('.vercel.app') ||
-                 hostname.includes('vercel.com') ||
-                 hostname === 'auto-wp.vercel.app';
+  // ビルド時の環境変数を使用（Vercel等のデプロイ設定で VITE_USE_PROXY_API=true を設定）
+  _isProxyEnv = import.meta.env.VITE_USE_PROXY_API === 'true';
 
-  return _isVercelEnv;
-};
-
-/**
- * プロキシAPIが利用可能かを確認（非同期・キャッシュ）
- * @returns {Promise<boolean>}
- */
-const checkProxyAvailable = async () => {
-  if (_proxyAvailable !== null) return _proxyAvailable;
-
-  // Vercel環境でない場合はスキップ
-  if (!isVercelEnvironment()) {
-    _proxyAvailable = false;
-    return false;
-  }
-
-  try {
-    // OPTIONSリクエストでエンドポイントの存在を確認
-    const response = await fetch(VERCEL_PROXY_ENDPOINT, {
-      method: 'OPTIONS'
-    });
-    _proxyAvailable = response.ok;
-  } catch {
-    _proxyAvailable = false;
-  }
-
-  return _proxyAvailable;
+  return _isProxyEnv;
 };
 
 /**
@@ -64,15 +36,7 @@ const checkProxyAvailable = async () => {
  * @returns {boolean}
  */
 export const isPreConfiguredApi = () => {
-  return isVercelEnvironment();
-};
-
-/**
- * プロキシAPIの利用可能状態を取得（同期版、キャッシュのみ）
- * @returns {boolean|null}
- */
-export const getProxyStatus = () => {
-  return _proxyAvailable;
+  return isProxyEnvironment();
 };
 
 /**
@@ -171,7 +135,7 @@ export const setApiKey = (key) => {
 // APIキーが設定されているか確認（Vercelプロキシも考慮）
 export const hasApiKey = () => {
   // Vercel環境ではプロキシ経由でAPIキーが利用可能
-  if (isVercelEnvironment()) {
+  if (isProxyEnvironment()) {
     return true;
   }
   return !!getApiKey();
@@ -280,7 +244,7 @@ export const callOpenAI = async (messages, options = {}) => {
   } = options;
 
   const useLocal = isLocalModel(model);
-  const useProxy = isVercelEnvironment() && !useLocal;
+  const useProxy = isProxyEnvironment() && !useLocal;
   const apiKey = getApiKey();
 
   // OpenAIモデルの場合はAPIキーまたはプロキシが必要
@@ -527,7 +491,6 @@ export default {
   setApiKey,
   hasApiKey,
   isPreConfiguredApi,
-  getProxyStatus,
   getSelectedModel,
   setSelectedModel,
   getLocalEndpoint,
