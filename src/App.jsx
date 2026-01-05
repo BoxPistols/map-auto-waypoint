@@ -17,6 +17,7 @@ import { createPolygonFromSearchResult } from './services/polygonGenerator'
 import { addElevationToWaypoints } from './services/elevation'
 import FlightAssistant from './components/FlightAssistant'
 import ApiSettings from './components/ApiSettings'
+import FlightRequirements from './components/FlightRequirements'
 import './App.scss'
 
 // Default center: Tokyo Tower
@@ -70,6 +71,8 @@ function App() {
   const [showHelp, setShowHelp] = useState(false)
   const [showApiSettings, setShowApiSettings] = useState(false)
   const [showChat, setShowChat] = useState(false)
+  const [showFlightRequirements, setShowFlightRequirements] = useState(false)
+  const [lastSearchResult, setLastSearchResult] = useState(null)
   const [notification, setNotification] = useState(null)
   const [theme, setThemeState] = useState(() => getTheme())
 
@@ -199,6 +202,8 @@ function App() {
     if (!result) return
     setCenter({ lat: result.lat, lng: result.lng })
     setZoom(16)
+    setLastSearchResult(result)
+    setShowFlightRequirements(true)
     showNotification(`「${result.displayName.split(',')[0]}」を表示しました`)
   }, [showNotification])
 
@@ -373,6 +378,10 @@ function App() {
             e.preventDefault()
             setShowChat(prev => !prev)
             break
+          case 'l': // Toggle Flight Requirements (法的要件サマリー)
+            e.preventDefault()
+            setShowFlightRequirements(prev => !prev)
+            break
           case 'f': // Toggle Full Map Mode
             e.preventDefault()
             setFullMapMode(prev => {
@@ -468,6 +477,9 @@ function App() {
       setCenter(center)
       setZoom(16)
     }
+    // 飛行要件パネルを表示
+    setLastSearchResult(null)
+    setShowFlightRequirements(true)
   }, [])
 
   // Generate waypoints from single polygon
@@ -1158,6 +1170,16 @@ function App() {
       <ApiSettings
         isOpen={showApiSettings}
         onClose={() => setShowApiSettings(false)}
+      />
+
+      {/* Flight Requirements Panel (法的要件サマリー) */}
+      <FlightRequirements
+        polygon={selectedPolygonId ? polygons.find(p => p.id === selectedPolygonId) : polygons[0]}
+        waypoints={waypoints}
+        altitude={50}
+        searchResult={lastSearchResult}
+        isOpen={showFlightRequirements}
+        onClose={() => setShowFlightRequirements(false)}
       />
 
       {/* Flight Assistant (AI) */}
