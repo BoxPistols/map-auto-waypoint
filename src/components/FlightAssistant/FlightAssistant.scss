@@ -173,6 +173,18 @@
       flex-shrink: 0;
       background: rgba(16, 185, 129, 0.3);
       color: var(--color-success-light);
+
+      &.preset {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(139, 92, 246, 0.4));
+        color: #fff;
+        padding: 2px 6px;
+        animation: presetGlow 2s ease-in-out infinite;
+      }
+    }
+
+    @keyframes presetGlow {
+      0%, 100% { box-shadow: 0 0 4px rgba(139, 92, 246, 0.5); }
+      50% { box-shadow: 0 0 8px rgba(56, 189, 248, 0.8); }
     }
   }
 

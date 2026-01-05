@@ -33,7 +33,8 @@ import {
 } from 'lucide-react';
 import {
   hasApiKey,
-  getFlightAdvice
+  getFlightAdvice,
+  isPreConfiguredApi
 } from '../../services/openaiService';
 import { runFullAnalysis, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
 import {
@@ -61,6 +62,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
   const setIsOpen = onOpenChange || setInternalIsOpen;
   const [hasKey, setHasKey] = useState(hasApiKey());
+  const [isPreConfigured] = useState(isPreConfiguredApi());
   // OpenAI以外の外部API連携は削除（OpenAIのみ残す）
   const [messages, setMessages] = useState([
     {
@@ -913,7 +915,11 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         <div className="header-title">
           <Sparkles size={18} />
           <span>フライトアシスタント</span>
-          {hasKey && <span className="ai-badge">AI</span>}
+          {isPreConfigured ? (
+            <span className="ai-badge preset" title="OpenAI APIキー標準搭載">AI標準</span>
+          ) : hasKey ? (
+            <span className="ai-badge">AI</span>
+          ) : null}
         </div>
         <div className="header-actions">
           <button
@@ -1292,7 +1298,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder={hasKey ? 'AIに質問...' : 'メッセージ...（AI未設定）'}
+          placeholder={isPreConfigured ? 'AIに質問...（APIキー標準搭載）' : hasKey ? 'AIに質問...' : 'メッセージ...（AI未設定）'}
           rows={1}
           disabled={isProcessing}
         />
