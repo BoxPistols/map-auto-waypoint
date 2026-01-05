@@ -18,6 +18,7 @@ import { addElevationToWaypoints } from './services/elevation'
 import FlightAssistant from './components/FlightAssistant'
 import ApiSettings from './components/ApiSettings'
 import FlightRequirements from './components/FlightRequirements'
+import FlightPlanner from './components/FlightPlanner'
 import './App.scss'
 
 // Default center: Tokyo Tower
@@ -72,6 +73,7 @@ function App() {
   const [showApiSettings, setShowApiSettings] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [showFlightRequirements, setShowFlightRequirements] = useState(false)
+  const [showFlightPlanner, setShowFlightPlanner] = useState(false)
   const [lastSearchResult, setLastSearchResult] = useState(null)
   const [notification, setNotification] = useState(null)
   const [theme, setThemeState] = useState(() => getTheme())
@@ -381,6 +383,10 @@ function App() {
           case 'l': // Toggle Flight Requirements (法的要件サマリー)
             e.preventDefault()
             setShowFlightRequirements(prev => !prev)
+            break
+          case 'g': // Toggle Flight Planner (目的ベースプランナー)
+            e.preventDefault()
+            setShowFlightPlanner(prev => !prev)
             break
           case 'f': // Toggle Full Map Mode
             e.preventDefault()
@@ -1180,6 +1186,22 @@ function App() {
         searchResult={lastSearchResult}
         isOpen={showFlightRequirements}
         onClose={() => setShowFlightRequirements(false)}
+      />
+
+      {/* Flight Planner (目的ベースOOUI) */}
+      <FlightPlanner
+        isOpen={showFlightPlanner}
+        onClose={() => setShowFlightPlanner(false)}
+        polygons={polygons}
+        waypoints={waypoints}
+        searchResult={lastSearchResult}
+        onApplyRoute={(plan) => {
+          // ルートのWaypointを追加
+          if (plan.waypoints && plan.waypoints.length > 0) {
+            setWaypoints(prev => [...prev, ...plan.waypoints])
+            showNotification(`${plan.waypoints.length}個のWaypointを追加しました`, 'success')
+          }
+        }}
       />
 
       {/* Flight Assistant (AI) */}
