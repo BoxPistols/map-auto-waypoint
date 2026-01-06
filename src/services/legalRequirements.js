@@ -692,7 +692,7 @@ export const generateExternalLinks = (results) => {
       id: 'airport_info',
       name: `${airportItem.airport.name}情報`,
       description: '空港周辺の飛行制限',
-      url: `https://aisjapan.mlit.go.jp/`,
+      url: 'https://www.mlit.go.jp/koku/koku_tk10_000003.html',
       category: 'official',
     });
   }
