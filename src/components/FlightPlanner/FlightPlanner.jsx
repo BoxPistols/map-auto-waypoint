@@ -320,7 +320,7 @@ function FlightPlanner({
                   <div className="point-placeholder">
                     <input
                       type="text"
-                      placeholder="緯度, 経度 または 地図クリック"
+                      placeholder="例: 35.5494, 139.7798"
                       onFocus={() => setIsSelectingStart(true)}
                       onBlur={() => setIsSelectingStart(false)}
                       onChange={(e) => {
@@ -360,7 +360,7 @@ function FlightPlanner({
                   <div className="point-placeholder">
                     <input
                       type="text"
-                      placeholder="緯度, 経度 または 地図クリック"
+                      placeholder="例: 35.6812, 139.7671"
                       onFocus={() => setIsSelectingEnd(true)}
                       onBlur={() => setIsSelectingEnd(false)}
                       onChange={(e) => {

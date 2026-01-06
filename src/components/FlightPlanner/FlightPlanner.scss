@@ -323,6 +323,11 @@
     border-radius: 8px;
     font-size: 14px;
     background: var(--bg-primary, #fff);
+    color: var(--text-primary, #1a1a1a);
+
+    &::placeholder {
+      color: var(--text-secondary, #666);
+    }
 
     &:focus {
       outline: none;
