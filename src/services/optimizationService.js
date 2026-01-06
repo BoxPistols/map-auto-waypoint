@@ -5,7 +5,6 @@
 
 import { getDistanceMeters } from '../utils/geoUtils';
 import { AIRPORT_ZONES, NO_FLY_ZONES } from './airspace';
-import { isPositionInDIDSync } from './didService';
 import { getSetting, isDIDAvoidanceModeEnabled } from './settingsService';
 
 /**

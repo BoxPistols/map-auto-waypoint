@@ -66,7 +66,7 @@ const fetchDIDFromGitHub = async (prefCode, prefName) => {
   try {
     const url = `https://raw.githubusercontent.com/dronebird/DIDinJapan/master/GeoJSON/h22_did_${prefCode}_${prefName}.geojson`;
     const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
-    if (!response.ok) return null;
+    if (!response || !response.ok) return null;
     const geojson = await response.json();
     didPrefectureCache.set(cacheKey, geojson);
     return geojson;

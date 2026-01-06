@@ -52,7 +52,7 @@ const SIMULATED_UTM_FLIGHTS = [
   }
 ];
 
-export const checkUTMConflicts = (flightPlan, options = {}) => {
+export const checkUTMConflicts = (flightPlan) => {
   const { center } = flightPlan;
   if (!center) return { checked: false, message: '位置情報なし' };
 

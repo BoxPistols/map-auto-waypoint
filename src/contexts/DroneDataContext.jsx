@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import { loadPolygons, savePolygons, loadWaypoints, saveWaypoints } from '../utils/storage';
 
-const DroneDataContext = createContext(null);
+export const DroneDataContext = createContext(null);
 
 export const DroneDataProvider = ({ children }) => {
   // Data state
@@ -115,12 +115,4 @@ export const DroneDataProvider = ({ children }) => {
       {children}
     </DroneDataContext.Provider>
   );
-};
-
-export const useDroneData = () => {
-  const context = useContext(DroneDataContext);
-  if (!context) {
-    throw new Error('useDroneData must be used within a DroneDataProvider');
-  }
-  return context;
 };

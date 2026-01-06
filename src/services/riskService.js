@@ -172,10 +172,50 @@ export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) 
   else if (riskScore >= 50) riskLevel = 'HIGH';
   else if (riskScore >= 20) riskLevel = 'MEDIUM';
 
+  // 推奨事項の生成
+  const recommendations = [];
+  if (didInfo.isDID) {
+    recommendations.push('DID上空飛行の許可申請が必要です');
+  }
+  if (restrictions.some(r => r.type === 'airport')) {
+    recommendations.push('空港周辺飛行の許可申請が必要です');
+  }
+  if (altitude > 150) {
+    recommendations.push('高度150m超の飛行許可申請が必要です');
+  }
+  if (recommendations.length === 0) {
+    recommendations.push('特別な許可は不要です（包括申請の範囲内）');
+  }
+
+  // 必要な許可リスト
+  const requiredPermissions = [];
+  if (didInfo.isDID) requiredPermissions.push('DID上空飛行許可');
+  if (restrictions.some(r => r.type === 'airport')) requiredPermissions.push('空港周辺飛行許可');
+  if (altitude > 150) requiredPermissions.push('150m以上飛行許可');
+
+  // 承認日数の見積もり
+  let estimatedApprovalDays = 0;
+  if (requiredPermissions.length > 0) {
+    estimatedApprovalDays = requiredPermissions.length * 10;
+  }
+
+  // サマリー生成
+  const summary = riskLevel === 'LOW'
+    ? '飛行計画は安全な範囲内です。'
+    : riskLevel === 'MEDIUM'
+    ? '注意が必要な飛行計画です。'
+    : riskLevel === 'HIGH'
+    ? '高リスクの飛行計画です。許可申請を推奨します。'
+    : '重大なリスクがあります。飛行計画の見直しを強く推奨します。';
+
   return {
     riskLevel,
     riskScore: Math.min(100, riskScore),
     risks,
+    recommendations,
+    requiredPermissions,
+    estimatedApprovalDays,
+    summary,
     context: {
       center,
       areaSqMeters,

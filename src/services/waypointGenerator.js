@@ -176,7 +176,7 @@ export const calculatePolygonPerimeter = (polygon) => {
 
 // Get polygon centroid
 export const getPolygonCenter = (polygon) => {
-  if (!polygon.geometry || polygon.geometry.type !== 'Polygon') {
+  if (!polygon || !polygon.geometry || polygon.geometry.type !== 'Polygon') {
     return null
   }
 
