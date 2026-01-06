@@ -12,8 +12,30 @@
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--border-color, #e0e0e0);
+  transition: left 0.3s ease, max-height 0.3s ease;
 
   // サイドバー折りたたみ時
+  &.sidebar-collapsed {
+    left: 70px;
+  }
+
+  // 最小化時
+  &.minimized {
+    max-height: none;
+    overflow: visible;
+
+    .overall-status,
+    .loading-state,
+    .error-state,
+    .categories,
+    .procedures-section,
+    .external-links,
+    .requirements-footer {
+      display: none;
+    }
+  }
+
+  // モバイル対応
   @media (max-width: 768px) {
     left: 16px;
     right: 16px;
@@ -21,6 +43,10 @@
     top: auto;
     bottom: 80px;
     max-height: 60vh;
+
+    &.sidebar-collapsed {
+      left: 16px;
+    }
   }
 }
 

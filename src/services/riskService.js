@@ -7,6 +7,7 @@ import { checkAirspaceRestrictions, AIRPORT_ZONES, NO_FLY_ZONES } from './airspa
 import { checkDIDArea } from './didService';
 import { getDistanceMeters } from '../utils/geoUtils';
 import { getPolygonCenter, calculatePolygonArea as getPolygonArea } from './waypointGenerator';
+import { checkUTMConflicts } from './supportServices';
 
 /**
  * 申請区分と費用データ
@@ -208,14 +209,19 @@ export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) 
     ? '高リスクの飛行計画です。許可申請を推奨します。'
     : '重大なリスクがあります。飛行計画の見直しを強く推奨します。';
 
+  // UTMチェック
+  const utmCheck = center ? checkUTMConflicts({ center }) : { checked: false, message: '位置情報なし', conflicts: [] };
+
   return {
     riskLevel,
     riskScore: Math.min(100, riskScore),
     risks,
-    recommendations: ['安全確認を徹底してください'],
-    safetyChecklist: ['飛行前点検'],
-    requiredPermissions: [],
-    utmCheck: { checked: true },
+    recommendations,
+    requiredPermissions,
+    estimatedApprovalDays,
+    summary,
+    safetyChecklist: ['飛行前点検', '気象確認', '緊急連絡先確認'],
+    utmCheck,
     context: {
       center,
       areaSqMeters,

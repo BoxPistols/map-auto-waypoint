@@ -1157,6 +1157,7 @@ function MainLayout() {
         searchResult={lastSearchResult}
         isOpen={showFlightRequirements}
         onClose={() => setShowFlightRequirements(false)}
+        sidebarCollapsed={sidebarCollapsed}
       />
 
       {/* Flight Planner (目的ベースOOUI) */}

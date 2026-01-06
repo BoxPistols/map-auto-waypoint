@@ -16,6 +16,8 @@ import {
   X,
   Clipboard,
   Check,
+  Minimize2,
+  Maximize2,
 } from 'lucide-react';
 import {
   checkAllLegalRequirements,
@@ -38,6 +40,7 @@ function FlightRequirements({
   searchResult = null,
   isOpen,
   onClose,
+  sidebarCollapsed = false,
 }) {
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,6 +52,7 @@ function FlightRequirements({
   });
   const [showProcedures, setShowProcedures] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [minimized, setMinimized] = useState(false);
 
   // チェック実行
   const runCheck = useCallback(async () => {
@@ -182,14 +186,27 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
 
   if (!isOpen) return null;
 
+  const panelClasses = [
+    'flight-requirements',
+    sidebarCollapsed ? 'sidebar-collapsed' : '',
+    minimized ? 'minimized' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className="flight-requirements">
+    <div className={panelClasses}>
       <div className="requirements-header">
         <h3>
           <FileText size={18} />
           飛行要件サマリー
         </h3>
         <div className="header-actions">
+          <button
+            className="minimize-btn"
+            onClick={() => setMinimized(!minimized)}
+            title={minimized ? '展開' : '最小化'}
+          >
+            {minimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+          </button>
           <button
             className="refresh-btn"
             onClick={runCheck}
