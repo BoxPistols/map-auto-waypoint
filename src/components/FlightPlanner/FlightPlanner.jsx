@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Target,
   MapPin,
@@ -21,9 +21,12 @@ import {
   Shield,
   Info,
   ExternalLink,
+  Search,
+  Loader,
 } from 'lucide-react';
 import { USE_CASES, generateRouteOptions, getUseCaseById } from '../../services/routePlanner';
 import { downloadFlightPlan } from '../../services/documentGenerator';
+import { searchAddress } from '../../services/geocoding';
 import './FlightPlanner.scss';
 
 /**
@@ -53,6 +56,15 @@ function FlightPlanner({
   const [endPoint, setEndPoint] = useState(null);
   const [isSelectingStart, setIsSelectingStart] = useState(false);
   const [isSelectingEnd, setIsSelectingEnd] = useState(false);
+
+  // 地名検索
+  const [startQuery, setStartQuery] = useState('');
+  const [endQuery, setEndQuery] = useState('');
+  const [startResults, setStartResults] = useState([]);
+  const [endResults, setEndResults] = useState([]);
+  const [isSearchingStart, setIsSearchingStart] = useState(false);
+  const [isSearchingEnd, setIsSearchingEnd] = useState(false);
+  const searchTimeoutRef = useRef(null);
 
   // ルート
   const [routeOptions, setRouteOptions] = useState(null);
@@ -158,12 +170,96 @@ function FlightPlanner({
     setShowExportOptions(false);
   };
 
+  // 地名検索ハンドラー
+  const handleSearch = useCallback(async (query, type) => {
+    if (!query || query.trim().length < 2) {
+      if (type === 'start') {
+        setStartResults([]);
+      } else {
+        setEndResults([]);
+      }
+      return;
+    }
+
+    // 座標形式かチェック
+    const coords = query.split(',').map(s => parseFloat(s.trim()));
+    if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
+      const point = { lat: coords[0], lng: coords[1], name: `${coords[0].toFixed(4)}, ${coords[1].toFixed(4)}` };
+      if (type === 'start') {
+        setStartPoint(point);
+        setStartResults([]);
+        setStartQuery('');
+      } else {
+        setEndPoint(point);
+        setEndResults([]);
+        setEndQuery('');
+      }
+      return;
+    }
+
+    // 地名検索
+    if (type === 'start') {
+      setIsSearchingStart(true);
+    } else {
+      setIsSearchingEnd(true);
+    }
+
+    try {
+      const results = await searchAddress(query, { limit: 5 });
+      if (type === 'start') {
+        setStartResults(results);
+      } else {
+        setEndResults(results);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      if (type === 'start') {
+        setIsSearchingStart(false);
+      } else {
+        setIsSearchingEnd(false);
+      }
+    }
+  }, []);
+
+  // デバウンス検索
+  const debouncedSearch = useCallback((query, type) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      handleSearch(query, type);
+    }, 300);
+  }, [handleSearch]);
+
+  // 検索結果選択
+  const handleSelectResult = (result, type) => {
+    const point = {
+      lat: result.lat,
+      lng: result.lng,
+      name: result.displayName.split(',')[0],
+    };
+    if (type === 'start') {
+      setStartPoint(point);
+      setStartResults([]);
+      setStartQuery('');
+    } else {
+      setEndPoint(point);
+      setEndResults([]);
+      setEndQuery('');
+    }
+  };
+
   // リセット
   const handleReset = () => {
     setStep(1);
     setSelectedUseCase(null);
     setStartPoint(null);
     setEndPoint(null);
+    setStartQuery('');
+    setEndQuery('');
+    setStartResults([]);
+    setEndResults([]);
     setRouteOptions(null);
     setSelectedRoute(null);
   };
@@ -294,7 +390,7 @@ function FlightPlanner({
           <div className="step-content">
             <h3>出発地・目的地を設定</h3>
             <p className="step-description">
-              地図上でクリックするか、座標を入力してください
+              地名・住所または座標を入力してください
             </p>
 
             <div className="point-inputs">
@@ -317,19 +413,37 @@ function FlightPlanner({
                     </button>
                   </div>
                 ) : (
-                  <div className="point-placeholder">
-                    <input
-                      type="text"
-                      placeholder="例: 35.5494, 139.7798"
-                      onFocus={() => setIsSelectingStart(true)}
-                      onBlur={() => setIsSelectingStart(false)}
-                      onChange={(e) => {
-                        const coords = e.target.value.split(',').map(s => parseFloat(s.trim()));
-                        if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-                          setStartPoint({ lat: coords[0], lng: coords[1], name: '出発地' });
-                        }
-                      }}
-                    />
+                  <div className="point-search">
+                    <div className="search-input-wrapper">
+                      <Search size={14} className="search-icon" />
+                      <input
+                        type="text"
+                        placeholder="地名・住所・座標で検索"
+                        value={startQuery}
+                        onFocus={() => setIsSelectingStart(true)}
+                        onBlur={() => setTimeout(() => setIsSelectingStart(false), 200)}
+                        onChange={(e) => {
+                          setStartQuery(e.target.value);
+                          debouncedSearch(e.target.value, 'start');
+                        }}
+                      />
+                      {isSearchingStart && <Loader size={14} className="loading-icon" />}
+                    </div>
+                    {startResults.length > 0 && (
+                      <div className="search-results">
+                        {startResults.map((result, idx) => (
+                          <button
+                            key={idx}
+                            className="search-result-item"
+                            onClick={() => handleSelectResult(result, 'start')}
+                          >
+                            <MapPin size={12} />
+                            <span className="result-name">{result.displayName.split(',')[0]}</span>
+                            <span className="result-address">{result.displayName.split(',').slice(1, 3).join(',')}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -357,19 +471,37 @@ function FlightPlanner({
                     </button>
                   </div>
                 ) : (
-                  <div className="point-placeholder">
-                    <input
-                      type="text"
-                      placeholder="例: 35.6812, 139.7671"
-                      onFocus={() => setIsSelectingEnd(true)}
-                      onBlur={() => setIsSelectingEnd(false)}
-                      onChange={(e) => {
-                        const coords = e.target.value.split(',').map(s => parseFloat(s.trim()));
-                        if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-                          setEndPoint({ lat: coords[0], lng: coords[1], name: '目的地' });
-                        }
-                      }}
-                    />
+                  <div className="point-search">
+                    <div className="search-input-wrapper">
+                      <Search size={14} className="search-icon" />
+                      <input
+                        type="text"
+                        placeholder="地名・住所・座標で検索"
+                        value={endQuery}
+                        onFocus={() => setIsSelectingEnd(true)}
+                        onBlur={() => setTimeout(() => setIsSelectingEnd(false), 200)}
+                        onChange={(e) => {
+                          setEndQuery(e.target.value);
+                          debouncedSearch(e.target.value, 'end');
+                        }}
+                      />
+                      {isSearchingEnd && <Loader size={14} className="loading-icon" />}
+                    </div>
+                    {endResults.length > 0 && (
+                      <div className="search-results">
+                        {endResults.map((result, idx) => (
+                          <button
+                            key={idx}
+                            className="search-result-item"
+                            onClick={() => handleSelectResult(result, 'end')}
+                          >
+                            <MapPin size={12} />
+                            <span className="result-name">{result.displayName.split(',')[0]}</span>
+                            <span className="result-address">{result.displayName.split(',').slice(1, 3).join(',')}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
