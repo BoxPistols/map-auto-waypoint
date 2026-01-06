@@ -90,7 +90,6 @@ function MainLayout() {
   const [editingPolygon, setEditingPolygon] = useState(null)
 
   // Waypoint settings
-  const [gridSpacing, setGridSpacing] = useState(30)
   const [isLoadingElevation, setIsLoadingElevation] = useState(false)
   const [elevationProgress, setElevationProgress] = useState(null)
 
@@ -689,33 +688,6 @@ function MainLayout() {
     showNotification('すべてのWaypointを削除しました')
   }, [setWaypoints, showNotification])
 
-  // Handle grid regeneration with new spacing
-  const handleRegenerateGrid = useCallback(() => {
-    // Find polygons that have grid waypoints
-    const polygonIds = [...new Set(
-      waypoints.filter(wp => wp.type === 'grid').map(wp => wp.polygonId)
-    )]
-
-    if (polygonIds.length === 0) return
-
-    let newWaypoints = waypoints.filter(wp => wp.type !== 'grid')
-    let globalIndex = newWaypoints.length + 1
-
-    polygonIds.forEach(polygonId => {
-      const polygon = polygons.find(p => p.id === polygonId)
-      if (polygon) {
-        const gridWaypoints = generateGridWaypoints(polygon, gridSpacing)
-        gridWaypoints.forEach(wp => {
-          wp.index = globalIndex++
-          newWaypoints.push(wp)
-        })
-      }
-    })
-
-    setWaypoints(newWaypoints)
-    showNotification(`グリッドを ${gridSpacing}m 間隔で再生成しました`)
-  }, [waypoints, polygons, gridSpacing, setWaypoints, showNotification])
-
   // Handle file import
   const handleImport = useCallback((importedPolygons) => {
     setPolygons(prev => [...prev, ...importedPolygons])
@@ -1004,9 +976,6 @@ function MainLayout() {
                     onUpdate={handleWaypointUpdate}
                     onClear={handleWaypointClear}
                     onFetchElevation={handleFetchElevation}
-                    onRegenerateGrid={handleRegenerateGrid}
-                    gridSpacing={gridSpacing}
-                    onGridSpacingChange={setGridSpacing}
                     isLoadingElevation={isLoadingElevation}
                     elevationProgress={elevationProgress}
                     onOpenRouteOptimizer={() => setShowRouteOptimizer(true)}

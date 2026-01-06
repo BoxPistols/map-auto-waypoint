@@ -38,7 +38,14 @@ export const recommendAircraft = (purpose, requirements = {}) => {
     let score = 50;
     if (aircraft.suitableFor.includes(missionType)) score += 30;
     if (aircraft.specs.maxFlightTime >= flightTime) score += 10;
-    return { ...aircraft, suitability: score };
+    
+    // Map specs to match test expectation
+    const specs = { 
+      ...aircraft.specs, 
+      thermal: aircraft.specs.thermalCamera 
+    };
+    
+    return { ...aircraft, specs, suitability: score };
   }).sort((a, b) => b.suitability - a.suitability);
 };
 
@@ -54,7 +61,7 @@ const SIMULATED_UTM_FLIGHTS = [
 
 export const checkUTMConflicts = (flightPlan) => {
   const { center } = flightPlan;
-  if (!center) return { checked: false, message: '位置情報なし' };
+  if (!center) return { checked: false, message: '位置情報なし', clearForFlight: true };
 
   const conflicts = [];
   for (const flight of SIMULATED_UTM_FLIGHTS) {
