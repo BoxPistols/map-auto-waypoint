@@ -141,7 +141,7 @@ const WaypointList = ({
           <button
             className={styles.iconButton}
             onClick={() => setShowSettings(!showSettings)}
-            data-tooltip="グリッド設定"
+            data-tooltip="グリッド間隔調整"
             data-tooltip-pos="bottom"
           >
             <Settings2 size={16} />

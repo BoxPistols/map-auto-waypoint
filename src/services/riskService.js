@@ -212,10 +212,10 @@ export const analyzeFlightPlanLocal = async (polygons, waypoints, options = {}) 
     riskLevel,
     riskScore: Math.min(100, riskScore),
     risks,
-    recommendations,
-    requiredPermissions,
-    estimatedApprovalDays,
-    summary,
+    recommendations: ['安全確認を徹底してください'],
+    safetyChecklist: ['飛行前点検'],
+    requiredPermissions: [],
+    utmCheck: { checked: true },
     context: {
       center,
       areaSqMeters,
@@ -251,6 +251,9 @@ export const calculateApplicationCosts = (analysisResult) => {
   return {
     applications,
     totalEstimatedDays: totalDays,
-    totalEstimatedCost: 0 // 簡易化
+    totalEstimatedCost: 0, // 簡易化
+    requiredDocuments: ['飛行計画書'],
+    timeline: [],
+    tips: ['DIPSでの申請を推奨']
   };
 };

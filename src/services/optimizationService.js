@@ -118,8 +118,9 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
   return {
     hasIssues,
     gaps,
+    totalGaps: gaps.length,
     recommendedWaypoints,
-    summary: hasIssues ? '問題が検出されました' : '安全です'
+    summary: hasIssues ? '問題が検出されました' : '現在のプランは安全基準を満たしています'
   };
 };
 
@@ -127,10 +128,40 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
  * ポリゴンのギャップ分析
  */
 export const analyzePolygonGaps = (polygon) => {
-  // 簡易実装: 頂点のチェックのみ
-  if (!polygon?.geometry?.coordinates?.[0]) return { hasIssues: false };
-  // ... (flightAnalyzer.jsからロジックをコピーすべきだが省略)
-  return { hasIssues: false, gaps: [] }; 
+  if (!polygon?.geometry?.coordinates?.[0]) return { hasIssues: false, totalGaps: 0, recommendedPolygon: null };
+  
+  const coords = polygon.geometry.coordinates[0];
+  let hasIssues = false;
+  let totalGaps = 0;
+
+  for (const [lng, lat] of coords) {
+    let pointIssue = false;
+    for (const airport of AIRPORT_ZONES) {
+      if (getDistanceMeters(lat, lng, airport.lat, airport.lng) < airport.radius) {
+        pointIssue = true;
+        break;
+      }
+    }
+    if (!pointIssue) {
+      for (const zone of NO_FLY_ZONES) {
+        if (getDistanceMeters(lat, lng, zone.lat, zone.lng) < zone.radius) {
+          pointIssue = true;
+          break;
+        }
+      }
+    }
+    if (pointIssue) {
+      hasIssues = true;
+      totalGaps++;
+    }
+  }
+
+  return { 
+    hasIssues, 
+    gaps: [], 
+    totalGaps, 
+    recommendedPolygon: hasIssues ? { ...polygon } : null 
+  }; 
 };
 
 /**
@@ -138,10 +169,16 @@ export const analyzePolygonGaps = (polygon) => {
  */
 export const generateOptimizationPlan = (polygons, waypoints, didInfo = null) => {
   const waypointAnalysis = analyzeWaypointGaps(waypoints, didInfo);
+  const actions = [];
+  if (waypointAnalysis.hasIssues) {
+    actions.push('Waypointの調整が必要です');
+  }
+
   return {
     hasIssues: waypointAnalysis.hasIssues,
     waypointAnalysis,
     recommendedWaypoints: waypointAnalysis.recommendedWaypoints,
-    summary: waypointAnalysis.summary
+    summary: waypointAnalysis.summary,
+    actions
   };
 };
