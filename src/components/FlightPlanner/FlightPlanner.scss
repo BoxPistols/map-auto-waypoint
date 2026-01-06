@@ -794,6 +794,145 @@
   to { transform: rotate(360deg); }
 }
 
+// プレビューモーダル
+.preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+
+.preview-modal {
+  width: 90vw;
+  max-width: 900px;
+  height: 85vh;
+  max-height: 800px;
+  background: var(--bg-primary, #ffffff);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+.preview-content {
+  flex: 1;
+  overflow: hidden;
+  background: var(--bg-secondary, #f8f9fa);
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: white;
+}
+
+.preview-text {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  padding: 16px;
+
+  pre {
+    margin: 0;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: var(--text-primary, #1a1a1a);
+    background: var(--bg-primary, #fff);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #e0e0e0);
+  }
+}
+
+.preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--bg-secondary, #f8f9fa);
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  gap: 12px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.preview-filename {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary, #666);
+  font-family: monospace;
+
+  @media (max-width: 600px) {
+    justify-content: center;
+  }
+}
+
+.preview-actions {
+  display: flex;
+  gap: 10px;
+
+  @media (max-width: 600px) {
+    justify-content: center;
+  }
+}
+
 // ダークモード
 [data-theme='dark'] {
   .flight-planner {
@@ -841,5 +980,22 @@
       background: rgba(255, 193, 7, 0.2);
       color: #ffe066;
     }
+  }
+
+  .preview-modal {
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #252525;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --border-color: #3d3d3d;
+  }
+
+  .preview-header {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  }
+
+  .preview-text pre {
+    background: #2d2d2d;
+    border-color: #3d3d3d;
   }
 }

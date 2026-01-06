@@ -25,8 +25,9 @@ import {
   Loader,
 } from 'lucide-react';
 import { USE_CASES, generateRouteOptions, getUseCaseById } from '../../services/routePlanner';
-import { downloadFlightPlan } from '../../services/documentGenerator';
+import { downloadFlightPlan, generatePreview, downloadFile } from '../../services/documentGenerator';
 import { searchAddress } from '../../services/geocoding';
+import { Eye } from 'lucide-react';
 import './FlightPlanner.scss';
 
 /**
@@ -74,6 +75,9 @@ function FlightPlanner({
   // 詳細表示
   const [expandedRoute, setExpandedRoute] = useState(null);
   const [showExportOptions, setShowExportOptions] = useState(false);
+
+  // プレビュー
+  const [previewData, setPreviewData] = useState(null);
 
   // 検索結果から初期値を設定
   useEffect(() => {
@@ -151,11 +155,10 @@ function FlightPlanner({
     onClose();
   };
 
-  // 書類ダウンロード
-  const handleDownload = (format) => {
-    if (!selectedRoute) return;
-
-    const flightPlan = {
+  // 飛行計画データを作成
+  const createFlightPlan = useCallback(() => {
+    if (!selectedRoute) return null;
+    return {
       waypoints: selectedRoute.waypoints,
       polygons,
       route: selectedRoute,
@@ -165,9 +168,27 @@ function FlightPlanner({
       flightDate: new Date(),
       location: endPoint?.name || '-',
     };
+  }, [selectedRoute, polygons, selectedUseCase, endPoint]);
 
-    downloadFlightPlan(flightPlan, format);
+  // プレビュー表示
+  const handlePreview = (format) => {
+    const flightPlan = createFlightPlan();
+    if (!flightPlan) return;
+
+    const preview = generatePreview(flightPlan, format);
+    setPreviewData({ ...preview, format });
     setShowExportOptions(false);
+  };
+
+  // プレビューからダウンロード
+  const handleDownloadFromPreview = () => {
+    if (!previewData) return;
+    downloadFile(previewData.content, previewData.filename, previewData.mimeType);
+  };
+
+  // プレビューを閉じる
+  const closePreview = () => {
+    setPreviewData(null);
   };
 
   // 地名検索ハンドラー
@@ -684,16 +705,16 @@ function FlightPlanner({
                 </button>
                 {showExportOptions && (
                   <div className="export-menu">
-                    <button onClick={() => handleDownload('html')}>
-                      <FileText size={14} />
+                    <button onClick={() => handlePreview('html')}>
+                      <Eye size={14} />
                       飛行計画書 (HTML/Word)
                     </button>
-                    <button onClick={() => handleDownload('excel')}>
-                      <FileText size={14} />
+                    <button onClick={() => handlePreview('excel')}>
+                      <Eye size={14} />
                       飛行計画書 (TSV/Excel)
                     </button>
-                    <button onClick={() => handleDownload('csv')}>
-                      <FileText size={14} />
+                    <button onClick={() => handlePreview('csv')}>
+                      <Eye size={14} />
                       DIPS申請用 (CSV)
                     </button>
                   </div>
@@ -733,6 +754,51 @@ function FlightPlanner({
           FISS
         </a>
       </div>
+
+      {/* プレビューモーダル */}
+      {previewData && (
+        <div className="preview-overlay" onClick={closePreview}>
+          <div className="preview-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="preview-header">
+              <h3>
+                <Eye size={18} />
+                {previewData.title}
+              </h3>
+              <button className="close-btn" onClick={closePreview}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="preview-content">
+              {previewData.type === 'html' ? (
+                <iframe
+                  srcDoc={previewData.content}
+                  title="プレビュー"
+                  className="preview-iframe"
+                />
+              ) : (
+                <div className="preview-text">
+                  <pre>{previewData.content}</pre>
+                </div>
+              )}
+            </div>
+            <div className="preview-footer">
+              <span className="preview-filename">
+                <FileText size={14} />
+                {previewData.filename}
+              </span>
+              <div className="preview-actions">
+                <button className="secondary-btn" onClick={closePreview}>
+                  キャンセル
+                </button>
+                <button className="primary-btn" onClick={handleDownloadFromPreview}>
+                  <Download size={16} />
+                  ダウンロード
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -435,11 +435,47 @@ export const downloadFlightPlan = (flightPlan, format = 'html') => {
   }
 };
 
+/**
+ * プレビュー用コンテンツを生成（ダウンロードせずに返す）
+ */
+export const generatePreview = (flightPlan, format = 'html') => {
+  switch (format) {
+    case 'csv':
+      return {
+        content: generateDIPSCSV(flightPlan),
+        type: 'csv',
+        filename: `flight-plan-dips-${new Date().toISOString().slice(0, 10)}.csv`,
+        mimeType: 'text/csv;charset=utf-8',
+        title: 'DIPS申請用 (CSV)',
+      };
+    case 'tsv':
+    case 'excel':
+      return {
+        content: generateFlightPlanTSV(flightPlan),
+        type: 'tsv',
+        filename: `flight-plan-${new Date().toISOString().slice(0, 10)}.tsv`,
+        mimeType: 'text/tab-separated-values;charset=utf-8',
+        title: '飛行計画書 (TSV/Excel)',
+      };
+    case 'html':
+    case 'word':
+    default:
+      return {
+        content: generateFlightPlanHTML(flightPlan),
+        type: 'html',
+        filename: `flight-plan-${new Date().toISOString().slice(0, 10)}.html`,
+        mimeType: 'text/html;charset=utf-8',
+        title: '飛行計画書 (HTML/Word)',
+      };
+  }
+};
+
 export default {
   generateDIPSCSV,
   generateFlightPlanTSV,
   generateFlightPlanHTML,
   downloadFlightPlan,
+  generatePreview,
   toDMS,
   formatDate,
 };
