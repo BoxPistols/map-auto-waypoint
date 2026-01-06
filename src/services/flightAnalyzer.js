@@ -9,5 +9,5 @@ export * from './optimizationService';
 export * from './supportServices';
 
 // Re-export utilities used in tests/components
-export { getPolygonCenter, getPolygonArea } from './waypointGenerator';
+export { getPolygonCenter, calculatePolygonArea as getPolygonArea } from './waypointGenerator';
 export { getDistanceMeters } from '../utils/geoUtils';
