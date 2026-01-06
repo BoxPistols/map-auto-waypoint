@@ -401,13 +401,6 @@ function App() {
             e.preventDefault()
             setShowFlightRequirements(prev => !prev)
             break
-          case 'g': // Toggle Route Optimizer (最適巡回ルートプランナー) - 旧FlightPlannerのキーを継承
-          case 'o': // Toggle Route Optimizer (最適巡回ルートプランナー)
-            e.preventDefault()
-            if (waypoints.length >= 2) {
-              setShowRouteOptimizer(prev => !prev)
-            }
-            break
           case 'f': // Toggle Full Map Mode
             e.preventDefault()
             setFullMapMode(prev => {
@@ -913,16 +906,6 @@ function App() {
             disabled={!!editingPolygon}
           >
             エクスポート
-          </button>
-          <button
-            className={`action-button ${showRouteOptimizer ? 'active' : ''}`}
-            onClick={() => setShowRouteOptimizer(true)}
-            disabled={!!editingPolygon || waypoints.length < 2}
-            data-tooltip="ルート最適化 (O)"
-            data-tooltip-pos="bottom"
-          >
-            <Route size={16} style={{ marginRight: '4px' }} />
-            プランナー
           </button>
           <button
             className="icon-button theme-button"
