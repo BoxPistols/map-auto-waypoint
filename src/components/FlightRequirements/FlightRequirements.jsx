@@ -34,7 +34,6 @@ import './FlightRequirements.scss';
  */
 function FlightRequirements({
   polygon,
-  waypoints = [],
   altitude = 50,
   searchResult = null,
   isOpen,
@@ -80,7 +79,6 @@ function FlightRequirements({
         lat,
         lng,
         altitude,
-        waypoints,
         searchResult,
         polygons: polygon ? [polygon] : [],
       };
@@ -93,7 +91,7 @@ function FlightRequirements({
     } finally {
       setIsLoading(false);
     }
-  }, [polygon, waypoints, altitude, searchResult]);
+  }, [polygon, altitude, searchResult]);
 
   // ポリゴンまたは検索結果が変わったらチェック実行
   useEffect(() => {

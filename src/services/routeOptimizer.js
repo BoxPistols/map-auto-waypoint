@@ -4,7 +4,8 @@
  */
 
 import { getDroneSpecs, getRouteSettings } from './droneSpecsService';
-import { getDistanceMeters, checkDIDArea, analyzeFlightPlanLocal } from './flightAnalyzer';
+import { getDistanceMeters } from '../utils/geoUtils';
+import { checkDIDArea } from './flightAnalyzer';
 import { checkAirspaceRestrictions } from './airspace';
 
 /**

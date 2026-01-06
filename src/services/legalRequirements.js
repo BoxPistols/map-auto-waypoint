@@ -9,22 +9,11 @@
  * 参考: https://naka4.com/drone/flightflow/
  */
 
+import { getDistanceMeters } from '../utils/geoUtils';
 import { AIRPORT_ZONES, NO_FLY_ZONES, HELIPORTS } from './airspace';
 import { checkDIDArea } from './flightAnalyzer';
 
-// ===== 距離計算ユーティリティ =====
-
-const getDistanceMeters = (lat1, lng1, lat2, lng2) => {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
+const NO_FLY_ZONE_BUFFER_METERS = 500;
 
 // ===== 1. 航空法関連チェック =====
 
@@ -40,7 +29,7 @@ const getDistanceMeters = (lat1, lng1, lat2, lng2) => {
  * @returns {Object} 航空法チェック結果
  */
 export const checkAviationLaw = async (context) => {
-  const { lat, lng, altitude = 50, waypoints = [], polygons = [] } = context;
+  const { lat, lng, altitude = 50 } = context;
   const results = {
     category: 'aviation_law',
     categoryName: '航空法',
@@ -226,7 +215,7 @@ export const checkSmallUASProhibitionLaw = (context) => {
   for (const zone of NO_FLY_ZONES) {
     const distance = getDistanceMeters(lat, lng, zone.lat, zone.lng);
     const isInZone = distance < zone.radius;
-    const isNearZone = distance < zone.radius + 500; // 500m追加バッファ
+    const isNearZone = distance < zone.radius + NO_FLY_ZONE_BUFFER_METERS; // 500m追加バッファ
 
     if (isInZone || isNearZone) {
       const zoneInfo = { ...zone, distance, isInZone };
@@ -317,7 +306,7 @@ export const checkSmallUASProhibitionLaw = (context) => {
  * @returns {Object} 管理者ルールチェック結果
  */
 export const checkLandManagerRules = (context) => {
-  const { lat, lng, searchResult = null } = context;
+  const { searchResult = null } = context;
   const results = {
     category: 'land_manager',
     categoryName: '土地・施設管理者',
@@ -331,12 +320,15 @@ export const checkLandManagerRules = (context) => {
   const placeType = searchResult?.type || searchResult?.class || '';
   const placeName = searchResult?.displayName || '';
 
-  // 公園チェック
-  if (
+  // 公園チェック (より堅牢な判定)
+  const isPark =
     placeType.includes('park') ||
-    placeName.includes('公園') ||
-    placeName.includes('緑地')
-  ) {
+    placeType.includes('recreation_ground') ||
+    /公園$|緑地$|庭園$|植物園$/.test(placeName) ||
+    placeName.includes('国定公園') ||
+    placeName.includes('国立公園');
+
+  if (isPark) {
     results.items.push({
       id: 'park',
       name: '公園・緑地',
@@ -661,6 +653,8 @@ const generateRequiredProcedures = (results) => {
  * @returns {Array} 外部リンク一覧
  */
 export const generateExternalLinks = (results) => {
+  const lat = results?.context?.lat || 35.681236;
+  const lng = results?.context?.lng || 139.767125;
   const links = [
     {
       id: 'dips',
@@ -671,16 +665,16 @@ export const generateExternalLinks = (results) => {
     },
     {
       id: 'fiss',
-      name: 'FISS',
-      description: '飛行情報共有システム',
-      url: 'https://www.uafp.dips.mlit.go.jp/',
+      name: 'FISS（飛行計画通報）',
+      description: 'DIPS 2.0に統合済み',
+      url: 'https://www.ossportal.dips.mlit.go.jp/portal/top/',
       category: 'official',
     },
     {
       id: 'gsi',
       name: '地理院地図',
       description: 'DID・航空法規制確認',
-      url: `https://maps.gsi.go.jp/#15/${results?.context?.lat || 35.68}/${results?.context?.lng || 139.77}/`,
+      url: `https://maps.gsi.go.jp/#15/${lat}/${lng}/`,
       category: 'map',
     },
   ];

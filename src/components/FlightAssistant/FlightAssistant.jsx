@@ -36,7 +36,7 @@ import {
   getFlightAdvice,
   isPreConfiguredApi
 } from '../../services/openaiService';
-import { runFullAnalysis, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
+import { analyzeFlightPlanLocal, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
 import {
   getAllChatLogs,
   saveChatLog,
@@ -487,7 +487,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
     try {
       // 実データに基づく分析を実行（proposedPlanから高度・目的を取得）
-      const result = await runFullAnalysis(polygons, waypoints, {
+      const result = await analyzeFlightPlanLocal(polygons, waypoints, {
         altitude: proposedPlan.altitude || 50,
         purpose: proposedPlan.purpose || '点検飛行',
         useAI: hasKey

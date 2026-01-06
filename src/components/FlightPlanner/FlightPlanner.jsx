@@ -33,7 +33,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { USE_CASES, generateRouteOptions } from '../../services/routePlanner';
-import { downloadFlightPlan, generatePreview, downloadFile } from '../../services/documentGenerator';
+import { generatePreview, downloadFile } from '../../services/documentGenerator';
 import { searchAddress } from '../../services/geocoding';
 import './FlightPlanner.scss';
 
@@ -67,7 +67,6 @@ function FlightPlanner({
   isOpen,
   onClose,
   polygons = [],
-  waypoints = [],
   onApplyRoute,
   searchResult,
 }) {
@@ -775,12 +774,12 @@ function FlightPlanner({
         </a>
         <span className="divider">|</span>
         <a
-          href="https://www.fiss.mlit.go.jp/"
+          href="https://www.ossportal.dips.mlit.go.jp/portal/top/"
           target="_blank"
           rel="noopener noreferrer"
         >
           <ExternalLink size={12} />
-          FISS
+          飛行計画通報
         </a>
       </div>
 
