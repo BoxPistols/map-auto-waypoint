@@ -14,6 +14,9 @@ import {
   ChevronUp,
   Home,
   Plane,
+  Navigation,
+  Flame,
+  Thermometer,
 } from 'lucide-react';
 import {
   getAllDrones,
@@ -28,6 +31,21 @@ import {
   formatTime,
 } from '../../services/routeOptimizer';
 import './RouteOptimizer.scss';
+
+// アイコン名からコンポーネントへのマッピング
+const DRONE_ICON_MAP = {
+  Plane,
+  Navigation,
+  MapPin,
+  Flame,
+  Thermometer,
+};
+
+// アイコンコンポーネントを取得
+const getDroneIcon = (iconName, size = 24) => {
+  const IconComponent = DRONE_ICON_MAP[iconName];
+  return IconComponent ? <IconComponent size={size} /> : null;
+};
 
 const RouteOptimizer = ({
   isOpen,
@@ -188,7 +206,7 @@ const RouteOptimizer = ({
                     className={`route-optimizer__drone-card ${selectedDroneId === drone.id ? 'selected' : ''}`}
                     onClick={() => handleDroneSelect(drone.id)}
                   >
-                    <div className="route-optimizer__drone-icon">{drone.icon}</div>
+                    <div className="route-optimizer__drone-icon">{getDroneIcon(drone.icon, 20)}</div>
                     <div className="route-optimizer__drone-info">
                       <div className="route-optimizer__drone-model">{drone.model}</div>
                       <div className="route-optimizer__drone-specs">
