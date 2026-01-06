@@ -17,6 +17,13 @@ import {
   Navigation,
   Flame,
   Thermometer,
+  Heart,
+  Sun,
+  Building2,
+  Ruler,
+  Wheat,
+  Package,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   getAllDrones,
@@ -25,6 +32,7 @@ import {
   getRouteSettings,
   saveRouteSettings,
 } from '../../services/droneSpecsService';
+import { USE_CASES } from '../../services/routePlanner';
 import {
   optimizeRoute,
   formatDistance,
@@ -33,17 +41,26 @@ import {
 import './RouteOptimizer.scss';
 
 // アイコン名からコンポーネントへのマッピング
-const DRONE_ICON_MAP = {
+const ICON_MAP = {
+  // ドローン用
   Plane,
   Navigation,
   MapPin,
   Flame,
   Thermometer,
+  // ユースケース用
+  Heart,
+  Sun,
+  Building2,
+  Ruler,
+  Wheat,
+  Package,
+  ShieldCheck,
 };
 
 // アイコンコンポーネントを取得
-const getDroneIcon = (iconName, size = 24) => {
-  const IconComponent = DRONE_ICON_MAP[iconName];
+const getIcon = (iconName, size = 24) => {
+  const IconComponent = ICON_MAP[iconName];
   return IconComponent ? <IconComponent size={size} /> : null;
 };
 
@@ -54,6 +71,7 @@ const RouteOptimizer = ({
   onApplyRoute,
 }) => {
   const [step, setStep] = useState(1);
+  const [selectedUseCase, setSelectedUseCase] = useState(null);
   const [selectedDroneId, setSelectedDroneId] = useState(null);
   const [options, setOptions] = useState({
     autoSplit: true,
@@ -80,6 +98,7 @@ const RouteOptimizer = ({
         safetyMargin: settings.safetyMargin,
       });
       setStep(1);
+      setSelectedUseCase(null);
       setOptimizationResult(null);
       setError(null);
     }
@@ -113,7 +132,7 @@ const RouteOptimizer = ({
 
       if (result.success) {
         setOptimizationResult(result);
-        setStep(3);
+        setStep(4);
       } else {
         setError(result.error);
       }
@@ -175,24 +194,60 @@ const RouteOptimizer = ({
         <div className="route-optimizer__steps">
           <div className={`route-optimizer__step ${step >= 1 ? 'active' : ''} ${step > 1 ? 'completed' : ''}`}>
             <span className="route-optimizer__step-number">1</span>
-            <span className="route-optimizer__step-label">ドローン選択</span>
+            <span className="route-optimizer__step-label">飛行目的</span>
           </div>
           <div className="route-optimizer__step-connector" />
           <div className={`route-optimizer__step ${step >= 2 ? 'active' : ''} ${step > 2 ? 'completed' : ''}`}>
             <span className="route-optimizer__step-number">2</span>
+            <span className="route-optimizer__step-label">ドローン</span>
+          </div>
+          <div className="route-optimizer__step-connector" />
+          <div className={`route-optimizer__step ${step >= 3 ? 'active' : ''} ${step > 3 ? 'completed' : ''}`}>
+            <span className="route-optimizer__step-number">3</span>
             <span className="route-optimizer__step-label">オプション</span>
           </div>
           <div className="route-optimizer__step-connector" />
-          <div className={`route-optimizer__step ${step >= 3 ? 'active' : ''}`}>
-            <span className="route-optimizer__step-number">3</span>
+          <div className={`route-optimizer__step ${step >= 4 ? 'active' : ''}`}>
+            <span className="route-optimizer__step-number">4</span>
             <span className="route-optimizer__step-label">結果</span>
           </div>
         </div>
 
         {/* コンテンツ */}
         <div className="route-optimizer__content">
-          {/* Step 1: ドローン選択 */}
+          {/* Step 1: 飛行目的選択 */}
           {step === 1 && (
+            <div className="route-optimizer__step-content">
+              <h3>飛行目的を選択</h3>
+              <p className="route-optimizer__description">
+                目的に応じて最適なドローンと設定を提案します
+              </p>
+
+              <div className="route-optimizer__usecase-grid">
+                {USE_CASES.map((useCase) => (
+                  <div
+                    key={useCase.id}
+                    className={`route-optimizer__usecase-card ${selectedUseCase === useCase.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedUseCase(useCase.id)}
+                  >
+                    <div className="route-optimizer__usecase-icon">
+                      {getIcon(useCase.icon, 24)}
+                    </div>
+                    <div className="route-optimizer__usecase-info">
+                      <div className="route-optimizer__usecase-name">{useCase.name}</div>
+                      <div className="route-optimizer__usecase-desc">{useCase.description}</div>
+                    </div>
+                    {selectedUseCase === useCase.id && (
+                      <CheckCircle className="route-optimizer__usecase-check" size={20} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: ドローン選択 */}
+          {step === 2 && (
             <div className="route-optimizer__step-content">
               <h3>使用するドローンを選択</h3>
               <p className="route-optimizer__description">
@@ -206,7 +261,7 @@ const RouteOptimizer = ({
                     className={`route-optimizer__drone-card ${selectedDroneId === drone.id ? 'selected' : ''}`}
                     onClick={() => handleDroneSelect(drone.id)}
                   >
-                    <div className="route-optimizer__drone-icon">{getDroneIcon(drone.icon, 20)}</div>
+                    <div className="route-optimizer__drone-icon">{getIcon(drone.icon, 20)}</div>
                     <div className="route-optimizer__drone-info">
                       <div className="route-optimizer__drone-model">{drone.model}</div>
                       <div className="route-optimizer__drone-specs">
@@ -236,8 +291,8 @@ const RouteOptimizer = ({
             </div>
           )}
 
-          {/* Step 2: オプション設定 */}
-          {step === 2 && (
+          {/* Step 3: オプション設定 */}
+          {step === 3 && (
             <div className="route-optimizer__step-content">
               <h3>最適化オプション</h3>
 
@@ -324,8 +379,8 @@ const RouteOptimizer = ({
             </div>
           )}
 
-          {/* Step 3: 結果表示 */}
-          {step === 3 && optimizationResult && (
+          {/* Step 4: 結果表示 */}
+          {step === 4 && optimizationResult && (
             <div className="route-optimizer__step-content">
               <h3>最適化結果</h3>
 
@@ -475,7 +530,7 @@ const RouteOptimizer = ({
             <button
               className="route-optimizer__btn route-optimizer__btn--primary"
               onClick={() => setStep(2)}
-              disabled={!selectedDroneId}
+              disabled={!selectedUseCase}
             >
               次へ <ChevronRight size={16} />
             </button>
@@ -491,6 +546,24 @@ const RouteOptimizer = ({
               </button>
               <button
                 className="route-optimizer__btn route-optimizer__btn--primary"
+                onClick={() => setStep(3)}
+                disabled={!selectedDroneId}
+              >
+                次へ <ChevronRight size={16} />
+              </button>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <button
+                className="route-optimizer__btn route-optimizer__btn--secondary"
+                onClick={() => setStep(2)}
+              >
+                <ChevronLeft size={16} /> 戻る
+              </button>
+              <button
+                className="route-optimizer__btn route-optimizer__btn--primary"
                 onClick={handleOptimize}
                 disabled={isOptimizing || waypoints.length === 0}
               >
@@ -499,7 +572,7 @@ const RouteOptimizer = ({
             </>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <>
               <button
                 className="route-optimizer__btn route-optimizer__btn--secondary"

@@ -233,6 +233,83 @@
     color: #2563eb;
   }
 
+  // 飛行目的選択
+  &__usecase-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__usecase-card {
+    position: relative;
+    padding: 14px;
+    background: var(--bg-secondary, #f8f9fa);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    &:hover {
+      background: var(--bg-hover, #f3f4f6);
+      border-color: var(--border-color, #e5e7eb);
+    }
+
+    &.selected {
+      background: rgba(37, 99, 235, 0.1);
+      border-color: #2563eb;
+    }
+  }
+
+  &__usecase-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(37, 99, 235, 0.1);
+    border-radius: 10px;
+    color: #2563eb;
+
+    .selected & {
+      background: #2563eb;
+      color: white;
+    }
+  }
+
+  &__usecase-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__usecase-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary, #111827);
+    margin-bottom: 4px;
+  }
+
+  &__usecase-desc {
+    font-size: 11px;
+    color: var(--text-secondary, #6b7280);
+    line-height: 1.4;
+  }
+
+  &__usecase-check {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #2563eb;
+  }
+
   &__drone-detail {
     padding: 14px;
     background: rgba(37, 99, 235, 0.05);
@@ -658,6 +735,37 @@
       &-grid {
         color: #e5e7eb;
       }
+    }
+
+    &__usecase-card {
+      background: var(--bg-secondary, #374151);
+
+      &:hover {
+        background: var(--bg-hover, #4b5563);
+      }
+
+      &.selected {
+        background: rgba(37, 99, 235, 0.3);
+        border-color: #3b82f6;
+      }
+    }
+
+    &__usecase-icon {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+
+      .selected & {
+        background: #3b82f6;
+        color: white;
+      }
+    }
+
+    &__usecase-name {
+      color: #f3f4f6;
+    }
+
+    &__usecase-desc {
+      color: #9ca3af;
     }
 
     &__option-group > label {
