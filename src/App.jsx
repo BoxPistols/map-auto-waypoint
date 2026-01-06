@@ -625,6 +625,17 @@ function App() {
     showNotification(`最適ルートを適用しました（${result.totalFlights}フライト）`)
   }, [showNotification])
 
+  // Handle home point move on map
+  const handleHomePointMove = useCallback((newPosition) => {
+    if (!optimizedRoute) return
+
+    setOptimizedRoute(prev => ({
+      ...prev,
+      homePoint: newPosition
+    }))
+    showNotification('ホームポイントを移動しました')
+  }, [optimizedRoute, showNotification])
+
   // Handle waypoint select from sidebar - start editing parent polygon
   const handleWaypointSelect = useCallback((waypoint) => {
     // Focus on waypoint location
@@ -1086,6 +1097,7 @@ function App() {
             waypointIssueFlagsById={waypointIssueFlagsById}
             highlightedWaypointIndex={highlightedWaypointIndex}
             optimizedRoute={optimizedRoute}
+            onHomePointMove={handleHomePointMove}
             isMobile={isMobile}
             onPolygonCreate={handlePolygonCreate}
             onPolygonUpdate={handlePolygonUpdate}

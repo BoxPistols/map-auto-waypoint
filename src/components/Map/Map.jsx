@@ -132,6 +132,7 @@ const Map = ({
   waypointIssueFlagsById = null,
   highlightedWaypointIndex = null,
   optimizedRoute = null,
+  onHomePointMove,
   isMobile = false,
   onPolygonCreate,
   onPolygonUpdate,
@@ -895,15 +896,24 @@ const Map = ({
           </Source>
         )}
 
-        {/* Display home point marker for optimized route */}
+        {/* Display home point marker for optimized route (draggable) */}
         {optimizedRoute?.homePoint && (
           <Marker
             latitude={optimizedRoute.homePoint.lat}
             longitude={optimizedRoute.homePoint.lng}
+            draggable={!!onHomePointMove}
+            onDragEnd={(e) => {
+              if (onHomePointMove) {
+                onHomePointMove({
+                  lat: e.lngLat.lat,
+                  lng: e.lngLat.lng
+                })
+              }
+            }}
           >
             <div
-              className={styles.homeMarker}
-              title="ホームポイント（離発着地点）"
+              className={`${styles.homeMarker} ${onHomePointMove ? styles.draggable : ''}`}
+              title="ホームポイント（離発着地点）- ドラッグで移動可能"
             >
               <span>H</span>
             </div>
