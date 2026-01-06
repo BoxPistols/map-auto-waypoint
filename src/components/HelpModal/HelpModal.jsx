@@ -336,6 +336,10 @@ const HelpModal = ({ onClose }) => {
                   <td>チャット（フライトアシスタント）を開く / 閉じる</td>
                 </tr>
                 <tr>
+                  <td><kbd>L</kbd></td>
+                  <td>飛行要件サマリーを開く / 閉じる</td>
+                </tr>
+                <tr>
                   <td><kbd>S</kbd></td>
                   <td>サイドバーを開く / 閉じる</td>
                 </tr>

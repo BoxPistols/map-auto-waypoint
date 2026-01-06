@@ -36,7 +36,7 @@ import {
   getFlightAdvice,
   isPreConfiguredApi
 } from '../../services/openaiService';
-import { runFullAnalysis, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
+import { analyzeFlightPlanLocal, generateOptimizationPlan, calculateApplicationCosts } from '../../services/flightAnalyzer';
 import {
   getAllChatLogs,
   saveChatLog,
@@ -487,7 +487,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
     try {
       // 実データに基づく分析を実行（proposedPlanから高度・目的を取得）
-      const result = await runFullAnalysis(polygons, waypoints, {
+      const result = await analyzeFlightPlanLocal(polygons, waypoints, {
         altitude: proposedPlan.altitude || 50,
         purpose: proposedPlan.purpose || '点検飛行',
         useAI: hasKey
@@ -506,7 +506,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       response += `${result.summary}\n\n`;
 
       // リスク詳細
-      if (result.risks.length > 0) {
+      if (result.risks && result.risks.length > 0) {
         response += `### 検出されたリスク\n`;
         result.risks.forEach(r => {
           const label = r.severity === 'critical' ? '[CRITICAL]' :
@@ -551,9 +551,11 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           response += `[OK] ${utm.message}\n`;
         } else {
           response += `[!] ${utm.message}\n`;
-          utm.conflicts.forEach(c => {
-            response += `• ${c.operator}: ${c.recommendation}\n`;
-          });
+          if (utm.conflicts && utm.conflicts.length > 0) {
+            utm.conflicts.forEach(c => {
+              response += `• ${c.operator}: ${c.recommendation}\n`;
+            });
+          }
         }
         response += '\n';
       }
@@ -569,30 +571,38 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       }
 
       // 推奨事項
-      response += `### 推奨事項\n`;
-      result.recommendations.forEach(rec => {
-        response += `• ${rec}\n`;
-      });
-      response += '\n';
+      if (result.recommendations && result.recommendations.length > 0) {
+        response += `### 推奨事項\n`;
+        result.recommendations.forEach(rec => {
+          response += `• ${rec}\n`;
+        });
+        response += '\n';
+      }
 
       // 必要な許可
-      if (result.requiredPermissions.length > 0) {
+      if (result.requiredPermissions && result.requiredPermissions.length > 0) {
         response += `### 必要な許可\n`;
         result.requiredPermissions.forEach(p => {
           response += `• ${p}\n`;
         });
-        response += `\n承認取得目安: **${result.estimatedApprovalDays}日**\n`;
+        if (result.estimatedApprovalDays) {
+          response += `\n承認取得目安: **${result.estimatedApprovalDays}日**\n`;
+        }
       }
 
       // 申請コスト詳細
       const applicationCosts = calculateApplicationCosts(result);
-      if (applicationCosts.applications.length > 0) {
+      if (applicationCosts?.applications?.length > 0) {
         response += `\n### 申請タイムライン\n`;
-        applicationCosts.timeline.forEach(t => {
-          response += `• Day ${t.day}: ${t.event}\n`;
-        });
-        response += `\n**必要書類**: ${applicationCosts.requiredDocuments.slice(0, 4).join('、')}\n`;
-        if (applicationCosts.tips.length > 0) {
+        if (applicationCosts.timeline && applicationCosts.timeline.length > 0) {
+          applicationCosts.timeline.forEach(t => {
+            response += `• Day ${t.day}: ${t.event}\n`;
+          });
+        }
+        if (applicationCosts.requiredDocuments && applicationCosts.requiredDocuments.length > 0) {
+          response += `\n**必要書類**: ${applicationCosts.requiredDocuments.slice(0, 4).join('、')}\n`;
+        }
+        if (applicationCosts.tips && applicationCosts.tips.length > 0) {
           response += `\nTIP: ${applicationCosts.tips[0]}\n`;
         }
       }
@@ -709,7 +719,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     content += `${assessmentResult.summary}\n\n`;
 
     // 検出されたリスク
-    if (assessmentResult.risks.length > 0) {
+    if (assessmentResult.risks && assessmentResult.risks.length > 0) {
       content += `## 検出されたリスク\n\n`;
       content += `| 深刻度 | 説明 |\n`;
       content += `|--------|------|\n`;
@@ -748,19 +758,23 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
     }
 
     // 推奨事項
-    content += `## 推奨事項\n\n`;
-    assessmentResult.recommendations.forEach(rec => {
-      content += `- ${rec}\n`;
-    });
-    content += '\n';
+    if (assessmentResult.recommendations && assessmentResult.recommendations.length > 0) {
+      content += `## 推奨事項\n\n`;
+      assessmentResult.recommendations.forEach(rec => {
+        content += `- ${rec}\n`;
+      });
+      content += '\n';
+    }
 
     // 必要な許可
-    if (assessmentResult.requiredPermissions.length > 0) {
+    if (assessmentResult.requiredPermissions && assessmentResult.requiredPermissions.length > 0) {
       content += `## 必要な許可\n\n`;
       assessmentResult.requiredPermissions.forEach(p => {
         content += `- ${p}\n`;
       });
-      content += `\n**承認取得目安:** ${assessmentResult.estimatedApprovalDays}日\n\n`;
+      if (assessmentResult.estimatedApprovalDays) {
+        content += `\n**承認取得目安:** ${assessmentResult.estimatedApprovalDays}日\n\n`;
+      }
     }
 
     // Waypointデータ
@@ -794,11 +808,13 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
       });
       content += '\n';
 
-      content += `### 最適化アクション\n\n`;
-      optimizationPlan.actions.forEach(action => {
-        content += `- ${action}\n`;
-      });
-      content += '\n';
+      if (optimizationPlan.actions && optimizationPlan.actions.length > 0) {
+        content += `### 最適化アクション\n\n`;
+        optimizationPlan.actions.forEach(action => {
+          content += `- ${action}\n`;
+        });
+        content += '\n';
+      }
     }
 
     content += `---\n\n`;

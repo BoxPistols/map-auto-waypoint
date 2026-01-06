@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Trash2, Mountain, RefreshCw, Settings2, Pencil, Check } from 'lucide-react'
+import { Trash2, Mountain, Pencil, Check, Route } from 'lucide-react'
 import { formatElevation } from '../../services/elevation'
 import styles from './WaypointList.module.scss'
 
@@ -10,13 +10,10 @@ const WaypointList = ({
   onClear,
   onUpdate,
   onFetchElevation,
-  onRegenerateGrid,
-  gridSpacing = 30,
-  onGridSpacingChange,
   isLoadingElevation = false,
-  elevationProgress = null
+  elevationProgress = null,
+  onOpenRouteOptimizer,
 }) => {
-  const [showSettings, setShowSettings] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [editingField, setEditingField] = useState(null) // 'name' | 'lat' | 'lng' | 'index'
   const [editValue, setEditValue] = useState('')
@@ -121,20 +118,19 @@ const WaypointList = ({
     return acc
   }, {})
 
-  const hasGridWaypoints = waypoints.some(wp => wp.type === 'grid')
-
   return (
     <div className={styles.waypointList}>
       <div className={styles.header}>
         <span className={styles.count}>{waypoints.length} Waypoints</span>
         <div className={styles.headerActions}>
           <button
-            className={styles.iconButton}
-            onClick={() => setShowSettings(!showSettings)}
-            data-tooltip="グリッド設定"
+            className={`${styles.iconButton} ${styles.routeButton}`}
+            onClick={onOpenRouteOptimizer}
+            disabled={waypoints.length < 2}
+            data-tooltip="ルート最適化"
             data-tooltip-pos="bottom"
           >
-            <Settings2 size={16} />
+            <Route size={16} />
           </button>
           <button
             className={styles.iconButton}
@@ -172,34 +168,6 @@ const WaypointList = ({
           <span>
             標高取得中 {elevationProgress.current}/{elevationProgress.total}
           </span>
-        </div>
-      )}
-
-      {/* 設定パネル */}
-      {showSettings && (
-        <div className={styles.settings}>
-          <div className={styles.settingRow}>
-            <label>グリッド間隔:</label>
-            <input
-              type="range"
-              min="10"
-              max="100"
-              step="5"
-              value={gridSpacing}
-              onChange={(e) => onGridSpacingChange?.(Number(e.target.value))}
-              className={styles.slider}
-            />
-            <span className={styles.sliderValue}>{gridSpacing}m</span>
-          </div>
-          {hasGridWaypoints && (
-            <button
-              className={styles.regenerateButton}
-              onClick={onRegenerateGrid}
-            >
-              <RefreshCw size={14} />
-              グリッド再生成
-            </button>
-          )}
         </div>
       )}
 

@@ -1,0 +1,859 @@
+.route-optimizer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+  }
+
+  &__modal {
+    position: relative;
+    width: 520px;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: var(--bg-primary, #ffffff);
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+
+    &-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+
+    &-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  &__reset-btn,
+  &__close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  &__steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 20px;
+    background: var(--bg-secondary, #f8f9fa);
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    gap: 8px;
+  }
+
+  &__step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary, #6b7280);
+    font-size: 13px;
+
+    &.active {
+      color: #2563eb;
+      font-weight: 500;
+    }
+
+    &.completed {
+      color: #16a34a;
+    }
+
+    &-number {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--bg-hover, #e5e7eb);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+
+      .active & {
+        background: #2563eb;
+        color: white;
+      }
+
+      .completed & {
+        background: #16a34a;
+        color: white;
+      }
+    }
+
+    &-label {
+      @media (max-width: 480px) {
+        display: none;
+      }
+    }
+  }
+
+  &__step-connector {
+    width: 24px;
+    height: 2px;
+    background: var(--border-color, #e5e7eb);
+  }
+
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  &__step-content {
+    h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary, #111827);
+    }
+  }
+
+  &__description {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: var(--text-secondary, #6b7280);
+  }
+
+  &__drone-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__drone-card {
+    position: relative;
+    padding: 12px;
+    background: var(--bg-secondary, #f8f9fa);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    &:hover {
+      background: var(--bg-hover, #f3f4f6);
+      border-color: var(--border-color, #e5e7eb);
+    }
+
+    &.selected {
+      background: rgba(37, 99, 235, 0.1);
+      border-color: #2563eb;
+    }
+  }
+
+  &__drone-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+  }
+
+  &__drone-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__drone-model {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary, #111827);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__drone-specs {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--text-secondary, #6b7280);
+
+    span {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+  }
+
+  &__drone-check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    color: #2563eb;
+  }
+
+  // 飛行目的選択
+  &__usecase-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+
+    @media (max-width: 480px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__usecase-card {
+    position: relative;
+    padding: 14px;
+    background: var(--bg-secondary, #f8f9fa);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+
+    &:hover {
+      background: var(--bg-hover, #f3f4f6);
+      border-color: var(--border-color, #e5e7eb);
+    }
+
+    &.selected {
+      background: rgba(37, 99, 235, 0.1);
+      border-color: #2563eb;
+    }
+  }
+
+  &__usecase-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(37, 99, 235, 0.1);
+    border-radius: 10px;
+    color: #2563eb;
+
+    .selected & {
+      background: #2563eb;
+      color: white;
+    }
+  }
+
+  &__usecase-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__usecase-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary, #111827);
+    margin-bottom: 4px;
+  }
+
+  &__usecase-desc {
+    font-size: 11px;
+    color: var(--text-secondary, #6b7280);
+    line-height: 1.4;
+  }
+
+  &__usecase-check {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #2563eb;
+  }
+
+  &__drone-detail {
+    padding: 14px;
+    background: rgba(37, 99, 235, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+
+    h4 {
+      margin: 0 0 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #2563eb;
+    }
+
+    p {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--text-secondary, #6b7280);
+    }
+
+    &-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-primary, #111827);
+
+      div {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+
+        svg {
+          color: var(--text-secondary, #6b7280);
+        }
+      }
+    }
+  }
+
+  &__option-group {
+    margin-bottom: 16px;
+
+    > label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary, #111827);
+      cursor: pointer;
+
+      input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #2563eb;
+      }
+    }
+  }
+
+  &__option-desc {
+    margin: 6px 0 0 24px;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+  }
+
+  &__radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  &__radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-primary, #111827);
+    cursor: pointer;
+
+    input[type="radio"] {
+      accent-color: #2563eb;
+    }
+  }
+
+  &__slider-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+
+    input[type="range"] {
+      flex: 1;
+      height: 4px;
+      accent-color: #2563eb;
+    }
+  }
+
+  &__slider-value {
+    min-width: 40px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2563eb;
+    text-align: right;
+  }
+
+  &__waypoint-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-secondary, #6b7280);
+    margin-top: 16px;
+
+    svg {
+      color: #2563eb;
+    }
+  }
+
+  &__error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(220, 38, 38, 0.1);
+    border-radius: 8px;
+    font-size: 13px;
+    color: #dc2626;
+    margin-top: 16px;
+  }
+
+  &__summary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+
+    @media (max-width: 400px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__summary-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: 10px;
+
+    svg {
+      color: #2563eb;
+      flex-shrink: 0;
+    }
+
+    div {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  &__summary-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary, #111827);
+  }
+
+  &__summary-label {
+    font-size: 11px;
+    color: var(--text-secondary, #6b7280);
+  }
+
+  &__improvement {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(22, 163, 74, 0.1);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #16a34a;
+    margin-bottom: 16px;
+  }
+
+  &__home-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+    margin-bottom: 16px;
+
+    svg {
+      color: #f59e0b;
+      flex-shrink: 0;
+    }
+  }
+
+  &__home-reason {
+    opacity: 0.7;
+  }
+
+  &__flights {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  &__flight {
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  &__flight-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: var(--bg-hover, #f3f4f6);
+    }
+  }
+
+  &__flight-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  &__flight-badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+  }
+
+  &__flight-stats {
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+  }
+
+  &__flight-battery {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+
+    svg:first-child {
+      color: #16a34a;
+    }
+  }
+
+  &__flight-detail {
+    padding: 0 14px 14px;
+    border-top: 1px solid var(--border-color, #e5e7eb);
+  }
+
+  &__flight-route {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 0;
+    font-size: 11px;
+    color: var(--text-secondary, #6b7280);
+  }
+
+  &__flight-home {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    color: #f59e0b;
+  }
+
+  &__flight-wp {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    color: var(--text-primary, #111827);
+  }
+
+  &__flight-warnings {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border-color, #e5e7eb);
+    margin-top: 8px;
+  }
+
+  &__flight-warning {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #f59e0b;
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  &__warnings {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: 8px;
+    font-size: 13px;
+    color: #f59e0b;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 20px;
+    background: var(--bg-secondary, #f8f9fa);
+    border-top: 1px solid var(--border-color, #e5e7eb);
+  }
+
+  &__btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &--primary {
+      background: #2563eb;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: #1d4ed8;
+      }
+    }
+
+    &--secondary {
+      background: var(--bg-hover, #e5e7eb);
+      color: var(--text-primary, #111827);
+
+      &:hover:not(:disabled) {
+        background: var(--border-color, #d1d5db);
+      }
+    }
+  }
+}
+
+// ダークモード対応
+[data-theme='dark'] {
+  .route-optimizer {
+    &__modal {
+      background: var(--bg-primary, #1f2937);
+    }
+
+    &__steps {
+      background: var(--bg-secondary, #374151);
+      border-bottom-color: var(--border-color, #4b5563);
+    }
+
+    &__step {
+      color: var(--text-secondary, #9ca3af);
+
+      &.active {
+        color: #60a5fa;
+      }
+
+      &.completed {
+        color: #22c55e;
+      }
+
+      &-number {
+        background: var(--bg-hover, #4b5563);
+
+        .active & {
+          background: #3b82f6;
+        }
+
+        .completed & {
+          background: #22c55e;
+        }
+      }
+    }
+
+    &__step-connector {
+      background: var(--border-color, #4b5563);
+    }
+
+    &__footer {
+      background: var(--bg-secondary, #374151);
+      border-top-color: var(--border-color, #4b5563);
+    }
+
+    &__btn {
+      &--secondary {
+        background: var(--bg-hover, #4b5563);
+        color: var(--text-primary, #f3f4f6);
+
+        &:hover:not(:disabled) {
+          background: #6b7280;
+        }
+      }
+    }
+
+    &__step-content {
+      h3 {
+        color: #f3f4f6;
+      }
+    }
+
+    &__description {
+      color: #9ca3af;
+    }
+
+    &__drone-card {
+      background: var(--bg-secondary, #374151);
+
+      &:hover {
+        background: var(--bg-hover, #4b5563);
+      }
+
+      &.selected {
+        background: rgba(37, 99, 235, 0.3);
+        border-color: #3b82f6;
+      }
+    }
+
+    &__drone-model {
+      color: #f3f4f6;
+    }
+
+    &__drone-specs {
+      color: #9ca3af;
+    }
+
+    &__drone-detail {
+      background: rgba(37, 99, 235, 0.15);
+      border-color: rgba(37, 99, 235, 0.4);
+
+      h4 {
+        color: #60a5fa;
+      }
+
+      p {
+        color: #9ca3af;
+      }
+
+      &-grid {
+        color: #e5e7eb;
+      }
+    }
+
+    &__usecase-card {
+      background: var(--bg-secondary, #374151);
+
+      &:hover {
+        background: var(--bg-hover, #4b5563);
+      }
+
+      &.selected {
+        background: rgba(37, 99, 235, 0.3);
+        border-color: #3b82f6;
+      }
+    }
+
+    &__usecase-icon {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+
+      .selected & {
+        background: #3b82f6;
+        color: white;
+      }
+    }
+
+    &__usecase-name {
+      color: #f3f4f6;
+    }
+
+    &__usecase-desc {
+      color: #9ca3af;
+    }
+
+    &__option-group > label {
+      color: #f3f4f6;
+    }
+
+    &__option-desc {
+      color: #9ca3af;
+    }
+
+    &__radio span {
+      color: #e5e7eb;
+    }
+
+    &__summary-item,
+    &__flight,
+    &__waypoint-info,
+    &__home-info {
+      background: var(--bg-secondary, #374151);
+    }
+
+    &__summary-value {
+      color: #f3f4f6;
+    }
+
+    &__summary-label {
+      color: #9ca3af;
+    }
+
+    &__flight-header:hover {
+      background: var(--bg-hover, #4b5563);
+    }
+
+    &__flight-stats {
+      color: #9ca3af;
+    }
+
+    &__flight-wp {
+      color: #e5e7eb;
+    }
+  }
+}

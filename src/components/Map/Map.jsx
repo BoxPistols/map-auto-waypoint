@@ -131,6 +131,8 @@ const Map = ({
   didHighlightedWaypointIndices = null,
   waypointIssueFlagsById = null,
   highlightedWaypointIndex = null,
+  optimizedRoute = null,
+  onHomePointMove,
   isMobile = false,
   onPolygonCreate,
   onPolygonUpdate,
@@ -202,6 +204,70 @@ const Map = ({
   const redZonesGeoJSON = useMemo(() => getRedZonesGeoJSON(), [])
   const yellowZonesGeoJSON = useMemo(() => getYellowZonesGeoJSON(), [])
   const heliportsGeoJSON = useMemo(() => getHeliportsGeoJSON(), [])
+
+  // Memoize optimized route GeoJSON (lines connecting waypoints in optimal order)
+  const optimizedRouteGeoJSON = useMemo(() => {
+    if (!optimizedRoute || !optimizedRoute.flights || optimizedRoute.flights.length === 0) return null
+
+    const features = []
+    const homePoint = optimizedRoute.homePoint
+
+    // Flight colors: Flight 1 = blue, Flight 2 = green, Flight 3+ = red
+    const flightColors = ['#2563eb', '#16a34a', '#dc2626', '#f59e0b', '#8b5cf6']
+
+    optimizedRoute.flights.forEach((flight, flightIdx) => {
+      const color = flightColors[Math.min(flightIdx, flightColors.length - 1)]
+      const wps = flight.waypoints
+
+      if (wps.length === 0) return
+
+      // Line from home to first waypoint
+      features.push({
+        type: 'Feature',
+        properties: { flightNumber: flight.flightNumber, color, isReturn: false },
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [homePoint.lng, homePoint.lat],
+            [wps[0].lng, wps[0].lat]
+          ]
+        }
+      })
+
+      // Lines between waypoints
+      for (let i = 0; i < wps.length - 1; i++) {
+        features.push({
+          type: 'Feature',
+          properties: { flightNumber: flight.flightNumber, color, isReturn: false },
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [wps[i].lng, wps[i].lat],
+              [wps[i + 1].lng, wps[i + 1].lat]
+            ]
+          }
+        })
+      }
+
+      // Line from last waypoint back to home
+      features.push({
+        type: 'Feature',
+        properties: { flightNumber: flight.flightNumber, color, isReturn: true },
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [wps[wps.length - 1].lng, wps[wps.length - 1].lat],
+            [homePoint.lng, homePoint.lat]
+          ]
+        }
+      })
+    })
+
+    return {
+      type: 'FeatureCollection',
+      features
+    }
+  }, [optimizedRoute])
 
   // Memoize optimization overlay GeoJSON (lines from current to recommended positions + zone warnings)
   const optimizationOverlayGeoJSON = useMemo(() => {
@@ -813,6 +879,46 @@ const Map = ({
             }}
           />
         </Source>
+
+        {/* Display optimized route lines */}
+        {optimizedRouteGeoJSON && (
+          <Source id="optimized-route" type="geojson" data={optimizedRouteGeoJSON}>
+            <Layer
+              id="optimized-route-line"
+              type="line"
+              paint={{
+                'line-color': ['get', 'color'],
+                'line-width': 3,
+                'line-dasharray': [2, 1],
+                'line-opacity': ['case', ['get', 'isReturn'], 0.5, 0.9]
+              }}
+            />
+          </Source>
+        )}
+
+        {/* Display home point marker for optimized route (draggable) */}
+        {optimizedRoute?.homePoint && (
+          <Marker
+            latitude={optimizedRoute.homePoint.lat}
+            longitude={optimizedRoute.homePoint.lng}
+            draggable={!!onHomePointMove}
+            onDragEnd={(e) => {
+              if (onHomePointMove) {
+                onHomePointMove({
+                  lat: e.lngLat.lat,
+                  lng: e.lngLat.lng
+                })
+              }
+            }}
+          >
+            <div
+              className={`${styles.homeMarker} ${onHomePointMove ? styles.draggable : ''}`}
+              title="ホームポイント（離発着地点）- ドラッグで移動可能"
+            >
+              <span>H</span>
+            </div>
+          </Marker>
+        )}
 
         {/* Display waypoints as draggable markers (non-interactive during polygon edit) */}
         {waypoints.map((wp) => {
