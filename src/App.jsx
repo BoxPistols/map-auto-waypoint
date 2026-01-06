@@ -114,10 +114,13 @@ function App() {
 
   // Show notification (defined early for use in undo/redo)
   // action: { label: string, onClick: () => void } for actionable notifications
-  const showNotification = useCallback((message, type = 'info', action = null) => {
-    setNotification({ message, type, action })
-    const timeout = action ? 5000 : 2500 // Longer timeout for actionable notifications
-    setTimeout(() => setNotification(null), timeout)
+  // persistent: true for notifications that should stay until manually dismissed
+  const showNotification = useCallback((message, type = 'info', action = null, persistent = false) => {
+    setNotification({ message, type, action, persistent })
+    // Don't auto-dismiss persistent notifications (actionable ones)
+    if (!persistent && !action) {
+      setTimeout(() => setNotification(null), 2500)
+    }
   }, [])
 
   // Undo/Redo history management
@@ -1380,15 +1383,24 @@ function App() {
         <div className={`notification ${notification.type} ${notification.action ? 'has-action' : ''}`}>
           <span>{notification.message}</span>
           {notification.action && (
-            <button
-              className="notification-action"
-              onClick={() => {
-                notification.action.onClick()
-                setNotification(null)
-              }}
-            >
-              {notification.action.label}
-            </button>
+            <>
+              <button
+                className="notification-action"
+                onClick={() => {
+                  notification.action.onClick()
+                  setNotification(null)
+                }}
+              >
+                {notification.action.label}
+              </button>
+              <button
+                className="notification-close"
+                onClick={() => setNotification(null)}
+                aria-label="閉じる"
+              >
+                <X size={14} />
+              </button>
+            </>
           )}
         </div>
       )}
