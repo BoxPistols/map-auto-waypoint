@@ -1251,7 +1251,7 @@ function App() {
 
       {/* Flight Requirements Panel (法的要件サマリー) */}
       <FlightRequirements
-        polygon={selectedPolygonId ? polygons.find(p => p.id === selectedPolygonId) : polygons[0]}
+        polygon={selectedPolygonId ? polygons.find(p => p.id === selectedPolygonId) : (polygons.length > 0 ? polygons[0] : null)}
         waypoints={waypoints}
         altitude={50}
         searchResult={lastSearchResult}

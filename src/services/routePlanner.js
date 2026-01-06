@@ -7,9 +7,27 @@
  * - バッテリー効率ルート
  */
 
-import * as turf from '@turf/turf';
+import { getDistanceMeters } from '../utils/geoUtils';
 import { AIRPORT_ZONES, NO_FLY_ZONES } from './airspace';
 import { checkDIDArea } from './flightAnalyzer';
+
+// Constants
+const AVG_SPEED_KMH = 40; // 一般的なドローン巡航速度
+const BATTERY_CONSUMPTION_PER_KM = 3; // 1kmあたり3%
+const BATTERY_ALTITUDE_FACTOR = 0.05; // 高度によるバッテリー消費係数
+const WEIGHT_MULTIPLIER_HEAVY = 1.5;
+const WEIGHT_MULTIPLIER_CARGO = 1.3;
+const CHECK_POINTS_COUNT = 10;
+const METERS_PER_DEGREE = 111000; // 緯度経度1度あたりの概算距離(m)
+const CAT2_DISTANCE_THRESHOLD = 500;
+const CAT3_DISTANCE_THRESHOLD = 2000;
+const PENALTY_ERROR = 20;
+const PENALTY_WARNING = 10;
+const PENALTY_FLIGHT_TIME = 2;
+const PENALTY_BATTERY = 0.5;
+const SCORE_RECOMMENDED = 80;
+const SCORE_NOT_RECOMMENDED = 50;
+const AVOIDANCE_DISTANCE_FACTOR = 1.1;
 
 // ===== ユースケース定義 =====
 
@@ -140,20 +158,6 @@ export const USE_CASES = [
   },
 ];
 
-// ===== 距離計算 =====
-
-const getDistanceMeters = (lat1, lng1, lat2, lng2) => {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
 // ===== ルート生成 =====
 
 /**
@@ -181,12 +185,11 @@ const generateAvoidanceRoute = async (start, end, options = {}) => {
   const { avoidDID = true, avoidAirport = true, margin = 500 } = options;
 
   // 直線ルート上の中間点をチェック
-  const numCheckPoints = 10;
   const checkPoints = [];
   const obstacles = [];
 
-  for (let i = 0; i <= numCheckPoints; i++) {
-    const t = i / numCheckPoints;
+  for (let i = 0; i <= CHECK_POINTS_COUNT; i++) {
+    const t = i / CHECK_POINTS_COUNT;
     const lat = start.lat + (end.lat - start.lat) * t;
     const lng = start.lng + (end.lng - start.lng) * t;
     checkPoints.push({ lat, lng, t });
@@ -271,7 +274,7 @@ const generateAvoidanceRoute = async (start, end, options = {}) => {
 
     // オフセット距離（障害物のサイズに応じて）
     const offsetDist = obs.radius
-      ? (obs.radius + margin) / 111000 // メートルを度に変換（概算）
+      ? (obs.radius + margin) / METERS_PER_DEGREE // メートルを度に変換（概算）
       : 0.01; // DIDの場合は固定オフセット
 
     // 迂回ポイント（障害物の手前と奥）
@@ -317,14 +320,13 @@ const evaluateRoute = async (route, useCase, options = {}) => {
 
   // 基本情報
   const distance = route.distance;
-  const avgSpeed = 40; // km/h（一般的なドローン巡航速度）
-  const flightTime = (distance / 1000) / avgSpeed * 60; // 分
+  const flightTime = (distance / 1000) / AVG_SPEED_KMH * 60; // 分
 
   // バッテリー消費推定（距離 + 高度 + 積載重量）
-  let batteryUsage = (distance / 1000) * 3; // 1kmあたり3%
-  batteryUsage += altitude * 0.05; // 高度100mで5%追加
-  if (useCase.weight === 'heavy') batteryUsage *= 1.5;
-  if (useCase.weight === 'cargo') batteryUsage *= 1.3;
+  let batteryUsage = (distance / 1000) * BATTERY_CONSUMPTION_PER_KM; // 1kmあたり3%
+  batteryUsage += altitude * BATTERY_ALTITUDE_FACTOR; // 高度100mで5%追加
+  if (useCase.weight === 'heavy') batteryUsage *= WEIGHT_MULTIPLIER_HEAVY;
+  if (useCase.weight === 'cargo') batteryUsage *= WEIGHT_MULTIPLIER_CARGO;
   batteryUsage = Math.min(100, Math.round(batteryUsage));
 
   // DID/制限区域チェック
@@ -360,27 +362,27 @@ const evaluateRoute = async (route, useCase, options = {}) => {
 
   // 申請カテゴリ判定
   let category = 'カテゴリーⅡ（目視内）';
-  if (distance > 500) {
+  if (distance > CAT2_DISTANCE_THRESHOLD) {
     category = 'カテゴリーⅢ（目視外・補助者あり）';
     permits.push('目視外飛行許可');
   }
-  if (distance > 2000 || issues.some(i => i.type === 'did')) {
+  if (distance > CAT3_DISTANCE_THRESHOLD || issues.some(i => i.type === 'did')) {
     category = 'カテゴリーⅢ（目視外・補助者なし）';
   }
 
   // スコア計算（100点満点）
   let score = 100;
-  score -= issues.filter(i => i.severity === 'error').length * 20;
-  score -= issues.filter(i => i.severity === 'warning').length * 10;
-  score -= Math.max(0, flightTime - useCase.maxFlightTime) * 2;
-  score -= Math.max(0, batteryUsage - 70) * 0.5;
+  score -= issues.filter(i => i.severity === 'error').length * PENALTY_ERROR;
+  score -= issues.filter(i => i.severity === 'warning').length * PENALTY_WARNING;
+  score -= Math.max(0, flightTime - useCase.maxFlightTime) * PENALTY_FLIGHT_TIME;
+  score -= Math.max(0, batteryUsage - 70) * PENALTY_BATTERY;
   score = Math.max(0, Math.round(score));
 
   // 推奨度
   let recommendation = 'neutral';
-  if (score >= 80 && issues.length === 0) {
+  if (score >= SCORE_RECOMMENDED && issues.length === 0) {
     recommendation = 'recommended';
-  } else if (score < 50 || issues.some(i => i.severity === 'error')) {
+  } else if (score < SCORE_NOT_RECOMMENDED || issues.some(i => i.severity === 'error')) {
     recommendation = 'not_recommended';
   }
 
@@ -445,7 +447,7 @@ export const generateRouteOptions = async (start, end, useCase, options = {}) =>
   avoidanceEval.evaluation.pros = avoidanceRoute.avoided.length > 0
     ? ['申請手続きが簡素化', '法的リスクが低い']
     : ['直線経路で問題なし'];
-  avoidanceEval.evaluation.cons = avoidanceRoute.distance > directRoute.distance * 1.1
+  avoidanceEval.evaluation.cons = avoidanceRoute.distance > directRoute.distance * AVOIDANCE_DISTANCE_FACTOR
     ? ['距離が長い', 'バッテリー消費が多い', '飛行時間が長い']
     : [];
 

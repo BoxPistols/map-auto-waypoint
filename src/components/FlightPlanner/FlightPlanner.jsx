@@ -32,7 +32,7 @@ import {
   Package,
   ShieldCheck,
 } from 'lucide-react';
-import { USE_CASES, generateRouteOptions, getUseCaseById } from '../../services/routePlanner';
+import { USE_CASES, generateRouteOptions } from '../../services/routePlanner';
 import { downloadFlightPlan, generatePreview, downloadFile } from '../../services/documentGenerator';
 import { searchAddress } from '../../services/geocoding';
 import './FlightPlanner.scss';
@@ -163,7 +163,7 @@ function FlightPlanner({
 
     // Waypointに変換
     const newWaypoints = selectedRoute.waypoints.map((wp, idx) => ({
-      id: `route-wp-${Date.now()}-${idx}`,
+      id: crypto.randomUUID(),
       lat: wp.lat,
       lng: wp.lng,
       index: idx + 1,
@@ -230,17 +230,21 @@ function FlightPlanner({
     // 座標形式かチェック
     const coords = query.split(',').map(s => parseFloat(s.trim()));
     if (coords.length === 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-      const point = { lat: coords[0], lng: coords[1], name: `${coords[0].toFixed(4)}, ${coords[1].toFixed(4)}` };
-      if (type === 'start') {
-        setStartPoint(point);
-        setStartResults([]);
-        setStartQuery('');
-      } else {
-        setEndPoint(point);
-        setEndResults([]);
-        setEndQuery('');
+      const [lat, lng] = coords;
+      // 座標の妥当性チェック
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        const point = { lat, lng, name: `${lat.toFixed(4)}, ${lng.toFixed(4)}` };
+        if (type === 'start') {
+          setStartPoint(point);
+          setStartResults([]);
+          setStartQuery('');
+        } else {
+          setEndPoint(point);
+          setEndResults([]);
+          setEndQuery('');
+        }
+        return;
       }
-      return;
     }
 
     // 地名検索

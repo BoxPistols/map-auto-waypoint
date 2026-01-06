@@ -108,7 +108,7 @@ export const generateDIPSCSV = (flightPlan) => {
 
   // CSVに変換
   const csv = [headers, ...rows]
-    .map(row => row.map(cell => `"${cell}"`).join(','))
+    .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     .join('\n');
 
   return csv;

@@ -689,6 +689,55 @@
       background: var(--bg-primary, #1f2937);
     }
 
+    &__steps {
+      background: var(--bg-secondary, #374151);
+      border-bottom-color: var(--border-color, #4b5563);
+    }
+
+    &__step {
+      color: var(--text-secondary, #9ca3af);
+
+      &.active {
+        color: #60a5fa;
+      }
+
+      &.completed {
+        color: #22c55e;
+      }
+
+      &-number {
+        background: var(--bg-hover, #4b5563);
+
+        .active & {
+          background: #3b82f6;
+        }
+
+        .completed & {
+          background: #22c55e;
+        }
+      }
+    }
+
+    &__step-connector {
+      background: var(--border-color, #4b5563);
+    }
+
+    &__footer {
+      background: var(--bg-secondary, #374151);
+      border-top-color: var(--border-color, #4b5563);
+    }
+
+    &__btn {
+      &--secondary {
+        background: var(--bg-hover, #4b5563);
+        color: var(--text-primary, #f3f4f6);
+
+        &:hover:not(:disabled) {
+          background: #6b7280;
+        }
+      }
+    }
+
     &__step-content {
       h3 {
         color: #f3f4f6;
