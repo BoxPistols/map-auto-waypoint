@@ -17,7 +17,7 @@ export const USE_CASES = [
   {
     id: 'emergency_medical',
     name: '緊急医療輸送',
-    icon: '🏥',
+    icon: 'Heart',
     description: '血液製剤・医薬品・臓器等の緊急輸送',
     priority: 'speed',
     maxFlightTime: 30, // 分
@@ -33,7 +33,7 @@ export const USE_CASES = [
   {
     id: 'inspection_solar',
     name: '太陽光パネル点検',
-    icon: '☀️',
+    icon: 'Sun',
     description: 'メガソーラー等の定期点検・熱画像撮影',
     priority: 'coverage',
     maxFlightTime: 25,
@@ -49,7 +49,7 @@ export const USE_CASES = [
   {
     id: 'inspection_infrastructure',
     name: 'インフラ点検',
-    icon: '🏗️',
+    icon: 'Building2',
     description: '橋梁・送電線・鉄塔等の点検',
     priority: 'precision',
     maxFlightTime: 20,
@@ -65,7 +65,7 @@ export const USE_CASES = [
   {
     id: 'survey_mapping',
     name: '測量・3Dマッピング',
-    icon: '📐',
+    icon: 'Ruler',
     description: '地形測量・建設現場の進捗管理',
     priority: 'accuracy',
     maxFlightTime: 30,
@@ -81,7 +81,7 @@ export const USE_CASES = [
   {
     id: 'agriculture',
     name: '農業（散布・監視）',
-    icon: '🌾',
+    icon: 'Wheat',
     description: '農薬散布・生育監視・圃場管理',
     priority: 'coverage',
     maxFlightTime: 15,
@@ -97,7 +97,7 @@ export const USE_CASES = [
   {
     id: 'delivery',
     name: '物流配送',
-    icon: '📦',
+    icon: 'Package',
     description: '荷物の配送・離島への物資輸送',
     priority: 'efficiency',
     maxFlightTime: 30,
@@ -113,7 +113,7 @@ export const USE_CASES = [
   {
     id: 'security',
     name: '警備・監視',
-    icon: '🔒',
+    icon: 'ShieldCheck',
     description: 'イベント警備・施設監視',
     priority: 'realtime',
     maxFlightTime: 20,
@@ -129,7 +129,7 @@ export const USE_CASES = [
   {
     id: 'other',
     name: 'その他',
-    icon: '🚁',
+    icon: 'Plane',
     description: '上記以外の用途',
     priority: 'balanced',
     maxFlightTime: 25,

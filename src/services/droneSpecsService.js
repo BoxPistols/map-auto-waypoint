@@ -25,7 +25,7 @@ const DRONE_SPECS = {
     thermalCamera: true,
     // 表示用
     description: '長時間飛行・高精度RTK対応のフラッグシップ機',
-    icon: '🛩️',
+    icon: 'Plane',
   },
   'mavic-3-enterprise': {
     id: 'mavic-3-enterprise',
@@ -43,7 +43,7 @@ const DRONE_SPECS = {
     rtk: true,
     thermalCamera: true,
     description: 'コンパクトで持ち運び容易、バランス型',
-    icon: '🚁',
+    icon: 'Navigation',
   },
   'phantom-4-rtk': {
     id: 'phantom-4-rtk',
@@ -61,7 +61,7 @@ const DRONE_SPECS = {
     rtk: true,
     thermalCamera: false,
     description: '測量・マッピング特化の高精度機',
-    icon: '📍',
+    icon: 'MapPin',
   },
   'matrice-30t': {
     id: 'matrice-30t',
@@ -79,7 +79,7 @@ const DRONE_SPECS = {
     rtk: true,
     thermalCamera: true,
     description: '全天候対応・熱画像内蔵の堅牢機',
-    icon: '🔥',
+    icon: 'Flame',
   },
   'mavic-3t': {
     id: 'mavic-3t',
@@ -97,7 +97,7 @@ const DRONE_SPECS = {
     rtk: false,
     thermalCamera: true,
     description: '熱画像特化・コストパフォーマンス良好',
-    icon: '🌡️',
+    icon: 'Thermometer',
   },
 };
 

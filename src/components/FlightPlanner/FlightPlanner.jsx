@@ -23,12 +23,37 @@ import {
   ExternalLink,
   Search,
   Loader,
+  Eye,
+  Heart,
+  Sun,
+  Building2,
+  Ruler,
+  Wheat,
+  Package,
+  ShieldCheck,
 } from 'lucide-react';
 import { USE_CASES, generateRouteOptions, getUseCaseById } from '../../services/routePlanner';
 import { downloadFlightPlan, generatePreview, downloadFile } from '../../services/documentGenerator';
 import { searchAddress } from '../../services/geocoding';
-import { Eye } from 'lucide-react';
 import './FlightPlanner.scss';
+
+// アイコン名からコンポーネントへのマッピング
+const ICON_MAP = {
+  Heart,
+  Sun,
+  Building2,
+  Ruler,
+  Wheat,
+  Package,
+  ShieldCheck,
+  Plane,
+};
+
+// アイコンコンポーネントを取得
+const getIcon = (iconName, size = 18) => {
+  const IconComponent = ICON_MAP[iconName];
+  return IconComponent ? <IconComponent size={size} /> : null;
+};
 
 /**
  * フライトプランナー - 目的ベースOOUI
@@ -340,7 +365,7 @@ function FlightPlanner({
                   className={`usecase-card ${selectedUseCase?.id === uc.id ? 'selected' : ''}`}
                   onClick={() => setSelectedUseCase(uc)}
                 >
-                  <span className="usecase-icon">{uc.icon}</span>
+                  <span className="usecase-icon">{getIcon(uc.icon)}</span>
                   <span className="usecase-name">{uc.name}</span>
                   <span className="usecase-desc">{uc.description}</span>
                 </button>
@@ -349,7 +374,7 @@ function FlightPlanner({
 
             {selectedUseCase && (
               <div className="usecase-details">
-                <h4>{selectedUseCase.icon} {selectedUseCase.name}</h4>
+                <h4>{getIcon(selectedUseCase.icon, 16)} {selectedUseCase.name}</h4>
                 <div className="detail-grid">
                   <div className="detail-item">
                     <Clock size={14} />

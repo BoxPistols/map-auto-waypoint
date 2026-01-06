@@ -9,7 +9,10 @@ import {
   AlertCircle,
   Loader,
   Info,
-  RotateCcw
+  RotateCcw,
+  Plane,
+  Ban,
+  Home,
 } from 'lucide-react';
 import {
   hasApiKey,
@@ -350,7 +353,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                           </div>
 
                           <div className='did-checkboxes'>
-                              <span className='did-label'>🏘️ DID:</span>
+                              <span className='did-label'><Home size={14} /> DID:</span>
                               <label className='checkbox-item'>
                                   <input
                                       type='checkbox'
@@ -388,17 +391,17 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                       {/* 区域一覧 */}
                       <div className='zone-list'>
                           <div className='zone-item'>
-                              <span className='zone-icon'>✈️</span>
+                              <span className='zone-icon'><Plane size={14} /></span>
                               <span className='zone-name'>空港制限</span>
                               <span className='zone-status mandatory'>回避必須</span>
                           </div>
                           <div className='zone-item'>
-                              <span className='zone-icon'>⛔</span>
+                              <span className='zone-icon'><Ban size={14} /></span>
                               <span className='zone-name'>飛行禁止</span>
                               <span className='zone-status mandatory'>回避必須</span>
                           </div>
                           <div className='zone-item'>
-                              <span className='zone-icon'>🏘️</span>
+                              <span className='zone-icon'><Home size={14} /></span>
                               <span className='zone-name'>DID</span>
                               <span className={`zone-status ${didAvoidanceMode ? 'avoidance' : didWarningOnly ? 'warning' : 'off'}`}>
                                   {didAvoidanceMode ? '回避推奨' : didWarningOnly ? '警告のみ' : 'OFF'}
