@@ -684,8 +684,8 @@ export const generateExternalLinks = (results) => {
   if (airportItem?.airport) {
     links.push({
       id: 'airport_info',
-      name: `${airportItem.airport.name}情報`,
-      description: '空港周辺の飛行制限',
+      name: '空港等周辺飛行ルール',
+      description: `${airportItem.airport.name}周辺`,
       url: 'https://www.mlit.go.jp/koku/koku_tk10_000003.html',
       category: 'official',
     });

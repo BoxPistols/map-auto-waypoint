@@ -25,6 +25,10 @@ export const DroneDataProvider = ({ children }) => {
     saveWaypoints(waypoints);
   }, [waypoints]);
 
+  // History state for UI updates
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const [historyLength, setHistoryLength] = useState(1);
+
   // History management
   const pushToHistory = useCallback(() => {
     if (isUndoRedoRef.current) {
@@ -48,6 +52,10 @@ export const DroneDataProvider = ({ children }) => {
     }
 
     historyRef.current = newHistory;
+    
+    // Update state to trigger re-renders for UI buttons
+    setHistoryIndex(historyIndexRef.current);
+    setHistoryLength(newHistory.length);
   }, [polygons, waypoints]);
 
   // Track changes for history
@@ -63,6 +71,9 @@ export const DroneDataProvider = ({ children }) => {
       const prevState = historyRef.current[index - 1];
       setPolygons(prevState.polygons);
       setWaypoints(prevState.waypoints);
+      
+      // Update state
+      setHistoryIndex(index - 1);
       return true; // Success
     }
     return false; // Cannot undo
@@ -77,13 +88,16 @@ export const DroneDataProvider = ({ children }) => {
       const nextState = history[index + 1];
       setPolygons(nextState.polygons);
       setWaypoints(nextState.waypoints);
+      
+      // Update state
+      setHistoryIndex(index + 1);
       return true; // Success
     }
     return false; // Cannot redo
   }, []);
 
-  const canUndo = historyIndexRef.current > 0;
-  const canRedo = historyIndexRef.current < historyRef.current.length - 1;
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < historyLength - 1;
 
   return (
     <DroneDataContext.Provider value={{

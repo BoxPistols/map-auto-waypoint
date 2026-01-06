@@ -13,48 +13,20 @@ import { getSetting, isDIDAvoidanceModeEnabled } from './settingsService';
  */
 const calculateSafePosition = (lat, lng, zone, safetyMargin = 500) => {
   const distance = getDistanceMeters(lat, lng, zone.lat, zone.lng);
-  const requiredDistance = zone.radius + safetyMargin;
+  const safeDistance = zone.radius + safetyMargin;
 
-  if (distance >= requiredDistance) {
-    return { lat, lng, distance: 0, safe: true };
+  if (distance >= safeDistance) {
+    return { lat, lng };
   }
 
-  const bearing = Math.atan2(lng - zone.lng, lat - zone.lat);
-  const moveDistance = requiredDistance - distance;
-  
-  // 1度あたりの距離 (m) - 簡易計算
-  const latOffset = (moveDistance * Math.cos(bearing)) / 111320;
-  const lngOffset = (moveDistance * Math.sin(bearing)) / (111320 * Math.cos(lat * Math.PI / 180));
+  // 中心から外側へ移動
+  const ratio = safeDistance / distance;
+  const newLat = zone.lat + (lat - zone.lat) * ratio;
+  const newLng = zone.lng + (lng - zone.lng) * ratio;
 
-  return {
-    lat: lat + latOffset,
-    lng: lng + lngOffset,
-    distance: Math.round(moveDistance),
-    safe: false
-  };
+  return { lat: newLat, lng: newLng };
 };
 
-/**
- * 位置が制限区域内にあるかチェック
- */
-const isPositionInRestrictedZone = (lat, lng, margin = 0, checkDID = true) => {
-  for (const airport of AIRPORT_ZONES) {
-    const dist = getDistanceMeters(lat, lng, airport.lat, airport.lng);
-    if (dist < airport.radius + margin) return { type: 'airport', zone: airport };
-  }
-  for (const zone of NO_FLY_ZONES) {
-    const dist = getDistanceMeters(lat, lng, zone.lat, zone.lng);
-    if (dist < zone.radius + margin) return { type: 'prohibited', zone };
-  }
-  if (checkDID && isPositionInDIDSync(lat, lng)) {
-    return { type: 'did' };
-  }
-  return null;
-};
-
-/**
- * Waypointのギャップ分析
- */
 export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
   const gaps = [];
   let hasIssues = false;

@@ -121,7 +121,9 @@ const checkPointInDIDGeoJSON = (geojson, lat, lng) => {
       try {
         const c = turf.centroid(feature);
         centroid = { lat: c.geometry.coordinates[1], lng: c.geometry.coordinates[0] };
-      } catch (e) {}
+      } catch {
+        // Ignore centroid calculation errors
+      }
 
       return {
         isDID: true,
@@ -159,7 +161,7 @@ export const checkDIDArea = async (lat, lng) => {
       };
     }
     return checkDIDAreaFallback(lat, lng);
-  } catch (error) {
+  } catch {
     return checkDIDAreaFallback(lat, lng);
   }
 };
