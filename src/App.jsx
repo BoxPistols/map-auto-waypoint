@@ -19,6 +19,7 @@ import FlightAssistant from './components/FlightAssistant'
 import ApiSettings from './components/ApiSettings'
 import FlightRequirements from './components/FlightRequirements'
 import FlightPlanner from './components/FlightPlanner'
+import RouteOptimizer from './components/RouteOptimizer'
 import './App.scss'
 
 // Default center: Tokyo Tower
@@ -74,6 +75,8 @@ function App() {
   const [showChat, setShowChat] = useState(false)
   const [showFlightRequirements, setShowFlightRequirements] = useState(false)
   const [showFlightPlanner, setShowFlightPlanner] = useState(false)
+  const [showRouteOptimizer, setShowRouteOptimizer] = useState(false)
+  const [optimizedRoute, setOptimizedRoute] = useState(null)
   const [lastSearchResult, setLastSearchResult] = useState(null)
   const [notification, setNotification] = useState(null)
   const [theme, setThemeState] = useState(() => getTheme())
@@ -110,9 +113,11 @@ function App() {
   }, [])
 
   // Show notification (defined early for use in undo/redo)
-  const showNotification = useCallback((message, type = 'info') => {
-    setNotification({ message, type })
-    setTimeout(() => setNotification(null), 2500)
+  // action: { label: string, onClick: () => void } for actionable notifications
+  const showNotification = useCallback((message, type = 'info', action = null) => {
+    setNotification({ message, type, action })
+    const timeout = action ? 5000 : 2500 // Longer timeout for actionable notifications
+    setTimeout(() => setNotification(null), timeout)
   }, [])
 
   // Undo/Redo history management
@@ -226,7 +231,19 @@ function App() {
       setZoom(16)
     }
 
-    showNotification(`ポリゴンとWaypoint(${newWaypoints.length}個)を生成しました`)
+    // Show notification with route optimization action
+    if (newWaypoints.length >= 2) {
+      showNotification(
+        `ポリゴンとWaypoint(${newWaypoints.length}個)を生成しました`,
+        'info',
+        {
+          label: 'ルートを最適化',
+          onClick: () => setShowRouteOptimizer(true),
+        }
+      )
+    } else {
+      showNotification(`ポリゴンとWaypoint(${newWaypoints.length}個)を生成しました`)
+    }
   }, [showNotification])
 
   // Handle elevation fetch
@@ -384,9 +401,12 @@ function App() {
             e.preventDefault()
             setShowFlightRequirements(prev => !prev)
             break
-          case 'g': // Toggle Flight Planner (目的ベースプランナー)
+          case 'g': // Toggle Route Optimizer (最適巡回ルートプランナー) - 旧FlightPlannerのキーを継承
+          case 'o': // Toggle Route Optimizer (最適巡回ルートプランナー)
             e.preventDefault()
-            setShowFlightPlanner(prev => !prev)
+            if (waypoints.length >= 2) {
+              setShowRouteOptimizer(prev => !prev)
+            }
             break
           case 'f': // Toggle Full Map Mode
             e.preventDefault()
@@ -555,8 +575,21 @@ function App() {
     ])
 
     setShowGridSettings(null)
-    showNotification(`${newWaypoints.length} Waypointを生成しました（${spacing}m間隔）`)
     setActivePanel('waypoints')
+
+    // Show notification with route optimization action
+    if (newWaypoints.length >= 2) {
+      showNotification(
+        `${newWaypoints.length} Waypointを生成しました`,
+        'info',
+        {
+          label: 'ルートを最適化',
+          onClick: () => setShowRouteOptimizer(true),
+        }
+      )
+    } else {
+      showNotification(`${newWaypoints.length} Waypointを生成しました（${spacing}m間隔）`)
+    }
   }, [showGridSettings, showNotification])
 
   // Generate waypoints from all polygons
@@ -564,9 +597,37 @@ function App() {
     if (polygons.length === 0) return
     const newWaypoints = generateAllWaypoints(polygons)
     setWaypoints(newWaypoints)
-    showNotification(`${newWaypoints.length} Waypointを生成しました`)
     setActivePanel('waypoints')
+
+    // Show notification with route optimization action
+    if (newWaypoints.length >= 2) {
+      showNotification(
+        `${newWaypoints.length} Waypointを生成しました`,
+        'info',
+        {
+          label: 'ルートを最適化',
+          onClick: () => setShowRouteOptimizer(true),
+        }
+      )
+    } else {
+      showNotification(`${newWaypoints.length} Waypointを生成しました`)
+    }
   }, [polygons, showNotification])
+
+  // Handle route optimization result
+  const handleApplyOptimizedRoute = useCallback((result) => {
+    if (!result || !result.orderedWaypoints) return
+
+    // Reorder waypoints based on optimization
+    const reorderedWaypoints = result.orderedWaypoints.map((wp, idx) => ({
+      ...wp,
+      index: idx + 1,
+    }))
+
+    setWaypoints(reorderedWaypoints)
+    setOptimizedRoute(result)
+    showNotification(`最適ルートを適用しました（${result.totalFlights}フライト）`)
+  }, [showNotification])
 
   // Handle waypoint select from sidebar - start editing parent polygon
   const handleWaypointSelect = useCallback((waypoint) => {
@@ -854,10 +915,10 @@ function App() {
             エクスポート
           </button>
           <button
-            className={`action-button ${showFlightPlanner ? 'active' : ''}`}
-            onClick={() => setShowFlightPlanner(true)}
-            disabled={!!editingPolygon}
-            data-tooltip="フライトプランナー (G)"
+            className={`action-button ${showRouteOptimizer ? 'active' : ''}`}
+            onClick={() => setShowRouteOptimizer(true)}
+            disabled={!!editingPolygon || waypoints.length < 2}
+            data-tooltip="ルート最適化 (O)"
             data-tooltip-pos="bottom"
           >
             <Route size={16} style={{ marginRight: '4px' }} />
@@ -1019,6 +1080,7 @@ function App() {
                     onGridSpacingChange={setGridSpacing}
                     isLoadingElevation={isLoadingElevation}
                     elevationProgress={elevationProgress}
+                    onOpenRouteOptimizer={() => setShowRouteOptimizer(true)}
                   />
                 )}
               </div>
@@ -1037,6 +1099,7 @@ function App() {
             didHighlightedWaypointIndices={didHighlightedWaypointIndices}
             waypointIssueFlagsById={waypointIssueFlagsById}
             highlightedWaypointIndex={highlightedWaypointIndex}
+            optimizedRoute={optimizedRoute}
             isMobile={isMobile}
             onPolygonCreate={handlePolygonCreate}
             onPolygonUpdate={handlePolygonUpdate}
@@ -1214,6 +1277,14 @@ function App() {
         }}
       />
 
+      {/* Route Optimizer (最適巡回ルートプランナー) */}
+      <RouteOptimizer
+        isOpen={showRouteOptimizer}
+        onClose={() => setShowRouteOptimizer(false)}
+        waypoints={waypoints}
+        onApplyRoute={handleApplyOptimizedRoute}
+      />
+
       {/* Flight Assistant (AI) */}
       <FlightAssistant
         polygons={polygons}
@@ -1323,8 +1394,19 @@ function App() {
 
       {/* Notification */}
       {notification && (
-        <div className={`notification ${notification.type}`}>
-          {notification.message}
+        <div className={`notification ${notification.type} ${notification.action ? 'has-action' : ''}`}>
+          <span>{notification.message}</span>
+          {notification.action && (
+            <button
+              className="notification-action"
+              onClick={() => {
+                notification.action.onClick()
+                setNotification(null)
+              }}
+            >
+              {notification.action.label}
+            </button>
+          )}
         </div>
       )}
     </div>

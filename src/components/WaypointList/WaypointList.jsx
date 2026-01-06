@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Trash2, Mountain, RefreshCw, Settings2, Pencil, Check } from 'lucide-react'
+import { Trash2, Mountain, RefreshCw, Settings2, Pencil, Check, Route } from 'lucide-react'
 import { formatElevation } from '../../services/elevation'
 import styles from './WaypointList.module.scss'
 
@@ -14,7 +14,8 @@ const WaypointList = ({
   gridSpacing = 30,
   onGridSpacingChange,
   isLoadingElevation = false,
-  elevationProgress = null
+  elevationProgress = null,
+  onOpenRouteOptimizer,
 }) => {
   const [showSettings, setShowSettings] = useState(false)
   const [editingId, setEditingId] = useState(null)
@@ -128,6 +129,15 @@ const WaypointList = ({
       <div className={styles.header}>
         <span className={styles.count}>{waypoints.length} Waypoints</span>
         <div className={styles.headerActions}>
+          <button
+            className={`${styles.iconButton} ${styles.routeButton}`}
+            onClick={onOpenRouteOptimizer}
+            disabled={waypoints.length < 2}
+            data-tooltip="ルート最適化"
+            data-tooltip-pos="bottom"
+          >
+            <Route size={16} />
+          </button>
           <button
             className={styles.iconButton}
             onClick={() => setShowSettings(!showSettings)}
