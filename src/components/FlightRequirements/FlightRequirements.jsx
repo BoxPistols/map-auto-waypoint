@@ -448,7 +448,7 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
           <p className="disclaimer">
             ※ 本チェックは参考情報です。最終的な判断は
             <a
-              href="https://www.ossportal.dips-reg.mlit.go.jp/portal/top"
+              href="https://www.ossportal.dips.mlit.go.jp/portal/top/"
               target="_blank"
               rel="noopener noreferrer"
             >

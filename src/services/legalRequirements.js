@@ -61,7 +61,7 @@ export const checkAviationLaw = async (context) => {
       description: didResult.description,
       area: didResult.area,
       action: '特定飛行に該当 - DIPS通報または許可申請',
-      link: 'https://www.ossportal.dips-reg.mlit.go.jp/portal/top',
+      link: 'https://www.ossportal.dips.mlit.go.jp/portal/top/',
       linkText: 'DIPS 2.0',
     });
     results.requiresPermission = true;
@@ -531,7 +531,7 @@ const generateRequiredProcedures = (results) => {
         '保険証書',
         '飛行マニュアル',
       ],
-      link: 'https://www.ossportal.dips-reg.mlit.go.jp/portal/top',
+      link: 'https://www.ossportal.dips.mlit.go.jp/portal/top/',
       linkText: 'DIPS 2.0',
       notes: didItem?.status === 'warning'
         ? '包括申請済みの場合は通報のみで可'
@@ -666,14 +666,14 @@ export const generateExternalLinks = (results) => {
       id: 'dips',
       name: 'DIPS 2.0',
       description: '飛行許可・承認申請',
-      url: 'https://www.ossportal.dips-reg.mlit.go.jp/portal/top',
+      url: 'https://www.ossportal.dips.mlit.go.jp/portal/top/',
       category: 'official',
     },
     {
       id: 'fiss',
       name: 'FISS',
       description: '飛行情報共有システム',
-      url: 'https://www.fiss.mlit.go.jp/',
+      url: 'https://www.uafp.dips.mlit.go.jp/',
       category: 'official',
     },
     {

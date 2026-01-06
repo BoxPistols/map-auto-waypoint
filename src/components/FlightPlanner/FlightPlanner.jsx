@@ -29,8 +29,8 @@ import './FlightPlanner.scss';
 /**
  * フライトプランナー - 目的ベースOOUI
  *
- * 1. ユースケース選択
- * 2. 出発地・目的地設定
+ * 1. 出発地・目的地設定
+ * 2. 飛行目的（ユースケース）選択
  * 3. ルート候補の生成・比較（A案/B案）
  * 4. 申請書類の生成
  */
@@ -193,12 +193,12 @@ function FlightPlanner({
       <div className="step-indicator">
         <div className={`step ${step >= 1 ? 'active' : ''} ${step > 1 ? 'completed' : ''}`}>
           <span className="step-number">1</span>
-          <span className="step-label">目的</span>
+          <span className="step-label">地点</span>
         </div>
         <div className="step-connector" />
         <div className={`step ${step >= 2 ? 'active' : ''} ${step > 2 ? 'completed' : ''}`}>
           <span className="step-number">2</span>
-          <span className="step-label">地点</span>
+          <span className="step-label">目的</span>
         </div>
         <div className="step-connector" />
         <div className={`step ${step >= 3 ? 'active' : ''}`}>
@@ -208,8 +208,8 @@ function FlightPlanner({
       </div>
 
       <div className="planner-content">
-        {/* Step 1: ユースケース選択 */}
-        {step === 1 && (
+        {/* Step 2: 飛行目的選択 */}
+        {step === 2 && (
           <div className="step-content">
             <h3>飛行目的を選択</h3>
             <p className="step-description">
@@ -265,20 +265,32 @@ function FlightPlanner({
             )}
 
             <div className="step-actions">
+              <button className="secondary-btn" onClick={() => setStep(1)}>
+                戻る
+              </button>
               <button
                 className="primary-btn"
-                onClick={() => setStep(2)}
-                disabled={!selectedUseCase}
+                onClick={handleGenerateRoutes}
+                disabled={!selectedUseCase || !startPoint || !endPoint || isGenerating}
               >
-                次へ: 地点設定
-                <ChevronRight size={16} />
+                {isGenerating ? (
+                  <>
+                    <RefreshCw size={16} className="spinning" />
+                    生成中...
+                  </>
+                ) : (
+                  <>
+                    ルート生成
+                    <Zap size={16} />
+                  </>
+                )}
               </button>
             </div>
           </div>
         )}
 
-        {/* Step 2: 地点設定 */}
-        {step === 2 && (
+        {/* Step 1: 地点設定 */}
+        {step === 1 && (
           <div className="step-content">
             <h3>出発地・目的地を設定</h3>
             <p className="step-description">
@@ -364,25 +376,13 @@ function FlightPlanner({
             </div>
 
             <div className="step-actions">
-              <button className="secondary-btn" onClick={() => setStep(1)}>
-                戻る
-              </button>
               <button
                 className="primary-btn"
-                onClick={handleGenerateRoutes}
-                disabled={!startPoint || !endPoint || isGenerating}
+                onClick={() => setStep(2)}
+                disabled={!startPoint || !endPoint}
               >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw size={16} className="spinning" />
-                    生成中...
-                  </>
-                ) : (
-                  <>
-                    ルート生成
-                    <Zap size={16} />
-                  </>
-                )}
+                次へ: 飛行目的を選択
+                <ChevronRight size={16} />
               </button>
             </div>
           </div>
