@@ -297,6 +297,42 @@
   color: white;
 }
 
+// UTM新規レイヤーボタンのスタイル
+.toggleButton.activeEmergency {
+  background: #ef4444;
+  color: white;
+}
+
+.toggleButton.activeRemoteId {
+  background: #2563eb;
+  color: white;
+}
+
+.toggleButton.activeMannedAircraft {
+  background: #ec4899;
+  color: white;
+}
+
+.toggleButton.activeGeoFeatures {
+  background: #10b981;
+  color: white;
+}
+
+.toggleButton.activeRainCloud {
+  background: #06b6d4;
+  color: white;
+}
+
+.toggleButton.activeWind {
+  background: #0ea5e9;
+  color: white;
+}
+
+.toggleButton.activeRadioZones {
+  background: #a855f7;
+  color: white;
+}
+
 .toggleButton.loading {
   animation: pulse 1s infinite;
 }
