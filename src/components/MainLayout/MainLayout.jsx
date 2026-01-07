@@ -520,15 +520,21 @@ function MainLayout() {
   const handleApplyOptimizedRoute = useCallback((result) => {
     if (!result || !result.orderedWaypoints) return
 
-    // Reorder waypoints based on optimization
+    // Reorder waypoints based on optimization result
+    // routeOptimizer returns ordered waypoints with optimizedOrder property
     const reorderedWaypoints = result.orderedWaypoints.map((wp, idx) => ({
       ...wp,
-      index: idx + 1,
+      index: idx + 1, // Update index to reflect new order
     }))
 
-    setWaypoints(reorderedWaypoints)
+    // Sort by optimizedOrder to maintain the optimized sequence
+    const sortedWaypoints = reorderedWaypoints.sort((a, b) =>
+      (a.optimizedOrder || a.index) - (b.optimizedOrder || b.index)
+    )
+
+    setWaypoints(sortedWaypoints)
     setOptimizedRoute(result)
-    showNotification(`最適ルートを適用しました（${result.totalFlights}フライト）`)
+    showNotification(`ルート順序を最適化しました（${result.totalFlights}フライト、距離${(result.totalDistance / 1000).toFixed(1)}km）`)
   }, [setWaypoints, showNotification])
 
   // Handle home point move on map
