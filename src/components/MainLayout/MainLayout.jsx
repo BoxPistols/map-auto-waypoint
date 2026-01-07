@@ -167,19 +167,7 @@ function MainLayout() {
       setZoom(16)
     }
 
-    // Show notification with route optimization action
-    if (newWaypoints.length >= 2) {
-      showNotification(
-        `ポリゴンとWaypoint(${newWaypoints.length}個)を生成しました`,
-        'info',
-        {
-          label: 'ルートを最適化',
-          onClick: () => setShowRouteOptimizer(true),
-        }
-      )
-    } else {
-      showNotification(`ポリゴンとWaypoint(${newWaypoints.length}個)を生成しました`)
-    }
+    showNotification(`ポリゴンとWaypoint(${newWaypoints.length}個)を生成しました`)
   }, [setPolygons, setWaypoints, showNotification])
 
   // Handle elevation fetch
@@ -503,20 +491,7 @@ function MainLayout() {
 
     setShowGridSettings(null)
     setActivePanel('waypoints')
-
-    // Show notification with route optimization action
-    if (newWaypoints.length >= 2) {
-      showNotification(
-        `${newWaypoints.length} Waypointを生成しました`,
-        'info',
-        {
-          label: 'ルートを最適化',
-          onClick: () => setShowRouteOptimizer(true),
-        }
-      )
-    } else {
-      showNotification(`${newWaypoints.length} Waypointを生成しました（${spacing}m間隔）`)
-    }
+    showNotification(`${newWaypoints.length} Waypointを生成しました（${spacing}m間隔）`)
   }, [showGridSettings, setWaypoints, showNotification])
 
   // Generate waypoints from all polygons
@@ -525,20 +500,7 @@ function MainLayout() {
     const newWaypoints = generateAllWaypoints(polygons)
     setWaypoints(newWaypoints)
     setActivePanel('waypoints')
-
-    // Show notification with route optimization action
-    if (newWaypoints.length >= 2) {
-      showNotification(
-        `${newWaypoints.length} Waypointを生成しました`,
-        'info',
-        {
-          label: 'ルートを最適化',
-          onClick: () => setShowRouteOptimizer(true),
-        }
-      )
-    } else {
-      showNotification(`${newWaypoints.length} Waypointを生成しました`)
-    }
+    showNotification(`${newWaypoints.length} Waypointを生成しました`)
   }, [polygons, setWaypoints, showNotification])
 
   // Handle route optimization result
