@@ -167,6 +167,11 @@ function MainLayout() {
       setZoom(16)
     }
 
+    // Automatically show flight requirements panel to set mission/drone seamlessly
+    setLastSearchResult(searchResult)
+    setShowFlightRequirements(true)
+    setActivePanel('waypoints')
+
     showNotification(`ポリゴンとWaypoint(${newWaypoints.length}個)を生成しました`)
   }, [setPolygons, setWaypoints, showNotification])
 
@@ -491,6 +496,10 @@ function MainLayout() {
 
     setShowGridSettings(null)
     setActivePanel('waypoints')
+
+    // Show flight requirements panel to set mission/drone seamlessly
+    setShowFlightRequirements(true)
+
     showNotification(`${newWaypoints.length} Waypointを生成しました（${spacing}m間隔）`)
   }, [showGridSettings, setWaypoints, showNotification])
 
@@ -500,6 +509,10 @@ function MainLayout() {
     const newWaypoints = generateAllWaypoints(polygons)
     setWaypoints(newWaypoints)
     setActivePanel('waypoints')
+
+    // Show flight requirements panel to set mission/drone seamlessly
+    setShowFlightRequirements(true)
+
     showNotification(`${newWaypoints.length} Waypointを生成しました`)
   }, [polygons, setWaypoints, showNotification])
 
