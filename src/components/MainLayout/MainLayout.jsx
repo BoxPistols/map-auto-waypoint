@@ -1261,6 +1261,7 @@ function MainLayout() {
             showNotification(`WP${wpIndex}が見つかりません`, 'warning')
           }
         }}
+        onOpenRouteOptimizer={() => setShowRouteOptimizer(true)}
       />
 
             {/* Notification */}

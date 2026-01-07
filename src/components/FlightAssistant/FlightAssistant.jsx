@@ -45,6 +45,7 @@ import {
   updateChatLog
 } from '../../services/chatLogService';
 import { getSetting, setSetting } from '../../services/settingsService';
+import { USE_CASES } from '../../services/routePlanner';
 import './FlightAssistant.scss';
 
 /**
@@ -56,7 +57,7 @@ import './FlightAssistant.scss';
  * - OpenAI連携による高度な分析
  * - 「判定！」ボタンで総合判定
  */
-function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect, isOpen: controlledIsOpen, onOpenChange }) {
+function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect, isOpen: controlledIsOpen, onOpenChange, onOpenRouteOptimizer }) {
   // Controlled or uncontrolled mode
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
@@ -76,7 +77,11 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const [showAssessmentDetail, setShowAssessmentDetail] = useState(false);
   const [optimizationPlan, setOptimizationPlan] = useState(null);
   const [showOptimization, setShowOptimization] = useState(false);
-  const [proposedPlan, _setProposedPlan] = useState({ altitude: 50, purpose: '点検飛行' });
+  const [proposedPlan, setProposedPlan] = useState({
+    altitude: 50,
+    purpose: '点検飛行',
+    useCaseId: null // USE_CASESのIDを保持
+  });
   const [isExpanded, setIsExpanded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -1185,6 +1190,75 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         </div>
       )}
 
+      {/* 飛行設定パネル */}
+      <div className="flight-settings-panel">
+        <div className="setting-row">
+          <label className="setting-label">飛行目的</label>
+          <select
+            className="setting-select"
+            value={proposedPlan.useCaseId || ''}
+            onChange={(e) => {
+              const useCaseId = e.target.value;
+              const useCase = USE_CASES.find(u => u.id === useCaseId);
+              if (useCase) {
+                setProposedPlan(prev => ({
+                  ...prev,
+                  useCaseId,
+                  purpose: useCase.name
+                }));
+              }
+            }}
+          >
+            <option value="">--選択してください--</option>
+            {USE_CASES.map(useCase => (
+              <option key={useCase.id} value={useCase.id}>
+                {useCase.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="setting-row">
+          <label className="setting-label">飛行高度</label>
+          <div className="altitude-input-group">
+            <input
+              type="range"
+              min="10"
+              max="500"
+              step="5"
+              value={proposedPlan.altitude}
+              onChange={(e) => {
+                setProposedPlan(prev => ({
+                  ...prev,
+                  altitude: parseInt(e.target.value)
+                }));
+              }}
+              className="altitude-slider"
+            />
+            <input
+              type="number"
+              min="10"
+              max="500"
+              step="5"
+              value={proposedPlan.altitude}
+              onChange={(e) => {
+                const value = Math.max(10, Math.min(500, parseInt(e.target.value) || 50));
+                setProposedPlan(prev => ({
+                  ...prev,
+                  altitude: value
+                }));
+              }}
+              className="altitude-input"
+            />
+            <span className="altitude-unit">m</span>
+          </div>
+        </div>
+
+        <div className="setting-info">
+          <span>現在: {proposedPlan.purpose} / 高度 {proposedPlan.altitude}m</span>
+        </div>
+      </div>
+
       {/* 判定・アクションバー（コンパクト） */}
       <div className="flight-assistant-actions">
         <button
@@ -1212,6 +1286,16 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
               <Download size={14} />
             </button>
           </>
+        )}
+        {assessmentResult && waypoints.length >= 2 && onOpenRouteOptimizer && (
+          <button
+            className="route-optimize-btn"
+            onClick={onOpenRouteOptimizer}
+            title="ルート最適化プランナーを開く"
+          >
+            <Sparkles size={14} />
+            ルート最適化
+          </button>
         )}
         {showOptimization && optimizationPlan?.hasIssues && (
           <button
