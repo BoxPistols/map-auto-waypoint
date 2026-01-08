@@ -1142,8 +1142,6 @@ function MainLayout() {
         isOpen={showFlightRequirements}
         onClose={() => setShowFlightRequirements(false)}
         sidebarCollapsed={sidebarCollapsed}
-        selectedUseCase={selectedUseCase}
-        onSelectedUseCaseChange={setSelectedUseCase}
       />
 
       {/* Flight Planner (目的ベースOOUI) */}
