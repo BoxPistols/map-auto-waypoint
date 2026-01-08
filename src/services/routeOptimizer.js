@@ -7,6 +7,7 @@ import { getDroneSpecs, getRouteSettings } from './droneSpecsService';
 import { getDistanceMeters } from '../utils/geoUtils';
 import { checkDIDArea } from './flightAnalyzer';
 import { checkAirspaceRestrictions } from './airspace';
+import { OPTIMIZATION_OBJECTIVES, getOptimizationObjective } from './optimizationObjectives';
 
 /**
  * 2点間の距離を計算（メートル）
@@ -42,9 +43,9 @@ export const buildDistanceMatrix = (waypoints) => {
  * 最適な出発点を見つける
  * 全WPを分析し、総ルート距離が最小となる出発点を提案
  * @param {Array} waypoints - ウェイポイント配列
- * @returns {Object} 最適出発点情報
+ * @returns {Promise<Object>} 最適出発点情報
  */
-export const findOptimalStartPoint = (waypoints) => {
+export const findOptimalStartPoint = async (waypoints) => {
   if (waypoints.length === 0) {
     return null;
   }
@@ -65,7 +66,7 @@ export const findOptimalStartPoint = (waypoints) => {
 
   // 各WPを出発点として総距離を計算し、最小を選択
   for (let startIdx = 0; startIdx < waypoints.length; startIdx++) {
-    const route = nearestNeighborTSP(waypoints, startIdx, distanceMatrix);
+    const route = await nearestNeighborTSP(waypoints, startIdx, distanceMatrix);
     const totalDist = calculateRouteDistance(route, distanceMatrix);
 
     if (totalDist < minTotalDistance) {
@@ -100,18 +101,110 @@ const calculateRouteDistance = (routeIndices, distanceMatrix) => {
 };
 
 /**
+ * セグメントのリスクスコアを計算
+ * @param {Object} wp1 - 開始ウェイポイント
+ * @param {Object} wp2 - 終了ウェイポイント
+ * @returns {Promise<number>} リスクスコア (0-1, 高いほどリスク高)
+ */
+const calculateSegmentRisk = async (wp1, wp2) => {
+  try {
+    const midLat = (wp1.lat + wp2.lat) / 2;
+    const midLng = (wp1.lng + wp2.lng) / 2;
+
+    let riskScore = 0;
+
+    // DID チェック (中程度リスク = 0.3)
+    const didInfo = await checkDIDArea(midLat, midLng);
+    if (didInfo?.isDID) {
+      riskScore += 0.3;
+    }
+
+    // 空港周辺チェック (高リスク = 0.6)
+    const airspaceRestrictions = checkAirspaceRestrictions(midLat, midLng);
+    const airports = airspaceRestrictions.filter(r => r.type === 'airport');
+    if (airports.length > 0) {
+      riskScore += 0.6;
+    }
+
+    // 禁止区域チェック (重大リスク = 1.0)
+    const prohibited = airspaceRestrictions.filter(r => r.type === 'prohibited');
+    if (prohibited.length > 0) {
+      riskScore += 1.0;
+    }
+
+    return Math.min(riskScore, 1.0);
+  } catch (error) {
+    console.warn('[calculateSegmentRisk] Error:', error);
+    return 0;
+  }
+};
+
+/**
+ * マルチ目標スコアリング - セグメントのスコアを計算
+ * @param {Object} wp1 - 開始ウェイポイント
+ * @param {Object} wp2 - 終了ウェイポイント
+ * @param {Object} weights - 目標の重み付け
+ * @param {Object} droneSpec - ドローン仕様
+ * @param {number} distance - 距離（メートル、オプション）
+ * @returns {Promise<number>} 総合スコア（低いほど良い）
+ */
+const calculateSegmentScore = async (wp1, wp2, weights, droneSpec, distance = null) => {
+  try {
+    // 距離成分（メートル）
+    const dist = distance !== null ? distance : getDistance(wp1, wp2);
+    const distanceScore = dist;
+
+    // 時間成分（分）
+    const cruiseSpeed = (droneSpec?.cruiseSpeed || 50) / 3.6; // km/h → m/s
+    const timeScore = dist / cruiseSpeed / 60;
+
+    // バッテリー成分（比率）
+    const maxFlightTime = droneSpec?.maxFlightTime || 30;
+    const batteryScore = timeScore / maxFlightTime;
+
+    // リスク成分（0-1）
+    const riskScore = await calculateSegmentRisk(wp1, wp2);
+
+    // 正規化された重み付き合計
+    // 各成分を同程度のスケールに正規化
+    const normalizedScore =
+      weights.distance * (distanceScore / 1000) +    // km
+      weights.time * (timeScore * 10) +              // 10倍分
+      weights.battery * (batteryScore * 100) +       // パーセント相当
+      weights.risk * (riskScore * 50);               // 0-50 範囲
+
+    return normalizedScore;
+  } catch (error) {
+    console.warn('[calculateSegmentScore] Error:', error);
+    // フォールバック: 距離のみ
+    return (distance || getDistance(wp1, wp2)) / 1000;
+  }
+};
+
+/**
  * 最近傍法によるTSP（巡回セールスマン問題）解法
- * O(n²) の貪欲アルゴリズム
+ * O(n²) の貪欲アルゴリズム（マルチ目標対応）
  * @param {Array} waypoints - ウェイポイント配列
  * @param {number} startIndex - 開始インデックス
  * @param {Array<Array<number>>} [distanceMatrix] - 事前計算済み距離行列（省略時は内部で計算）
- * @returns {Array<number>} 訪問順序（インデックス配列）
+ * @param {string} [objective='balanced'] - 最適化目標
+ * @param {Object} [droneSpec] - ドローン仕様
+ * @returns {Promise<Array<number>>} 訪問順序（インデックス配列）
  */
-export const nearestNeighborTSP = (waypoints, startIndex = 0, distanceMatrix = null) => {
+export const nearestNeighborTSP = async (
+  waypoints,
+  startIndex = 0,
+  distanceMatrix = null,
+  objective = 'balanced',
+  droneSpec = null
+) => {
   const n = waypoints.length;
   if (n <= 1) return [0];
 
   const matrix = distanceMatrix || buildDistanceMatrix(waypoints);
+  const objectiveData = getOptimizationObjective(objective);
+  const weights = objectiveData?.weights || OPTIMIZATION_OBJECTIVES.find(o => o.isDefault).weights;
+
   const visited = new Set();
   const route = [];
 
@@ -120,20 +213,33 @@ export const nearestNeighborTSP = (waypoints, startIndex = 0, distanceMatrix = n
   route.push(current);
 
   while (visited.size < n) {
-    let nearestDist = Infinity;
-    let nearestIdx = -1;
+    let bestScore = Infinity;
+    let bestIdx = -1;
 
     for (let i = 0; i < n; i++) {
-      if (!visited.has(i) && matrix[current][i] < nearestDist) {
-        nearestDist = matrix[current][i];
-        nearestIdx = i;
+      if (!visited.has(i)) {
+        const distance = matrix[current][i];
+
+        // マルチ目標スコアリング
+        const score = await calculateSegmentScore(
+          waypoints[current],
+          waypoints[i],
+          weights,
+          droneSpec,
+          distance
+        );
+
+        if (score < bestScore) {
+          bestScore = score;
+          bestIdx = i;
+        }
       }
     }
 
-    if (nearestIdx !== -1) {
-      visited.add(nearestIdx);
-      route.push(nearestIdx);
-      current = nearestIdx;
+    if (bestIdx !== -1) {
+      visited.add(bestIdx);
+      route.push(bestIdx);
+      current = bestIdx;
     }
   }
 
@@ -339,6 +445,7 @@ export const optimizeRoute = async (waypoints, options = {}) => {
     algorithm = settings.optimizationAlgorithm,
     checkRegulations = settings.checkRegulationsEnabled,
     autoSplit = settings.autoSplitEnabled,
+    objective = settings.objective || 'balanced', // NEW: 最適化目標
   } = options;
 
   const droneSpec = getDroneSpecs(droneId);
@@ -350,7 +457,7 @@ export const optimizeRoute = async (waypoints, options = {}) => {
   }
 
   // 1. 最適出発点を計算
-  const optimalStart = findOptimalStartPoint(waypoints);
+  const optimalStart = await findOptimalStartPoint(waypoints);
   const effectiveHomePoint = homePoint || {
     lat: optimalStart.lat,
     lng: optimalStart.lng,
@@ -359,8 +466,14 @@ export const optimizeRoute = async (waypoints, options = {}) => {
   // 2. 距離行列を構築
   const distanceMatrix = buildDistanceMatrix(waypoints);
 
-  // 3. TSPで最適順序を計算
-  let routeIndices = nearestNeighborTSP(waypoints, optimalStart.index, distanceMatrix);
+  // 3. TSPで最適順序を計算（マルチ目標対応）
+  let routeIndices = await nearestNeighborTSP(
+    waypoints,
+    optimalStart.index,
+    distanceMatrix,
+    objective,
+    droneSpec
+  );
 
   // 4. 2-opt改善（オプション）
   if (algorithm === '2-opt') {
