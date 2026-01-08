@@ -534,6 +534,7 @@ export const optimizeRoute = async (waypoints, options = {}) => {
   // 9. サマリー計算
   const totalDistance = processedFlights.reduce((sum, f) => sum + f.totalDistance, 0);
   const totalTime = processedFlights.reduce((sum, f) => sum + f.estimatedTime, 0);
+  const totalBatteryUsage = processedFlights.reduce((sum, f) => sum + f.batteryUsage, 0);
 
   // 改善率を計算（元のインデックス順との比較）
   const originalDistance = calculateRouteDistance(
@@ -544,6 +545,61 @@ export const optimizeRoute = async (waypoints, options = {}) => {
   const improvement = originalDistance > 0
     ? Math.round((1 - optimizedDistance / originalDistance) * 100)
     : 0;
+
+  // 10. 拡張メトリクス計算
+  // リスク指標の計算（制限区域の数と重要度から推定）
+  const riskScore = restrictions.reduce((sum, r) => {
+    const weight = r.severity === 'critical' ? 3 : r.severity === 'high' ? 2 : 1;
+    return sum + weight;
+  }, 0) / 10;
+
+  // メトリクススコアの正規化
+  const distanceScore = totalDistance / 1000; // km単位
+  const timeScore = totalTime * 10; // 分の10倍
+  const batteryScore = totalBatteryUsage / 100; // パーセンテージ単位
+  const normalizedRiskScore = Math.min(riskScore, 1);
+
+  // 目標達成度の計算
+  let objectiveAchievement = 0;
+  if (objective === 'shortest_distance') {
+    // 距離最短：改善率を達成度とする
+    objectiveAchievement = Math.min(100, improvement * 1.5);
+  } else if (objective === 'fastest_time') {
+    // 時間最短：総飛行時間が少ないほど良い（基準は60分とする）
+    objectiveAchievement = Math.max(0, 100 - (totalTime / 60) * 100);
+  } else if (objective === 'safest_route') {
+    // 最安全：制限区域が少ないほど良い
+    objectiveAchievement = Math.max(0, 100 - restrictions.length * 5);
+  } else if (objective === 'battery_efficient') {
+    // バッテリー効率：使用率が低いほど良い
+    objectiveAchievement = Math.max(0, 100 - totalBatteryUsage);
+  } else {
+    // バランス型：全指標の平均（高いほど良い）
+    const distEff = Math.max(0, 100 - (distanceScore / 50) * 100);
+    const timeEff = Math.max(0, 100 - (timeScore / 600) * 100);
+    const battEff = Math.max(0, 100 - totalBatteryUsage);
+    const safeEff = Math.max(0, 100 - restrictions.length * 5);
+    objectiveAchievement = (distEff + timeEff + battEff + safeEff) / 4;
+  }
+  objectiveAchievement = Math.min(100, Math.max(0, objectiveAchievement));
+
+  // トレードオフ分析
+  const tradeoffs = [];
+  if (improvement > 0) {
+    // 距離改善がある場合の他メトリクスへの影響を分析
+    if (totalTime > 60) {
+      tradeoffs.push({
+        gain: { metric: '距離', change: improvement },
+        cost: { metric: '時間', change: Math.round((totalTime - 60) / 6) },
+      });
+    }
+    if (restrictions.length > 2) {
+      tradeoffs.push({
+        gain: { metric: '距離', change: improvement },
+        cost: { metric: '安全', change: -(restrictions.length * 10) },
+      });
+    }
+  }
 
   return {
     success: true,
@@ -567,6 +623,19 @@ export const optimizeRoute = async (waypoints, options = {}) => {
       warnings: restrictions.filter(r => r.severity === 'high' || r.severity === 'critical').length,
       algorithm,
     },
+    // NEW: 拡張メトリクス
+    metrics: {
+      distance: totalDistance,
+      time: totalTime,
+      batteryUsage: totalBatteryUsage,
+      riskScore: normalizedRiskScore,
+      riskLabel: normalizedRiskScore > 0.7 ? '高' : normalizedRiskScore > 0.3 ? '中' : '低',
+      distanceScore,
+      timeScore,
+      batteryScore,
+    },
+    objectiveAchievement: Math.round(objectiveAchievement),
+    tradeoffs,
     orderedWaypoints,
   };
 };

@@ -1,11 +1,24 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { X, Grid3X3, AlertTriangle, Info } from 'lucide-react'
 import { estimateGridWaypointCount, calculatePolygonArea, formatArea } from '../../services/waypointGenerator'
+import { USE_CASES } from '../../services/routePlanner'
 import styles from './GridSettingsDialog.module.scss'
 
-const GridSettingsDialog = ({ polygon, onConfirm, onCancel }) => {
-  const [spacing, setSpacing] = useState(30)
+const GridSettingsDialog = ({ polygon, selectedUseCase, onConfirm, onCancel }) => {
+  // 飛行目的から推奨グリッド間隔を取得
+  const recommendedGridSize = useMemo(() => {
+    if (!selectedUseCase) return 30; // デフォルト
+    const useCase = USE_CASES.find(uc => uc.id === selectedUseCase);
+    return useCase?.wpGridSize || 30;
+  }, [selectedUseCase])
+
+  const [spacing, setSpacing] = useState(recommendedGridSize)
   const [includeVertices, setIncludeVertices] = useState(true)
+
+  // 飛行目的が変更されたら自動的にスペースを更新
+  useEffect(() => {
+    setSpacing(recommendedGridSize)
+  }, [recommendedGridSize])
 
   // Calculate estimated waypoint count
   const estimatedCount = useMemo(() => {

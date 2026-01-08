@@ -86,6 +86,7 @@ function MainLayout() {
   const [showRouteOptimizer, setShowRouteOptimizer] = useState(false)
   const [optimizedRoute, setOptimizedRoute] = useState(null)
   const [lastSearchResult, setLastSearchResult] = useState(null)
+  const [selectedUseCase, setSelectedUseCase] = useState(null) // 飛行目的
   
   const [editingPolygon, setEditingPolygon] = useState(null)
 
@@ -483,6 +484,7 @@ function MainLayout() {
 
     // Add grid waypoints
     const gridWaypoints = generateGridWaypoints(polygon, spacing)
+
     gridWaypoints.forEach(wp => {
       wp.index = globalIndex++
       newWaypoints.push(wp)
@@ -1109,6 +1111,7 @@ function MainLayout() {
           <div onClick={e => e.stopPropagation()}>
             <GridSettingsDialog
               polygon={showGridSettings}
+              selectedUseCase={selectedUseCase}
               onConfirm={handleGridSettingsConfirm}
               onCancel={() => setShowGridSettings(null)}
             />
@@ -1139,6 +1142,8 @@ function MainLayout() {
         isOpen={showFlightRequirements}
         onClose={() => setShowFlightRequirements(false)}
         sidebarCollapsed={sidebarCollapsed}
+        selectedUseCase={selectedUseCase}
+        onSelectedUseCaseChange={setSelectedUseCase}
       />
 
       {/* Flight Planner (目的ベースOOUI) */}
@@ -1162,6 +1167,7 @@ function MainLayout() {
         onClose={() => setShowRouteOptimizer(false)}
         waypoints={waypoints}
         onApplyRoute={handleApplyOptimizedRoute}
+        selectedUseCase={selectedUseCase}
       />
 
       {/* Flight Assistant (AI) */}
@@ -1170,6 +1176,8 @@ function MainLayout() {
         waypoints={waypoints}
         isOpen={showChat}
         onOpenChange={setShowChat}
+        selectedUseCase={selectedUseCase}
+        onSelectedUseCaseChange={setSelectedUseCase}
         onOptimizationUpdate={(optimizationPlan) => {
           // DIDハイライトは、推奨オーバーレイとは独立に保持する（警告のみでも点滅させるため）
           const didSet = new Set()

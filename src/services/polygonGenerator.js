@@ -112,20 +112,16 @@ export const createPolygonFromSearchResult = (searchResult, options = {}) => {
   const lat = parseFloat(searchResult.lat)
   const lng = parseFloat(searchResult.lng)
 
-  const radius = useCustomSize
-    ? (typeof customRadius === 'number' ? customRadius : SIZE_PRESETS.medium)
+  // ユーザーが明示的にサイズを選択した場合は常にそれを使用
+  const radius = typeof customRadius === 'number'
+    ? customRadius
     : (SIZE_PRESETS[sizePreset] || SIZE_PRESETS.medium)
 
   let geometry = null
-  if (searchResult.boundingBox && !useCustomSize) {
-    geometry = generateFromBoundingBox(searchResult.boundingBox, padding)
-  }
-
-  if (!geometry) {
-    geometry = shape === 'circle'
-      ? generateCirclePolygon(lat, lng, radius)
-      : generateRectanglePolygon(lat, lng, radius)
-  }
+  // bounding box は使用しない - 常にユーザーが選択したサイズを使用
+  geometry = shape === 'circle'
+    ? generateCirclePolygon(lat, lng, radius)
+    : generateRectanglePolygon(lat, lng, radius)
 
   return {
     id: crypto.randomUUID(),

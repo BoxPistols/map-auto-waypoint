@@ -41,6 +41,8 @@ export const USE_CASES = [
     maxFlightTime: 30, // 分
     recommendedAltitude: 100,
     weight: 'light', // 軽量貨物
+    wpGridSize: 100, // ← 目的地への輸送なので広めの間隔
+    defaultOptimization: 'fastest_time', // ← 時間最短
     regulations: ['特定飛行（レベル3.5相当）', '緊急用務空域の確認必須'],
     tips: [
       '事前に飛行経路を医療機関と共有',
@@ -57,6 +59,8 @@ export const USE_CASES = [
     maxFlightTime: 25,
     recommendedAltitude: 50,
     weight: 'camera',
+    wpGridSize: 50, // ← 細密な検査が必要
+    defaultOptimization: 'balanced', // ← 品質と効率のバランス
     regulations: ['目視外飛行（BVLOS）', '施設管理者許可'],
     tips: [
       '熱画像カメラ搭載推奨',
@@ -73,6 +77,8 @@ export const USE_CASES = [
     maxFlightTime: 20,
     recommendedAltitude: 80,
     weight: 'camera',
+    wpGridSize: 50, // ← 高精度検査
+    defaultOptimization: 'safest_route', // ← 複雑な地形で安全重視
     regulations: ['目視外飛行（BVLOS）', '道路管理者・電力会社許可'],
     tips: [
       '障害物センサー搭載推奨',
@@ -89,6 +95,8 @@ export const USE_CASES = [
     maxFlightTime: 30,
     recommendedAltitude: 100,
     weight: 'survey',
+    wpGridSize: 100, // ← 高精度RTKで広めの間隔でも十分
+    defaultOptimization: 'balanced', // ← オーバーラップと効率
     regulations: ['目視外飛行（BVLOS）', '測量法に基づく資格'],
     tips: [
       'RTK対応機体推奨',
@@ -105,6 +113,8 @@ export const USE_CASES = [
     maxFlightTime: 15,
     recommendedAltitude: 30,
     weight: 'heavy', // 散布剤搭載
+    wpGridSize: 200, // ← 広大な農地を効率的に
+    defaultOptimization: 'battery_efficient', // ← バッテリー効率重視
     regulations: ['農薬散布は認定機体のみ', '周辺住民への事前通知'],
     tips: [
       '早朝または夕方が最適',
@@ -121,6 +131,8 @@ export const USE_CASES = [
     maxFlightTime: 30,
     recommendedAltitude: 100,
     weight: 'cargo',
+    wpGridSize: 100, // ← 輸送が主目的なので広め
+    defaultOptimization: 'fastest_time', // ← 配送時間最短
     regulations: ['レベル4飛行（一等資格）', '運航管理システム必須'],
     tips: [
       '着陸地点の事前確認',
@@ -137,6 +149,8 @@ export const USE_CASES = [
     maxFlightTime: 20,
     recommendedAltitude: 60,
     weight: 'light',
+    wpGridSize: 75, // ← 監視範囲をカバー
+    defaultOptimization: 'safest_route', // ← 安全最優先
     regulations: ['イベント上空は原則禁止', '警察との連携必須'],
     tips: [
       'リアルタイム映像伝送',
@@ -153,6 +167,8 @@ export const USE_CASES = [
     maxFlightTime: 25,
     recommendedAltitude: 50,
     weight: 'light',
+    wpGridSize: 100, // ← デフォルト
+    defaultOptimization: 'balanced', // ← バランス型
     regulations: ['用途に応じた許可取得'],
     tips: [],
   },

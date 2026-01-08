@@ -57,7 +57,7 @@ import './FlightAssistant.scss';
  * - OpenAI連携による高度な分析
  * - 「判定！」ボタンで総合判定
  */
-function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect, isOpen: controlledIsOpen, onOpenChange, onOpenRouteOptimizer }) {
+function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdate, onWaypointSelect, isOpen: controlledIsOpen, onOpenChange, onOpenRouteOptimizer, selectedUseCase, onSelectedUseCaseChange }) {
   // Controlled or uncontrolled mode
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
@@ -103,6 +103,20 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   const messagesEndRef = useRef(null);
   const panelRef = useRef(null);
   const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
+
+  // 飛行目的が選択されたら proposedPlan を同期
+  useEffect(() => {
+    if (selectedUseCase) {
+      const useCase = USE_CASES.find(u => u.id === selectedUseCase);
+      if (useCase) {
+        setProposedPlan(prev => ({
+          ...prev,
+          useCaseId: selectedUseCase,
+          purpose: useCase.name
+        }));
+      }
+    }
+  }, [selectedUseCase]);
 
   // 設定変更の同期（他コンポーネントからの変更を反映）
   useEffect(() => {
@@ -1192,31 +1206,15 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
       {/* 飛行設定パネル */}
       <div className="flight-settings-panel">
-        <div className="setting-row">
-          <label className="setting-label">飛行目的</label>
-          <select
-            className="setting-select"
-            value={proposedPlan.useCaseId || ''}
-            onChange={(e) => {
-              const useCaseId = e.target.value;
-              const useCase = USE_CASES.find(u => u.id === useCaseId);
-              if (useCase) {
-                setProposedPlan(prev => ({
-                  ...prev,
-                  useCaseId,
-                  purpose: useCase.name
-                }));
-              }
-            }}
-          >
-            <option value="">--選択してください--</option>
-            {USE_CASES.map(useCase => (
-              <option key={useCase.id} value={useCase.id}>
-                {useCase.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* 飛行目的は Step 1 で選択済みなので、表示のみ */}
+        {selectedUseCase && (
+          <div className="setting-row">
+            <label className="setting-label">飛行目的</label>
+            <div className="setting-display">
+              {USE_CASES.find(u => u.id === selectedUseCase)?.name || '選択されていません'}
+            </div>
+          </div>
+        )}
 
         <div className="setting-row">
           <label className="setting-label">飛行高度</label>

@@ -1,7 +1,7 @@
 .flight-requirements {
   position: fixed;
   top: 60px;
-  left: 340px;
+  left: 390px; // サイドバー(340px) + トグルボタン幅分の余白
   width: 400px;
   max-height: calc(100vh - 80px);
   background: var(--bg-primary, #ffffff);
@@ -16,7 +16,7 @@
 
   // サイドバー折りたたみ時
   &.sidebar-collapsed {
-    left: 70px;
+    left: 80px;
   }
 
   // 最小化時
@@ -97,20 +97,37 @@
   gap: 8px;
   padding: 12px 16px;
   font-weight: 500;
+  border-radius: 8px;
+  margin-bottom: 8px;
 
   &.ok {
-    background: #d4edda;
-    color: #155724;
+    background: rgba(40, 167, 69, 0.12);
+    color: #28a745;
+
+    @media (prefers-color-scheme: dark) {
+      background: rgba(40, 167, 69, 0.15);
+      color: #66bb6a;
+    }
   }
 
   &.warning {
-    background: #fff3cd;
-    color: #856404;
+    background: rgba(255, 193, 7, 0.12);
+    color: #ff9800;
+
+    @media (prefers-color-scheme: dark) {
+      background: rgba(255, 193, 7, 0.15);
+      color: #ffb74d;
+    }
   }
 
   &.error {
-    background: #f8d7da;
-    color: #721c24;
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+
+    @media (prefers-color-scheme: dark) {
+      background: rgba(220, 53, 69, 0.15);
+      color: #ef5350;
+    }
   }
 
   .status-text {
@@ -122,6 +139,79 @@
     padding: 2px 8px;
     background: rgba(0, 0, 0, 0.1);
     border-radius: 10px;
+  }
+}
+
+// 飛行目的選択（コンパクト）
+.flight-purpose-selector {
+  padding: 8px 16px;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+  background: var(--bg-secondary, #f8f9fa);
+
+  .selector-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .usecase-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    max-height: 80px;
+    overflow-y: auto;
+  }
+
+  .usecase-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: var(--bg-primary, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12px;
+    white-space: nowrap;
+    color: var(--text-primary, #1a1a1a);
+
+    &:hover {
+      background: var(--bg-hover, #f3f4f6);
+      border-color: #2563eb;
+    }
+
+    &.selected {
+      background: rgba(37, 99, 235, 0.15);
+      border-color: #2563eb;
+      color: #2563eb;
+      font-weight: 600;
+
+      @media (prefers-color-scheme: dark) {
+        background: rgba(59, 130, 246, 0.2);
+        border-color: #3b82f6;
+        color: #60a5fa;
+      }
+    }
+
+    .usecase-name {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 11px;
+    }
+
+    svg {
+      flex-shrink: 0;
+      color: #2563eb;
+      width: 14px;
+      height: 14px;
+      margin-left: 4px;
+    }
   }
 }
 
@@ -308,23 +398,43 @@
     font-weight: 500;
 
     &.ok {
-      background: #d4edda;
-      color: #155724;
+      background: rgba(40, 167, 69, 0.15);
+      color: #28a745;
+
+      @media (prefers-color-scheme: dark) {
+        background: rgba(40, 167, 69, 0.2);
+        color: #66bb6a;
+      }
     }
 
     &.warning {
-      background: #fff3cd;
-      color: #856404;
+      background: rgba(255, 193, 7, 0.15);
+      color: #ff9800;
+
+      @media (prefers-color-scheme: dark) {
+        background: rgba(255, 193, 7, 0.2);
+        color: #ffb74d;
+      }
     }
 
     &.error {
-      background: #f8d7da;
-      color: #721c24;
+      background: rgba(220, 53, 69, 0.15);
+      color: #dc3545;
+
+      @media (prefers-color-scheme: dark) {
+        background: rgba(220, 53, 69, 0.2);
+        color: #ef5350;
+      }
     }
 
     &.info {
-      background: #d1ecf1;
-      color: #0c5460;
+      background: rgba(23, 162, 184, 0.15);
+      color: #17a2b8;
+
+      @media (prefers-color-scheme: dark) {
+        background: rgba(23, 162, 184, 0.2);
+        color: #4db8d8;
+      }
     }
   }
 }
@@ -369,6 +479,10 @@
   font-size: 12px;
   color: #007bff;
   text-decoration: none;
+
+  @media (prefers-color-scheme: dark) {
+    color: #42a5f5;
+  }
 
   &:hover {
     text-decoration: underline;
@@ -452,16 +566,29 @@
     &.critical {
       background: #dc3545;
       color: white;
+
+      @media (prefers-color-scheme: dark) {
+        background: #ef5350;
+      }
     }
 
     &.high {
       background: #ffc107;
       color: #1a1a1a;
+
+      @media (prefers-color-scheme: dark) {
+        background: #ffa726;
+        color: white;
+      }
     }
 
     &.medium {
       background: #17a2b8;
       color: white;
+
+      @media (prefers-color-scheme: dark) {
+        background: #4db8d8;
+      }
     }
   }
 
@@ -531,11 +658,16 @@
 
 .procedure-notes {
   font-size: 11px;
-  color: #856404;
-  background: #fff3cd;
+  color: #ff9800;
+  background: rgba(255, 193, 7, 0.12);
   padding: 6px 8px;
   border-radius: 4px;
   margin: 8px 0 0;
+
+  @media (prefers-color-scheme: dark) {
+    color: #ffb74d;
+    background: rgba(255, 193, 7, 0.15);
+  }
 }
 
 .procedure-link {
@@ -546,6 +678,10 @@
   font-size: 12px;
   color: #007bff;
   text-decoration: none;
+
+  @media (prefers-color-scheme: dark) {
+    color: #42a5f5;
+  }
 
   &:hover {
     text-decoration: underline;

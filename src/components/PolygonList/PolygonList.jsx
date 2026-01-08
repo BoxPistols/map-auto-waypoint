@@ -125,7 +125,7 @@ const PolygonList = ({
                       e.stopPropagation()
                       onGenerateWaypoints?.(polygon, { includeGrid: true })
                     }}
-                    data-tooltip="グリッドWaypoint生成"
+                    data-tooltip="グリッド間隔を設定してWaypoint生成"
                     data-tooltip-pos="bottom"
                   >
                     <Grid3X3 size={14} />

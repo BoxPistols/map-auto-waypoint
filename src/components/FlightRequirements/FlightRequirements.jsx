@@ -24,6 +24,7 @@ import {
   generateExternalLinks,
 } from '../../services/legalRequirements';
 import { getPolygonCenter } from '../../services/waypointGenerator';
+import { USE_CASES } from '../../services/routePlanner';
 import './FlightRequirements.scss';
 
 /**
@@ -41,6 +42,8 @@ function FlightRequirements({
   isOpen,
   onClose,
   sidebarCollapsed = false,
+  selectedUseCase = null,
+  onSelectedUseCaseChange = null,
 }) {
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -233,6 +236,23 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
           )}
         </div>
       )}
+
+      {/* 飛行目的選択 */}
+      <div className="flight-purpose-selector">
+        <label className="selector-label">飛行目的を選択</label>
+        <div className="usecase-grid">
+          {USE_CASES.map((useCase) => (
+            <div
+              key={useCase.id}
+              className={`usecase-item ${selectedUseCase === useCase.id ? 'selected' : ''}`}
+              onClick={() => onSelectedUseCaseChange?.(useCase.id)}
+            >
+              <div className="usecase-name">{useCase.name}</div>
+              {selectedUseCase === useCase.id && <CheckCircle size={16} />}
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ローディング */}
       {isLoading && (

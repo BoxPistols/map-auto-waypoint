@@ -28,7 +28,6 @@ import {
 } from 'lucide-react';
 import {
   getAllDrones,
-  getDroneSpecs,
   getFormattedSpecs,
   getRouteSettings,
   saveRouteSettings,
@@ -76,19 +75,29 @@ const RouteOptimizer = ({
   onClose,
   waypoints,
   onApplyRoute,
+  selectedUseCase: propSelectedUseCase, // MainLayout から渡される
 }) => {
-  const [step, setStep] = useState(1);
-  const [selectedUseCase, setSelectedUseCase] = useState(null);
+  // 飛行目的が既に選択されていれば、Step 2 から開始
+  const [step, setStep] = useState(propSelectedUseCase ? 2 : 1);
+  const [selectedUseCase, setLocalSelectedUseCase] = useState(propSelectedUseCase);
   const [selectedDroneId, setSelectedDroneId] = useState(null);
+
+  // 飛行目的に応じたデフォルト最適化目標を決定
+  const getDefaultObjective = () => {
+    if (!selectedUseCase) return 'balanced';
+    const useCase = USE_CASES.find(uc => uc.id === selectedUseCase);
+    return useCase?.defaultOptimization || 'balanced';
+  };
+
   const [options, setOptions] = useState({
     autoSplit: true,
     checkRegulations: true,
     algorithm: 'nearest-neighbor',
     safetyMargin: 0.2,
-    objective: 'balanced', // NEW: 最適化目標
+    objective: getDefaultObjective(), // 目的から推奨される最適化目標
   });
   const [homePointMode, setHomePointMode] = useState('auto');
-  const [customHomePoint, setCustomHomePoint] = useState(null);
+  const [customHomePoint, _setCustomHomePoint] = useState(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizationResult, setOptimizationResult] = useState(null);
   const [expandedFlight, setExpandedFlight] = useState(null);
@@ -106,7 +115,7 @@ const RouteOptimizer = ({
         safetyMargin: settings.safetyMargin,
       });
       setStep(1);
-      setSelectedUseCase(null);
+      setLocalSelectedUseCase(null);
       setOptimizationResult(null);
       setError(null);
     }
@@ -237,7 +246,7 @@ const RouteOptimizer = ({
                   <div
                     key={useCase.id}
                     className={`route-optimizer__usecase-card ${selectedUseCase === useCase.id ? 'selected' : ''}`}
-                    onClick={() => setSelectedUseCase(useCase.id)}
+                    onClick={() => setLocalSelectedUseCase(useCase.id)}
                   >
                     <div className="route-optimizer__usecase-icon">
                       {getIcon(useCase.icon, 24)}
@@ -422,6 +431,20 @@ const RouteOptimizer = ({
             <div className="route-optimizer__step-content">
               <h3>最適化結果</h3>
 
+              {/* 選択した目標 */}
+              {(() => {
+                const selectedObjective = OPTIMIZATION_OBJECTIVES.find(o => o.id === options.objective);
+                return selectedObjective ? (
+                  <div className="route-optimizer__selected-objective">
+                    <div className="route-optimizer__objective-badge">
+                      {getIcon(selectedObjective.icon, 16)}
+                      <span>{selectedObjective.name}</span>
+                    </div>
+                    <p>{selectedObjective.description}</p>
+                  </div>
+                ) : null;
+              })()}
+
               {/* サマリー */}
               <div className="route-optimizer__summary">
                 <div className="route-optimizer__summary-item">
@@ -466,6 +489,96 @@ const RouteOptimizer = ({
                 <div className="route-optimizer__improvement">
                   <CheckCircle size={16} />
                   ルート距離を{optimizationResult.summary.improvement}%短縮しました
+                </div>
+              )}
+
+              {/* 各メトリクスの内訳 */}
+              {optimizationResult.metrics && (
+                <div className="route-optimizer__metrics">
+                  <h4>最適化メトリクス</h4>
+                  <div className="route-optimizer__metrics-grid">
+                    <div className="route-optimizer__metric">
+                      <Route size={16} />
+                      <span className="route-optimizer__metric-label">距離</span>
+                      <span className="route-optimizer__metric-value">{formatDistance(optimizationResult.metrics.distance)}</span>
+                      {optimizationResult.metrics.distanceScore && (
+                        <span className="route-optimizer__metric-score">スコア: {optimizationResult.metrics.distanceScore.toFixed(1)}</span>
+                      )}
+                    </div>
+                    <div className="route-optimizer__metric">
+                      <Clock size={16} />
+                      <span className="route-optimizer__metric-label">時間</span>
+                      <span className="route-optimizer__metric-value">{formatTime(optimizationResult.metrics.time)}</span>
+                      {optimizationResult.metrics.timeScore && (
+                        <span className="route-optimizer__metric-score">スコア: {optimizationResult.metrics.timeScore.toFixed(1)}</span>
+                      )}
+                    </div>
+                    <div className="route-optimizer__metric">
+                      <Battery size={16} />
+                      <span className="route-optimizer__metric-label">バッテリー</span>
+                      <span className="route-optimizer__metric-value">{optimizationResult.metrics.batteryUsage?.toFixed(1)}%</span>
+                      {optimizationResult.metrics.batteryScore && (
+                        <span className="route-optimizer__metric-score">スコア: {optimizationResult.metrics.batteryScore.toFixed(1)}</span>
+                      )}
+                    </div>
+                    <div className="route-optimizer__metric">
+                      <ShieldCheck size={16} />
+                      <span className="route-optimizer__metric-label">安全性</span>
+                      <span className="route-optimizer__metric-value">{optimizationResult.metrics.riskLabel || '低'}</span>
+                      {optimizationResult.metrics.riskScore && (
+                        <span className="route-optimizer__metric-score">スコア: {optimizationResult.metrics.riskScore.toFixed(1)}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 選択した目標の達成度 */}
+              {optimizationResult.objectiveAchievement && (
+                <div className="route-optimizer__achievement">
+                  <h4>目標達成度</h4>
+                  <div className="route-optimizer__achievement-bar">
+                    <div
+                      className="route-optimizer__achievement-fill"
+                      style={{ width: `${optimizationResult.objectiveAchievement}%` }}
+                    >
+                      {optimizationResult.objectiveAchievement > 10 && (
+                        <span className="route-optimizer__achievement-text">
+                          {optimizationResult.objectiveAchievement.toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="route-optimizer__achievement-description">
+                    {(() => {
+                      const obj = OPTIMIZATION_OBJECTIVES.find(o => o.id === options.objective);
+                      return obj ? `${obj.name}の観点で${optimizationResult.objectiveAchievement.toFixed(0)}%達成` : '';
+                    })()}
+                  </p>
+                </div>
+              )}
+
+              {/* トレードオフの可視化 */}
+              {optimizationResult.tradeoffs && optimizationResult.tradeoffs.length > 0 && (
+                <div className="route-optimizer__tradeoffs">
+                  <h4>トレードオフ分析</h4>
+                  {optimizationResult.tradeoffs.map((tradeoff, _idx) => (
+                    <div key={_idx} className="route-optimizer__tradeoff">
+                      <div className="route-optimizer__tradeoff-item route-optimizer__tradeoff-gain">
+                        <span className="route-optimizer__tradeoff-metric">{tradeoff.gain.metric}</span>
+                        <span className="route-optimizer__tradeoff-change">
+                          {tradeoff.gain.change > 0 ? '+' : ''}{tradeoff.gain.change.toFixed(1)}%
+                        </span>
+                      </div>
+                      <span className="route-optimizer__tradeoff-arrow">⇄</span>
+                      <div className="route-optimizer__tradeoff-item route-optimizer__tradeoff-cost">
+                        <span className="route-optimizer__tradeoff-metric">{tradeoff.cost.metric}</span>
+                        <span className="route-optimizer__tradeoff-change">
+                          {tradeoff.cost.change > 0 ? '+' : ''}{tradeoff.cost.change.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
@@ -523,7 +636,7 @@ const RouteOptimizer = ({
                           <span className="route-optimizer__flight-home">
                             <Home size={12} /> Home
                           </span>
-                          {flight.waypoints.map((wp, idx) => (
+                          {flight.waypoints.map((wp) => (
                             <span key={wp.id} className="route-optimizer__flight-wp">
                               <ChevronRight size={12} />
                               WP{wp.optimizedOrder || wp.index}
