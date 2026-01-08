@@ -109,6 +109,7 @@ const DEFAULT_ROUTE_SETTINGS = {
   checkRegulationsEnabled: true,  // 規制チェック
   optimizationAlgorithm: 'nearest-neighbor', // 'nearest-neighbor' or '2-opt'
   defaultHomePoint: null,         // { lat, lng } or null for auto
+  objective: 'balanced',          // NEW: 最適化目標
 };
 
 const STORAGE_KEY = 'drone_route_optimizer_settings';

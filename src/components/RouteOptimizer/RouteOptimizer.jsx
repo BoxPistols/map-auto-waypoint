@@ -24,6 +24,7 @@ import {
   Wheat,
   Package,
   ShieldCheck,
+  Target,
 } from 'lucide-react';
 import {
   getAllDrones,
@@ -33,6 +34,7 @@ import {
   saveRouteSettings,
 } from '../../services/droneSpecsService';
 import { USE_CASES } from '../../services/routePlanner';
+import { OPTIMIZATION_OBJECTIVES } from '../../services/optimizationObjectives';
 import {
   optimizeRoute,
   formatDistance,
@@ -56,6 +58,11 @@ const ICON_MAP = {
   Wheat,
   Package,
   ShieldCheck,
+  // 最適化目標用
+  Target,
+  Route,
+  Clock,
+  Battery,
 };
 
 // アイコンコンポーネントを取得
@@ -78,6 +85,7 @@ const RouteOptimizer = ({
     checkRegulations: true,
     algorithm: 'nearest-neighbor',
     safetyMargin: 0.2,
+    objective: 'balanced', // NEW: 最適化目標
   });
   const [homePointMode, setHomePointMode] = useState('auto');
   const [customHomePoint, setCustomHomePoint] = useState(null);
@@ -128,6 +136,7 @@ const RouteOptimizer = ({
         algorithm: options.algorithm,
         checkRegulations: options.checkRegulations,
         autoSplit: options.autoSplit,
+        objective: options.objective, // NEW: 最適化目標
       });
 
       if (result.success) {
@@ -295,6 +304,35 @@ const RouteOptimizer = ({
           {step === 3 && (
             <div className="route-optimizer__step-content">
               <h3>最適化オプション</h3>
+
+              {/* 最適化目標選択 */}
+              <div className="route-optimizer__option-group">
+                <label>最適化目標</label>
+                <p className="route-optimizer__option-desc">
+                  どの観点を優先して最適化しますか
+                </p>
+
+                <div className="route-optimizer__objective-grid">
+                  {OPTIMIZATION_OBJECTIVES.map((objective) => (
+                    <div
+                      key={objective.id}
+                      className={`route-optimizer__objective-card ${options.objective === objective.id ? 'selected' : ''}`}
+                      onClick={() => setOptions({ ...options, objective: objective.id })}
+                    >
+                      <div className="route-optimizer__objective-icon">
+                        {getIcon(objective.icon, 20)}
+                      </div>
+                      <div className="route-optimizer__objective-info">
+                        <div className="route-optimizer__objective-name">{objective.name}</div>
+                        <div className="route-optimizer__objective-desc">{objective.description}</div>
+                      </div>
+                      {options.objective === objective.id && (
+                        <CheckCircle className="route-optimizer__objective-check" size={16} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               <div className="route-optimizer__option-group">
                 <label>ホームポイント（離発着地点）</label>
