@@ -1,10 +1,122 @@
 /**
  * DID（人口集中地区）判定サービス
- * 国土地理院タイルおよびGitHub上のGeoJSONデータを使用
+ * 国土地理院タイル（令和2年国勢調査）をピクセル判定で使用
  */
 
 import * as turf from '@turf/turf';
 import { getDistanceMeters } from '../utils/geoUtils';
+
+// 国土地理院 DIDタイル URL（令和2年国勢調査データ）
+const DID_TILE_URL = 'https://cyberjapandata.gsi.go.jp/xyz/did2020/{z}/{x}/{y}.png';
+const DID_TILE_ZOOM = 14; // タイル判定に使用するズームレベル
+
+/**
+ * 緯度経度からタイル座標を計算
+ */
+const latLngToTile = (lat, lng, zoom) => {
+  const n = Math.pow(2, zoom);
+  const x = Math.floor((lng + 180) / 360 * n);
+  const latRad = lat * Math.PI / 180;
+  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+  return { x, y, z: zoom };
+};
+
+/**
+ * タイル内のピクセル座標を計算
+ */
+const latLngToPixelInTile = (lat, lng, zoom) => {
+  const n = Math.pow(2, zoom);
+  const xTile = (lng + 180) / 360 * n;
+  const latRad = lat * Math.PI / 180;
+  const yTile = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n;
+
+  const pixelX = Math.floor((xTile % 1) * 256);
+  const pixelY = Math.floor((yTile % 1) * 256);
+
+  return { pixelX, pixelY };
+};
+
+/**
+ * タイルキャッシュ（ImageDataを保存）
+ */
+const tileImageCache = new Map();
+
+/**
+ * ブラウザ環境かどうか判定
+ */
+const isBrowserEnvironment = () => {
+  return typeof window !== 'undefined' &&
+         typeof document !== 'undefined' &&
+         typeof Image !== 'undefined' &&
+         !import.meta.env?.VITEST; // テスト環境ではスキップ
+};
+
+/**
+ * DIDタイルを取得してピクセル判定
+ * ピンク色（R > 200, G < 150, B < 150）ならDID内
+ */
+const checkDIDByTile = async (lat, lng) => {
+  // ブラウザ環境でない場合はスキップ
+  if (!isBrowserEnvironment()) return null;
+
+  const tile = latLngToTile(lat, lng, DID_TILE_ZOOM);
+  const cacheKey = `${tile.z}/${tile.x}/${tile.y}`;
+
+  let imageData = tileImageCache.get(cacheKey);
+
+  if (!imageData) {
+    try {
+      const url = DID_TILE_URL
+        .replace('{z}', tile.z)
+        .replace('{x}', tile.x)
+        .replace('{y}', tile.y);
+
+      // Canvas APIでタイル画像を読み込み
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = url;
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      imageData = ctx.getImageData(0, 0, 256, 256);
+      tileImageCache.set(cacheKey, imageData);
+    } catch (error) {
+      console.warn('[DID] Tile fetch error:', error.message);
+      return null;
+    }
+  }
+
+  const { pixelX, pixelY } = latLngToPixelInTile(lat, lng, DID_TILE_ZOOM);
+  const idx = (pixelY * 256 + pixelX) * 4;
+
+  const r = imageData.data[idx];
+  const g = imageData.data[idx + 1];
+  const b = imageData.data[idx + 2];
+  const a = imageData.data[idx + 3];
+
+  // 透明または白に近い場合はDID外
+  if (a < 128) return { isDID: false, source: 'tile' };
+
+  // ピンク/赤色（DIDエリア）の判定
+  // GSI DIDタイルは濃いピンク色 (約 R:255, G:155, B:155)
+  const isDIDPixel = r > 200 && g < 200 && b < 200 && r > g && r > b;
+
+  return {
+    isDID: isDIDPixel,
+    source: 'GSI/did2020',
+    certainty: 'confirmed',
+    description: isDIDPixel ? 'DID内（令和2年国勢調査）' : 'DID外',
+    pixel: { r, g, b, a }
+  };
+};
 
 /**
  * DIDデータのキャッシュ（都道府県単位）
@@ -170,9 +282,24 @@ const checkPointInDIDGeoJSON = (geojson, lat, lng) => {
 
 /**
  * メイン: DID判定
+ * 国土地理院タイル（令和2年）を優先、失敗時はGitHubデータにフォールバック
  */
 export const checkDIDArea = async (lat, lng) => {
   try {
+    // 1. まず国土地理院タイル（令和2年データ）で判定を試みる
+    const tileResult = await checkDIDByTile(lat, lng);
+    if (tileResult) {
+      console.log('[DID] Tile-based check result:', tileResult);
+      return {
+        isDID: tileResult.isDID,
+        area: tileResult.isDID ? '人口集中地区' : null,
+        certainty: 'confirmed',
+        source: 'GSI/did2020',
+        description: tileResult.description
+      };
+    }
+
+    // 2. タイル判定失敗時はGitHubデータ（平成22年）にフォールバック
     const prefecture = getPrefectureFromCoords(lat, lng);
     if (!prefecture) {
       return checkDIDAreaFallback(lat, lng);
@@ -191,7 +318,8 @@ export const checkDIDArea = async (lat, lng) => {
       };
     }
     return checkDIDAreaFallback(lat, lng);
-  } catch {
+  } catch (error) {
+    console.warn('[DID] Error:', error);
     return checkDIDAreaFallback(lat, lng);
   }
 };
