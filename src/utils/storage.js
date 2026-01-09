@@ -126,6 +126,17 @@ export const loadMapSettings = () => {
       showDID: false,
       showAirportZones: false,
       showNoFlyZones: false,
+      showRedZones: false,
+      showYellowZones: false,
+      showHeliports: false,
+      // UTM新規レイヤー
+      showEmergencyAirspace: false,
+      showRemoteIdZones: false,
+      showMannedAircraftZones: false,
+      showGeoFeatures: false,
+      showRainCloud: false,
+      showWind: false,
+      showRadioZones: false,
       mapStyleId: 'osm'
     }
   } catch (error) {
@@ -135,6 +146,17 @@ export const loadMapSettings = () => {
       showDID: false,
       showAirportZones: false,
       showNoFlyZones: false,
+      showRedZones: false,
+      showYellowZones: false,
+      showHeliports: false,
+      // UTM新規レイヤー
+      showEmergencyAirspace: false,
+      showRemoteIdZones: false,
+      showMannedAircraftZones: false,
+      showGeoFeatures: false,
+      showRainCloud: false,
+      showWind: false,
+      showRadioZones: false,
       mapStyleId: 'osm'
     }
   }

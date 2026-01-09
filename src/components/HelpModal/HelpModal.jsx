@@ -374,12 +374,52 @@ const HelpModal = ({ onClose }) => {
                   <td>空港エリア ON/OFF</td>
                 </tr>
                 <tr>
+                  <td><kbd>R</kbd></td>
+                  <td>レッドゾーン ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>Y</kbd></td>
+                  <td>イエローゾーン ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>H</kbd></td>
+                  <td>ヘリポート ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>E</kbd></td>
+                  <td>緊急用務空域 ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>I</kbd></td>
+                  <td>リモートID特定区域 ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>U</kbd></td>
+                  <td>有人機発着エリア ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>G</kbd></td>
+                  <td>地物 ON/OFF</td>
+                </tr>
+                <tr>
                   <td><kbd>N</kbd></td>
-                  <td>飛行禁止区域 ON/OFF</td>
+                  <td>雨雲 ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>O</kbd></td>
+                  <td>風向・風量 ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>T</kbd></td>
+                  <td>電波種(LTE) ON/OFF</td>
                 </tr>
                 <tr>
                   <td><kbd>3</kbd></td>
                   <td>2D/3D 切り替え</td>
+                </tr>
+                <tr>
+                  <td><kbd>M</kbd></td>
+                  <td>地図スタイル切り替え</td>
                 </tr>
               </tbody>
             </table>
