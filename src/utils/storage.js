@@ -9,6 +9,26 @@ const STORAGE_KEYS = {
 
 const MAX_HISTORY_ITEMS = 50
 
+// デフォルトのマップ設定
+const DEFAULT_MAP_SETTINGS = {
+  is3D: false,
+  showDID: false,
+  showAirportZones: false,
+  showNoFlyZones: false,
+  showRedZones: false,
+  showYellowZones: false,
+  showHeliports: false,
+  // UTM新規レイヤー
+  showEmergencyAirspace: false,
+  showRemoteIdZones: false,
+  showMannedAircraftZones: false,
+  showGeoFeatures: false,
+  showRainCloud: false,
+  showWind: false,
+  showRadioZones: false,
+  mapStyleId: 'osm'
+}
+
 // Polygon operations
 export const savePolygons = (polygons) => {
   try {
@@ -121,22 +141,10 @@ export const saveMapSettings = (settings) => {
 export const loadMapSettings = () => {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.MAP_SETTINGS)
-    return data ? JSON.parse(data) : {
-      is3D: false,
-      showDID: false,
-      showAirportZones: false,
-      showNoFlyZones: false,
-      mapStyleId: 'osm'
-    }
+    return data ? JSON.parse(data) : DEFAULT_MAP_SETTINGS
   } catch (error) {
     console.error('Failed to load map settings:', error)
-    return {
-      is3D: false,
-      showDID: false,
-      showAirportZones: false,
-      showNoFlyZones: false,
-      mapStyleId: 'osm'
-    }
+    return DEFAULT_MAP_SETTINGS
   }
 }
 

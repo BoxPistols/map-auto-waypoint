@@ -95,7 +95,8 @@ export const checkAllWaypointsDID = async (waypoints) => {
         waypointIndex: wp.index,
         lat: wp.lat,
         lng: wp.lng,
-        area: didResult.area
+        area: didResult.area,
+        centroid: didResult.centroid  // DIDエリアの重心座標（回避位置計算に使用）
       });
       const areaName = didResult.area || '不明';
       if (!checkedAreas.has(areaName)) checkedAreas.set(areaName, []);

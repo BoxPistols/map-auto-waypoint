@@ -1,9 +1,20 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
-import { getAirportZonesGeoJSON, getRedZonesGeoJSON, getYellowZonesGeoJSON, getHeliportsGeoJSON } from '../../services/airspace'
+import {
+  getAirportZonesGeoJSON,
+  getRedZonesGeoJSON,
+  getYellowZonesGeoJSON,
+  getHeliportsGeoJSON,
+  getEmergencyAirspaceGeoJSON,
+  getRemoteIdZonesGeoJSON,
+  getMannedAircraftZonesGeoJSON,
+  getRadioInterferenceZonesGeoJSON,
+  getGeographicFeaturesSourceConfig
+} from '../../services/airspace'
+import { getRainViewerSourceConfig, getWindLayerSourceConfig } from '../../services/weatherService'
 import { loadMapSettings, saveMapSettings } from '../../utils/storage'
 import styles from './Map.module.scss'
 
@@ -165,15 +176,37 @@ const Map = ({
     pitch: initialSettings.is3D ? 60 : 0,
     bearing: 0
   })
-  const [is3D, setIs3D] = useState(initialSettings.is3D)
-  const [showAirportZones, setShowAirportZones] = useState(initialSettings.showAirportZones)
-  const [showRedZones, setShowRedZones] = useState(initialSettings.showRedZones ?? false)
-  const [showYellowZones, setShowYellowZones] = useState(initialSettings.showYellowZones ?? false)
-  const [showHeliports, setShowHeliports] = useState(initialSettings.showHeliports ?? false)
-  const [showDID, setShowDID] = useState(initialSettings.showDID)
+
+  // レイヤー表示状態を単一オブジェクトで管理
+  const [layerVisibility, setLayerVisibility] = useState({
+    is3D: initialSettings.is3D,
+    showAirportZones: initialSettings.showAirportZones,
+    showRedZones: initialSettings.showRedZones ?? false,
+    showYellowZones: initialSettings.showYellowZones ?? false,
+    showHeliports: initialSettings.showHeliports ?? false,
+    showDID: initialSettings.showDID,
+    showEmergencyAirspace: initialSettings.showEmergencyAirspace ?? false,
+    showRemoteIdZones: initialSettings.showRemoteIdZones ?? false,
+    showMannedAircraftZones: initialSettings.showMannedAircraftZones ?? false,
+    showGeoFeatures: initialSettings.showGeoFeatures ?? false,
+    showRainCloud: initialSettings.showRainCloud ?? false,
+    showWind: initialSettings.showWind ?? false,
+    showRadioZones: initialSettings.showRadioZones ?? false
+  })
+
+  const [rainCloudSource, setRainCloudSource] = useState(null)
+  const [windSource, setWindSource] = useState(null)
   const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
   const [showStylePicker, setShowStylePicker] = useState(false)
   const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false)
+
+  // レイヤー表示状態を更新するヘルパー関数
+  const toggleLayer = useCallback((layerKey) => {
+    setLayerVisibility(prev => ({
+      ...prev,
+      [layerKey]: !prev[layerKey]
+    }))
+  }, [])
 
   // isMobile is now passed as a prop from App.jsx to avoid duplication
 
@@ -182,8 +215,48 @@ const Map = ({
 
   // Save map settings when they change
   useEffect(() => {
-    saveMapSettings({ is3D, showAirportZones, showRedZones, showYellowZones, showHeliports, showDID, mapStyleId })
-  }, [is3D, showAirportZones, showRedZones, showYellowZones, showHeliports, showDID, mapStyleId])
+    saveMapSettings({
+      ...layerVisibility,
+      mapStyleId
+    })
+  }, [layerVisibility, mapStyleId])
+
+  // 雨雲レーダーソースを取得
+  useEffect(() => {
+    let isActive = true
+    if (layerVisibility.showRainCloud) {
+      getRainViewerSourceConfig()
+        .then(config => {
+          if (isActive) {
+            setRainCloudSource(config)
+          }
+        })
+        .catch(error => {
+          console.error('Failed to fetch rain cloud source:', error)
+          if (isActive) {
+            setRainCloudSource(null) // エラー時はソースをクリア
+          }
+        })
+    } else {
+      setRainCloudSource(null) // 非表示になったらソースをクリア
+    }
+
+    return () => {
+      isActive = false
+    }
+  }, [layerVisibility.showRainCloud])
+
+  // 風データソースを取得（環境変数からAPIキーを読み込み）
+  useEffect(() => {
+    if (layerVisibility.showWind) {
+      // VITE_OPENWEATHER_API_KEY環境変数からAPIキーを取得
+      const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY
+      const config = getWindLayerSourceConfig(apiKey)
+      setWindSource(config)
+    } else {
+      setWindSource(null)
+    }
+  }, [layerVisibility.showWind])
 
   // Sync viewState when center/zoom props change from parent (e.g., WP click)
   useEffect(() => {
@@ -204,6 +277,64 @@ const Map = ({
   const redZonesGeoJSON = useMemo(() => getRedZonesGeoJSON(), [])
   const yellowZonesGeoJSON = useMemo(() => getYellowZonesGeoJSON(), [])
   const heliportsGeoJSON = useMemo(() => getHeliportsGeoJSON(), [])
+  // UTM新規レイヤーのGeoJSON
+  const emergencyAirspaceGeoJSON = useMemo(() => getEmergencyAirspaceGeoJSON(), [])
+  const remoteIdZonesGeoJSON = useMemo(() => getRemoteIdZonesGeoJSON(), [])
+  const mannedAircraftZonesGeoJSON = useMemo(() => getMannedAircraftZonesGeoJSON(), [])
+  const radioInterferenceZonesGeoJSON = useMemo(() => getRadioInterferenceZonesGeoJSON(), [])
+  const geoFeaturesSourceConfig = useMemo(() => getGeographicFeaturesSourceConfig(), [])
+
+  // GeoJSONレイヤーの設定配列（データ駆動でレンダリング）
+  const geoJsonLayerConfigs = useMemo(() => [
+    {
+      id: 'emergency-airspace',
+      show: layerVisibility.showEmergencyAirspace,
+      data: emergencyAirspaceGeoJSON,
+      fillColor: '#ef4444',
+      fillOpacity: 0.25,
+      lineColor: '#dc2626',
+      lineWidth: 2,
+      lineDasharray: [5, 3],
+      labelColor: '#b91c1c',
+      labelSize: 11
+    },
+    {
+      id: 'remote-id-zones',
+      show: layerVisibility.showRemoteIdZones,
+      data: remoteIdZonesGeoJSON,
+      fillColor: '#3b82f6',
+      fillOpacity: 0.15,
+      lineColor: '#2563eb',
+      lineWidth: 2,
+      lineDasharray: [4, 4],
+      labelColor: '#1d4ed8',
+      labelSize: 11
+    },
+    {
+      id: 'manned-aircraft-zones',
+      show: layerVisibility.showMannedAircraftZones,
+      data: mannedAircraftZonesGeoJSON,
+      fillColor: '#ec4899',
+      fillOpacity: 0.2,
+      lineColor: '#db2777',
+      lineWidth: 2,
+      labelColor: '#be185d',
+      labelSize: 10
+    },
+    {
+      id: 'radio-zones',
+      show: layerVisibility.showRadioZones,
+      data: radioInterferenceZonesGeoJSON,
+      fillColor: '#a855f7',
+      fillOpacity: 0.2,
+      lineColor: '#9333ea',
+      lineWidth: 2,
+      lineDasharray: [2, 2],
+      labelColor: '#7c3aed',
+      labelSize: 10,
+      labelField: ['concat', ['get', 'name'], ' (', ['get', 'frequency'], ')']  // 特別なラベルフィールド
+    }
+  ], [layerVisibility.showEmergencyAirspace, layerVisibility.showRemoteIdZones, layerVisibility.showMannedAircraftZones, layerVisibility.showRadioZones, emergencyAirspaceGeoJSON, remoteIdZonesGeoJSON, mannedAircraftZonesGeoJSON, radioInterferenceZonesGeoJSON])
 
   // Memoize optimized route GeoJSON (lines connecting waypoints in optimal order)
   const optimizedRouteGeoJSON = useMemo(() => {
@@ -348,13 +479,16 @@ const Map = ({
 
   // Toggle 3D mode
   const toggle3D = useCallback(() => {
-    setIs3D(prev => {
-      const newIs3D = !prev
+    setLayerVisibility(prev => {
+      const newIs3D = !prev.is3D
       setViewState(v => ({
         ...v,
         pitch: newIs3D ? 60 : 0
       }))
-      return newIs3D
+      return {
+        ...prev,
+        is3D: newIs3D
+      }
     })
   }, [])
 
@@ -376,23 +510,23 @@ const Map = ({
       switch (e.key.toLowerCase()) {
         case 'd': // DID toggle
           e.preventDefault()
-          setShowDID(prev => !prev)
+          toggleLayer('showDID')
           break
         case 'a': // Airport zones toggle
           e.preventDefault()
-          setShowAirportZones(prev => !prev)
+          toggleLayer('showAirportZones')
           break
         case 'r': // Red zones toggle
           e.preventDefault()
-          setShowRedZones(prev => !prev)
+          toggleLayer('showRedZones')
           break
         case 'y': // Yellow zones toggle
           e.preventDefault()
-          setShowYellowZones(prev => !prev)
+          toggleLayer('showYellowZones')
           break
         case 'h': // Heliport toggle
           e.preventDefault()
-          setShowHeliports(prev => !prev)
+          toggleLayer('showHeliports')
           break
         case 'm': // Map style picker toggle
           e.preventDefault()
@@ -402,12 +536,41 @@ const Map = ({
           e.preventDefault()
           toggle3D()
           break
+        // UTM新規レイヤーのキーボードショートカット
+        case 'e': // Emergency airspace toggle
+          e.preventDefault()
+          toggleLayer('showEmergencyAirspace')
+          break
+        case 'i': // Remote ID zones toggle
+          e.preventDefault()
+          toggleLayer('showRemoteIdZones')
+          break
+        case 'u': // Manned aircraft zones toggle
+          e.preventDefault()
+          toggleLayer('showMannedAircraftZones')
+          break
+        case 'g': // Geographic features toggle
+          e.preventDefault()
+          toggleLayer('showGeoFeatures')
+          break
+        case 'n': // Rain cloud toggle
+          e.preventDefault()
+          toggleLayer('showRainCloud')
+          break
+        case 'o': // Wind toggle
+          e.preventDefault()
+          toggleLayer('showWind')
+          break
+        case 't': // Radio zones (LTE) toggle
+          e.preventDefault()
+          toggleLayer('showRadioZones')
+          break
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggle3D])
+  }, [toggle3D, toggleLayer])
 
   // Handle map click
   const handleClick = useCallback((e) => {
@@ -601,7 +764,7 @@ const Map = ({
         />
 
         {/* Airport restriction zones */}
-        {showAirportZones && (
+        {layerVisibility.showAirportZones && (
           <Source id="airport-zones" type="geojson" data={airportZonesGeoJSON}>
             <Layer
               id="airport-zones-fill"
@@ -638,7 +801,7 @@ const Map = ({
         )}
 
         {/* レッドゾーン（国の重要施設・原発・米軍基地） */}
-        {showRedZones && (
+        {layerVisibility.showRedZones && (
           <Source id="red-zones" type="geojson" data={redZonesGeoJSON}>
             <Layer
               id="red-zones-fill"
@@ -674,7 +837,7 @@ const Map = ({
         )}
 
         {/* イエローゾーン（外国公館・政党本部） */}
-        {showYellowZones && (
+        {layerVisibility.showYellowZones && (
           <Source id="yellow-zones" type="geojson" data={yellowZonesGeoJSON}>
             <Layer
               id="yellow-zones-fill"
@@ -710,7 +873,7 @@ const Map = ({
         )}
 
         {/* ヘリポート */}
-        {showHeliports && (
+        {layerVisibility.showHeliports && (
           <Source id="heliports" type="geojson" data={heliportsGeoJSON}>
             <Layer
               id="heliports-fill"
@@ -747,13 +910,92 @@ const Map = ({
         )}
 
         {/* DID (人口集中地区) raster tiles */}
-        {showDID && (
+        {layerVisibility.showDID && (
           <Source id="did-tiles" {...didTileSource}>
             <Layer
               id="did-layer"
               type="raster"
               paint={{
                 'raster-opacity': 0.6
+              }}
+            />
+          </Source>
+        )}
+
+        {/* GeoJSONレイヤー（データ駆動でレンダリング） */}
+        {geoJsonLayerConfigs.map(config => config.show && (
+          <Source key={config.id} id={config.id} type="geojson" data={config.data}>
+            {/* Fill layer */}
+            <Layer
+              id={`${config.id}-fill`}
+              type="fill"
+              paint={{
+                'fill-color': config.fillColor,
+                'fill-opacity': config.fillOpacity
+              }}
+            />
+            {/* Outline layer */}
+            <Layer
+              id={`${config.id}-outline`}
+              type="line"
+              paint={{
+                'line-color': config.lineColor,
+                'line-width': config.lineWidth,
+                ...(config.lineDasharray && { 'line-dasharray': config.lineDasharray })
+              }}
+            />
+            {/* Label layer */}
+            <Layer
+              id={`${config.id}-label`}
+              type="symbol"
+              layout={{
+                'text-field': config.labelField || ['get', 'name'],
+                'text-size': config.labelSize,
+                'text-anchor': 'center'
+              }}
+              paint={{
+                'text-color': config.labelColor,
+                'text-halo-color': '#fff',
+                'text-halo-width': 1
+              }}
+            />
+          </Source>
+        ))}
+
+        {/* 地物レイヤー */}
+        {layerVisibility.showGeoFeatures && (
+          <Source id="geo-features" {...geoFeaturesSourceConfig}>
+            <Layer
+              id="geo-features-layer"
+              type="raster"
+              paint={{
+                'raster-opacity': 0.7
+              }}
+            />
+          </Source>
+        )}
+
+        {/* 雨雲レーダー */}
+        {layerVisibility.showRainCloud && rainCloudSource && (
+          <Source id="rain-cloud" {...rainCloudSource}>
+            <Layer
+              id="rain-cloud-layer"
+              type="raster"
+              paint={{
+                'raster-opacity': 0.6
+              }}
+            />
+          </Source>
+        )}
+
+        {/* 風向・風量 */}
+        {layerVisibility.showWind && windSource && (
+          <Source id="wind-layer" {...windSource}>
+            <Layer
+              id="wind-layer-display"
+              type="raster"
+              paint={{
+                'raster-opacity': 0.5
               }}
             />
           </Source>
@@ -1050,52 +1292,111 @@ const Map = ({
         {/* Controls - always visible on desktop, togglable on mobile */}
         <div className={`${styles.controlsGroup} ${isMobile && !mobileControlsExpanded ? styles.hidden : ''}`}>
           <button
-            className={`${styles.toggleButton} ${showDID ? styles.activeDID : ''}`}
-            onClick={() => setShowDID(!showDID)}
+            className={`${styles.toggleButton} ${layerVisibility.showDID ? styles.activeDID : ''}`}
+            onClick={() => toggleLayer('showDID')}
             data-tooltip={`DID 人口集中地区 [D]`}
             data-tooltip-pos="left"
           >
             <Users size={18} />
           </button>
           <button
-            className={`${styles.toggleButton} ${showAirportZones ? styles.activeAirport : ''}`}
-            onClick={() => setShowAirportZones(!showAirportZones)}
+            className={`${styles.toggleButton} ${layerVisibility.showAirportZones ? styles.activeAirport : ''}`}
+            onClick={() => toggleLayer('showAirportZones')}
             data-tooltip={`空港制限区域 [A]`}
             data-tooltip-pos="left"
           >
             <Plane size={18} />
           </button>
           <button
-            className={`${styles.toggleButton} ${showRedZones ? styles.activeRed : ''}`}
-            onClick={() => setShowRedZones(!showRedZones)}
+            className={`${styles.toggleButton} ${layerVisibility.showRedZones ? styles.activeRed : ''}`}
+            onClick={() => toggleLayer('showRedZones')}
             data-tooltip={`レッドゾーン [R]`}
             data-tooltip-pos="left"
           >
             <ShieldAlert size={18} />
           </button>
           <button
-            className={`${styles.toggleButton} ${showYellowZones ? styles.activeYellow : ''}`}
-            onClick={() => setShowYellowZones(!showYellowZones)}
+            className={`${styles.toggleButton} ${layerVisibility.showYellowZones ? styles.activeYellow : ''}`}
+            onClick={() => toggleLayer('showYellowZones')}
             data-tooltip={`イエローゾーン [Y]`}
             data-tooltip-pos="left"
           >
             <Building2 size={18} />
           </button>
           <button
-            className={`${styles.toggleButton} ${showHeliports ? styles.activeHeliport : ''}`}
-            onClick={() => setShowHeliports(!showHeliports)}
+            className={`${styles.toggleButton} ${layerVisibility.showHeliports ? styles.activeHeliport : ''}`}
+            onClick={() => toggleLayer('showHeliports')}
             data-tooltip={`ヘリポート [H]`}
             data-tooltip-pos="left"
           >
             <Landmark size={18} />
           </button>
+
+          {/* UTM新規レイヤーボタン */}
           <button
-            className={`${styles.toggleButton} ${is3D ? styles.active : ''}`}
-            onClick={toggle3D}
-            data-tooltip={is3D ? '2D表示 [3]' : '3D表示 [3]'}
+            className={`${styles.toggleButton} ${layerVisibility.showEmergencyAirspace ? styles.activeEmergency : ''}`}
+            onClick={() => toggleLayer('showEmergencyAirspace')}
+            data-tooltip={`緊急用務空域 [E]`}
             data-tooltip-pos="left"
           >
-            {is3D ? <Box size={18} /> : <Rotate3D size={18} />}
+            <AlertTriangle size={18} />
+          </button>
+          <button
+            className={`${styles.toggleButton} ${layerVisibility.showRemoteIdZones ? styles.activeRemoteId : ''}`}
+            onClick={() => toggleLayer('showRemoteIdZones')}
+            data-tooltip={`リモートID特定区域 [I]`}
+            data-tooltip-pos="left"
+          >
+            <Radio size={18} />
+          </button>
+          <button
+            className={`${styles.toggleButton} ${layerVisibility.showMannedAircraftZones ? styles.activeMannedAircraft : ''}`}
+            onClick={() => toggleLayer('showMannedAircraftZones')}
+            data-tooltip={`有人機発着エリア [U]`}
+            data-tooltip-pos="left"
+          >
+            <MapPinned size={18} />
+          </button>
+          <button
+            className={`${styles.toggleButton} ${layerVisibility.showGeoFeatures ? styles.activeGeoFeatures : ''}`}
+            onClick={() => toggleLayer('showGeoFeatures')}
+            data-tooltip={`地物 [G]`}
+            data-tooltip-pos="left"
+          >
+            <MapIcon size={18} />
+          </button>
+          <button
+            className={`${styles.toggleButton} ${layerVisibility.showRainCloud ? styles.activeRainCloud : ''}`}
+            onClick={() => toggleLayer('showRainCloud')}
+            data-tooltip={`雨雲 [N]`}
+            data-tooltip-pos="left"
+          >
+            <CloudRain size={18} />
+          </button>
+          <button
+            className={`${styles.toggleButton} ${layerVisibility.showWind ? styles.activeWind : ''}`}
+            onClick={() => toggleLayer('showWind')}
+            data-tooltip={`風向・風量 [O]`}
+            data-tooltip-pos="left"
+          >
+            <Wind size={18} />
+          </button>
+          <button
+            className={`${styles.toggleButton} ${layerVisibility.showRadioZones ? styles.activeRadioZones : ''}`}
+            onClick={() => toggleLayer('showRadioZones')}
+            data-tooltip={`電波種(LTE) [T]`}
+            data-tooltip-pos="left"
+          >
+            <Wifi size={18} />
+          </button>
+
+          <button
+            className={`${styles.toggleButton} ${layerVisibility.is3D ? styles.active : ''}`}
+            onClick={toggle3D}
+            data-tooltip={layerVisibility.is3D ? '2D表示 [3]' : '3D表示 [3]'}
+            data-tooltip-pos="left"
+          >
+            {layerVisibility.is3D ? <Box size={18} /> : <Rotate3D size={18} />}
           </button>
 
           {/* 地図スタイル切り替え */}
