@@ -162,7 +162,7 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
       lat: newLat,
       lng: newLng,
       modified,
-      hasDID: didArea && shouldFlagDID,
+      hasDID: didData && shouldFlagDID,
       hasAirport: issues.some(i => i.type === 'airport'),
       hasProhibited: issues.some(i => i.type === 'prohibited'),
       issueTypes: [...new Set(issues.map(i => i.type))]
