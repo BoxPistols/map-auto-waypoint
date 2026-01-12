@@ -33,10 +33,12 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
   const didWarningOnly = getSetting('didWarningOnlyMode');
   const shouldFlagDID = didAvoidanceEnabled || didWarningOnly;
 
-  // DID内のWPインデックス
-  const didWaypointIndices = new Set();
+  // DID内のWPインデックスとエリア名のマップ
+  const didWaypointMap = new Map();
   if (didInfo?.waypointDetails?.didWaypoints) {
-    didInfo.waypointDetails.didWaypoints.forEach(dwp => didWaypointIndices.add(dwp.waypointIndex));
+    didInfo.waypointDetails.didWaypoints.forEach(dwp => {
+      didWaypointMap.set(dwp.waypointIndex, dwp.area || '人口集中地区');
+    });
   }
 
   // 簡易実装: 個別の回避計算（グループ化ロジックは省略して軽量化）
@@ -81,11 +83,12 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
     }
 
     // DIDチェック
-    const isDID = didWaypointIndices.has(wpIndex);
-    if (isDID && shouldFlagDID) {
+    const didArea = didWaypointMap.get(wpIndex);
+    if (didArea && shouldFlagDID) {
       hasIssues = true;
-      issues.push({ 
-        type: 'did', 
+      issues.push({
+        type: 'did',
+        zone: didArea,
         severity: didAvoidanceEnabled ? 'high' : 'low',
         description: '人口集中地区内'
       });
@@ -108,7 +111,7 @@ export const analyzeWaypointGaps = (waypoints, didInfo = null) => {
       lat: newLat,
       lng: newLng,
       modified,
-      hasDID: isDID && shouldFlagDID,
+      hasDID: didArea && shouldFlagDID,
       hasAirport: issues.some(i => i.type === 'airport'),
       hasProhibited: issues.some(i => i.type === 'prohibited'),
       issueTypes: [...new Set(issues.map(i => i.type))]

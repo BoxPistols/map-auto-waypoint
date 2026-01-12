@@ -300,12 +300,12 @@ export const checkRouteRestrictions = async (waypoints) => {
     // DIDチェック
     try {
       const didResult = await checkDIDArea(wp.lat, wp.lng);
-      if (didResult.isInDID) {
+      if (didResult.isDID) {
         restrictions.push({
           waypointId: wp.id,
           waypointIndex: wp.index,
           type: 'did',
-          name: 'DID（人口集中地区）',
+          name: didResult.area || 'DID（人口集中地区）',
           severity: 'medium',
           description: 'DID区域内（飛行許可が必要）',
         });
