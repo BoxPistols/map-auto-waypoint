@@ -307,9 +307,10 @@ export const DID_INFO = {
 
 // DIDタイルソース設定（MapLibre用）
 // Note: GSI DID tiles have limited zoom availability, maxzoom 14 is reliable
+// 平成22年データを使用（DID_TILE_URLと整合性を保つため）
 export const getDIDSourceConfig = () => ({
   type: 'raster',
-  tiles: ['https://cyberjapandata.gsi.go.jp/xyz/did2020/{z}/{x}/{y}.png'],
+  tiles: [DID_TILE_URL],
   minzoom: 8,
   maxzoom: 14,
   tileSize: 256
