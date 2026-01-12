@@ -286,14 +286,16 @@ export const HELIPORTS = [
 ]
 
 // 国土地理院 DID (人口集中地区) タイルレイヤー
+// 注意: didService.jsで使用するGeoJSONデータと整合性を保つため、平成22年データを使用
+// 航空法上の現行基準は令和2年（2022年6月25日適用）ですが、令和2年のGeoJSONデータが
+// 入手困難なため、表示と判定の両方を平成22年データに統一しています
 // 参照: https://www.gsi.go.jp/chizujoho/h27did.html
-// 令和2年国勢調査データに更新（2022年6月25日から航空法の基準として適用）
-export const DID_TILE_URL = 'https://cyberjapandata.gsi.go.jp/xyz/did2020/{z}/{x}/{y}.png'
+export const DID_TILE_URL = 'https://cyberjapandata.gsi.go.jp/xyz/did2010/{z}/{x}/{y}.png'
 
 // DID区域の情報
 export const DID_INFO = {
   description: '人口集中地区（DID）は国勢調査に基づく人口密度4,000人/km²以上の地域',
-  source: '総務省統計局 令和2年国勢調査',
+  source: '総務省統計局 平成22年国勢調査（注意：航空法上の現行基準は令和2年）',
   tileUrl: DID_TILE_URL,
   attribution: '国土地理院',
   externalLinks: {
