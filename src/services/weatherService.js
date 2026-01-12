@@ -5,9 +5,9 @@
  * 参照: 気象庁ナウキャスト、OpenWeatherMap等
  */
 
-// 気象庁ナウキャスト 雨雲レーダータイル
+// 気象庁ナウキャスト 雨雲レーダータイル（内部フォールバック用）
 // 参照: https://www.jma.go.jp/bosai/nowc/
-export const getRainRadarSourceConfig = () => {
+const getRainRadarSourceConfig = () => {
   // 現在時刻から最新のタイル時刻を計算（5分単位）
   const now = new Date()
   const minutes = Math.floor(now.getMinutes() / 5) * 5
@@ -27,7 +27,7 @@ export const getRainRadarSourceConfig = () => {
 }
 
 // OpenWeatherMap 風向・風量タイル（APIキーが必要）
-// 無料で使えるタイルサービスとして RainViewer を使用
+// 注意: 現在Map.jsxでは未使用だが、APIキー設定後に使用予定
 export const getWindLayerSourceConfig = (apiKey = null) => {
   if (apiKey) {
     return {
@@ -108,53 +108,3 @@ export const getRainViewerSourceConfig = async () => {
   }
 }
 
-// 天気情報の説明
-export const WEATHER_LAYER_INFO = {
-  rainCloud: {
-    name: '雨雲',
-    description: 'リアルタイム雨雲レーダー（5分更新）',
-    source: 'RainViewer / 気象庁',
-    legend: [
-      { color: '#00ff00', label: '弱い雨' },
-      { color: '#ffff00', label: '中程度の雨' },
-      { color: '#ff8800', label: '強い雨' },
-      { color: '#ff0000', label: '非常に強い雨' },
-      { color: '#ff00ff', label: '猛烈な雨' }
-    ]
-  },
-  wind: {
-    name: '風向・風量',
-    description: '地上風向・風速データ',
-    source: 'OpenWeatherMap / 気象庁',
-    legend: [
-      { color: '#00ff00', label: '0-5 m/s (穏やか)' },
-      { color: '#ffff00', label: '5-10 m/s (軽風)' },
-      { color: '#ff8800', label: '10-15 m/s (強風注意)' },
-      { color: '#ff0000', label: '15+ m/s (飛行注意)' }
-    ]
-  }
-}
-
-// ドローン飛行に適した天候かどうかを判定
-export const checkFlightConditions = async (lat, lng) => {
-  try {
-    // 簡易的な天候チェック（実際のAPIからデータ取得が必要）
-    const warnings = []
-
-    // 注意: 実際の運用では気象APIからリアルタイムデータを取得する必要があります
-    // ここではサンプル実装として基本的な構造を提供
-
-    return {
-      safe: warnings.length === 0,
-      warnings,
-      timestamp: new Date().toISOString()
-    }
-  } catch (error) {
-    console.error('Weather check error:', error)
-    return {
-      safe: null,
-      warnings: ['天候情報の取得に失敗しました'],
-      timestamp: new Date().toISOString()
-    }
-  }
-}

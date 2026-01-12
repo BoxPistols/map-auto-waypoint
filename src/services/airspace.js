@@ -421,7 +421,9 @@ const createCircleFeature = (zone, points = 64) => {
     properties: {
       name: zone.name,
       type: zone.type,
-      radius: zone.radius
+      radius: zone.radius,
+      // 追加のプロパティを保持（例: frequency）
+      ...(zone.frequency && { frequency: zone.frequency })
     },
     geometry: {
       type: 'Polygon',
