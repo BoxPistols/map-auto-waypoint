@@ -477,6 +477,19 @@
       background: var(--color-primary);
       color: var(--color-text-inverse);
       border-radius: 16px 16px 4px 16px;
+
+      // ユーザーメッセージ内のWPリンクは白背景・プライマリーテキスト
+      .wp-link {
+        background: var(--color-text-inverse);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: var(--color-primary);
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.9);
+          border-color: var(--color-text-inverse);
+          color: var(--color-primary-dark);
+        }
+      }
     }
   }
 
