@@ -12,7 +12,7 @@ import {
   getAirportZonesGeoJSON,
   getNoFlyZonesGeoJSON,
   getExternalMapLinks
-} from './airspace';
+} from '../lib';
 
 describe('airspace', () => {
 
@@ -74,8 +74,8 @@ describe('airspace', () => {
       expect(kokkai).toBeDefined();
     });
 
-    it('原発施設が含まれている', () => {
-      const nukes = NO_FLY_ZONES.filter(z => z.name.includes('原発'));
+    it('原子力発電所が含まれている', () => {
+      const nukes = NO_FLY_ZONES.filter(z => z.name.includes('発電所') || z.name.includes('原子力'));
       expect(nukes.length).toBeGreaterThan(0);
     });
 

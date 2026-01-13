@@ -9,8 +9,7 @@
  * 参考: https://naka4.com/drone/flightflow/
  */
 
-import { getDistanceMeters } from '../utils/geoUtils';
-import { AIRPORT_ZONES, NO_FLY_ZONES, HELIPORTS } from './airspace';
+import { getDistanceMeters, AIRPORT_ZONES, NO_FLY_ZONES, HELIPORTS } from '../lib';
 import { checkDIDArea } from './flightAnalyzer';
 
 const NO_FLY_ZONE_BUFFER_METERS = 500;

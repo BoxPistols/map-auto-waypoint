@@ -56,8 +56,13 @@ function FlightRequirements({
 
   // チェック実行
   const runCheck = useCallback(async () => {
-    if (!polygon && !searchResult) return;
+    console.log('[FlightRequirements] runCheck called', { polygon, searchResult });
+    if (!polygon && !searchResult) {
+      console.log('[FlightRequirements] No polygon or searchResult, returning');
+      return;
+    }
 
+    console.log('[FlightRequirements] Starting check...');
     setIsLoading(true);
     setError(null);
 
@@ -88,11 +93,13 @@ function FlightRequirements({
       };
 
       const checkResults = await checkAllLegalRequirements(context);
+      console.log('[FlightRequirements] Check completed', checkResults);
       setResults(checkResults);
     } catch (err) {
       console.error('[FlightRequirements] Check error:', err);
       setError(err.message);
     } finally {
+      console.log('[FlightRequirements] Setting isLoading to false');
       setIsLoading(false);
     }
   }, [polygon, altitude, searchResult]);
@@ -210,8 +217,8 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
           <button
             className="refresh-btn"
             onClick={runCheck}
-            disabled={isLoading}
-            title="再チェック"
+            disabled={isLoading || (!polygon && !searchResult)}
+            title={!polygon && !searchResult ? 'ポリゴンまたは検索結果が必要です' : '再チェック'}
           >
             <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
           </button>

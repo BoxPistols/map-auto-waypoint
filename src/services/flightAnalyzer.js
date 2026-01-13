@@ -10,4 +10,4 @@ export * from './supportServices';
 
 // Re-export utilities used in tests/components
 export { getPolygonCenter, calculatePolygonArea as getPolygonArea } from './waypointGenerator';
-export { getDistanceMeters } from '../utils/geoUtils';
+export { getDistanceMeters } from '../lib/utils/geo';

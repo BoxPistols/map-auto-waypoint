@@ -3,7 +3,7 @@
  * 機体推奨、UTM干渉チェックなど
  */
 
-import { getDistanceMeters } from '../utils/geoUtils';
+import { getDistanceMeters } from '../lib/utils/geo';
 
 // ===== 機体推奨 =====
 
