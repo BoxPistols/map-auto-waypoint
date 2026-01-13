@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
 import type { MapRef, MapLayerMouseEvent, MarkerDragEvent } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, ChevronsRight, ChevronsLeft } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, ChevronRight, ChevronLeft } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import CustomLayerManager from './CustomLayerManager'
@@ -146,25 +146,6 @@ const Map = ({
   const [mapStyleId, setMapStyleId] = useState<BaseMapKey>(initialSettings.mapStyleId || 'osm')
   const [showStylePicker, setShowStylePicker] = useState(false)
   const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false)
-  
-  // Controls expanded state (Label mode)
-  const [controlsExpanded, setControlsExpanded] = useState(() => {
-    try {
-      const saved = localStorage.getItem('map-controls-expanded')
-      return saved === 'true'
-    } catch {
-      return false
-    }
-  })
-
-  // Toggle controls expanded state
-  const toggleControlsExpanded = useCallback(() => {
-    setControlsExpanded(prev => {
-      const next = !prev
-      localStorage.setItem('map-controls-expanded', String(next))
-      return next
-    })
-  }, [])
 
   // Toggle layer visibility helper
   const toggleLayer = useCallback((layerKey: keyof LayerVisibility) => {
@@ -513,10 +494,6 @@ const Map = ({
         case 't':
           e.preventDefault()
           toggleLayer('showRadioZones')
-          break
-        case ']':
-          e.preventDefault()
-          toggleControlsExpanded()
           break
       }
     }
@@ -1255,138 +1232,112 @@ const Map = ({
 
         {/* Controls group */}
         <div className={`${styles.controlsGroup} ${isMobile && !mobileControlsExpanded ? styles.hidden : ''}`}>
-          {/* Controls Expander Toggle (Desktop only) */}
-          {!isMobile && (
-            <button
-              className={`${styles.toggleButton} ${styles.expanderButton}`}
-              onClick={toggleControlsExpanded}
-              data-tooltip={controlsExpanded ? 'アイコンのみ表示 []]' : 'ラベルを表示 []]'}
-              data-tooltip-pos="left"
-            >
-              {controlsExpanded ? <ChevronsRight size={18} /> : <ChevronsLeft size={18} />}
-              <span className={styles.buttonLabel}>表示を縮小</span>
-            </button>
-          )}
-
           <button
             className={`${styles.toggleButton} ${layerVisibility.showDID ? styles.activeDID : ''}`}
             onClick={() => toggleLayer('showDID')}
-            data-tooltip={!controlsExpanded ? `DID 人口集中地区 [D]` : undefined}
+            data-tooltip={`DID 人口集中地区 [D]`}
             data-tooltip-pos="left"
           >
             <Users size={18} />
-            <span className={styles.buttonLabel}>人口集中地区</span>
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showAirportZones ? styles.activeAirport : ''}`}
             onClick={() => toggleLayer('showAirportZones')}
-            data-tooltip={!controlsExpanded ? `空港制限区域 [A]` : undefined}
+            data-tooltip={`空港制限区域 [A]`}
             data-tooltip-pos="left"
           >
             <Plane size={18} />
-            <span className={styles.buttonLabel}>空港制限区域</span>
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showRedZones ? styles.activeRed : ''}`}
             onClick={() => toggleLayer('showRedZones')}
-            data-tooltip={!controlsExpanded ? `レッドゾーン [R]` : undefined}
+            data-tooltip={`レッドゾーン [R]`}
             data-tooltip-pos="left"
           >
             <ShieldAlert size={18} />
-            <span className={styles.buttonLabel}>レッドゾーン</span>
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showYellowZones ? styles.activeYellow : ''}`}
             onClick={() => toggleLayer('showYellowZones')}
-            data-tooltip={!controlsExpanded ? `イエローゾーン [Y]` : undefined}
+            data-tooltip={`イエローゾーン [Y]`}
             data-tooltip-pos="left"
           >
             <Building2 size={18} />
-            <span className={styles.buttonLabel}>イエローゾーン</span>
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showHeliports ? styles.activeHeliport : ''}`}
             onClick={() => toggleLayer('showHeliports')}
-            data-tooltip={!controlsExpanded ? `ヘリポート [H]` : undefined}
+            data-tooltip={`ヘリポート [H]`}
             data-tooltip-pos="left"
           >
             <Landmark size={18} />
-            <span className={styles.buttonLabel}>ヘリポート</span>
           </button>
 
           {/* UTM layers */}
           <button
             className={`${styles.toggleButton} ${layerVisibility.showEmergencyAirspace ? styles.activeEmergency : ''}`}
             onClick={() => toggleLayer('showEmergencyAirspace')}
-            data-tooltip={!controlsExpanded ? `緊急用務空域 [E]` : undefined}
+            data-tooltip={`緊急用務空域 [E]`}
             data-tooltip-pos="left"
           >
             <AlertTriangle size={18} />
-            <span className={styles.buttonLabel}>緊急用務空域</span>
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showRemoteIdZones ? styles.activeRemoteId : ''}`}
             onClick={() => toggleLayer('showRemoteIdZones')}
-            data-tooltip={!controlsExpanded ? `リモートID特定区域 [I]` : undefined}
+            data-tooltip={`リモートID特定区域 [I]`}
             data-tooltip-pos="left"
           >
             <Radio size={18} />
-            <span className={styles.buttonLabel}>リモートID区域</span>
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showMannedAircraftZones ? styles.activeMannedAircraft : ''}`}
             onClick={() => toggleLayer('showMannedAircraftZones')}
-            data-tooltip={!controlsExpanded ? `有人機発着エリア [U]` : undefined}
+            data-tooltip={`有人機発着エリア [U]`}
             data-tooltip-pos="left"
           >
             <MapPinned size={18} />
-            <span className={styles.buttonLabel}>有人機発着エリア</span>
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showGeoFeatures ? styles.activeGeoFeatures : ''}`}
             onClick={() => toggleLayer('showGeoFeatures')}
-            data-tooltip={!controlsExpanded ? `地物 [G]` : undefined}
+            data-tooltip={`地物 [G]`}
             data-tooltip-pos="left"
           >
             <MapIcon size={18} />
-            <span className={styles.buttonLabel}>地物</span>
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showRainCloud ? styles.activeRainCloud : ''}`}
             onClick={() => toggleLayer('showRainCloud')}
-            data-tooltip={!controlsExpanded ? `雨雲 [N]` : undefined}
+            data-tooltip={`雨雲 [N]`}
             data-tooltip-pos="left"
           >
             <CloudRain size={18} />
-            <span className={styles.buttonLabel}>雨雲レーダー</span>
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showWind ? styles.activeWind : ''}`}
             onClick={() => toggleLayer('showWind')}
-            data-tooltip={!controlsExpanded ? `風向・風量 [O]` : undefined}
+            data-tooltip={`風向・風量 [O]`}
             data-tooltip-pos="left"
           >
             <Wind size={18} />
-            <span className={styles.buttonLabel}>風向・風速</span>
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showRadioZones ? styles.activeRadioZones : ''}`}
             onClick={() => toggleLayer('showRadioZones')}
-            data-tooltip={!controlsExpanded ? `電波種(LTE) [T]` : undefined}
+            data-tooltip={`電波種(LTE) [T]`}
             data-tooltip-pos="left"
           >
             <Wifi size={18} />
-            <span className={styles.buttonLabel}>電波種(LTE)</span>
           </button>
 
           <button
             className={`${styles.toggleButton} ${layerVisibility.is3D ? styles.active : ''}`}
             onClick={toggle3D}
-            data-tooltip={!controlsExpanded ? (layerVisibility.is3D ? '2D表示 [3]' : '3D表示 [3]') : undefined}
+            data-tooltip={layerVisibility.is3D ? '2D表示 [3]' : '3D表示 [3]'}
             data-tooltip-pos="left"
           >
             {layerVisibility.is3D ? <Box size={18} /> : <Rotate3D size={18} />}
-            <span className={styles.buttonLabel}>{layerVisibility.is3D ? '2D表示' : '3D表示'}</span>
           </button>
 
           {/* Map style picker */}
@@ -1394,11 +1345,10 @@ const Map = ({
             <button
               className={`${styles.toggleButton} ${showStylePicker ? styles.active : ''}`}
               onClick={() => setShowStylePicker(!showStylePicker)}
-              data-tooltip={!controlsExpanded ? "地図スタイル [M]" : undefined}
+              data-tooltip="地図スタイル [M]"
               data-tooltip-pos="left"
             >
               <Layers size={18} />
-              <span className={styles.buttonLabel}>地図スタイル</span>
             </button>
             {showStylePicker && (
               <div className={styles.stylePicker}>
