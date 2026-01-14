@@ -7,8 +7,7 @@
  * - バッテリー効率ルート
  */
 
-import { getDistanceMeters } from '../utils/geoUtils';
-import { AIRPORT_ZONES, NO_FLY_ZONES } from './airspace';
+import { getDistanceMeters, AIRPORT_ZONES, NO_FLY_ZONES } from '../lib';
 import { checkDIDArea } from './flightAnalyzer';
 
 // Constants

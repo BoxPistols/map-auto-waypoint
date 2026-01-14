@@ -22,6 +22,7 @@ import RouteOptimizer from '../RouteOptimizer'
 import { useDroneData } from '../../hooks/useDroneData'
 import { useNotification } from '../../hooks/useNotification'
 import { useTheme } from '../../hooks/useTheme'
+import { useCustomLayers } from '../../hooks/useCustomLayers'
 import '../../App.scss'
 
 // Default center: Tokyo Tower
@@ -44,6 +45,7 @@ const calcTotalDistance = (wps) => {
 }
 
 function MainLayout() {
+
   // Hooks
   const { 
     polygons, setPolygons, 
@@ -87,6 +89,15 @@ function MainLayout() {
   const [optimizedRoute, setOptimizedRoute] = useState(null)
   const [lastSearchResult, setLastSearchResult] = useState(null)
   
+  // Custom Layers
+  const {
+    customLayers,
+    visibleCustomLayerIds,
+    handleCustomLayerAdded,
+    handleCustomLayerRemoved,
+    handleCustomLayerToggle
+  } = useCustomLayers()
+
   const [editingPolygon, setEditingPolygon] = useState(null)
 
   // Waypoint settings
@@ -993,6 +1004,8 @@ function MainLayout() {
             zoom={zoom}
             polygons={polygons}
             waypoints={waypoints}
+            customLayers={customLayers}
+            visibleCustomLayerIds={visibleCustomLayerIds}
             recommendedWaypoints={recommendedWaypoints}
             didHighlightedWaypointIndices={didHighlightedWaypointIndices}
             waypointIssueFlagsById={waypointIssueFlagsById}
@@ -1010,6 +1023,9 @@ function MainLayout() {
             onWaypointDelete={handleWaypointDelete}
             onWaypointMove={handleWaypointMove}
             onWaypointsBulkDelete={handleWaypointsBulkDelete}
+            onCustomLayerAdded={handleCustomLayerAdded}
+            onCustomLayerRemoved={handleCustomLayerRemoved}
+            onCustomLayerToggle={handleCustomLayerToggle}
             selectedPolygonId={selectedPolygonId}
             editingPolygon={editingPolygon}
             drawMode={drawMode}

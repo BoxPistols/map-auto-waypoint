@@ -1,15 +1,14 @@
 /**
  * DID（人口集中地区）判定サービス
- * 国土地理院タイルおよびGitHub上のGeoJSONデータを使用
+ * 国土地理院タイルおよびローカルGeoJSONデータを使用
  *
- * 注意: このサービスは平成22年（2010年）国勢調査データを使用しています
- * 航空法上の現行基準は令和2年（2020年）国勢調査データですが、
- * dronebird/DIDinJapanリポジトリには平成22年データのみが公開されているため、
- * 表示（airspace.js）と判定（このファイル）の両方を平成22年データに統一しています
+ * データソース: 令和2年（2020年）国勢調査データ
+ * - 表示: 国土地理院 DIDタイル (did2020)
+ * - 判定: ローカルGeoJSON (/data/did/r02_did_*.geojson)
  */
 
 import * as turf from '@turf/turf';
-import { getDistanceMeters } from '../utils/geoUtils';
+import { getDistanceMeters } from '../lib/utils/geo';
 
 /**
  * DIDデータのキャッシュ（都道府県単位）
@@ -37,7 +36,7 @@ const PREFECTURE_DATA = [
   { code: '06', name: 'yamagata', nameJa: '山形県', bounds: { minLat: 37.7, maxLat: 39.2, minLng: 139.5, maxLng: 140.7 } },
   { code: '07', name: 'fukushima', nameJa: '福島県', bounds: { minLat: 36.8, maxLat: 37.9, minLng: 139.2, maxLng: 141.1 } },
   // ========== 関東 ==========
-  { code: '08', name: 'ibaragi', nameJa: '茨城県', bounds: { minLat: 35.7, maxLat: 36.9, minLng: 139.85, maxLng: 140.9 } },
+  { code: '08', name: 'ibaraki', nameJa: '茨城県', bounds: { minLat: 35.7, maxLat: 36.9, minLng: 139.85, maxLng: 140.9 } },
   { code: '09', name: 'tochigi', nameJa: '栃木県', bounds: { minLat: 36.2, maxLat: 37.2, minLng: 139.3, maxLng: 140.3 } },
   { code: '10', name: 'gunma', nameJa: '群馬県', bounds: { minLat: 36.0, maxLat: 37.1, minLng: 138.4, maxLng: 139.7 } },
   { code: '11', name: 'saitama', nameJa: '埼玉県', bounds: { minLat: 35.75, maxLat: 36.3, minLng: 138.9, maxLng: 139.95 } },
@@ -97,24 +96,32 @@ const getPrefectureFromCoords = (lat, lng) => {
 };
 
 /**
- * GitHub dronebird/DIDinJapan からDIDデータを取得
+ * ローカルGeoJSONからDIDデータを取得
+ * 令和2年（2020年）国勢調査データを使用
  */
-const fetchDIDFromGitHub = async (prefCode, prefName) => {
+const fetchDIDGeoJSON = async (prefCode, prefName) => {
   const cacheKey = `pref_${prefCode}`;
   if (didPrefectureCache.has(cacheKey)) return didPrefectureCache.get(cacheKey);
   if (typeof fetch === 'undefined') return null;
 
+  // ローカルGeoJSONを取得（令和2年データ）
+  const localUrl = `${import.meta.env.BASE_URL}data/did/r02_did_${prefCode}_${prefName}.geojson`;
+
   try {
-    const url = `https://raw.githubusercontent.com/dronebird/DIDinJapan/master/GeoJSON/h22_did_${prefCode}_${prefName}.geojson`;
-    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
-    if (!response || !response.ok) return null;
-    const geojson = await response.json();
-    didPrefectureCache.set(cacheKey, geojson);
-    return geojson;
+    const response = await fetch(localUrl, { headers: { 'Accept': 'application/json' } });
+    if (response && response.ok) {
+      const geojson = await response.json();
+      didPrefectureCache.set(cacheKey, geojson);
+      console.log(`[DID] Loaded local data for ${prefName} (R02)`);
+      return geojson;
+    }
   } catch (error) {
-    console.warn(`[DID] Fetch error: ${error.message}`);
-    return null;
+    console.warn(`[DID] Local fetch failed for ${prefName}: ${error.message}`);
   }
+
+  // ローカルデータがない場合はnull（fallbackを使用）
+  console.log(`[DID] No local data for ${prefName}, using fallback`);
+  return null;
 };
 
 /**
@@ -170,7 +177,7 @@ const checkPointInDIDGeoJSON = (geojson, lat, lng) => {
         isDID: true,
         area: areaName,
         certainty: 'confirmed',
-        source: 'GitHub/DIDinJapan',
+        source: 'local/R02',
         description: `${areaName}のDID内`,
         centroid
       };
@@ -189,7 +196,7 @@ export const checkDIDArea = async (lat, lng) => {
       return checkDIDAreaFallback(lat, lng);
     }
 
-    const geojson = await fetchDIDFromGitHub(prefecture.code, prefecture.name);
+    const geojson = await fetchDIDGeoJSON(prefecture.code, prefecture.name);
     if (geojson) {
       const result = checkPointInDIDGeoJSON(geojson, lat, lng);
       if (result) return result;
@@ -197,7 +204,7 @@ export const checkDIDArea = async (lat, lng) => {
         isDID: false,
         area: null,
         certainty: 'confirmed',
-        source: 'GitHub/DIDinJapan',
+        source: 'local/R02',
         description: 'DID外'
       };
     }

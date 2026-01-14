@@ -3,8 +3,7 @@
  * Waypointのギャップ分析と配置の最適化
  */
 
-import { getDistanceMeters } from '../utils/geoUtils';
-import { AIRPORT_ZONES, NO_FLY_ZONES } from './airspace';
+import { getDistanceMeters, AIRPORT_ZONES, NO_FLY_ZONES } from '../lib';
 import { getSetting, isDIDAvoidanceModeEnabled } from './settingsService';
 
 /**

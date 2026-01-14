@@ -56,7 +56,9 @@ function FlightRequirements({
 
   // チェック実行
   const runCheck = useCallback(async () => {
-    if (!polygon && !searchResult) return;
+    if (!polygon && !searchResult) {
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -210,8 +212,8 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
           <button
             className="refresh-btn"
             onClick={runCheck}
-            disabled={isLoading}
-            title="再チェック"
+            disabled={isLoading || (!polygon && !searchResult)}
+            title={!polygon && !searchResult ? 'ポリゴンまたは検索結果が必要です' : '再チェック'}
           >
             <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
           </button>

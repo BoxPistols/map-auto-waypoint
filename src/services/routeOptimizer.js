@@ -4,9 +4,8 @@
  */
 
 import { getDroneSpecs, getRouteSettings } from './droneSpecsService';
-import { getDistanceMeters } from '../utils/geoUtils';
+import { getDistanceMeters, checkAirspaceRestrictions } from '../lib';
 import { checkDIDArea } from './flightAnalyzer';
-import { checkAirspaceRestrictions } from './airspace';
 
 /**
  * 2点間の距離を計算（メートル）
