@@ -9,7 +9,7 @@ import {
   readGeoJSONFile,
   downloadAsFile
 } from '../../lib/services/customLayers'
-import { X, Plus, Download, Trash2, Layers as LayersIcon, ChevronRight } from 'lucide-react'
+import { X, Plus, Download, Trash2, Layers as LayersIcon } from 'lucide-react'
 import './CustomLayerManager.scss'
 
 /**

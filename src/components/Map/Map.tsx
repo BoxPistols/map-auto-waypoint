@@ -10,7 +10,6 @@ import type { DrawControlRef } from '../../lib/types'
 // Import from new lib
 import {
   BASE_MAPS,
-  LAYER_GROUPS,
   RESTRICTION_COLORS,
   getAirportZonesGeoJSON,
   getRedZonesGeoJSON,
@@ -1217,7 +1216,7 @@ const Map = ({
       )}
 
       {/* Map control buttons */}
-      <div className={`${styles.mapControls} ${isMobile ? styles.mobileControls : ''} ${mobileControlsExpanded ? styles.expanded : ''} ${controlsExpanded ? styles.controlsExpanded : ''}`}>
+      <div className={`${styles.mapControls} ${isMobile ? styles.mobileControls : ''} ${mobileControlsExpanded ? styles.expanded : ''}`}>
         {/* Mobile toggle button */}
         {isMobile && (
           <button

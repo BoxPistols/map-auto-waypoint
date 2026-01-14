@@ -238,7 +238,7 @@ const DrawControl = forwardRef<DrawControlRef, DrawControlProps>(({
         map.removeControl(draw)
       }
     }
-  }, [map, position, onCreate, onUpdate, onDelete])
+  }, [map, position, onCreate, onUpdate, onDelete, onEditComplete])
 
   // Handle active state changes
   useEffect(() => {

@@ -56,13 +56,10 @@ function FlightRequirements({
 
   // チェック実行
   const runCheck = useCallback(async () => {
-    console.log('[FlightRequirements] runCheck called', { polygon, searchResult });
     if (!polygon && !searchResult) {
-      console.log('[FlightRequirements] No polygon or searchResult, returning');
       return;
     }
 
-    console.log('[FlightRequirements] Starting check...');
     setIsLoading(true);
     setError(null);
 
@@ -93,13 +90,11 @@ function FlightRequirements({
       };
 
       const checkResults = await checkAllLegalRequirements(context);
-      console.log('[FlightRequirements] Check completed', checkResults);
       setResults(checkResults);
     } catch (err) {
       console.error('[FlightRequirements] Check error:', err);
       setError(err.message);
     } finally {
-      console.log('[FlightRequirements] Setting isLoading to false');
       setIsLoading(false);
     }
   }, [polygon, altitude, searchResult]);

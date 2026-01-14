@@ -3,7 +3,7 @@
  * 飛行計画のリスク分析、申請コスト計算
  */
 
-import { checkAirspaceRestrictions, AIRPORT_ZONES, NO_FLY_ZONES, getDistanceMeters } from '../lib';
+import { checkAirspaceRestrictions, AIRPORT_ZONES, getDistanceMeters } from '../lib';
 import { checkDIDArea } from './didService';
 import { getPolygonCenter, calculatePolygonArea as getPolygonArea } from './waypointGenerator';
 import { checkUTMConflicts } from './supportServices';

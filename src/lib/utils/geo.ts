@@ -7,8 +7,6 @@
 // Constants
 // ============================================
 
-/** Earth's radius in meters */
-const EARTH_RADIUS_METERS = 6371000
 /** Earth's radius in kilometers */
 const EARTH_RADIUS_KM = 6371
 
