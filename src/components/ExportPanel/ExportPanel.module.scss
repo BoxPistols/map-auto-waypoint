@@ -99,6 +99,10 @@
 
 .content {
   padding: 20px;
+  background: rgba(var(--color-bg-modal-rgb), 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow-y: auto;
 }
 
 .section {
