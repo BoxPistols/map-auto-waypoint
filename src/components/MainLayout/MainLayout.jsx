@@ -3,7 +3,7 @@ import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Su
 import { getSetting, isDIDAvoidanceModeEnabled } from '../../services/settingsService'
 import { getDetailedCollisionResults, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
 import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
-import Map from '../Map/Map'
+import MapComponent from '../Map/Map'
 import SearchForm from '../SearchForm/SearchForm'
 import PolygonList from '../PolygonList/PolygonList'
 import WaypointList from '../WaypointList/WaypointList'
@@ -13,7 +13,7 @@ import GridSettingsDialog from '../GridSettingsDialog/GridSettingsDialog'
 import HelpModal from '../HelpModal/HelpModal'
 import { saveSearchHistory } from '../../utils/storage'
 import { searchAddress } from '../../services/geocoding'
-import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints } from '../../services/waypointGenerator'
+import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints, reindexWaypoints } from '../../services/waypointGenerator'
 import { createPolygonFromSearchResult } from '../../services/polygonGenerator'
 import { addElevationToWaypoints } from '../../services/elevation'
 import FlightAssistant from '../FlightAssistant'
@@ -22,6 +22,8 @@ import FlightRequirements from '../FlightRequirements'
 import FlightPlanner from '../FlightPlanner'
 import RouteOptimizer from '../RouteOptimizer'
 import { WeatherForecastPanel } from '../WeatherForecast'
+// TODO: Issue #39 - DroneOperationDashboard でエラー発生のため一時コメントアウト
+// import { DroneOperationDashboard } from '../drone'
 import { useDroneData } from '../../hooks/useDroneData'
 import { useNotification } from '../../hooks/useNotification'
 import { useTheme } from '../../hooks/useTheme'
@@ -116,6 +118,9 @@ function MainLayout() {
   const [showFlightPlanner, setShowFlightPlanner] = useState(false)
   const [showRouteOptimizer, setShowRouteOptimizer] = useState(false)
   const [showWeatherForecast, setShowWeatherForecast] = useState(false)
+  // TODO: Issue #39 - 安全性チェッカーのエラー解決後に復活
+  // const [showDroneDashboard, setShowDroneDashboard] = useState(false)
+  // const [selectedDashboardPoint, setSelectedDashboardPoint] = useState(null)
   const [optimizedRoute, setOptimizedRoute] = useState(null)
   const [lastSearchResult, setLastSearchResult] = useState(null)
   
@@ -184,6 +189,7 @@ function MainLayout() {
 
   // ============================================
   // 自動衝突検出 (RBush空間インデックス + DID GeoJSON)
+  // 初期ロード時・リロード時・waypoint変更時に常時実行
   // ============================================
   useEffect(() => {
     if (!waypoints || waypoints.length === 0) {
@@ -195,10 +201,10 @@ function MainLayout() {
 
     let cancelled = false
 
-    // 衝突検出を非同期で実行（パフォーマンス考慮）
+    // 衝突検出を非同期で実行
     const checkCollisions = async () => {
       try {
-        // 1. RBush空間インデックスによる空港・禁止区域検出
+        // 1. RBush空間インデックスによる空港・禁止区域検出（即座に実行）
         const { results, byType } = getDetailedCollisionResults(waypoints)
 
         const newFlags = {}
@@ -207,41 +213,50 @@ function MainLayout() {
         for (const [waypointId, result] of results.entries()) {
           if (result.isColliding) {
             const wp = waypoints.find(w => w.id === waypointId)
-            const hasDID = result.collisionType === 'DID'
+            // RBush空間インデックスにはDIDは含まれていないはず
+            // (airports + noFlyZones のみ)
+            const hasDID = false // RBushからはDID判定しない
             const hasAirport = result.collisionType === 'AIRPORT' || result.collisionType === 'MILITARY'
             const hasProhibited = result.collisionType === 'RED_ZONE' || result.collisionType === 'YELLOW_ZONE'
 
             newFlags[waypointId] = { hasDID, hasAirport, hasProhibited }
 
-            if (hasDID && wp) {
-              didSet.add(wp.index)
+            // デバッグ: RBushで何が検出されたか
+            if (import.meta.env.DEV && wp) {
+              console.log(`[CollisionCheck] RBush: WP${wp.index} -> ${result.collisionType} (${result.areaName})`)
             }
           }
         }
 
-        // 2. DID GeoJSONによるDID検出（非同期）
-        const didResult = await checkAllWaypointsDID(waypoints)
+        // 2. DID GeoJSONによるDID検出（非同期・エラーでも継続）
+        try {
+          const didResult = await checkAllWaypointsDID(waypoints)
+
+          if (!cancelled && didResult?.hasDIDWaypoints) {
+            for (const didWp of didResult.didWaypoints) {
+              const wp = waypoints.find(w => w.id === didWp.waypointId)
+              if (wp) {
+                // デバッグ: どの座標がDID判定されたか
+                if (import.meta.env.DEV) {
+                  console.log(`[CollisionCheck] DID検出: WP${wp.index} (${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}) -> ${didWp.area}`)
+                }
+                if (newFlags[wp.id]) {
+                  newFlags[wp.id].hasDID = true
+                } else {
+                  newFlags[wp.id] = { hasDID: true, hasAirport: false, hasProhibited: false }
+                }
+                didSet.add(wp.index)
+              }
+            }
+          }
+        } catch (didError) {
+          // DIDチェック失敗しても他の判定は続行
+          console.warn('[CollisionCheck] DIDチェックエラー（継続）:', didError)
+        }
 
         if (cancelled) return
 
-        if (didResult?.hasDIDWaypoints) {
-          for (const didWp of didResult.didWaypoints) {
-            const wp = waypoints.find(w => w.id === didWp.waypointId)
-            if (wp) {
-              // 既存のフラグにDIDを追加
-              if (newFlags[wp.id]) {
-                newFlags[wp.id].hasDID = true
-              } else {
-                newFlags[wp.id] = { hasDID: true, hasAirport: false, hasProhibited: false }
-              }
-              didSet.add(wp.index)
-            }
-          }
-        }
-
         // 3. 危険セグメント検出（両端点が同一制限区域内のセグメント）
-        // 旧: 経路境界横切り検出は無効化
-        // 新: 両端点が同じゾーン内にある場合のみ危険セグメントとして表示
         const dangerSegments = []
 
         // ポリゴンごとにWaypointをグループ化
@@ -255,7 +270,7 @@ function MainLayout() {
         }
 
         // 各ポリゴン内のセグメントをチェック
-        for (const [polygonId, polygonWaypoints] of waypointsByPolygon.entries()) {
+        for (const [, polygonWaypoints] of waypointsByPolygon.entries()) {
           if (polygonWaypoints.length < 2) continue
 
           const sortedWaypoints = [...polygonWaypoints].sort((a, b) => a.index - b.index)
@@ -266,19 +281,18 @@ function MainLayout() {
             const flagsFrom = newFlags[wpFrom.id] || {}
             const flagsTo = newFlags[wpTo.id] || {}
 
-            // 両端点が同じ制限区域内かチェック
             let segmentType = null
             let segmentColor = null
 
             if (flagsFrom.hasDID && flagsTo.hasDID) {
               segmentType = 'DID'
-              segmentColor = '#dc2626' // 赤
+              segmentColor = '#dc2626'
             } else if (flagsFrom.hasAirport && flagsTo.hasAirport) {
               segmentType = 'AIRPORT'
-              segmentColor = '#9333ea' // 紫
+              segmentColor = '#9333ea'
             } else if (flagsFrom.hasProhibited && flagsTo.hasProhibited) {
               segmentType = 'PROHIBITED'
-              segmentColor = '#dc2626' // 赤
+              segmentColor = '#dc2626'
             }
 
             if (segmentType) {
@@ -286,31 +300,25 @@ function MainLayout() {
                 fromWaypoint: wpFrom,
                 toWaypoint: wpTo,
                 segmentType,
-                segmentColor,
-                polygonId
+                segmentColor
               })
             }
           }
         }
 
-        if (cancelled) return
-
         setWaypointIssueFlagsById(newFlags)
         setDidHighlightedWaypointIndices(didSet)
-        // 新しい危険セグメント形式でセット
         setPathCollisionResult(dangerSegments.length > 0 ? {
           isColliding: true,
           dangerSegments,
-          // 旧形式との互換性のため空配列
           intersectionPoints: [],
           affectedSegments: []
         } : null)
 
-        // 衝突があった場合のみコンソールに出力（開発時）
-        if (import.meta.env.DEV && (Object.keys(byType).length > 0 || didResult?.hasDIDWaypoints || dangerSegments.length > 0)) {
-          console.log('[CollisionCheck] 衝突検出結果:', {
+        if (import.meta.env.DEV && (Object.keys(byType).length > 0 || didSet.size > 0 || dangerSegments.length > 0)) {
+          console.log('[CollisionCheck] 自動検出結果:', {
             rbush: byType,
-            did: didResult?.hasDIDWaypoints ? `${didResult.didCount}件` : 'なし',
+            did: didSet.size > 0 ? `${didSet.size}件` : 'なし',
             dangerSegments: dangerSegments.length > 0 ? `${dangerSegments.length}セグメント` : 'なし'
           })
         }
@@ -319,13 +327,52 @@ function MainLayout() {
       }
     }
 
-    // debounce: 300ms待ってから実行
-    const timeoutId = setTimeout(checkCollisions, 300)
+    // 即座に実行（debounce短縮: 100ms）
+    const timeoutId = setTimeout(checkCollisions, 100)
     return () => {
       cancelled = true
       clearTimeout(timeoutId)
     }
-  }, [waypoints, didDataReady]) // didDataReadyが変わったら再実行
+  }, [waypoints]) // waypointsのみに依存（didDataReady削除で初期ロード時も実行）
+
+  // DIDデータ準備完了時に再チェック
+  useEffect(() => {
+    if (didDataReady && waypoints && waypoints.length > 0) {
+      // waypointsを強制的に更新して再チェックをトリガー
+      // （既にuseEffectが走っているので、ここでは追加のDIDチェックのみ）
+      const recheckDID = async () => {
+        try {
+          const didResult = await checkAllWaypointsDID(waypoints)
+          if (didResult?.hasDIDWaypoints) {
+            setWaypointIssueFlagsById(prev => {
+              const updated = { ...prev }
+              for (const didWp of didResult.didWaypoints) {
+                if (updated[didWp.waypointId]) {
+                  updated[didWp.waypointId].hasDID = true
+                } else {
+                  updated[didWp.waypointId] = { hasDID: true, hasAirport: false, hasProhibited: false }
+                }
+              }
+              return updated
+            })
+            setDidHighlightedWaypointIndices(prev => {
+              const newSet = new Set(prev)
+              for (const didWp of didResult.didWaypoints) {
+                newSet.add(didWp.waypointIndex)
+              }
+              return newSet
+            })
+            if (import.meta.env.DEV) {
+              console.log('[CollisionCheck] DIDデータ準備完了、再チェック:', didResult.didCount + '件')
+            }
+          }
+        } catch (error) {
+          console.warn('[CollisionCheck] DID再チェックエラー:', error)
+        }
+      }
+      recheckDID()
+    }
+  }, [didDataReady, waypoints])
 
   // ============================================
   // ポリゴン衝突検出
@@ -408,7 +455,7 @@ function MainLayout() {
 
     // Use generatePerimeterWaypoints to distribute waypoints evenly along the perimeter
     const newWaypoints = generatePerimeterWaypoints(polygon, waypointCount)
-    setWaypoints(prev => [...prev, ...newWaypoints])
+    setWaypoints(prev => reindexWaypoints([...prev, ...newWaypoints]))
 
     const center = getPolygonCenter(polygon.geometry)
     if (center) {
@@ -471,7 +518,7 @@ function MainLayout() {
   // Handle polygon delete
   const handlePolygonDelete = useCallback((id) => {
     setPolygons(prev => prev.filter(p => p.id !== id))
-    setWaypoints(prev => prev.filter(w => w.polygonId !== id))
+    setWaypoints(prev => reindexWaypoints(prev.filter(w => w.polygonId !== id)))
     if (selectedPolygonId === id) {
       setSelectedPolygonId(null)
     }
@@ -593,6 +640,11 @@ function MainLayout() {
             e.preventDefault()
             setShowWeatherForecast(prev => !prev)
             break
+          // TODO: Issue #39 - 安全性チェッカーのエラー解決後に復活
+          // case 'k': // Toggle Safety Checker
+          //   e.preventDefault()
+          //   setShowDroneDashboard(prev => !prev)
+          //   break
           case 'f': // Toggle Full Map Mode
             e.preventDefault()
             setFullMapMode(prev => {
@@ -720,11 +772,11 @@ function MainLayout() {
     // Vertex-only generation
     const newWaypoints = polygonToWaypoints(polygon)
 
-    // Remove existing waypoints for this polygon
-    setWaypoints(prev => [
+    // Remove existing waypoints for this polygon and reindex
+    setWaypoints(prev => reindexWaypoints([
       ...prev.filter(w => w.polygonId !== polygon.id),
       ...newWaypoints
-    ])
+    ]))
     showNotification(`${newWaypoints.length} Waypointを生成しました`)
     setActivePanel('waypoints')
   }, [waypoints, setWaypoints, showNotification])
@@ -737,29 +789,22 @@ function MainLayout() {
     const { spacing, includeVertices } = settings
 
     let newWaypoints = []
-    let globalIndex = 1
 
     // Add vertex waypoints if requested
     if (includeVertices) {
       const vertexWaypoints = polygonToWaypoints(polygon)
-      vertexWaypoints.forEach(wp => {
-        wp.index = globalIndex++
-        newWaypoints.push(wp)
-      })
+      newWaypoints.push(...vertexWaypoints)
     }
 
     // Add grid waypoints
     const gridWaypoints = generateGridWaypoints(polygon, spacing)
-    gridWaypoints.forEach(wp => {
-      wp.index = globalIndex++
-      newWaypoints.push(wp)
-    })
+    newWaypoints.push(...gridWaypoints)
 
-    // Remove existing waypoints for this polygon and add new ones
-    setWaypoints(prev => [
+    // Remove existing waypoints for this polygon and reindex all
+    setWaypoints(prev => reindexWaypoints([
       ...prev.filter(w => w.polygonId !== polygon.id),
       ...newWaypoints
-    ])
+    ]))
 
     setShowGridSettings(null)
     setActivePanel('waypoints')
@@ -960,15 +1005,23 @@ function MainLayout() {
         id: crypto.randomUUID(),
         lat: latlng.lat,
         lng: latlng.lng,
-        index: waypoints.length + 1,
+        index: 0, // Will be reindexed
         polygonId: null,
         polygonName: '手動追加',
         type: 'manual'
       }
-      setWaypoints(prev => [...prev, newWaypoint])
+      setWaypoints(prev => reindexWaypoints([...prev, newWaypoint]))
+
+      // TODO: Issue #39 - 安全性チェッカーのエラー解決後に復活
+      // ダッシュボードに選択地点を設定
+      // setSelectedDashboardPoint({ lat: latlng.lat, lng: latlng.lng })
+      // if (!showDroneDashboard) {
+      //   setShowDroneDashboard(true)
+      // }
+
       showNotification('Waypointを追加しました')
     }
-  }, [drawMode, waypoints.length, setWaypoints, showNotification])
+  }, [drawMode, setWaypoints, showNotification])
 
   // Mobile detection with resize listener
   useEffect(() => {
@@ -1245,7 +1298,7 @@ function MainLayout() {
 
         {/* Map */}
         <div className="map-section">
-          <Map
+          <MapComponent
             center={center}
             zoom={zoom}
             polygons={polygons}
@@ -1436,6 +1489,16 @@ function MainLayout() {
         sidebarCollapsed={sidebarCollapsed}
       />
 
+      {/* TODO: Issue #XX - 安全性チェッカーのエラー解決後に復活 */}
+      {/* Safety Checker (飛行安全性チェッカー) */}
+      {/* {showDroneDashboard && (
+        <DroneOperationDashboard
+          selectedPoint={selectedDashboardPoint}
+          onClose={() => setShowDroneDashboard(false)}
+          darkMode={theme === THEMES.DARK}
+        />
+      )} */}
+
       {/* Flight Planner (目的ベースOOUI) */}
       <FlightPlanner
         isOpen={showFlightPlanner}
@@ -1445,7 +1508,7 @@ function MainLayout() {
         onApplyRoute={(plan) => {
           // ルートのWaypointを追加
           if (plan.waypoints && plan.waypoints.length > 0) {
-            setWaypoints(prev => [...prev, ...plan.waypoints])
+            setWaypoints(prev => reindexWaypoints([...prev, ...plan.waypoints]))
             showNotification(`${plan.waypoints.length}個のWaypointを追加しました`, 'success')
           }
         }}

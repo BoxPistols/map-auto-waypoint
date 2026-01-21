@@ -38,16 +38,16 @@
   width: 400px;
   min-width: 360px;
   max-height: min(600px, calc(100vh - 100px));
-  background: rgba(var(--color-bg-elevated-rgb), 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-radius: 16px;
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--glass-shadow-elevated), var(--glass-inner-highlight);
   display: flex;
   flex-direction: column;
   z-index: 1000;
   overflow: hidden;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--glass-border);
   transition: box-shadow 0.3s ease, width 0.1s ease, height 0.1s ease;
 
   &.resizing {

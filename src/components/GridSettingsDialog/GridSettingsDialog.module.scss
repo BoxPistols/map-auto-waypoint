@@ -1,7 +1,10 @@
 .dialog {
-  background: white;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--glass-shadow-elevated), var(--glass-inner-highlight);
   width: 90vw;
   max-width: 420px;
   overflow: hidden;
@@ -12,8 +15,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #eee;
-  background: #f8f9fa;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme="dark"]) .header {
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .titleRow {
@@ -22,14 +29,14 @@
   gap: 10px;
 
   svg {
-    color: #45B7D1;
+    color: var(--color-primary);
   }
 
   h3 {
     margin: 0;
     font-size: 16px;
     font-weight: 600;
-    color: #333;
+    color: var(--color-text);
   }
 }
 
@@ -40,7 +47,7 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  color: #999;
+  color: var(--color-text-tertiary);
   background: transparent;
   border: none;
   border-radius: 50%;
@@ -48,13 +55,17 @@
   transition: background-color 0.2s, color 0.2s;
 
   &:hover {
-    background: #e0e0e0;
-    color: #666;
+    background: var(--color-bg-tertiary);
+    color: var(--color-text);
   }
 }
 
 .content {
   padding: 20px;
+  color: var(--color-text);
+  background: rgba(var(--color-bg-modal-rgb), 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .polygonInfo {
@@ -62,7 +73,7 @@
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: #f5f5f5;
+  background: var(--color-bg-secondary);
   border-radius: 8px;
   margin-bottom: 20px;
 }
@@ -76,12 +87,12 @@
 
 .polygonName {
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
 }
 
 .polygonArea {
   font-size: 13px;
-  color: #888;
+  color: var(--color-text-secondary);
 }
 
 .settingGroup {
@@ -93,12 +104,12 @@
   margin-bottom: 8px;
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
 }
 
 .unit {
   font-weight: normal;
-  color: #888;
+  color: var(--color-text-secondary);
   margin-left: 4px;
 }
 
@@ -115,13 +126,15 @@
   font-size: 18px;
   font-weight: 500;
   text-align: center;
-  border: 2px solid #ddd;
+  border: 2px solid var(--color-border);
   border-radius: 8px;
   outline: none;
   transition: border-color 0.2s;
+  background: var(--color-bg);
+  color: var(--color-text);
 
   &:focus {
-    border-color: #45B7D1;
+    border-color: var(--color-primary);
   }
 
   // Hide spin buttons
@@ -135,7 +148,7 @@
 
 .inputUnit {
   font-size: 16px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .spacingPresets {
@@ -147,22 +160,22 @@
 .presetButton {
   padding: 6px 12px;
   font-size: 13px;
-  color: #666;
-  background: #f0f0f0;
-  border: 1px solid #ddd;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
   border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: #e8e8e8;
-    border-color: #ccc;
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-border-dark);
   }
 
   &.active {
     color: white;
-    background: #45B7D1;
-    border-color: #45B7D1;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
   }
 }
 
@@ -171,7 +184,7 @@
   height: 6px;
   -webkit-appearance: none;
   appearance: none;
-  background: #ddd;
+  background: var(--color-border);
   border-radius: 3px;
   outline: none;
 
@@ -180,7 +193,7 @@
     appearance: none;
     width: 20px;
     height: 20px;
-    background: #45B7D1;
+    background: var(--color-primary);
     border-radius: 50%;
     cursor: pointer;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -189,7 +202,7 @@
   &::-moz-range-thumb {
     width: 20px;
     height: 20px;
-    background: #45B7D1;
+    background: var(--color-primary);
     border: none;
     border-radius: 50%;
     cursor: pointer;
@@ -202,7 +215,7 @@
   justify-content: space-between;
   margin-top: 4px;
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
 .checkboxLabel {
@@ -219,21 +232,21 @@
 
   span {
     font-size: 14px;
-    color: #333;
+    color: var(--color-text);
   }
 }
 
 .preview {
   padding: 16px;
-  background: #f8f9fa;
+  background: var(--color-bg-secondary);
   border-radius: 8px;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-border);
 
   h4 {
     margin: 0 0 12px;
     font-size: 13px;
     font-weight: 600;
-    color: #666;
+    color: var(--color-text-secondary);
   }
 }
 
@@ -249,33 +262,33 @@
   flex-direction: column;
   align-items: center;
   padding: 12px;
-  background: white;
+  background: var(--color-bg);
   border-radius: 8px;
-  border: 1px solid #eee;
+  border: 1px solid var(--color-border);
 
   &.total {
-    background: #e8f4f8;
-    border-color: #d0ebf1;
+    background: var(--color-primary-bg);
+    border-color: var(--color-primary);
   }
 }
 
 .countLabel {
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-secondary);
   margin-bottom: 4px;
 }
 
 .countValue {
   font-size: 24px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
 
   &.warning {
-    color: #f39c12;
+    color: var(--color-warning);
   }
 
   &.danger {
-    color: #e74c3c;
+    color: var(--color-danger);
   }
 }
 
@@ -294,22 +307,22 @@
   }
 
   &.warning {
-    background: #fef9e7;
-    color: #9a7b4f;
-    border: 1px solid #f7dc6f;
+    background: var(--color-warning-bg);
+    color: var(--color-warning-dark);
+    border: 1px solid var(--color-warning);
 
     svg {
-      color: #f39c12;
+      color: var(--color-warning);
     }
   }
 
   &.danger {
-    background: #fdedec;
-    color: #943126;
-    border: 1px solid #f1948a;
+    background: var(--color-danger-bg);
+    color: var(--color-danger-dark);
+    border: 1px solid var(--color-danger);
 
     svg {
-      color: #e74c3c;
+      color: var(--color-danger);
     }
   }
 }
@@ -318,8 +331,12 @@
   display: flex;
   gap: 12px;
   padding: 16px 20px;
-  border-top: 1px solid #eee;
-  background: #f8f9fa;
+  border-top: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme="dark"]) .actions {
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .cancelButton {
@@ -327,16 +344,16 @@
   padding: 12px 20px;
   font-size: 14px;
   font-weight: 500;
-  color: #666;
-  background: white;
-  border: 1px solid #ddd;
+  color: var(--color-text-secondary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: #f5f5f5;
-    border-color: #ccc;
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border-dark);
   }
 }
 
@@ -350,18 +367,18 @@
   font-size: 14px;
   font-weight: 500;
   color: white;
-  background: #45B7D1;
+  background: var(--color-primary);
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
 
   &:hover:not(:disabled) {
-    background: #3aa3bc;
+    background: var(--color-primary-dark);
   }
 
   &:disabled {
-    background: #ccc;
+    background: var(--color-border);
     cursor: not-allowed;
   }
 }

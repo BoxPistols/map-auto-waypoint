@@ -1572,10 +1572,9 @@ const Map = ({
                 (rw) => rw.id === wp.id
             )
             const flags = waypointIssueFlagsById && wp.id ? waypointIssueFlagsById[wp.id] : null
+            // DID判定はwaypointIssueFlagsById (ID-based) を使用
+            // didHighlightedWaypointIndices (index-based) は使用しない（cross-polygon contamination防止）
             const isInDID =
-                (didHighlightedWaypointIndices instanceof Set
-                    ? didHighlightedWaypointIndices.has(wp.index)
-                    : false) ||
                 (flags?.hasDID || false) ||
                 (recommendedWp?.hasDID || false)
             const isInAirport = (flags?.hasAirport || false) || (recommendedWp?.hasAirport || false)

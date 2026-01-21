@@ -130,6 +130,15 @@ $breakpoint-desktop: 1024px; // デスクトップ
   // ヘッダー
   --color-header-bg: #1e293b;
   --color-header-text: #ffffff;
+
+  // グラスモーフィズム (Light mode)
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-solid: rgba(255, 255, 255, 0.75);
+  --glass-blur: 20px;
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --glass-shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.18);
+  --glass-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 // ダークモード
@@ -200,6 +209,15 @@ $breakpoint-desktop: 1024px; // デスクトップ
   // ヘッダー
   --color-header-bg: #1e293b;
   --color-header-text: #ffffff;
+
+  // グラスモーフィズム (Dark mode)
+  --glass-bg: rgba(15, 23, 42, 0.5);
+  --glass-bg-solid: rgba(30, 41, 59, 0.7);
+  --glass-blur: 20px;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.5);
+  --glass-inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 // トランジション（テーマ切り替え時のアニメーション）
@@ -268,4 +286,32 @@ $spacing-mobile-lg: 16px;
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+// =============================================================================
+// グラスモーフィズム Mixin
+// =============================================================================
+
+@mixin glassmorphism {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inner-highlight);
+}
+
+@mixin glassmorphism-solid {
+  background: var(--glass-bg-solid);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inner-highlight);
+}
+
+@mixin glassmorphism-elevated {
+  background: var(--glass-bg);
+  backdrop-filter: blur(calc(var(--glass-blur) * 1.25));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 1.25));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-elevated), var(--glass-inner-highlight);
 }
