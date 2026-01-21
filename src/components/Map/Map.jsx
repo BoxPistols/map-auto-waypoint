@@ -145,6 +145,7 @@ const Map = ({
   recommendedWaypoints = null,
   didHighlightedWaypointIndices = null,
   waypointIssueFlagsById = null,
+  pathCollisionResult = null,
   highlightedWaypointIndex = null,
   optimizedRoute = null,
   onHomePointMove,
@@ -481,6 +482,54 @@ const Map = ({
     }
   }, [recommendedWaypoints, waypoints])
 
+  // Path collision overlay GeoJSON (intersection points and dangerous segments)
+  const pathCollisionGeoJSON = useMemo(() => {
+    if (!pathCollisionResult || !pathCollisionResult.isColliding) return null
+
+    const features = []
+
+    // Add intersection point markers
+    pathCollisionResult.intersectionPoints.forEach((coord, idx) => {
+      features.push({
+        type: 'Feature',
+        properties: {
+          type: 'intersection',
+          index: idx
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: coord
+        }
+      })
+    })
+
+    // Add dangerous segment lines
+    pathCollisionResult.affectedSegments?.forEach((segment) => {
+      if (segment.fromWaypoint && segment.toWaypoint) {
+        features.push({
+          type: 'Feature',
+          properties: {
+            type: 'dangerous-segment',
+            index: segment.index
+          },
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [segment.fromWaypoint.lng, segment.fromWaypoint.lat],
+              [segment.toWaypoint.lng, segment.toWaypoint.lat]
+            ]
+          }
+        })
+      }
+    })
+
+    if (features.length === 0) return null
+
+    return {
+      type: 'FeatureCollection',
+      features
+    }
+  }, [pathCollisionResult])
 
   // DID tile source configuration (令和2年国勢調査データ)
   // Note: GSI DID tiles have limited zoom range, maxzoom 14 is safe
@@ -1239,6 +1288,50 @@ const Map = ({
                 ],
                 'text-halo-color': '#000000',
                 'text-halo-width': 1
+              }}
+            />
+          </Source>
+        )}
+
+        {/* Path collision overlay - intersection points and dangerous segments */}
+        {pathCollisionGeoJSON && (
+          <Source id="path-collision-overlay" type="geojson" data={pathCollisionGeoJSON}>
+            {/* Dangerous segment lines (red highlight) */}
+            <Layer
+              id="path-collision-segments"
+              type="line"
+              filter={['==', ['get', 'type'], 'dangerous-segment']}
+              paint={{
+                'line-color': '#FF0000',
+                'line-width': 6,
+                'line-opacity': 0.7
+              }}
+            />
+            {/* Intersection point markers */}
+            <Layer
+              id="path-collision-points"
+              type="circle"
+              filter={['==', ['get', 'type'], 'intersection']}
+              paint={{
+                'circle-radius': 10,
+                'circle-color': '#FF0000',
+                'circle-stroke-color': '#FFFFFF',
+                'circle-stroke-width': 3,
+                'circle-opacity': 0.9
+              }}
+            />
+            {/* Warning icon/label at intersection */}
+            <Layer
+              id="path-collision-labels"
+              type="symbol"
+              filter={['==', ['get', 'type'], 'intersection']}
+              layout={{
+                'text-field': '⚠',
+                'text-size': 16,
+                'text-offset': [0, 0]
+              }}
+              paint={{
+                'text-color': '#FFFFFF'
               }}
             />
           </Source>

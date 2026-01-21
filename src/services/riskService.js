@@ -14,6 +14,7 @@ import {
   createSpatialIndex,
   checkWaypointsCollisionBatch,
   getCollisionSummary,
+  checkPathCollision,
   ZONE_PRIORITY,
   // GeoJSON生成関数
   generateAirportGeoJSON,
@@ -193,6 +194,58 @@ export const checkAllWaypointsDID = async (waypoints) => {
     didWaypoints,
     areaSummaries,
     didCount: didWaypoints.length
+  };
+};
+
+/**
+ * Waypoint間の飛行経路が禁止エリアを通過しているか判定
+ * @param {Array} waypoints - Waypoint配列
+ * @returns {Object} 衝突結果 { isColliding, intersectionPoints, affectedSegments, message }
+ */
+export const checkFlightPathCollision = (waypoints) => {
+  if (!waypoints || waypoints.length < 2) {
+    return {
+      isColliding: false,
+      intersectionPoints: [],
+      affectedSegments: [],
+      message: '経路が不十分です'
+    };
+  }
+
+  // Waypointをindex順にソートして座標配列を作成
+  const sortedWaypoints = [...waypoints].sort((a, b) => a.index - b.index);
+  const pathCoords = sortedWaypoints.map(wp => [wp.lng, wp.lat]);
+
+  // 禁止エリアのGeoJSONを取得
+  const prohibitedAreas = generateAllProhibitedAreasGeoJSON();
+
+  // 経路の衝突判定
+  const result = checkPathCollision(pathCoords, prohibitedAreas);
+
+  // 影響を受けるセグメントを特定
+  const affectedSegments = [];
+  if (result.isColliding && result.intersectionPoints.length > 0) {
+    // 各セグメントをチェック
+    for (let i = 0; i < pathCoords.length - 1; i++) {
+      const segmentCoords = [pathCoords[i], pathCoords[i + 1]];
+      const segmentResult = checkPathCollision(segmentCoords, prohibitedAreas);
+      if (segmentResult.isColliding) {
+        affectedSegments.push({
+          index: i,
+          fromWaypoint: sortedWaypoints[i],
+          toWaypoint: sortedWaypoints[i + 1],
+          intersectionCount: segmentResult.intersectionPoints.length
+        });
+      }
+    }
+  }
+
+  return {
+    isColliding: result.isColliding,
+    intersectionPoints: result.intersectionPoints,
+    affectedSegments,
+    severity: result.severity,
+    message: result.message
   };
 };
 

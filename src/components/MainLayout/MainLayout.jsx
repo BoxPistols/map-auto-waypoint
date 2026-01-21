@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getSetting, isDIDAvoidanceModeEnabled } from '../../services/settingsService'
-import { getDetailedCollisionResults, checkAllWaypointsDID } from '../../services/riskService'
+import { getDetailedCollisionResults, checkAllWaypointsDID, checkFlightPathCollision } from '../../services/riskService'
 import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
 import Map from '../Map/Map'
 import SearchForm from '../SearchForm/SearchForm'
@@ -140,6 +140,8 @@ function MainLayout() {
   const [didHighlightedWaypointIndices, setDidHighlightedWaypointIndices] = useState(() => new Set())
   // Per-waypoint issue flags (airport/prohibited/did) for marker highlighting (recommendedWaypointsと独立)
   const [waypointIssueFlagsById, setWaypointIssueFlagsById] = useState(() => ({}))
+  // Path collision results (intersection points and affected segments)
+  const [pathCollisionResult, setPathCollisionResult] = useState(null)
 
   // Highlighted waypoint (for FlightAssistant WP click)
   const [highlightedWaypointIndex, setHighlightedWaypointIndex] = useState(null)
@@ -185,6 +187,7 @@ function MainLayout() {
     if (!waypoints || waypoints.length === 0) {
       setWaypointIssueFlagsById({})
       setDidHighlightedWaypointIndices(new Set())
+      setPathCollisionResult(null)
       return
     }
 
@@ -234,16 +237,21 @@ function MainLayout() {
           }
         }
 
+        // 3. 飛行経路の衝突検出（Waypoint間のライン）
+        const pathResult = checkFlightPathCollision(waypoints)
+
         if (cancelled) return
 
         setWaypointIssueFlagsById(newFlags)
         setDidHighlightedWaypointIndices(didSet)
+        setPathCollisionResult(pathResult.isColliding ? pathResult : null)
 
         // 衝突があった場合のみコンソールに出力（開発時）
-        if (import.meta.env.DEV && (Object.keys(byType).length > 0 || didResult?.hasDIDWaypoints)) {
+        if (import.meta.env.DEV && (Object.keys(byType).length > 0 || didResult?.hasDIDWaypoints || pathResult.isColliding)) {
           console.log('[CollisionCheck] 衝突検出結果:', {
             rbush: byType,
-            did: didResult?.hasDIDWaypoints ? `${didResult.didCount}件` : 'なし'
+            did: didResult?.hasDIDWaypoints ? `${didResult.didCount}件` : 'なし',
+            path: pathResult.isColliding ? `${pathResult.intersectionPoints.length}箇所` : 'なし'
           })
         }
       } catch (error) {
@@ -1158,6 +1166,7 @@ function MainLayout() {
             recommendedWaypoints={recommendedWaypoints}
             didHighlightedWaypointIndices={didHighlightedWaypointIndices}
             waypointIssueFlagsById={waypointIssueFlagsById}
+            pathCollisionResult={pathCollisionResult}
             highlightedWaypointIndex={highlightedWaypointIndex}
             optimizedRoute={optimizedRoute}
             onHomePointMove={handleHomePointMove}
