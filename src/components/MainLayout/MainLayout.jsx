@@ -19,6 +19,7 @@ import ApiSettings from '../ApiSettings'
 import FlightRequirements from '../FlightRequirements'
 import FlightPlanner from '../FlightPlanner'
 import RouteOptimizer from '../RouteOptimizer'
+import { WeatherForecastPanel } from '../WeatherForecast'
 import { useDroneData } from '../../hooks/useDroneData'
 import { useNotification } from '../../hooks/useNotification'
 import { useTheme } from '../../hooks/useTheme'
@@ -86,6 +87,7 @@ function MainLayout() {
   const [showFlightRequirements, setShowFlightRequirements] = useState(false)
   const [showFlightPlanner, setShowFlightPlanner] = useState(false)
   const [showRouteOptimizer, setShowRouteOptimizer] = useState(false)
+  const [showWeatherForecast, setShowWeatherForecast] = useState(false)
   const [optimizedRoute, setOptimizedRoute] = useState(null)
   const [lastSearchResult, setLastSearchResult] = useState(null)
   
@@ -345,6 +347,10 @@ function MainLayout() {
           case 'l': // Toggle Flight Requirements
             e.preventDefault()
             setShowFlightRequirements(prev => !prev)
+            break
+          case 'o': // Toggle Weather Forecast
+            e.preventDefault()
+            setShowWeatherForecast(prev => !prev)
             break
           case 'f': // Toggle Full Map Mode
             e.preventDefault()
@@ -1173,6 +1179,14 @@ function MainLayout() {
         searchResult={lastSearchResult}
         isOpen={showFlightRequirements}
         onClose={() => setShowFlightRequirements(false)}
+        sidebarCollapsed={sidebarCollapsed}
+      />
+
+      {/* Weather Forecast Panel (天気予報) */}
+      <WeatherForecastPanel
+        isOpen={showWeatherForecast}
+        onClose={() => setShowWeatherForecast(false)}
+        center={center}
         sidebarCollapsed={sidebarCollapsed}
       />
 
