@@ -35,6 +35,7 @@ export {
 
 export {
   PREFECTURE_COLORS,
+  PREFECTURE_BOUNDS,
   LAYER_GROUPS,
   createLayerIdToNameMap,
   getAllLayers,
@@ -156,7 +157,14 @@ export {
   getDistanceMeters,
   destinationPoint,
   createCirclePolygon,
-  createCirclePolygonMeters
+  createCirclePolygonMeters,
+  formatCoordinates,
+  formatCoordinatesDMS,
+  convertDecimalToDMS,
+  degreesToCompass,
+  degreesToJapanese,
+  calculateBBox,
+  bboxesIntersect
 } from './utils/geo'
 
 // ============================================
