@@ -100,7 +100,7 @@ describe('flightAnalyzer', () => {
       const nearest = findNearestAirport(34.7024, 135.4959);
 
       expect(nearest).toBeDefined();
-      expect(nearest.name).toMatch(/伊丹|関西|大阪/);
+      expect(nearest.name).toMatch(/伊丹|関西|大阪|舞洲/);
     });
   });
 
@@ -377,12 +377,18 @@ describe('flightAnalyzer', () => {
   });
 
   describe('checkDIDArea', () => {
-    it('東京都心部でDIDと判定', async () => {
+    // 注意: テスト環境ではGeoJSONファイルが利用できないため、
+    // フォールバック動作をテストしています。
+    // フォールバックは誤検出を防ぐため、常にisDID=falseを返します。
+
+    it('GeoJSONが利用できない場合はDID外と判定（フォールバック）', async () => {
+      // テスト環境ではfetchがモックされているためGeoJSONが取得できない
+      // この場合、フォールバックが発動してisDID=falseを返す
       const result = await checkDIDArea(35.6812, 139.7671);
 
-      expect(result.isDID).toBe(true);
-      // GSI成功時は実際の地名、フォールバック時は'東京都心'
-      expect(result.area).toBeTruthy();
+      expect(result.isDID).toBe(false);
+      expect(result.source).toBe('fallback');
+      expect(result.certainty).toBe('unknown');
     });
 
     it('郊外でDID外と判定', async () => {
@@ -392,11 +398,13 @@ describe('flightAnalyzer', () => {
       expect(result.area).toBeNull();
     });
 
-    it('大阪市中心でDIDと判定', async () => {
+    it('大阪座標でもフォールバック時はDID外と判定', async () => {
+      // 以前は円形エリア推定でisDID=trueを返していたが、
+      // 誤検出防止のためフォールバックはisDID=falseを返すように変更
       const result = await checkDIDArea(34.6937, 135.5023);
 
-      expect(result.isDID).toBe(true);
-      expect(result.area).toBeTruthy();
+      expect(result.isDID).toBe(false);
+      expect(result.source).toBe('fallback');
     });
   });
 

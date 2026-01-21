@@ -125,7 +125,7 @@ const HelpModal = ({ onClose }) => {
                 <tr>
                   <td><PenTool size={14} /></td>
                   <td>形状を編集</td>
-                  <td>頂点をドラッグして変形、中点クリックで頂点追加</td>
+                  <td>サイドバーのアイコン、または地図上でダブルクリック・右クリックメニューから編集開始</td>
                 </tr>
                 <tr>
                   <td><Pencil size={14} /></td>
@@ -140,7 +140,7 @@ const HelpModal = ({ onClose }) => {
                 <tr>
                   <td><Trash2 size={14} /></td>
                   <td>削除</td>
-                  <td>ポリゴンと関連Waypointを削除</td>
+                  <td>サイドバーのアイコン、または地図上で右クリックメニューから削除</td>
                 </tr>
               </tbody>
             </table>
@@ -181,9 +181,9 @@ const HelpModal = ({ onClose }) => {
 
             <h3>Waypointの編集</h3>
             <ul>
-              <li><strong>ダブルクリック:</strong> 番号・緯度・経度を直接編集</li>
+              <li><strong>サイドバーでダブルクリック:</strong> 番号・緯度・経度を直接編集</li>
               <li><strong>ドラッグ:</strong> マップ上でWaypointマーカーを移動</li>
-              <li><strong>削除:</strong> 各行のゴミ箱アイコンで個別削除</li>
+              <li><strong>削除:</strong> サイドバーのゴミ箱アイコン、または地図上で右クリックメニューから削除</li>
             </ul>
 
             <h3>標高取得</h3>
@@ -340,6 +340,10 @@ const HelpModal = ({ onClose }) => {
                   <td>飛行要件サマリーを開く / 閉じる</td>
                 </tr>
                 <tr>
+                  <td><kbd>O</kbd></td>
+                  <td>天気予報パネルを開く / 閉じる</td>
+                </tr>
+                <tr>
                   <td><kbd>S</kbd></td>
                   <td>サイドバーを開く / 閉じる</td>
                 </tr>
@@ -406,10 +410,6 @@ const HelpModal = ({ onClose }) => {
                   <td>雨雲 ON/OFF</td>
                 </tr>
                 <tr>
-                  <td><kbd>O</kbd></td>
-                  <td>風向・風量 ON/OFF</td>
-                </tr>
-                <tr>
                   <td><kbd>T</kbd></td>
                   <td>電波種(LTE) ON/OFF</td>
                 </tr>
@@ -419,7 +419,15 @@ const HelpModal = ({ onClose }) => {
                 </tr>
                 <tr>
                   <td><kbd>M</kbd></td>
-                  <td>地図スタイル切り替え</td>
+                  <td>地図スタイル切り替え（次へ）</td>
+                </tr>
+                <tr>
+                  <td><kbd>Shift</kbd> + <kbd>M</kbd></td>
+                  <td>地図スタイル切り替え（前へ）</td>
+                </tr>
+                <tr>
+                  <td><kbd>X</kbd></td>
+                  <td>クロスヘア ON/OFF</td>
                 </tr>
               </tbody>
             </table>

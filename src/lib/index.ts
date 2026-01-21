@@ -35,6 +35,7 @@ export {
 
 export {
   PREFECTURE_COLORS,
+  PREFECTURE_BOUNDS,
   LAYER_GROUPS,
   createLayerIdToNameMap,
   getAllLayers,
@@ -42,52 +43,97 @@ export {
 } from './config/layers'
 
 // ============================================
-// Services
+// Services - Airports
 // ============================================
 export {
-  AIRPORT_ZONES,
-  getAirportZonesGeoJSON,
-  getAirportsByType,
-  getInternationalAirports,
-  getMilitaryAirfields,
-  checkAirspaceRestrictions,
-  getExternalMapLinks
+  MAJOR_AIRPORTS,
+  REGIONAL_AIRPORTS,
+  MILITARY_BASES,
+  HELIPORTS,
+  getAllAirports,
+  getAllAirportsWithHeliports,
+  getNoFlyLawAirports,
+  generateAirportGeoJSON,
+  generateAirportMarkersGeoJSON,
+  generateHeliportGeoJSON,
+  isInAirportZone,
+  AirportService
 } from './services/airports'
 
+// Use legacy checkAirspaceRestrictions that includes no-fly zones
+export { checkAirspaceRestrictionsLegacy as checkAirspaceRestrictions } from './utils/legacy'
+
+// Legacy format exports for backward compatibility
+// These use the old data format: { name, lat, lng, radius (meters), type }
 export {
+  AIRPORT_ZONES,
   NO_FLY_ZONES,
-  getNoFlyZonesGeoJSON,
-  getRedZonesGeoJSON,
-  getYellowZonesGeoJSON,
-  getNoFlyZonesByType,
-  getNoFlyZonesByCategory,
+  getExternalMapLinks,
+  checkAirspaceRestrictionsLegacy,
+  getAirportZonesGeoJSONLegacy,
+  getNoFlyZonesGeoJSONLegacy,
+  getLegacyAirportZones,
+  getLegacyNoFlyZones
+} from './utils/legacy'
+export type { LegacyAirport, LegacyNoFlyZone } from './utils/legacy'
+
+// Function aliases for test compatibility
+export { getAirportZonesGeoJSONLegacy as getAirportZonesGeoJSON } from './utils/legacy'
+
+// ============================================
+// Services - No-Fly Zones
+// ============================================
+export {
+  NO_FLY_FACILITIES,
+  getFacilitiesByZone,
+  getFacilitiesByType,
+  generateRedZoneGeoJSON,
+  generateYellowZoneGeoJSON,
+  generateAllNoFlyGeoJSON,
+  generateEmergencyAirspaceGeoJSON,
+  generateRemoteIDZoneGeoJSON,
+  generateMannedAircraftZonesGeoJSON,
+  generateRadioInterferenceZonesGeoJSON,
+  isInNoFlyZone,
+  getNearbyNoFlyZones,
   getNuclearPlants,
-  getEmbassies
+  getUSMilitaryBases,
+  getEmbassies,
+  toLegacyFormat,
+  NoFlyZoneService
 } from './services/noFlyZones'
 
+// Function aliases for legacy compatibility
+export { getNoFlyZonesGeoJSONLegacy as getNoFlyZonesGeoJSON } from './utils/legacy'
 export {
-  HELIPORTS,
-  getHeliportsGeoJSON,
-  getHeliportsByType,
-  getHospitalHeliports,
-  getRegularHeliports
-} from './services/heliports'
+  generateRedZoneGeoJSON as getRedZonesGeoJSON,
+  generateYellowZoneGeoJSON as getYellowZonesGeoJSON
+} from './services/noFlyZones'
+export type { NoFlyFacility } from './services/noFlyZones'
 
+// ============================================
+// Services - Heliports (if exists)
+// ============================================
+// Heliports are now included in airports.ts
+// Export aliases for backward compatibility
 export {
-  EMERGENCY_AIRSPACE,
-  REMOTE_ID_ZONES,
-  MANNED_AIRCRAFT_ZONES,
-  RADIO_INTERFERENCE_ZONES,
-  getEmergencyAirspaceGeoJSON,
-  getRemoteIdZonesGeoJSON,
-  getMannedAircraftZonesGeoJSON,
-  getRadioInterferenceZonesGeoJSON,
-  getActiveEmergencyAirspace,
-  getAgriculturalZones,
-  getGliderFields,
-  get5GZones
-} from './services/utmZones'
+  HELIPORTS as HELIPORTS_LIST,
+  generateHeliportGeoJSON as getHeliportsGeoJSON
+} from './services/airports'
 
+// ============================================
+// Services - UTM Zones (if exists)
+// ============================================
+export {
+  generateEmergencyAirspaceGeoJSON as getEmergencyAirspaceGeoJSON,
+  generateRemoteIDZoneGeoJSON as getRemoteIdZonesGeoJSON,
+  generateMannedAircraftZonesGeoJSON as getMannedAircraftZonesGeoJSON,
+  generateRadioInterferenceZonesGeoJSON as getRadioInterferenceZonesGeoJSON
+} from './services/noFlyZones'
+
+// ============================================
+// Services - Weather
+// ============================================
 export {
   fetchRainViewerData,
   getRainViewerSourceConfig,
@@ -98,15 +144,55 @@ export {
 } from './services/weather'
 export type { WeatherOverlayId } from './services/weather'
 
+// ============================================
+// Services - Custom Layers
+// ============================================
 export { CustomLayerService } from './services/customLayers'
 
 // ============================================
-// Utils
+// Utils - Geo
 // ============================================
 export {
   calculateDistance,
   getDistanceMeters,
   destinationPoint,
   createCirclePolygon,
-  createCirclePolygonMeters
+  createCirclePolygonMeters,
+  formatCoordinates,
+  formatCoordinatesDMS,
+  convertDecimalToDMS,
+  degreesToCompass,
+  degreesToJapanese,
+  calculateBBox,
+  bboxesIntersect
 } from './utils/geo'
+
+// ============================================
+// Utils - Collision Detection
+// ============================================
+export {
+  createSpatialIndex,
+  checkWaypointCollision,
+  checkWaypointCollisionOptimized,
+  checkPathCollision,
+  checkPolygonCollision,
+  checkWaypointsCollisionBatch,
+  hasAnyCollision,
+  getCollisionSummary,
+  getSeverityColor,
+  getSeverityLabel,
+  getZoneTypeLabel,
+  ZONE_COLORS,
+  ZONE_SEVERITY,
+  ZONE_PRIORITY,
+  CollisionService
+} from './utils/collision'
+
+export type {
+  CollisionType,
+  CollisionSeverity,
+  WaypointCollisionResult,
+  PathCollisionResult,
+  PolygonCollisionResult,
+  RBushItem
+} from './utils/collision'

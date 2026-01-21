@@ -1,8 +1,11 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
+import ContextMenu from '../ContextMenu'
+import FocusCrosshair from '../FocusCrosshair'
+import CoordinateDisplay from '../CoordinateDisplay'
 import {
   getAirportZonesGeoJSON,
   getRedZonesGeoJSON,
@@ -150,6 +153,7 @@ const Map = ({
   onPolygonUpdate,
   onPolygonDelete,
   onPolygonSelect,
+  onPolygonEditStart,
   onPolygonEditComplete,
   onMapClick,
   onWaypointClick,
@@ -167,8 +171,18 @@ const Map = ({
   const [selectedWaypointIds, setSelectedWaypointIds] = useState(new Set())
   const [isSelecting, setIsSelecting] = useState(false)
 
+  // Context menu state for right-click
+  const [contextMenu, setContextMenu] = useState(null) // { isOpen, position, waypoint }
+  const [polygonContextMenu, setPolygonContextMenu] = useState(null) // { isOpen, position, polygon }
+
   // Load map settings from localStorage (must be before viewState init)
   const initialSettings = useMemo(() => loadMapSettings(), [])
+
+  // Focus crosshair state
+  const [showCrosshair, setShowCrosshair] = useState(initialSettings.showCrosshair ?? false)
+
+  // Coordinate display state
+  const [coordinateDisplay, setCoordinateDisplay] = useState(null) // { lng, lat, screenX, screenY }
 
   const [viewState, setViewState] = useState({
     latitude: center.lat,
@@ -218,9 +232,10 @@ const Map = ({
   useEffect(() => {
     saveMapSettings({
       ...layerVisibility,
+      showCrosshair,
       mapStyleId
     })
-  }, [layerVisibility, mapStyleId])
+  }, [layerVisibility, showCrosshair, mapStyleId])
 
   // 雨雲レーダーソースを取得
   useEffect(() => {
@@ -529,9 +544,15 @@ const Map = ({
           e.preventDefault()
           toggleLayer('showHeliports')
           break
-        case 'm': // Map style picker toggle
-          e.preventDefault()
-          setShowStylePicker(prev => !prev)
+        case 'm': // Map style cycle (M: next, Shift+M: previous)
+          {
+            e.preventDefault()
+            const styleKeys = Object.keys(MAP_STYLES)
+            const currentIndex = styleKeys.indexOf(mapStyleId)
+            const nextIndex = (currentIndex + 1) % styleKeys.length
+            const prevIndex = (currentIndex - 1 + styleKeys.length) % styleKeys.length
+            setMapStyleId(styleKeys[e.shiftKey ? prevIndex : nextIndex])
+          }
           break
         case '3': // 3D toggle
           e.preventDefault()
@@ -566,12 +587,16 @@ const Map = ({
           e.preventDefault()
           toggleLayer('showRadioZones')
           break
+        case 'x': // Crosshair toggle
+          e.preventDefault()
+          setShowCrosshair(prev => !prev)
+          break
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggle3D, toggleLayer])
+  }, [toggle3D, toggleLayer, mapStyleId])
 
   // Handle map click
   const handleClick = useCallback((e) => {
@@ -591,20 +616,51 @@ const Map = ({
     }
   }, [onMapClick, onPolygonSelect, drawMode])
 
-  // Handle double click on polygon - delete
+  // Handle crosshair click to show center coordinates
+  const handleCrosshairClick = useCallback(() => {
+    if (!mapRef.current) return
+    const center = mapRef.current.getMap().getCenter()
+    setCoordinateDisplay({
+      lng: center.lng,
+      lat: center.lat,
+      screenX: window.innerWidth / 2,
+      screenY: window.innerHeight / 2
+    })
+  }, [])
+
+  // Handle double-click on polygon to enter edit mode
   const handleDoubleClick = useCallback((e) => {
     const features = e.features || []
     const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
 
-    if (polygonFeature && onPolygonDelete) {
+    if (polygonFeature && onPolygonEditStart) {
       e.preventDefault()
       const polygonId = polygonFeature.properties.id
       const polygon = polygons.find(p => p.id === polygonId)
-      if (polygon && confirm(`「${polygon.name}」を削除しますか?`)) {
-        onPolygonDelete(polygonId)
+      if (polygon) {
+        onPolygonEditStart(polygon)
       }
     }
-  }, [polygons, onPolygonDelete])
+  }, [polygons, onPolygonEditStart])
+
+  // Handle polygon right-click for context menu
+  const handlePolygonRightClick = useCallback((e) => {
+    const features = e.features || []
+    const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
+
+    if (polygonFeature) {
+      e.preventDefault()
+      const polygonId = polygonFeature.properties.id
+      const polygon = polygons.find(p => p.id === polygonId)
+      if (polygon) {
+        setPolygonContextMenu({
+          isOpen: true,
+          position: { x: e.point.x, y: e.point.y },
+          polygon
+        })
+      }
+    }
+  }, [polygons])
 
   // Handle polygon creation from draw control
   const handleCreate = useCallback((features) => {
@@ -633,13 +689,109 @@ const Map = ({
     }
   }, [onPolygonDelete])
 
-  // Handle waypoint double click - delete
-  const handleWaypointDoubleClick = useCallback((e, wp) => {
+  // Handle waypoint right-click - open context menu
+  const handleWaypointRightClick = useCallback((e, wp) => {
+    e.preventDefault()
     e.stopPropagation()
-    if (onWaypointDelete && confirm(`Waypoint #${wp.index} を削除しますか?`)) {
-      onWaypointDelete(wp.id)
+    setContextMenu({
+      isOpen: true,
+      position: { x: e.clientX, y: e.clientY },
+      waypoint: wp
+    })
+  }, [])
+
+  // Handle context menu actions
+  const handleContextMenuAction = useCallback((action, _data) => {
+    if (!contextMenu?.waypoint) return
+    const wp = contextMenu.waypoint
+
+    switch (action) {
+      case 'delete':
+        if (onWaypointDelete) {
+          if (confirm(`Waypoint #${wp.index} を削除しますか？`)) {
+            onWaypointDelete(wp.id)
+          }
+        }
+        break
+      case 'copy-coords':
+        const coordStr = `${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}`
+        navigator.clipboard.writeText(coordStr)
+        break
+      case 'copy-coords-dms':
+        const latDeg = Math.floor(Math.abs(wp.lat))
+        const latMin = Math.floor((Math.abs(wp.lat) - latDeg) * 60)
+        const latSec = ((Math.abs(wp.lat) - latDeg - latMin / 60) * 3600).toFixed(2)
+        const latDir = wp.lat >= 0 ? 'N' : 'S'
+        const lngDeg = Math.floor(Math.abs(wp.lng))
+        const lngMin = Math.floor((Math.abs(wp.lng) - lngDeg) * 60)
+        const lngSec = ((Math.abs(wp.lng) - lngDeg - lngMin / 60) * 3600).toFixed(2)
+        const lngDir = wp.lng >= 0 ? 'E' : 'W'
+        const dmsStr = `${latDeg}°${latMin}'${latSec}"${latDir} ${lngDeg}°${lngMin}'${lngSec}"${lngDir}`
+        navigator.clipboard.writeText(dmsStr)
+        break
+      case 'focus':
+        if (onWaypointClick) {
+          onWaypointClick(wp)
+        }
+        break
+      default:
+        break
     }
-  }, [onWaypointDelete])
+  }, [contextMenu, onWaypointDelete, onWaypointClick])
+
+  // Build context menu items for waypoint
+  const waypointContextMenuItems = useMemo(() => {
+    if (!contextMenu?.waypoint) return []
+    const wp = contextMenu.waypoint
+    return [
+      { id: 'header', type: 'header', label: `WP #${wp.index}` },
+      { id: 'copy-coords', icon: '📋', label: '座標をコピー (decimal)', action: 'copy-coords' },
+      { id: 'copy-coords-dms', icon: '🌐', label: '座標をコピー (DMS)', action: 'copy-coords-dms' },
+      { id: 'divider1', divider: true },
+      { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
+    ]
+  }, [contextMenu])
+
+  // Handle polygon context menu actions
+  const handlePolygonContextMenuAction = useCallback((action) => {
+    if (!polygonContextMenu?.polygon) return
+    const polygon = polygonContextMenu.polygon
+
+    switch (action) {
+      case 'delete':
+        if (onPolygonDelete) {
+          if (confirm(`「${polygon.name}」を削除しますか？`)) {
+            onPolygonDelete(polygon.id)
+          }
+        }
+        break
+      case 'select':
+        if (onPolygonSelect) {
+          onPolygonSelect(polygon.id)
+        }
+        break
+      case 'edit':
+        if (onPolygonEditStart) {
+          onPolygonEditStart(polygon)
+        }
+        break
+      default:
+        break
+    }
+  }, [polygonContextMenu, onPolygonDelete, onPolygonSelect, onPolygonEditStart])
+
+  // Build context menu items for polygon
+  const polygonContextMenuItems = useMemo(() => {
+    if (!polygonContextMenu?.polygon) return []
+    const polygon = polygonContextMenu.polygon
+    return [
+      { id: 'header', type: 'header', label: polygon.name },
+      { id: 'select', icon: '👆', label: '選択', action: 'select' },
+      { id: 'edit', icon: '✏️', label: '形状を編集', action: 'edit' },
+      { id: 'divider1', divider: true },
+      { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
+    ]
+  }, [polygonContextMenu])
 
   // Handle selection box for bulk waypoint operations
   const handleSelectionStart = useCallback((e) => {
@@ -738,6 +890,7 @@ const Map = ({
         onMove={e => setViewState(e.viewState)}
         onClick={handleClick}
         onDblClick={handleDoubleClick}
+        onContextMenu={handlePolygonRightClick}
         onMouseDown={handleSelectionStart}
         onMouseMove={handleSelectionMove}
         onMouseUp={handleSelectionEnd}
@@ -1246,8 +1399,8 @@ const Map = ({
                         }
                         title={`#${wp.index} - ${
                             wp.polygonName || 'Waypoint'
-                        }${multiLabel}`}
-                        onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
+                        }${multiLabel} (右クリックでメニュー)`}
+                        onContextMenu={(e) => handleWaypointRightClick(e, wp)}
                     >
                         {wp.index}
                     </div>
@@ -1375,9 +1528,10 @@ const Map = ({
             <CloudRain size={18} />
           </button>
           <button
-            className={`${styles.toggleButton} ${layerVisibility.showWind ? styles.activeWind : ''}`}
-            onClick={() => toggleLayer('showWind')}
-            data-tooltip={`風向・風量 [O]`}
+            className={`${styles.toggleButton} ${styles.disabled}`}
+            onClick={() => {}}
+            disabled
+            data-tooltip={`風向・風量 [O] (準備中)`}
             data-tooltip-pos="left"
           >
             <Wind size={18} />
@@ -1399,13 +1553,21 @@ const Map = ({
           >
             {layerVisibility.is3D ? <Box size={18} /> : <Rotate3D size={18} />}
           </button>
+          <button
+            className={`${styles.toggleButton} ${showCrosshair ? styles.activeCrosshair : ''}`}
+            onClick={() => setShowCrosshair(prev => !prev)}
+            data-tooltip={`クロスヘア [X]`}
+            data-tooltip-pos="left"
+          >
+            <Crosshair size={18} />
+          </button>
 
           {/* 地図スタイル切り替え */}
           <div className={styles.stylePickerContainer}>
             <button
               className={`${styles.toggleButton} ${showStylePicker ? styles.active : ''}`}
               onClick={() => setShowStylePicker(!showStylePicker)}
-              data-tooltip="地図スタイル [M]"
+              data-tooltip="地図スタイル [M: 次へ / Shift+M: 前へ]"
               data-tooltip-pos="left"
             >
               <Layers size={18} />
@@ -1439,11 +1601,57 @@ const Map = ({
           <span>編集中: 頂点をドラッグ / 完了ボタンで保存</span>
         ) : (
           <>
-            <span>ポリゴン: クリック=選択 / ダブルクリック=削除</span>
-            <span>Waypoint: ドラッグ=移動 / ダブルクリック=削除</span>
+            <span>ポリゴン: クリック=選択</span>
+            <span>Waypoint: ドラッグ=移動 / 右クリック=メニュー</span>
           </>
         )}
       </div>
+
+      {/* Waypoint Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          isOpen={contextMenu.isOpen}
+          position={contextMenu.position}
+          menuItems={waypointContextMenuItems}
+          onClose={() => setContextMenu(null)}
+          onAction={handleContextMenuAction}
+          title={contextMenu.waypoint ? `WP #${contextMenu.waypoint.index}` : null}
+        />
+      )}
+
+      {/* Polygon Context Menu */}
+      {polygonContextMenu && (
+        <ContextMenu
+          isOpen={polygonContextMenu.isOpen}
+          position={polygonContextMenu.position}
+          menuItems={polygonContextMenuItems}
+          onClose={() => setPolygonContextMenu(null)}
+          onAction={handlePolygonContextMenuAction}
+          title={polygonContextMenu.polygon?.name}
+        />
+      )}
+
+      {/* Focus Crosshair */}
+      <FocusCrosshair
+        visible={showCrosshair}
+        design="square"
+        color="#e53935"
+        size={40}
+        onClick={handleCrosshairClick}
+      />
+
+      {/* Coordinate Display */}
+      {coordinateDisplay && (
+        <CoordinateDisplay
+          lng={coordinateDisplay.lng}
+          lat={coordinateDisplay.lat}
+          screenX={coordinateDisplay.screenX}
+          screenY={coordinateDisplay.screenY}
+          darkMode={true}
+          onClose={() => setCoordinateDisplay(null)}
+          autoFade={true}
+        />
+      )}
     </div>
   )
 }

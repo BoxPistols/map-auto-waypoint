@@ -1,10 +1,10 @@
 .modal {
-  background: rgba(var(--color-bg-modal-rgb), 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--color-border);
+  background: rgba(var(--color-bg-modal-rgb), 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
-  box-shadow: var(--shadow-xl);
+  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
   width: 90vw;
   max-width: 900px;
   height: 80vh;
@@ -20,7 +20,7 @@
   align-items: center;
   padding: 16px 24px;
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg-secondary);
+  background: transparent;
   flex-shrink: 0;
 
   h1 {
@@ -61,7 +61,7 @@
   width: 200px;
   padding: 16px 0;
   border-right: 1px solid var(--color-border);
-  background: var(--color-bg-secondary);
+  background: rgba(var(--color-bg-modal-rgb), 0.3);
   flex-shrink: 0;
   overflow-y: auto;
 }
@@ -518,7 +518,9 @@
     padding: 10px 14px;
     position: sticky;
     top: 0;
-    background: var(--color-bg-secondary);
+    background: rgba(var(--color-bg-modal-rgb), 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     z-index: 10;
 
     h1 {
@@ -535,7 +537,9 @@
     padding: 4px 0;
     position: sticky;
     top: 52px;
-    background: var(--color-bg-secondary);
+    background: rgba(var(--color-bg-modal-rgb), 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     z-index: 10;
   }
 

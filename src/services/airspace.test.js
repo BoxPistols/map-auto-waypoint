@@ -24,14 +24,16 @@ describe('airspace', () => {
     it('羽田空港が含まれている', () => {
       const haneda = AIRPORT_ZONES.find(a => a.name.includes('羽田'));
       expect(haneda).toBeDefined();
-      expect(haneda.radius).toBe(9000);
+      // 小型無人機等飛行禁止法対象8空港は24km制限
+      expect(haneda.radius).toBe(24000);
       expect(haneda.type).toBe('airport');
     });
 
     it('成田空港が含まれている', () => {
       const narita = AIRPORT_ZONES.find(a => a.name.includes('成田'));
       expect(narita).toBeDefined();
-      expect(narita.radius).toBe(9000);
+      // 小型無人機等飛行禁止法対象8空港は24km制限
+      expect(narita.radius).toBe(24000);
     });
 
     it('すべての空港に必要なプロパティがある', () => {

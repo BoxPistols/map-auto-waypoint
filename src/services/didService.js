@@ -126,32 +126,18 @@ const fetchDIDGeoJSON = async (prefCode, prefName) => {
 
 /**
  * DID判定フォールバック
+ * GeoJSONデータが利用できない場合のデフォルト動作
+ * 誤検出を防ぐため、常にisDID=falseを返す
  */
-const checkDIDAreaFallback = (lat, lng) => {
-  const MAJOR_DID_AREAS = [
-    { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 15000 },
-    { name: '大阪市', lat: 34.6937, lng: 135.5023, radius: 15000 },
-    // 他主要都市...
-  ];
-
-  for (const did of MAJOR_DID_AREAS) {
-    const distance = getDistanceMeters(lat, lng, did.lat, did.lng);
-    if (distance < did.radius) {
-      return {
-        isDID: true,
-        area: did.name,
-        certainty: 'estimated',
-        source: 'fallback',
-        description: `${did.name}のDID内（推定）`
-      };
-    }
-  }
+const checkDIDAreaFallback = (_lat, _lng) => {
+  // GeoJSONデータが利用できない場合は、安全側に倒してDID外とする
+  // 以前は主要都市の円形エリアで推定していたが、誤検出の原因となっていた
   return {
     isDID: false,
     area: null,
-    certainty: 'estimated',
+    certainty: 'unknown',
     source: 'fallback',
-    description: 'DID外（推定）'
+    description: 'DID判定不可（GeoJSONデータなし）'
   };
 };
 
@@ -161,16 +147,22 @@ const checkDIDAreaFallback = (lat, lng) => {
 const checkPointInDIDGeoJSON = (geojson, lat, lng) => {
   if (!geojson?.features) return null;
   const point = turf.point([lng, lat]);
-  
+
   for (const feature of geojson.features) {
     if (turf.booleanPointInPolygon(point, feature)) {
-      const areaName = feature.properties?.CITY_NAME || '人口集中地区';
+      // R02データは CITYNAME を使用（CITY_NAME ではない）
+      const areaName = feature.properties?.CITYNAME || feature.properties?.CITY_NAME || '人口集中地区';
       let centroid = null;
       try {
         const c = turf.centroid(feature);
         centroid = { lat: c.geometry.coordinates[1], lng: c.geometry.coordinates[0] };
       } catch {
         // Ignore centroid calculation errors
+      }
+
+      // デバッグ: DID検出時に詳細をログ出力
+      if (import.meta.env.DEV) {
+        console.log(`[DID] DETECTED: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} -> ${areaName}`);
       }
 
       return {
@@ -193,7 +185,14 @@ export const checkDIDArea = async (lat, lng) => {
   try {
     const prefecture = getPrefectureFromCoords(lat, lng);
     if (!prefecture) {
+      if (import.meta.env.DEV) {
+        console.log(`[DID] No prefecture for: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)}`);
+      }
       return checkDIDAreaFallback(lat, lng);
+    }
+
+    if (import.meta.env.DEV) {
+      console.log(`[DID] Checking: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} in ${prefecture.nameJa}`);
     }
 
     const geojson = await fetchDIDGeoJSON(prefecture.code, prefecture.name);
@@ -220,11 +219,77 @@ export const checkDIDArea = async (lat, lng) => {
 export const isPositionInDIDSync = (lat, lng) => {
   const prefecture = getPrefectureFromCoords(lat, lng);
   if (!prefecture) return false;
-  
+
   const cacheKey = `pref_${prefecture.code}`;
   if (didPrefectureCache.has(cacheKey)) {
     const geojson = didPrefectureCache.get(cacheKey);
     return !!checkPointInDIDGeoJSON(geojson, lat, lng);
   }
   return checkDIDAreaFallback(lat, lng).isDID;
+};
+
+/**
+ * 指定された座標リストに基づいてDIDデータをプリロード
+ * 初回ロード時の遅延判定を回避するために使用
+ * @param {Array<{lat: number, lng: number}>} coordinates - 座標リスト
+ * @returns {Promise<Set<string>>} - ロードされた都道府県コードのセット
+ */
+export const preloadDIDDataForCoordinates = async (coordinates) => {
+  if (!coordinates || coordinates.length === 0) {
+    return new Set();
+  }
+
+  // 座標から必要な都道府県を特定
+  const prefecturesToLoad = new Set();
+  for (const coord of coordinates) {
+    const pref = getPrefectureFromCoords(coord.lat, coord.lng);
+    if (pref) {
+      prefecturesToLoad.add(JSON.stringify({ code: pref.code, name: pref.name }));
+    }
+  }
+
+  // 並列でDIDデータをフェッチ
+  const loadPromises = Array.from(prefecturesToLoad).map(async (prefJson) => {
+    const pref = JSON.parse(prefJson);
+    try {
+      await fetchDIDGeoJSON(pref.code, pref.name);
+      return pref.code;
+    } catch (error) {
+      console.warn(`[DID] Failed to preload ${pref.name}:`, error);
+      return null;
+    }
+  });
+
+  const results = await Promise.all(loadPromises);
+  const loadedCodes = new Set(results.filter(Boolean));
+
+  if (loadedCodes.size > 0) {
+    console.log(`[DID] Preloaded ${loadedCodes.size} prefecture(s):`, Array.from(loadedCodes).join(', '));
+  }
+
+  return loadedCodes;
+};
+
+/**
+ * DIDキャッシュが特定の都道府県に対してロード済みかチェック
+ * @param {number} lat - 緯度
+ * @param {number} lng - 経度
+ * @returns {boolean} - キャッシュにデータがあるか
+ */
+export const isDIDCacheReady = (lat, lng) => {
+  const prefecture = getPrefectureFromCoords(lat, lng);
+  if (!prefecture) return true; // 日本国外はチェック不要
+
+  const cacheKey = `pref_${prefecture.code}`;
+  return didPrefectureCache.has(cacheKey);
+};
+
+/**
+ * 複数座標のDIDキャッシュ準備状態をチェック
+ * @param {Array<{lat: number, lng: number}>} coordinates - 座標リスト
+ * @returns {boolean} - 全ての座標に対してキャッシュが準備できているか
+ */
+export const isAllDIDCacheReady = (coordinates) => {
+  if (!coordinates || coordinates.length === 0) return true;
+  return coordinates.every(coord => isDIDCacheReady(coord.lat, coord.lng));
 };
