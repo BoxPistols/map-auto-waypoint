@@ -1,10 +1,10 @@
 .modal {
-  background: rgba(var(--color-bg-modal-rgb), 0.72);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
-  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  box-shadow: var(--glass-shadow-elevated), var(--glass-inner-highlight);
   width: 90vw;
   max-width: 900px;
   height: 80vh;
