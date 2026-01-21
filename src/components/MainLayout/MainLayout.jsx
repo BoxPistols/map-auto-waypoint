@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getSetting, isDIDAvoidanceModeEnabled } from '../../services/settingsService'
-import { getDetailedCollisionResults, checkAllWaypointsDID, checkFlightPathCollision } from '../../services/riskService'
+import { getDetailedCollisionResults, checkAllWaypointsDID, checkFlightPathCollision, checkAllPolygonsCollision } from '../../services/riskService'
 import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
 import Map from '../Map/Map'
 import SearchForm from '../SearchForm/SearchForm'
@@ -142,6 +142,8 @@ function MainLayout() {
   const [waypointIssueFlagsById, setWaypointIssueFlagsById] = useState(() => ({}))
   // Path collision results (intersection points and affected segments)
   const [pathCollisionResult, setPathCollisionResult] = useState(null)
+  // Polygon collision results (overlap areas)
+  const [polygonCollisionResult, setPolygonCollisionResult] = useState(null)
 
   // Highlighted waypoint (for FlightAssistant WP click)
   const [highlightedWaypointIndex, setHighlightedWaypointIndex] = useState(null)
@@ -266,6 +268,31 @@ function MainLayout() {
       clearTimeout(timeoutId)
     }
   }, [waypoints, didDataReady]) // didDataReadyが変わったら再実行
+
+  // ============================================
+  // ポリゴン衝突検出
+  // ============================================
+  useEffect(() => {
+    if (!polygons || polygons.length === 0) {
+      setPolygonCollisionResult(null)
+      return
+    }
+
+    // debounce: 500ms待ってから実行
+    const timeoutId = setTimeout(() => {
+      const result = checkAllPolygonsCollision(polygons)
+      setPolygonCollisionResult(result.hasCollisions ? result : null)
+
+      if (import.meta.env.DEV && result.hasCollisions) {
+        console.log('[CollisionCheck] ポリゴン衝突検出:', {
+          collisions: result.polygonResults.length,
+          totalOverlapArea: Math.round(result.totalOverlapArea) + 'm²'
+        })
+      }
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [polygons])
 
   // Toggle sidebar collapsed state
   const toggleSidebar = useCallback(() => {
@@ -1167,6 +1194,7 @@ function MainLayout() {
             didHighlightedWaypointIndices={didHighlightedWaypointIndices}
             waypointIssueFlagsById={waypointIssueFlagsById}
             pathCollisionResult={pathCollisionResult}
+            polygonCollisionResult={polygonCollisionResult}
             highlightedWaypointIndex={highlightedWaypointIndex}
             optimizedRoute={optimizedRoute}
             onHomePointMove={handleHomePointMove}

@@ -146,6 +146,7 @@ const Map = ({
   didHighlightedWaypointIndices = null,
   waypointIssueFlagsById = null,
   pathCollisionResult = null,
+  polygonCollisionResult = null,
   highlightedWaypointIndex = null,
   optimizedRoute = null,
   onHomePointMove,
@@ -530,6 +531,28 @@ const Map = ({
       features
     }
   }, [pathCollisionResult])
+
+  // Polygon collision overlay GeoJSON (intersection/overlap areas)
+  const polygonCollisionGeoJSON = useMemo(() => {
+    if (!polygonCollisionResult || !polygonCollisionResult.hasCollisions) return null
+
+    const features = polygonCollisionResult.intersectionPolygons.map((ip, idx) => ({
+      type: 'Feature',
+      properties: {
+        ...ip.properties,
+        index: idx,
+        type: 'polygon-overlap'
+      },
+      geometry: ip.geometry
+    }))
+
+    if (features.length === 0) return null
+
+    return {
+      type: 'FeatureCollection',
+      features
+    }
+  }, [polygonCollisionResult])
 
   // DID tile source configuration (令和2年国勢調査データ)
   // Note: GSI DID tiles have limited zoom range, maxzoom 14 is safe
@@ -1332,6 +1355,41 @@ const Map = ({
               }}
               paint={{
                 'text-color': '#FFFFFF'
+              }}
+            />
+          </Source>
+        )}
+
+        {/* Polygon collision overlay - overlap areas with prohibited zones */}
+        {polygonCollisionGeoJSON && (
+          <Source id="polygon-collision-overlay" type="geojson" data={polygonCollisionGeoJSON}>
+            {/* Overlap area fill (red semi-transparent) */}
+            <Layer
+              id="polygon-collision-fill"
+              type="fill"
+              filter={['==', ['get', 'type'], 'polygon-overlap']}
+              paint={{
+                'fill-color': [
+                  'case',
+                  ['==', ['get', 'severity'], 'DANGER'], '#FF0000',
+                  '#FF6600' // WARNING
+                ],
+                'fill-opacity': 0.4
+              }}
+            />
+            {/* Overlap area outline */}
+            <Layer
+              id="polygon-collision-outline"
+              type="line"
+              filter={['==', ['get', 'type'], 'polygon-overlap']}
+              paint={{
+                'line-color': [
+                  'case',
+                  ['==', ['get', 'severity'], 'DANGER'], '#FF0000',
+                  '#FF6600'
+                ],
+                'line-width': 3,
+                'line-dasharray': [4, 2]
               }}
             />
           </Source>
