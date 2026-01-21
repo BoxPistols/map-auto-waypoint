@@ -1,265 +1,1063 @@
 /**
- * Airport Services
- * 空港制限区域データサービス
+ * Airport Data Service
+ * Japanese airports with restriction zones
  *
- * 参考: 国土交通省 DIPS、国土地理院、航空法
+ * データソース:
+ * - 国土交通省 DIPS (ドローン情報基盤システム)
+ * - 国土数値情報 空港データ (https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-C28-v3_0.html)
+ * - AIS JAPAN 航空路誌
+ *
+ * 制限半径の根拠:
+ * - 国際空港・主要空港: 航空法により進入表面・転移表面等の制限あり
+ *   - 小型無人機等飛行禁止法対象8空港: 約24km（実際は空港ごとに異なる制限表面）
+ * - 地方空港: 概ね6km（進入表面の水平距離を参考値として設定）
+ * - 小規模空港・飛行場: 2-3km
+ *
+ * 注意: 実際の飛行制限区域は空港ごとに異なり、制限表面（水平表面、円錐表面、
+ * 進入表面、転移表面、延長進入表面、外側水平表面）に基づきます。
+ * 正確な情報は必ずDIPSまたはAIS JAPANで確認してください。
+ *
+ * @see https://www.mlit.go.jp/koku/koku_fr10_000041.html 航空法における制限表面
  */
 
-import type { Airport, AirportType, AirspaceRestriction } from '../types'
-import { NO_FLY_ZONES } from './noFlyZones'
+import type { Airport } from '../types'
 
-/**
- * 日本全国の空港・飛行場の制限区域
- * 国際空港: 9km, 地方空港: 6km, 小規模空港: 3km, 飛行場: 2km
- */
-export const AIRPORT_ZONES: Airport[] = [
-  // ========== 北海道 ==========
-  { name: '新千歳空港', lat: 42.7752, lng: 141.6924, radius: 9000, type: 'airport' },
-  { name: '丘珠空港', lat: 43.1176, lng: 141.3816, radius: 3000, type: 'airfield' },
-  { name: '旭川空港', lat: 43.6708, lng: 142.4475, radius: 6000, type: 'airport' },
-  { name: '函館空港', lat: 41.7700, lng: 140.8219, radius: 6000, type: 'airport' },
-  { name: '帯広空港', lat: 42.7333, lng: 143.2172, radius: 6000, type: 'airport' },
-  { name: '釧路空港', lat: 43.0411, lng: 144.1928, radius: 6000, type: 'airport' },
-  { name: '女満別空港', lat: 43.8806, lng: 144.1644, radius: 6000, type: 'airport' },
-  { name: '中標津空港', lat: 43.5775, lng: 144.9600, radius: 3000, type: 'airport' },
-  { name: '紋別空港', lat: 44.3039, lng: 143.4044, radius: 3000, type: 'airport' },
-  { name: '稚内空港', lat: 45.4042, lng: 141.8008, radius: 6000, type: 'airport' },
-  { name: '利尻空港', lat: 45.2411, lng: 141.1864, radius: 3000, type: 'airport' },
-  { name: '奥尻空港', lat: 42.0717, lng: 139.4328, radius: 2000, type: 'airfield' },
-  { name: '札幌飛行場（丘珠）', lat: 43.1176, lng: 141.3816, radius: 3000, type: 'airfield' },
-  { name: 'たきかわスカイパーク', lat: 43.5467, lng: 141.9097, radius: 2000, type: 'airfield' },
-  { name: '美唄農道離着陸場', lat: 43.3333, lng: 141.8500, radius: 1500, type: 'airfield' },
-  { name: '新篠津滑空場', lat: 43.2258, lng: 141.6478, radius: 1500, type: 'airfield' },
+export type AirportMarkerProperties = {
+  id: string
+  name: string
+  nameEn?: string
+  type: Airport['type']
+  radiusKm: number
+}
 
-  // ========== 東北 ==========
-  { name: '青森空港', lat: 40.7347, lng: 140.6908, radius: 6000, type: 'airport' },
-  { name: '三沢空港', lat: 40.7033, lng: 141.3686, radius: 6000, type: 'airport' },
-  { name: '花巻空港', lat: 39.4286, lng: 141.1353, radius: 6000, type: 'airport' },
-  { name: '仙台空港', lat: 38.1397, lng: 140.9170, radius: 6000, type: 'airport' },
-  { name: '秋田空港', lat: 39.6156, lng: 140.2186, radius: 6000, type: 'airport' },
-  { name: '大館能代空港', lat: 40.1919, lng: 140.3714, radius: 3000, type: 'airport' },
-  { name: '山形空港', lat: 38.4119, lng: 140.3714, radius: 6000, type: 'airport' },
-  { name: '庄内空港', lat: 38.8122, lng: 139.7878, radius: 3000, type: 'airport' },
-  { name: '福島空港', lat: 37.2275, lng: 140.4311, radius: 6000, type: 'airport' },
-
-  // ========== 関東 ==========
-  { name: '成田国際空港', lat: 35.7647, lng: 140.3864, radius: 9000, type: 'airport' },
-  { name: '東京国際空港（羽田）', lat: 35.5494, lng: 139.7798, radius: 9000, type: 'airport' },
-  { name: '調布飛行場', lat: 35.6717, lng: 139.5281, radius: 3000, type: 'airfield' },
-  { name: '茨城空港（百里）', lat: 36.1811, lng: 140.4156, radius: 6000, type: 'airport' },
-  { name: 'ホンダエアポート', lat: 35.9992, lng: 139.5347, radius: 2000, type: 'airfield' },
-  { name: '大利根飛行場', lat: 36.0208, lng: 139.8736, radius: 1500, type: 'airfield' },
-  { name: '阿見飛行場', lat: 36.0125, lng: 140.2267, radius: 1500, type: 'airfield' },
-  { name: '龍ヶ崎飛行場', lat: 35.9403, lng: 140.1839, radius: 1500, type: 'airfield' },
-  { name: '大島空港', lat: 34.7822, lng: 139.3603, radius: 3000, type: 'airport' },
-  { name: '新島空港', lat: 34.3694, lng: 139.2689, radius: 2000, type: 'airfield' },
-  { name: '神津島空港', lat: 34.2114, lng: 139.1353, radius: 2000, type: 'airfield' },
-  { name: '三宅島空港', lat: 34.0736, lng: 139.5603, radius: 3000, type: 'airport' },
-  { name: '八丈島空港', lat: 33.1153, lng: 139.7858, radius: 3000, type: 'airport' },
-
-  // ========== 中部・北陸 ==========
-  { name: '中部国際空港', lat: 34.8584, lng: 136.8124, radius: 9000, type: 'airport' },
-  { name: '名古屋飛行場（小牧）', lat: 35.2551, lng: 136.9244, radius: 6000, type: 'airport' },
-  { name: '新潟空港', lat: 37.9559, lng: 139.1068, radius: 6000, type: 'airport' },
-  { name: '富山空港', lat: 36.6483, lng: 137.1875, radius: 6000, type: 'airport' },
-  { name: '小松空港', lat: 36.3946, lng: 136.4065, radius: 6000, type: 'airport' },
-  { name: '能登空港', lat: 37.2931, lng: 136.9619, radius: 3000, type: 'airport' },
-  { name: '静岡空港', lat: 34.7961, lng: 138.1894, radius: 6000, type: 'airport' },
-  { name: '松本空港', lat: 36.1669, lng: 137.9228, radius: 3000, type: 'airport' },
-  { name: '福井空港', lat: 36.1428, lng: 136.2236, radius: 2000, type: 'airfield' },
-  { name: '佐渡空港', lat: 38.0603, lng: 138.4142, radius: 2000, type: 'airfield' },
-
-  // ========== 近畿 ==========
-  { name: '関西国際空港', lat: 34.4347, lng: 135.2441, radius: 9000, type: 'airport' },
-  { name: '大阪国際空港（伊丹）', lat: 34.7855, lng: 135.4380, radius: 9000, type: 'airport' },
-  { name: '神戸空港', lat: 34.6328, lng: 135.2239, radius: 6000, type: 'airport' },
-  { name: '南紀白浜空港', lat: 33.6622, lng: 135.3644, radius: 3000, type: 'airport' },
-  { name: '但馬空港', lat: 35.5128, lng: 134.7869, radius: 2000, type: 'airfield' },
-  { name: '八尾空港', lat: 34.5967, lng: 135.6019, radius: 3000, type: 'airfield' },
-
-  // ========== 中国 ==========
-  { name: '広島空港', lat: 34.4361, lng: 132.9194, radius: 6000, type: 'airport' },
-  { name: '岡山空港', lat: 34.7569, lng: 133.8553, radius: 6000, type: 'airport' },
-  { name: '山口宇部空港', lat: 33.9300, lng: 131.2789, radius: 6000, type: 'airport' },
-  { name: '岩国空港', lat: 34.1456, lng: 132.2361, radius: 6000, type: 'airport' },
-  { name: '出雲空港', lat: 35.4136, lng: 132.8897, radius: 6000, type: 'airport' },
-  { name: '石見空港', lat: 34.6764, lng: 131.7906, radius: 3000, type: 'airport' },
-  { name: '米子空港', lat: 35.4922, lng: 133.2364, radius: 6000, type: 'airport' },
-  { name: '鳥取空港', lat: 35.5303, lng: 134.1667, radius: 6000, type: 'airport' },
-  { name: '広島西飛行場跡地', lat: 34.3672, lng: 132.4147, radius: 2000, type: 'airfield' },
-
-  // ========== 四国 ==========
-  { name: '高松空港', lat: 34.2142, lng: 134.0156, radius: 6000, type: 'airport' },
-  { name: '松山空港', lat: 33.8272, lng: 132.6997, radius: 6000, type: 'airport' },
-  { name: '高知空港', lat: 33.5461, lng: 133.6694, radius: 6000, type: 'airport' },
-  { name: '徳島空港', lat: 34.1328, lng: 134.6067, radius: 6000, type: 'airport' },
-
-  // ========== 九州（本土） ==========
-  { name: '福岡空港', lat: 33.5859, lng: 130.4510, radius: 9000, type: 'airport' },
-  { name: '北九州空港', lat: 33.8459, lng: 131.0349, radius: 6000, type: 'airport' },
-  { name: '佐賀空港', lat: 33.1497, lng: 130.3022, radius: 3000, type: 'airport' },
-  { name: '長崎空港', lat: 32.9169, lng: 129.9136, radius: 6000, type: 'airport' },
-  { name: '熊本空港', lat: 32.8373, lng: 130.8551, radius: 6000, type: 'airport' },
-  { name: '大分空港', lat: 33.4794, lng: 131.7372, radius: 6000, type: 'airport' },
-  { name: '宮崎空港', lat: 31.8772, lng: 131.4486, radius: 6000, type: 'airport' },
-  { name: '鹿児島空港', lat: 31.8034, lng: 130.7195, radius: 6000, type: 'airport' },
-
-  // ========== 九州（離島） ==========
-  { name: '対馬空港', lat: 34.2850, lng: 129.3306, radius: 3000, type: 'airport' },
-  { name: '壱岐空港', lat: 33.7489, lng: 129.7853, radius: 2000, type: 'airfield' },
-  { name: '福江空港', lat: 32.6664, lng: 128.8328, radius: 3000, type: 'airport' },
-  { name: '上五島空港', lat: 33.0142, lng: 129.0569, radius: 2000, type: 'airfield' },
-  { name: '小値賀空港', lat: 33.1900, lng: 129.0564, radius: 1500, type: 'airfield' },
-  { name: '天草飛行場', lat: 32.4828, lng: 130.1589, radius: 2000, type: 'airfield' },
-  { name: '種子島空港', lat: 30.6056, lng: 130.9917, radius: 3000, type: 'airport' },
-  { name: '屋久島空港', lat: 30.3856, lng: 130.6589, radius: 3000, type: 'airport' },
-  { name: '奄美空港', lat: 28.4306, lng: 129.7125, radius: 6000, type: 'airport' },
-  { name: '喜界空港', lat: 28.3214, lng: 129.9281, radius: 2000, type: 'airfield' },
-  { name: '徳之島空港', lat: 27.8364, lng: 128.8817, radius: 3000, type: 'airport' },
-  { name: '沖永良部空港', lat: 27.4256, lng: 128.7011, radius: 2000, type: 'airfield' },
-  { name: '与論空港', lat: 27.0439, lng: 128.4014, radius: 2000, type: 'airfield' },
-
-  // ========== 沖縄 ==========
-  { name: '那覇空港', lat: 26.1958, lng: 127.6459, radius: 9000, type: 'airport' },
-  { name: '新石垣空港', lat: 24.3964, lng: 124.2450, radius: 6000, type: 'airport' },
-  { name: '宮古空港', lat: 24.7828, lng: 125.2950, radius: 6000, type: 'airport' },
-  { name: '下地島空港', lat: 24.8267, lng: 125.1447, radius: 6000, type: 'airport' },
-  { name: '久米島空港', lat: 26.3636, lng: 126.7139, radius: 3000, type: 'airport' },
-  { name: '多良間空港', lat: 24.6539, lng: 124.6750, radius: 2000, type: 'airfield' },
-  { name: '与那国空港', lat: 24.4669, lng: 122.9789, radius: 3000, type: 'airport' },
-  { name: '南大東空港', lat: 25.8464, lng: 131.2631, radius: 2000, type: 'airfield' },
-  { name: '北大東空港', lat: 25.9447, lng: 131.3269, radius: 2000, type: 'airfield' },
-  { name: '粟国空港', lat: 26.5917, lng: 127.2406, radius: 1500, type: 'airfield' },
-  { name: '慶良間空港', lat: 26.1681, lng: 127.2931, radius: 1500, type: 'airfield' },
-  { name: '伊江島空港', lat: 26.7219, lng: 127.7856, radius: 2000, type: 'airfield' },
-  { name: '波照間空港', lat: 24.0586, lng: 123.8050, radius: 1500, type: 'airfield' },
-
-  // ========== 自衛隊・米軍基地（飛行制限区域） ==========
-  { name: '嘉手納飛行場', lat: 26.3516, lng: 127.7675, radius: 6000, type: 'military' },
-  { name: '普天間飛行場', lat: 26.2742, lng: 127.7558, radius: 4000, type: 'military' },
-  { name: '横田飛行場', lat: 35.7486, lng: 139.3486, radius: 6000, type: 'military' },
-  { name: '厚木飛行場', lat: 35.4547, lng: 139.4500, radius: 6000, type: 'military' },
-  { name: '岩国飛行場', lat: 34.1456, lng: 132.2361, radius: 6000, type: 'military' },
-  { name: '三沢飛行場', lat: 40.7033, lng: 141.3686, radius: 6000, type: 'military' },
-  { name: '小松飛行場', lat: 36.3946, lng: 136.4065, radius: 6000, type: 'military' },
-  { name: '百里飛行場', lat: 36.1811, lng: 140.4156, radius: 6000, type: 'military' },
-  { name: '築城飛行場', lat: 33.6850, lng: 131.0400, radius: 4000, type: 'military' },
-  { name: '新田原飛行場', lat: 32.0833, lng: 131.4500, radius: 4000, type: 'military' },
-  { name: '那覇飛行場（自衛隊）', lat: 26.1958, lng: 127.6459, radius: 6000, type: 'military' },
-  { name: '入間飛行場', lat: 35.8419, lng: 139.4108, radius: 4000, type: 'military' },
-  { name: '浜松飛行場', lat: 34.7503, lng: 137.7033, radius: 4000, type: 'military' },
-  { name: '千歳飛行場（自衛隊）', lat: 42.7944, lng: 141.6667, radius: 6000, type: 'military' }
+// 主要空港データ（小型無人機等飛行禁止法の対象空港含む）
+export const MAJOR_AIRPORTS: Airport[] = [
+  // 小型無人機等飛行禁止法で指定された8空港
+  {
+    id: 'NRT',
+    name: '成田国際空港',
+    nameEn: 'Narita International Airport',
+    type: 'international',
+    coordinates: [140.3929, 35.772],
+    radiusKm: 24
+  },
+  {
+    id: 'HND',
+    name: '東京国際空港（羽田）',
+    nameEn: 'Tokyo International Airport (Haneda)',
+    type: 'international',
+    coordinates: [139.7798, 35.5494],
+    radiusKm: 24
+  },
+  {
+    id: 'KIX',
+    name: '関西国際空港',
+    nameEn: 'Kansai International Airport',
+    type: 'international',
+    coordinates: [135.244, 34.4347],
+    radiusKm: 24
+  },
+  {
+    id: 'ITM',
+    name: '大阪国際空港（伊丹）',
+    nameEn: 'Osaka International Airport (Itami)',
+    type: 'international',
+    coordinates: [135.438, 34.7855],
+    radiusKm: 24
+  },
+  {
+    id: 'NGO',
+    name: '中部国際空港',
+    nameEn: 'Chubu Centrair International Airport',
+    type: 'international',
+    coordinates: [136.8052, 34.8584],
+    radiusKm: 24
+  },
+  {
+    id: 'CTS',
+    name: '新千歳空港',
+    nameEn: 'New Chitose Airport',
+    type: 'international',
+    coordinates: [141.6922, 42.7752],
+    radiusKm: 24
+  },
+  {
+    id: 'FUK',
+    name: '福岡空港',
+    nameEn: 'Fukuoka Airport',
+    type: 'international',
+    coordinates: [130.4511, 33.5859],
+    radiusKm: 24
+  },
+  {
+    id: 'OKA',
+    name: '那覇空港',
+    nameEn: 'Naha Airport',
+    type: 'international',
+    coordinates: [127.6465, 26.1958],
+    radiusKm: 24
+  },
+  // その他の主要空港
+  {
+    id: 'SDJ',
+    name: '仙台空港',
+    nameEn: 'Sendai Airport',
+    type: 'domestic',
+    coordinates: [140.9225, 38.1397],
+    radiusKm: 6
+  },
+  {
+    id: 'HIJ',
+    name: '広島空港',
+    nameEn: 'Hiroshima Airport',
+    type: 'domestic',
+    coordinates: [132.922, 34.4361],
+    radiusKm: 6
+  },
+  {
+    id: 'KMJ',
+    name: '熊本空港',
+    nameEn: 'Kumamoto Airport',
+    type: 'domestic',
+    coordinates: [130.8553, 32.8373],
+    radiusKm: 6
+  },
+  {
+    id: 'KOJ',
+    name: '鹿児島空港',
+    nameEn: 'Kagoshima Airport',
+    type: 'domestic',
+    coordinates: [130.7191, 31.8034],
+    radiusKm: 6
+  },
+  {
+    id: 'NGS',
+    name: '長崎空港',
+    nameEn: 'Nagasaki Airport',
+    type: 'domestic',
+    coordinates: [129.9146, 32.9169],
+    radiusKm: 6
+  },
+  {
+    id: 'OIT',
+    name: '大分空港',
+    nameEn: 'Oita Airport',
+    type: 'domestic',
+    coordinates: [131.7368, 33.4794],
+    radiusKm: 6
+  },
+  {
+    id: 'KMI',
+    name: '宮崎空港',
+    nameEn: 'Miyazaki Airport',
+    type: 'domestic',
+    coordinates: [131.4489, 31.8772],
+    radiusKm: 6
+  },
+  {
+    id: 'TAK',
+    name: '高松空港',
+    nameEn: 'Takamatsu Airport',
+    type: 'domestic',
+    coordinates: [134.0159, 34.2142],
+    radiusKm: 6
+  },
+  {
+    id: 'MYJ',
+    name: '松山空港',
+    nameEn: 'Matsuyama Airport',
+    type: 'domestic',
+    coordinates: [132.6997, 33.8272],
+    radiusKm: 6
+  },
+  {
+    id: 'KCZ',
+    name: '高知龍馬空港',
+    nameEn: 'Kochi Ryoma Airport',
+    type: 'domestic',
+    coordinates: [133.6694, 33.5461],
+    radiusKm: 6
+  },
+  {
+    id: 'TKS',
+    name: '徳島空港',
+    nameEn: 'Tokushima Airport',
+    type: 'domestic',
+    coordinates: [134.6067, 34.1328],
+    radiusKm: 6
+  },
+  {
+    id: 'OKJ',
+    name: '岡山空港',
+    nameEn: 'Okayama Airport',
+    type: 'domestic',
+    coordinates: [133.855, 34.7569],
+    radiusKm: 6
+  },
+  {
+    id: 'UBJ',
+    name: '山口宇部空港',
+    nameEn: 'Yamaguchi Ube Airport',
+    type: 'domestic',
+    coordinates: [131.2789, 33.93],
+    radiusKm: 6
+  },
+  {
+    id: 'IZO',
+    name: '出雲空港',
+    nameEn: 'Izumo Airport',
+    type: 'domestic',
+    coordinates: [132.89, 35.4136],
+    radiusKm: 6
+  },
+  {
+    id: 'TTJ',
+    name: '鳥取空港',
+    nameEn: 'Tottori Airport',
+    type: 'domestic',
+    coordinates: [134.1669, 35.53],
+    radiusKm: 6
+  },
+  {
+    id: 'KMQ',
+    name: '小松空港',
+    nameEn: 'Komatsu Airport',
+    type: 'domestic',
+    coordinates: [136.4067, 36.3947],
+    radiusKm: 6
+  },
+  {
+    id: 'TOY',
+    name: '富山空港',
+    nameEn: 'Toyama Airport',
+    type: 'domestic',
+    coordinates: [137.1878, 36.6483],
+    radiusKm: 6
+  },
+  {
+    id: 'NKM',
+    name: '県営名古屋空港',
+    nameEn: 'Nagoya Airfield',
+    type: 'domestic',
+    coordinates: [136.9239, 35.255],
+    radiusKm: 6
+  },
+  {
+    id: 'FSZ',
+    name: '静岡空港',
+    nameEn: 'Shizuoka Airport',
+    type: 'domestic',
+    coordinates: [138.19, 34.7961],
+    radiusKm: 6
+  },
+  {
+    id: 'MMJ',
+    name: '松本空港',
+    nameEn: 'Matsumoto Airport',
+    type: 'domestic',
+    coordinates: [137.9228, 36.1669],
+    radiusKm: 6
+  },
+  {
+    id: 'KIJ',
+    name: '新潟空港',
+    nameEn: 'Niigata Airport',
+    type: 'domestic',
+    coordinates: [139.1211, 37.9558],
+    radiusKm: 6
+  },
+  {
+    id: 'AKJ',
+    name: '旭川空港',
+    nameEn: 'Asahikawa Airport',
+    type: 'domestic',
+    coordinates: [142.4475, 43.6708],
+    radiusKm: 6
+  },
+  {
+    id: 'HKD',
+    name: '函館空港',
+    nameEn: 'Hakodate Airport',
+    type: 'domestic',
+    coordinates: [140.8219, 41.77],
+    radiusKm: 6
+  }
 ]
 
 /**
- * 円形のGeoJSON Polygonを生成
+ * 地方空港・小規模空港データ
  */
-function createCircleFeature(zone: Airport, points: number = 64): GeoJSON.Feature {
-  const coords: [number, number][] = []
-  const { lat, lng, radius } = zone
-
-  for (let i = 0; i <= points; i++) {
-    const angle = (i / points) * 2 * Math.PI
-    const dx = radius * Math.cos(angle)
-    const dy = radius * Math.sin(angle)
-
-    // メートルから度への変換（近似）
-    const latOffset = dy / 111320
-    const lngOffset = dx / (111320 * Math.cos(lat * Math.PI / 180))
-
-    coords.push([lng + lngOffset, lat + latOffset])
+export const REGIONAL_AIRPORTS: Airport[] = [
+  // ========== 北海道 ==========
+  {
+    id: 'OBO',
+    name: '帯広空港',
+    nameEn: 'Obihiro Airport',
+    type: 'domestic',
+    coordinates: [143.2172, 42.7333],
+    radiusKm: 6
+  },
+  {
+    id: 'KUH',
+    name: '釧路空港',
+    nameEn: 'Kushiro Airport',
+    type: 'domestic',
+    coordinates: [144.1928, 43.0411],
+    radiusKm: 6
+  },
+  {
+    id: 'MMB',
+    name: '女満別空港',
+    nameEn: 'Memanbetsu Airport',
+    type: 'domestic',
+    coordinates: [144.1644, 43.8806],
+    radiusKm: 6
+  },
+  {
+    id: 'SHB',
+    name: '中標津空港',
+    nameEn: 'Nakashibetsu Airport',
+    type: 'domestic',
+    coordinates: [144.96, 43.5775],
+    radiusKm: 3
+  },
+  {
+    id: 'MBE',
+    name: '紋別空港',
+    nameEn: 'Monbetsu Airport',
+    type: 'domestic',
+    coordinates: [143.4044, 44.3039],
+    radiusKm: 3
+  },
+  {
+    id: 'WKJ',
+    name: '稚内空港',
+    nameEn: 'Wakkanai Airport',
+    type: 'domestic',
+    coordinates: [141.8008, 45.4042],
+    radiusKm: 6
+  },
+  {
+    id: 'RIS',
+    name: '利尻空港',
+    nameEn: 'Rishiri Airport',
+    type: 'domestic',
+    coordinates: [141.1864, 45.2411],
+    radiusKm: 3
+  },
+  {
+    id: 'OIR',
+    name: '奥尻空港',
+    nameEn: 'Okushiri Airport',
+    type: 'domestic',
+    coordinates: [139.4328, 42.0717],
+    radiusKm: 2
+  },
+  {
+    id: 'RJCO',
+    name: '丘珠空港',
+    nameEn: 'Okadama Airport',
+    type: 'domestic',
+    coordinates: [141.3816, 43.1176],
+    radiusKm: 3
+  },
+  // ========== 東北 ==========
+  {
+    id: 'AOJ',
+    name: '青森空港',
+    nameEn: 'Aomori Airport',
+    type: 'domestic',
+    coordinates: [140.6908, 40.7347],
+    radiusKm: 6
+  },
+  {
+    id: 'MSJ',
+    name: '三沢空港',
+    nameEn: 'Misawa Airport',
+    type: 'domestic',
+    coordinates: [141.3686, 40.7033],
+    radiusKm: 6
+  },
+  {
+    id: 'HNA',
+    name: '花巻空港',
+    nameEn: 'Hanamaki Airport',
+    type: 'domestic',
+    coordinates: [141.1353, 39.4286],
+    radiusKm: 6
+  },
+  {
+    id: 'AXT',
+    name: '秋田空港',
+    nameEn: 'Akita Airport',
+    type: 'domestic',
+    coordinates: [140.2186, 39.6156],
+    radiusKm: 6
+  },
+  {
+    id: 'ONJ',
+    name: '大館能代空港',
+    nameEn: 'Odate-Noshiro Airport',
+    type: 'domestic',
+    coordinates: [140.3714, 40.1919],
+    radiusKm: 3
+  },
+  {
+    id: 'GAJ',
+    name: '山形空港',
+    nameEn: 'Yamagata Airport',
+    type: 'domestic',
+    coordinates: [140.3714, 38.4119],
+    radiusKm: 6
+  },
+  {
+    id: 'SYO',
+    name: '庄内空港',
+    nameEn: 'Shonai Airport',
+    type: 'domestic',
+    coordinates: [139.7878, 38.8122],
+    radiusKm: 3
+  },
+  {
+    id: 'FKS',
+    name: '福島空港',
+    nameEn: 'Fukushima Airport',
+    type: 'domestic',
+    coordinates: [140.4311, 37.2275],
+    radiusKm: 6
+  },
+  // ========== 関東（離島・飛行場） ==========
+  {
+    id: 'RJTF',
+    name: '調布飛行場',
+    nameEn: 'Chofu Airport',
+    type: 'domestic',
+    coordinates: [139.5281, 35.6717],
+    radiusKm: 3
+  },
+  {
+    id: 'IBR',
+    name: '茨城空港',
+    nameEn: 'Ibaraki Airport',
+    type: 'domestic',
+    coordinates: [140.4156, 36.1811],
+    radiusKm: 6
+  },
+  {
+    id: 'OIM',
+    name: '大島空港',
+    nameEn: 'Oshima Airport',
+    type: 'domestic',
+    coordinates: [139.3603, 34.7822],
+    radiusKm: 3
+  },
+  {
+    id: 'MYE',
+    name: '三宅島空港',
+    nameEn: 'Miyakejima Airport',
+    type: 'domestic',
+    coordinates: [139.5603, 34.0736],
+    radiusKm: 3
+  },
+  {
+    id: 'HAC',
+    name: '八丈島空港',
+    nameEn: 'Hachijojima Airport',
+    type: 'domestic',
+    coordinates: [139.7858, 33.1153],
+    radiusKm: 3
+  },
+  // ========== 北陸 ==========
+  {
+    id: 'NTQ',
+    name: '能登空港',
+    nameEn: 'Noto Airport',
+    type: 'domestic',
+    coordinates: [136.9619, 37.2931],
+    radiusKm: 3
+  },
+  {
+    id: 'FKJ',
+    name: '福井空港',
+    nameEn: 'Fukui Airport',
+    type: 'domestic',
+    coordinates: [136.2236, 36.1428],
+    radiusKm: 2
+  },
+  // ========== 近畿 ==========
+  {
+    id: 'UKB',
+    name: '神戸空港',
+    nameEn: 'Kobe Airport',
+    type: 'domestic',
+    coordinates: [135.2239, 34.6328],
+    radiusKm: 6
+  },
+  {
+    id: 'SHM',
+    name: '南紀白浜空港',
+    nameEn: 'Nanki-Shirahama Airport',
+    type: 'domestic',
+    coordinates: [135.3644, 33.6622],
+    radiusKm: 3
+  },
+  {
+    id: 'TJH',
+    name: '但馬空港',
+    nameEn: 'Tajima Airport',
+    type: 'domestic',
+    coordinates: [134.7869, 35.5128],
+    radiusKm: 2
+  },
+  // ========== 中国 ==========
+  {
+    id: 'IWJ',
+    name: '石見空港',
+    nameEn: 'Iwami Airport',
+    type: 'domestic',
+    coordinates: [131.7906, 34.6764],
+    radiusKm: 3
+  },
+  {
+    id: 'YGJ',
+    name: '米子空港',
+    nameEn: 'Yonago Airport',
+    type: 'domestic',
+    coordinates: [133.2364, 35.4922],
+    radiusKm: 6
+  },
+  {
+    id: 'IWK',
+    name: '岩国空港',
+    nameEn: 'Iwakuni Kintaikyo Airport',
+    type: 'domestic',
+    coordinates: [132.2361, 34.1456],
+    radiusKm: 6
+  },
+  // ========== 九州（本土追加） ==========
+  {
+    id: 'KKJ',
+    name: '北九州空港',
+    nameEn: 'Kitakyushu Airport',
+    type: 'domestic',
+    coordinates: [131.0349, 33.8459],
+    radiusKm: 6
+  },
+  {
+    id: 'HSG',
+    name: '佐賀空港',
+    nameEn: 'Saga Airport',
+    type: 'domestic',
+    coordinates: [130.3022, 33.1497],
+    radiusKm: 3
+  },
+  // ========== 九州（離島） ==========
+  {
+    id: 'TSJ',
+    name: '対馬空港',
+    nameEn: 'Tsushima Airport',
+    type: 'domestic',
+    coordinates: [129.3306, 34.285],
+    radiusKm: 3
+  },
+  {
+    id: 'IKI',
+    name: '壱岐空港',
+    nameEn: 'Iki Airport',
+    type: 'domestic',
+    coordinates: [129.7853, 33.7489],
+    radiusKm: 2
+  },
+  {
+    id: 'FUJ',
+    name: '福江空港',
+    nameEn: 'Fukue Airport',
+    type: 'domestic',
+    coordinates: [128.8328, 32.6664],
+    radiusKm: 3
+  },
+  {
+    id: 'TNE',
+    name: '種子島空港',
+    nameEn: 'Tanegashima Airport',
+    type: 'domestic',
+    coordinates: [130.9917, 30.6056],
+    radiusKm: 3
+  },
+  {
+    id: 'KUM',
+    name: '屋久島空港',
+    nameEn: 'Yakushima Airport',
+    type: 'domestic',
+    coordinates: [130.6589, 30.3856],
+    radiusKm: 3
+  },
+  {
+    id: 'ASJ',
+    name: '奄美空港',
+    nameEn: 'Amami Airport',
+    type: 'domestic',
+    coordinates: [129.7125, 28.4306],
+    radiusKm: 6
+  },
+  {
+    id: 'TKN',
+    name: '徳之島空港',
+    nameEn: 'Tokunoshima Airport',
+    type: 'domestic',
+    coordinates: [128.8817, 27.8364],
+    radiusKm: 3
+  },
+  {
+    id: 'OKE',
+    name: '沖永良部空港',
+    nameEn: 'Okinoerabu Airport',
+    type: 'domestic',
+    coordinates: [128.7011, 27.4256],
+    radiusKm: 2
+  },
+  {
+    id: 'RNJ',
+    name: '与論空港',
+    nameEn: 'Yoron Airport',
+    type: 'domestic',
+    coordinates: [128.4014, 27.0439],
+    radiusKm: 2
+  },
+  // ========== 沖縄 ==========
+  {
+    id: 'ISG',
+    name: '新石垣空港',
+    nameEn: 'New Ishigaki Airport',
+    type: 'domestic',
+    coordinates: [124.245, 24.3964],
+    radiusKm: 6
+  },
+  {
+    id: 'MMY',
+    name: '宮古空港',
+    nameEn: 'Miyako Airport',
+    type: 'domestic',
+    coordinates: [125.295, 24.7828],
+    radiusKm: 6
+  },
+  {
+    id: 'SHI',
+    name: '下地島空港',
+    nameEn: 'Shimojishima Airport',
+    type: 'domestic',
+    coordinates: [125.1447, 24.8267],
+    radiusKm: 6
+  },
+  {
+    id: 'UEO',
+    name: '久米島空港',
+    nameEn: 'Kumejima Airport',
+    type: 'domestic',
+    coordinates: [126.7139, 26.3636],
+    radiusKm: 3
+  },
+  {
+    id: 'OGN',
+    name: '与那国空港',
+    nameEn: 'Yonaguni Airport',
+    type: 'domestic',
+    coordinates: [122.9789, 24.4669],
+    radiusKm: 3
   }
+]
 
-  return {
-    type: 'Feature',
-    properties: {
-      name: zone.name,
-      type: zone.type,
-      radius: zone.radius
-    },
-    geometry: {
-      type: 'Polygon',
-      coordinates: [coords]
-    }
+/**
+ * 自衛隊・米軍基地データ
+ * ※ 制限区域は基地ごとに異なります
+ * ※ 小型無人機等飛行禁止法により上空飛行は禁止されています
+ */
+export const MILITARY_BASES: Airport[] = [
+  // ========== 航空自衛隊 ==========
+  {
+    id: 'RJAH',
+    name: '百里基地',
+    nameEn: 'Hyakuri Air Base',
+    type: 'military',
+    coordinates: [140.4147, 36.1811],
+    radiusKm: 6
+  },
+  {
+    id: 'RJFK',
+    name: '築城基地',
+    nameEn: 'Tsuiki Air Base',
+    type: 'military',
+    coordinates: [131.04, 33.685],
+    radiusKm: 4
+  },
+  {
+    id: 'RJFN',
+    name: '新田原基地',
+    nameEn: 'Nyutabaru Air Base',
+    type: 'military',
+    coordinates: [131.45, 32.0833],
+    radiusKm: 4
+  },
+  {
+    id: 'RJNA',
+    name: '浜松基地',
+    nameEn: 'Hamamatsu Air Base',
+    type: 'military',
+    coordinates: [137.7033, 34.7503],
+    radiusKm: 4
+  },
+  {
+    id: 'RJNK',
+    name: '小松基地',
+    nameEn: 'Komatsu Air Base',
+    type: 'military',
+    coordinates: [136.4065, 36.3946],
+    radiusKm: 6
+  },
+  {
+    id: 'RJSA',
+    name: '三沢基地（空自）',
+    nameEn: 'Misawa Air Base (JASDF)',
+    type: 'military',
+    coordinates: [141.3686, 40.7033],
+    radiusKm: 6
+  },
+  {
+    id: 'RJCJ',
+    name: '千歳基地',
+    nameEn: 'Chitose Air Base',
+    type: 'military',
+    coordinates: [141.6667, 42.7944],
+    radiusKm: 6
+  },
+  {
+    id: 'RJTE',
+    name: '入間基地',
+    nameEn: 'Iruma Air Base',
+    type: 'military',
+    coordinates: [139.4108, 35.8419],
+    radiusKm: 4
+  },
+  // ========== 在日米軍 ==========
+  {
+    id: 'RJTY',
+    name: '横田基地',
+    nameEn: 'Yokota Air Base',
+    type: 'military',
+    coordinates: [139.3486, 35.7486],
+    radiusKm: 6
+  },
+  {
+    id: 'RJTA',
+    name: '厚木基地',
+    nameEn: 'Naval Air Facility Atsugi',
+    type: 'military',
+    coordinates: [139.45, 35.4547],
+    radiusKm: 6
+  },
+  {
+    id: 'RJOI',
+    name: '岩国基地',
+    nameEn: 'Marine Corps Air Station Iwakuni',
+    type: 'military',
+    coordinates: [132.2361, 34.1456],
+    radiusKm: 6
+  },
+  {
+    id: 'RODN',
+    name: '嘉手納基地',
+    nameEn: 'Kadena Air Base',
+    type: 'military',
+    coordinates: [127.7675, 26.3516],
+    radiusKm: 6
+  },
+  {
+    id: 'ROTM',
+    name: '普天間基地',
+    nameEn: 'Marine Corps Air Station Futenma',
+    type: 'military',
+    coordinates: [127.7558, 26.2742],
+    radiusKm: 4
   }
-}
+]
 
 /**
- * 空港制限区域をGeoJSON Feature Collectionに変換
+ * ヘリポートデータ
+ * ※ ドクターヘリ・緊急用ヘリポートを含む
  */
-export function getAirportZonesGeoJSON(): GeoJSON.FeatureCollection {
-  return {
-    type: 'FeatureCollection',
-    features: AIRPORT_ZONES.map(zone => createCircleFeature(zone, 64))
+export const HELIPORTS: Airport[] = [
+  // ========== 主要ヘリポート ==========
+  {
+    id: 'RJTI',
+    name: '東京ヘリポート',
+    nameEn: 'Tokyo Heliport',
+    type: 'heliport',
+    coordinates: [139.8372, 35.6403],
+    radiusKm: 0.5
+  },
+  {
+    id: 'HLP-YAO',
+    name: '八尾ヘリポート',
+    nameEn: 'Yao Heliport',
+    type: 'heliport',
+    coordinates: [135.6019, 34.5967],
+    radiusKm: 0.5
+  },
+  {
+    id: 'HLP-MAI',
+    name: '舞洲ヘリポート',
+    nameEn: 'Maishima Heliport',
+    type: 'heliport',
+    coordinates: [135.3931, 34.6592],
+    radiusKm: 0.5
+  },
+  {
+    id: 'HLP-YOK',
+    name: '横浜ヘリポート',
+    nameEn: 'Yokohama Heliport',
+    type: 'heliport',
+    coordinates: [139.6333, 35.4667],
+    radiusKm: 0.5
+  },
+  {
+    id: 'HLP-NAG',
+    name: '名古屋ヘリポート',
+    nameEn: 'Nagoya Heliport',
+    type: 'heliport',
+    coordinates: [136.9, 35.1833],
+    radiusKm: 0.5
+  },
+  // ========== ビル屋上ヘリポート ==========
+  {
+    id: 'HLP-TORA',
+    name: '虎ノ門ヒルズヘリポート',
+    nameEn: 'Toranomon Hills Heliport',
+    type: 'heliport',
+    coordinates: [139.75, 35.6667],
+    radiusKm: 0.2
+  },
+  {
+    id: 'HLP-ROPPONGI',
+    name: '六本木ヒルズヘリポート',
+    nameEn: 'Roppongi Hills Heliport',
+    type: 'heliport',
+    coordinates: [139.7292, 35.6603],
+    radiusKm: 0.2
+  },
+  // ========== 病院ヘリポート（ドクターヘリ） ==========
+  {
+    id: 'HLP-LUKE',
+    name: '聖路加国際病院ヘリポート',
+    nameEn: "St. Luke's Hospital Heliport",
+    type: 'heliport',
+    coordinates: [139.7731, 35.6714],
+    radiusKm: 0.2
+  },
+  {
+    id: 'HLP-NMC',
+    name: '日本医科大学付属病院ヘリポート',
+    nameEn: 'Nippon Medical School Hospital Heliport',
+    type: 'heliport',
+    coordinates: [139.7683, 35.7028],
+    radiusKm: 0.2
   }
-}
+]
 
 /**
- * 空港タイプでフィルタリングして取得
+ * Haversine式で2点間の距離を計算（キロメートル）
  */
-export function getAirportsByType(type: AirportType): Airport[] {
-  return AIRPORT_ZONES.filter(zone => zone.type === type)
-}
-
-/**
- * 国際空港のみ取得
- */
-export function getInternationalAirports(): Airport[] {
-  return AIRPORT_ZONES.filter(zone => zone.radius >= 9000 && zone.type === 'airport')
-}
-
-/**
- * 軍事施設のみ取得
- */
-export function getMilitaryAirfields(): Airport[] {
-  return AIRPORT_ZONES.filter(zone => zone.type === 'military')
-}
-
-/**
- * 2点間の距離を計算（メートル）
- */
-function getDistanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371000 // 地球の半径（メートル）
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLng = (lng2 - lng1) * Math.PI / 180
+export function calculateDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const R = 6371 // 地球の半径（キロメートル）
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLng = ((lng2 - lng1) * Math.PI) / 180
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng / 2) * Math.sin(dLng / 2)
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2)
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
 }
 
 /**
- * Waypoint/ポリゴンが制限区域に入っているかチェック
+ * 円形ポリゴンを生成
  */
-export function checkAirspaceRestrictions(lat: number, lng: number): AirspaceRestriction[] {
-  const restrictions: AirspaceRestriction[] = []
+export function createCirclePolygon(
+  center: [number, number],
+  radiusKm: number,
+  points: number = 64
+): GeoJSON.Polygon {
+  const coords: [number, number][] = []
+  const [lng, lat] = center
 
-  // 空港チェック
-  for (const airport of AIRPORT_ZONES) {
-    const distance = getDistanceMeters(lat, lng, airport.lat, airport.lng)
-    if (distance < airport.radius) {
-      restrictions.push({
-        type: 'airport',
+  for (let i = 0; i <= points; i++) {
+    const angle = (i / points) * 2 * Math.PI
+    // キロメートルから度への変換（近似）
+    const latOffset = (radiusKm / 111.32) * Math.cos(angle)
+    const lngOffset = (radiusKm / (111.32 * Math.cos((lat * Math.PI) / 180))) * Math.sin(angle)
+    coords.push([lng + lngOffset, lat + latOffset])
+  }
+
+  return {
+    type: 'Polygon',
+    coordinates: [coords]
+  }
+}
+
+/**
+ * Get all airports (major + regional + military)
+ */
+export function getAllAirports(): Airport[] {
+  return [...MAJOR_AIRPORTS, ...REGIONAL_AIRPORTS, ...MILITARY_BASES]
+}
+
+/**
+ * Get all airports including heliports
+ */
+export function getAllAirportsWithHeliports(): Airport[] {
+  return [...MAJOR_AIRPORTS, ...REGIONAL_AIRPORTS, ...MILITARY_BASES, ...HELIPORTS]
+}
+
+/**
+ * Get airports that require special restrictions (小型無人機等飛行禁止法)
+ */
+export function getNoFlyLawAirports(): Airport[] {
+  return MAJOR_AIRPORTS.filter((a) => a.radiusKm >= 24)
+}
+
+/**
+ * Generate GeoJSON for airport restriction zones
+ */
+export function generateAirportGeoJSON(): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = []
+
+  for (const airport of getAllAirports()) {
+    const polygon = createCirclePolygon(airport.coordinates, airport.radiusKm)
+
+    features.push({
+      type: 'Feature',
+      properties: {
+        id: airport.id,
         name: airport.name,
-        distance: Math.round(distance),
-        radius: airport.radius,
-        severity: 'high'
-      })
+        nameEn: airport.nameEn,
+        type: airport.type,
+        radiusKm: airport.radiusKm,
+        zoneType: 'AIRPORT'
+      },
+      geometry: polygon
+    })
+  }
+
+  return {
+    type: 'FeatureCollection',
+    features
+  }
+}
+
+/**
+ * Generate GeoJSON for airport markers (points)
+ */
+export function generateAirportMarkersGeoJSON(): GeoJSON.FeatureCollection<
+  GeoJSON.Point,
+  AirportMarkerProperties
+> {
+  const features: Array<GeoJSON.Feature<GeoJSON.Point, AirportMarkerProperties>> =
+    getAllAirports().map((airport) => ({
+      type: 'Feature',
+      properties: {
+        id: airport.id,
+        name: airport.name,
+        nameEn: airport.nameEn,
+        type: airport.type,
+        radiusKm: airport.radiusKm
+      },
+      geometry: {
+        type: 'Point',
+        coordinates: airport.coordinates
+      }
+    }))
+
+  return {
+    type: 'FeatureCollection',
+    features
+  }
+}
+
+/**
+ * Generate GeoJSON for heliports only
+ */
+export function generateHeliportGeoJSON(): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = HELIPORTS.map((heliport) => ({
+    type: 'Feature',
+    properties: {
+      id: heliport.id,
+      name: heliport.name,
+      nameEn: heliport.nameEn,
+      type: 'heliport',
+      radiusKm: heliport.radiusKm,
+      zoneType: 'AIRPORT'
+    },
+    geometry: createCirclePolygon(heliport.coordinates, heliport.radiusKm)
+  }))
+
+  return {
+    type: 'FeatureCollection',
+    features
+  }
+}
+
+/**
+ * Check if a point is within any airport restriction zone
+ */
+export function isInAirportZone(lat: number, lng: number): { inZone: boolean; airport?: Airport } {
+  for (const airport of getAllAirports()) {
+    const distance = calculateDistance(lat, lng, airport.coordinates[1], airport.coordinates[0])
+
+    if (distance <= airport.radiusKm) {
+      return { inZone: true, airport }
     }
   }
 
-  // 飛行禁止区域チェック
-  for (const zone of NO_FLY_ZONES) {
-    const distance = getDistanceMeters(lat, lng, zone.lat, zone.lng)
-    if (distance < zone.radius) {
+  return { inZone: false }
+}
+
+/**
+ * Check airspace restrictions for a given point
+ * @deprecated Use collision.ts for optimized collision detection
+ */
+export function checkAirspaceRestrictions(
+  lat: number,
+  lng: number
+): Array<{
+  type: 'airport' | 'prohibited'
+  name: string
+  distance: number
+  radius: number
+  severity: 'high' | 'critical'
+}> {
+  const restrictions: Array<{
+    type: 'airport' | 'prohibited'
+    name: string
+    distance: number
+    radius: number
+    severity: 'high' | 'critical'
+  }> = []
+
+  for (const airport of getAllAirports()) {
+    const distance = calculateDistance(lat, lng, airport.coordinates[1], airport.coordinates[0])
+    if (distance <= airport.radiusKm) {
       restrictions.push({
-        type: 'prohibited',
-        name: zone.name,
-        distance: Math.round(distance),
-        radius: zone.radius,
-        severity: 'critical'
+        type: 'airport',
+        name: airport.name,
+        distance: Math.round(distance * 1000), // Convert to meters
+        radius: airport.radiusKm * 1000, // Convert to meters
+        severity: 'high'
       })
     }
   }
@@ -267,13 +1065,13 @@ export function checkAirspaceRestrictions(lat: number, lng: number): AirspaceRes
   return restrictions
 }
 
-/**
- * 外部地図サービスへのリンクを生成
- */
-export function getExternalMapLinks(lat: number, lng: number) {
-  return {
-    dips: 'https://www.ossportal.dips-reg.mlit.go.jp/portal/top',
-    sorapass: `https://www.sorapass.com/map?lat=${lat}&lng=${lng}&zoom=14`,
-    geospatial: `https://maps.gsi.go.jp/#15/${lat}/${lng}/`
-  }
+export const AirportService = {
+  getAllAirports,
+  getAllAirportsWithHeliports,
+  getNoFlyLawAirports,
+  generateGeoJSON: generateAirportGeoJSON,
+  generateMarkers: generateAirportMarkersGeoJSON,
+  generateHeliportGeoJSON,
+  isInZone: isInAirportZone,
+  checkAirspaceRestrictions
 }

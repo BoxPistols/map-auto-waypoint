@@ -151,19 +151,41 @@ export interface RestrictionCategory {
 // Airport Types
 // ============================================
 
-export type AirportType = 'airport' | 'airfield' | 'military'
+export type AirportType = 'international' | 'domestic' | 'military' | 'heliport'
 
 export interface Airport {
-  /** Name of the airport/airfield */
+  /** ICAO code or unique identifier */
+  id: string
+  /** Name of the airport/airfield (Japanese) */
   name: string
-  /** Latitude */
-  lat: number
-  /** Longitude */
-  lng: number
-  /** Restriction radius in meters */
-  radius: number
+  /** English name (optional) */
+  nameEn?: string
   /** Type of facility */
   type: AirportType
+  /** Coordinates [lng, lat] */
+  coordinates: [number, number]
+  /** Restriction radius in kilometers */
+  radiusKm: number
+  /** Airport surfaces (制限表面) - optional */
+  surfaces?: AirportSurface[]
+}
+
+export interface AirportSurface {
+  type: 'horizontal' | 'conical' | 'approach' | 'transitional'
+  heightLimit: number // meters
+  geometry: GeoJSON.Geometry
+}
+
+/** @deprecated Use Airport with new structure */
+export type LegacyAirportType = 'airport' | 'airfield' | 'military'
+
+/** @deprecated Use Airport with new structure */
+export interface LegacyAirport {
+  name: string
+  lat: number
+  lng: number
+  radius: number
+  type: LegacyAirportType
 }
 
 // ============================================
@@ -540,4 +562,72 @@ export interface DrawControlRef {
 
 export interface MapSettings extends LayerVisibility {
   mapStyleId: BaseMapKey
+}
+
+// ============================================
+// Collision Detection Types (RBush)
+// ============================================
+
+export type CollisionType = 'DID' | 'AIRPORT' | 'RED_ZONE' | 'YELLOW_ZONE' | 'MILITARY' | 'PARK' | string
+
+export type CollisionSeverity = 'DANGER' | 'WARNING' | 'SAFE'
+
+export interface WaypointCollisionResult {
+  isColliding: boolean
+  collisionType: CollisionType | null
+  areaName?: string
+  severity: CollisionSeverity
+  uiColor: string
+  message: string
+}
+
+export interface PathCollisionResult {
+  isColliding: boolean
+  intersectionPoints: GeoJSON.Position[]
+  severity: CollisionSeverity
+  message: string
+}
+
+export interface PolygonCollisionResult {
+  isColliding: boolean
+  overlapArea: number
+  overlapRatio: number
+  severity: CollisionSeverity
+  message: string
+}
+
+// ============================================
+// No-Fly Zone Types (Updated)
+// ============================================
+
+export type NoFlyZoneType = 'red' | 'yellow'
+
+export type NoFlyZoneCategory =
+  | 'imperial'      // 皇室施設
+  | 'government'    // 政府施設
+  | 'defense'       // 防衛施設
+  | 'us_military'   // 在日米軍施設
+  | 'nuclear'       // 原子力発電所
+  | 'political'     // 政党本部
+  | 'embassy'       // 外国公館
+
+export interface NoFlyZone {
+  /** Unique identifier */
+  id: string
+  /** Name of the zone (Japanese) */
+  name: string
+  /** English name (optional) */
+  nameEn?: string
+  /** Zone type (red=prohibited, yellow=restricted) */
+  type: NoFlyZoneType
+  /** Coordinates [lng, lat] */
+  coordinates: [number, number]
+  /** Restriction radius in kilometers */
+  radiusKm: number
+  /** Category of facility */
+  category: NoFlyZoneCategory
+  /** Data source */
+  source?: string
+  /** Description */
+  description?: string
 }
