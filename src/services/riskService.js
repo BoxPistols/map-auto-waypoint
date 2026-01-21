@@ -200,6 +200,8 @@ export const checkAllWaypointsDID = async (waypoints) => {
 
 /**
  * Waypoint間の飛行経路が禁止エリアを通過しているか判定
+ * ポリゴンごとに分けて経路をチェック（異なるポリゴンのWaypointは接続しない）
+ * 手動追加のWaypointは単独では経路チェックを行わない
  * @param {Array} waypoints - Waypoint配列
  * @returns {Object} 衝突結果 { isColliding, intersectionPoints, affectedSegments, message }
  */
@@ -213,40 +215,102 @@ export const checkFlightPathCollision = (waypoints) => {
     };
   }
 
-  // Waypointをindex順にソートして座標配列を作成
-  const sortedWaypoints = [...waypoints].sort((a, b) => a.index - b.index);
-  const pathCoords = sortedWaypoints.map(wp => [wp.lng, wp.lat]);
+  // ポリゴンIDでWaypointをグループ化
+  // 手動追加のWaypointは各々別グループとして扱う（相互接続しない）
+  const waypointsByPolygon = new Map();
+  let manualWaypointCounter = 0;
+
+  for (const wp of waypoints) {
+    // ポリゴンに紐づいたWaypointのみグループ化
+    // type='manual'や polygonId=null のWaypointは個別扱い
+    let groupId;
+    if (wp.polygonId) {
+      groupId = wp.polygonId;
+    } else if (wp.type === 'manual' || !wp.polygonName || wp.polygonName === '手動追加') {
+      // 手動追加は個別グループ（経路チェックスキップ）
+      groupId = `manual_${manualWaypointCounter++}`;
+    } else if (wp.polygonName) {
+      groupId = wp.polygonName;
+    } else {
+      // 不明なWaypointも個別扱い
+      groupId = `unknown_${manualWaypointCounter++}`;
+    }
+
+    if (!waypointsByPolygon.has(groupId)) {
+      waypointsByPolygon.set(groupId, []);
+    }
+    waypointsByPolygon.get(groupId).push(wp);
+  }
+
+  // デバッグ: グループ化結果をログ出力
+  if (import.meta.env.DEV) {
+    console.log('[PathCollision] Waypoint groups:',
+      Array.from(waypointsByPolygon.entries()).map(([id, wps]) =>
+        `${id}: ${wps.length}点 (indices: ${wps.map(w => w.index).join(',')})`
+      )
+    );
+  }
 
   // 禁止エリアのGeoJSONを取得
   const prohibitedAreas = generateAllProhibitedAreasGeoJSON();
 
-  // 経路の衝突判定
-  const result = checkPathCollision(pathCoords, prohibitedAreas);
+  // 結果を集約
+  let hasAnyCollision = false;
+  const allIntersectionPoints = [];
+  const allAffectedSegments = [];
+  let overallSeverity = 'SAFE';
+  const messages = [];
 
-  // 影響を受けるセグメントを特定
-  const affectedSegments = [];
-  if (result.isColliding && result.intersectionPoints.length > 0) {
-    // 各セグメントをチェック
-    for (let i = 0; i < pathCoords.length - 1; i++) {
-      const segmentCoords = [pathCoords[i], pathCoords[i + 1]];
-      const segmentResult = checkPathCollision(segmentCoords, prohibitedAreas);
-      if (segmentResult.isColliding) {
-        affectedSegments.push({
-          index: i,
-          fromWaypoint: sortedWaypoints[i],
-          toWaypoint: sortedWaypoints[i + 1],
-          intersectionCount: segmentResult.intersectionPoints.length
-        });
+  // 各ポリゴンの経路を個別にチェック
+  for (const [polygonId, polygonWaypoints] of waypointsByPolygon.entries()) {
+    // 2点以上必要
+    if (polygonWaypoints.length < 2) continue;
+
+    // Waypointをindex順にソートして座標配列を作成
+    const sortedWaypoints = [...polygonWaypoints].sort((a, b) => a.index - b.index);
+    const pathCoords = sortedWaypoints.map(wp => [wp.lng, wp.lat]);
+
+    // 経路の衝突判定
+    const result = checkPathCollision(pathCoords, prohibitedAreas);
+
+    if (result.isColliding) {
+      hasAnyCollision = true;
+      allIntersectionPoints.push(...result.intersectionPoints);
+
+      // 深刻度を更新（最も重いものを採用）
+      if (result.severity === 'DANGER' || overallSeverity !== 'DANGER') {
+        if (result.severity === 'DANGER') {
+          overallSeverity = 'DANGER';
+        } else if (result.severity === 'WARNING' && overallSeverity === 'SAFE') {
+          overallSeverity = 'WARNING';
+        }
       }
+
+      // 影響を受けるセグメントを特定
+      for (let i = 0; i < pathCoords.length - 1; i++) {
+        const segmentCoords = [pathCoords[i], pathCoords[i + 1]];
+        const segmentResult = checkPathCollision(segmentCoords, prohibitedAreas);
+        if (segmentResult.isColliding) {
+          allAffectedSegments.push({
+            index: i,
+            polygonId,
+            fromWaypoint: sortedWaypoints[i],
+            toWaypoint: sortedWaypoints[i + 1],
+            intersectionCount: segmentResult.intersectionPoints.length
+          });
+        }
+      }
+
+      messages.push(result.message);
     }
   }
 
   return {
-    isColliding: result.isColliding,
-    intersectionPoints: result.intersectionPoints,
-    affectedSegments,
-    severity: result.severity,
-    message: result.message
+    isColliding: hasAnyCollision,
+    intersectionPoints: allIntersectionPoints,
+    affectedSegments: allAffectedSegments,
+    severity: overallSeverity,
+    message: hasAnyCollision ? messages.join('; ') : '経路は安全です'
   };
 };
 
