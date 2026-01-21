@@ -221,49 +221,36 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
     };
 
     return (
-      <div
-        className="flight-requirements-minimized-icon"
-        onClick={() => setMinimized(false)}
-        title="飛行要件サマリーを表示"
-        style={{
-          position: 'fixed',
-          top: '80px',
-          left: sidebarCollapsed ? '80px' : '340px',
-          zIndex: 1000,
-          backgroundColor: 'rgba(30, 30, 30, 0.85)',
-          backdropFilter: 'blur(10px)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
-          borderRadius: '12px',
-          padding: '10px 14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          cursor: 'pointer',
-          transition: 'left 0.3s ease, background-color 0.2s',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-        }}
-      >
-        <ClipboardCheck size={20} color="rgba(255, 255, 255, 0.9)" />
-        <span style={{
-          fontSize: '13px',
-          fontWeight: 500,
-          color: 'rgba(255, 255, 255, 0.9)',
-        }}>
-          飛行要件
-        </span>
-        {results && (
-          <span
+        <div
+            className='flight-requirements-minimized-icon'
+            onClick={() => setMinimized(false)}
+            title='飛行要件サマリーを表示'
             style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: getBadgeColor(results.overallStatus),
-              marginLeft: '4px',
+                position: 'fixed',
+                top: '96px',
+                left: sidebarCollapsed ? '84px' : '344px',
+                zIndex: 1000,
+                borderRadius: '8px',
+                padding: '10px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                transition: 'left 0.3s ease, background-color 0.2s',
             }}
-          />
-        )}
-      </div>
-    );
+        >
+            <ClipboardCheck size={20} className='minimized-icon-svg' />
+            <span className='minimized-icon-text'>飛行要件</span>
+            {results && (
+                <span
+                    className='minimized-icon-badge'
+                    style={{
+                        backgroundColor: getBadgeColor(results.overallStatus),
+                    }}
+                />
+            )}
+        </div>
+    )
   }
 
   // ヘッダーアクション（最小化、更新ボタン）

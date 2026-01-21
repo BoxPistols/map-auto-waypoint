@@ -1,23 +1,47 @@
 // 最小化時のトリガーアイコン
 .flight-requirements-minimized-icon {
+  // CSS変数を使用してテーマに応じて自動切り替え
+  background-color: var(--glass-bg-solid, rgba(30, 41, 59, 0.85));
+  backdrop-filter: blur(var(--glass-blur, 20px));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 20px));
+  box-shadow: var(--glass-shadow, 0 8px 32px rgba(0, 0, 0, 0.4));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+
+  .minimized-icon-svg {
+    color: var(--color-text, rgba(255, 255, 255, 0.9));
+  }
+
+  .minimized-icon-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text, rgba(255, 255, 255, 0.9));
+  }
+
+  .minimized-icon-badge {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 4px;
+  }
+
   &:hover {
-    background-color: rgba(50, 50, 50, 0.95) !important;
+    background-color: var(--glass-bg, rgba(15, 23, 42, 0.5));
     transform: scale(1.02);
   }
 }
 
-// ライトモード対応
-:global([data-theme="light"]) .flight-requirements-minimized-icon {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+// ライトモード対応（CSS変数が適用されない場合のフォールバック）
+[data-theme="light"] .flight-requirements-minimized-icon {
+  background-color: var(--glass-bg-solid, rgba(255, 255, 255, 0.95)) !important;
+  border-color: var(--glass-border, rgba(0, 0, 0, 0.1)) !important;
+  box-shadow: var(--glass-shadow, 0 4px 12px rgba(0, 0, 0, 0.1)) !important;
 
-  svg {
-    color: rgba(0, 0, 0, 0.7) !important;
+  .minimized-icon-svg {
+    color: var(--color-text, rgba(0, 0, 0, 0.7)) !important;
   }
 
-  span {
-    color: rgba(0, 0, 0, 0.8) !important;
+  .minimized-icon-text {
+    color: var(--color-text, rgba(0, 0, 0, 0.8)) !important;
   }
 
   &:hover {

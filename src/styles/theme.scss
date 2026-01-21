@@ -117,7 +117,7 @@ $breakpoint-desktop: 1024px; // デスクトップ
   --color-text-inverse: #ffffff;
 
   // ボーダー
-  --color-border: #e2e8f0;
+  --color-border: #c3c8ce8b;
   --color-border-light: #f1f5f9;
   --color-border-dark: #cbd5e1;
 
@@ -133,7 +133,7 @@ $breakpoint-desktop: 1024px; // デスクトップ
 
   // グラスモーフィズム (Light mode)
   --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-bg-solid: rgba(255, 255, 255, 0.75);
+  --glass-bg-solid: rgba(255, 255, 255, 0.85);
   --glass-blur: 20px;
   --glass-border: rgba(255, 255, 255, 0.3);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
@@ -196,7 +196,7 @@ $breakpoint-desktop: 1024px; // デスクトップ
   --color-text-inverse: #0f172a;
 
   // ボーダー
-  --color-border: #475569;
+  --color-border: #475569be;
   --color-border-light: #64748b;
   --color-border-dark: #334155;
 
@@ -212,7 +212,7 @@ $breakpoint-desktop: 1024px; // デスクトップ
 
   // グラスモーフィズム (Dark mode)
   --glass-bg: rgba(15, 23, 42, 0.5);
-  --glass-bg-solid: rgba(30, 41, 59, 0.7);
+  --glass-bg-solid: rgba(30, 41, 59, 0.85);
   --glass-blur: 20px;
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
