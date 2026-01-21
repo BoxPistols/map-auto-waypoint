@@ -1,3 +1,30 @@
+// 最小化時のトリガーアイコン
+.flight-requirements-minimized-icon {
+  &:hover {
+    background-color: rgba(50, 50, 50, 0.95) !important;
+    transform: scale(1.02);
+  }
+}
+
+// ライトモード対応
+:global([data-theme="light"]) .flight-requirements-minimized-icon {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+
+  svg {
+    color: rgba(0, 0, 0, 0.7) !important;
+  }
+
+  span {
+    color: rgba(0, 0, 0, 0.8) !important;
+  }
+
+  &:hover {
+    background-color: rgba(245, 245, 245, 0.98) !important;
+  }
+}
+
 // GlassPanelベースのFlightRequirements
 .flight-requirements-panel {
   // 最小化時のスタイル調整

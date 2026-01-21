@@ -147,16 +147,22 @@ const checkDIDAreaFallback = (_lat, _lng) => {
 const checkPointInDIDGeoJSON = (geojson, lat, lng) => {
   if (!geojson?.features) return null;
   const point = turf.point([lng, lat]);
-  
+
   for (const feature of geojson.features) {
     if (turf.booleanPointInPolygon(point, feature)) {
-      const areaName = feature.properties?.CITY_NAME || '人口集中地区';
+      // R02データは CITYNAME を使用（CITY_NAME ではない）
+      const areaName = feature.properties?.CITYNAME || feature.properties?.CITY_NAME || '人口集中地区';
       let centroid = null;
       try {
         const c = turf.centroid(feature);
         centroid = { lat: c.geometry.coordinates[1], lng: c.geometry.coordinates[0] };
       } catch {
         // Ignore centroid calculation errors
+      }
+
+      // デバッグ: DID検出時に詳細をログ出力
+      if (import.meta.env.DEV) {
+        console.log(`[DID] DETECTED: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} -> ${areaName}`);
       }
 
       return {
@@ -179,7 +185,14 @@ export const checkDIDArea = async (lat, lng) => {
   try {
     const prefecture = getPrefectureFromCoords(lat, lng);
     if (!prefecture) {
+      if (import.meta.env.DEV) {
+        console.log(`[DID] No prefecture for: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)}`);
+      }
       return checkDIDAreaFallback(lat, lng);
+    }
+
+    if (import.meta.env.DEV) {
+      console.log(`[DID] Checking: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} in ${prefecture.nameJa}`);
     }
 
     const geojson = await fetchDIDGeoJSON(prefecture.code, prefecture.name);

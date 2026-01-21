@@ -32,6 +32,7 @@ import '../../App.scss'
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
 
 // ポリゴンの境界からズームレベルを計算
+// maxZoom: 14 に制限（近寄りすぎ防止）
 const calculateZoomForBounds = (geometry) => {
   if (!geometry?.coordinates?.[0]) return 14
 
@@ -48,14 +49,12 @@ const calculateZoomForBounds = (geometry) => {
   const lngSpan = Math.max(...lngs) - Math.min(...lngs)
   const maxSpan = Math.max(latSpan, lngSpan)
 
-  // maxSpanに基づいてズームレベルを計算（パディング考慮）
+  // maxSpanに基づいてズームレベルを計算（最大14に制限）
   if (maxSpan > 0.5) return 10
   if (maxSpan > 0.2) return 11
   if (maxSpan > 0.1) return 12
   if (maxSpan > 0.05) return 13
-  if (maxSpan > 0.02) return 14
-  if (maxSpan > 0.01) return 15
-  return 16
+  return 14 // 最大ズームを14に制限
 }
 
 // WP間の総距離を計算 (km)
@@ -290,7 +289,7 @@ function MainLayout() {
       const first = results[0]
       saveSearchHistory(query, results)
       setCenter({ lat: first.lat, lng: first.lng })
-      setZoom(16)
+      setZoom(14)
       showNotification(`「${first.displayName.split(',')[0]}」を表示しました`)
     } else {
       showNotification('検索結果が見つかりませんでした', 'warning')
@@ -301,7 +300,7 @@ function MainLayout() {
   const handleSearchSelect = useCallback((result) => {
     if (!result) return
     setCenter({ lat: result.lat, lng: result.lng })
-    setZoom(16)
+    setZoom(14)
     setLastSearchResult(result)
     setShowFlightRequirements(true)
     showNotification(`「${result.displayName.split(',')[0]}」を表示しました`)
@@ -412,7 +411,7 @@ function MainLayout() {
     const center = getPolygonCenter(polygon)
     if (center) {
       setCenter(center)
-      setZoom(17)
+      setZoom(14)
     }
     showNotification('ポリゴンを編集中です。頂点をドラッグして変更してください。')
   }, [setSelectedPolygonId, showNotification])
@@ -733,9 +732,9 @@ function MainLayout() {
 
   // Handle waypoint select from sidebar - start editing parent polygon
   const handleWaypointSelect = useCallback((waypoint) => {
-    // Focus on waypoint location (zoom 15で周辺も見える)
+    // Focus on waypoint location
     setCenter({ lat: waypoint.lat, lng: waypoint.lng })
-    setZoom(15)
+    setZoom(14)
 
     // If waypoint belongs to a polygon, start editing that polygon
     if (waypoint.polygonId) {
@@ -835,14 +834,11 @@ function MainLayout() {
     setSelectedPolygonId(polygonId)
     const polygon = polygons.find(p => p.id === polygonId)
     if (polygon) {
-      const coords = polygon.geometry.coordinates[0]
-      // Calculate center of polygon
-      const lats = coords.map(c => c[1])
-      const lngs = coords.map(c => c[0])
-      const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2
-      const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2
-      setCenter({ lat: centerLat, lng: centerLng })
-      setZoom(17)
+      const center = getPolygonCenter(polygon)
+      if (center) {
+        setCenter(center)
+        setZoom(calculateZoomForBounds(polygon.geometry))
+      }
     }
   }, [polygons, setSelectedPolygonId])
 
@@ -1453,7 +1449,7 @@ function MainLayout() {
           if (waypoint) {
             // 地図の中心をWaypointに移動
             setCenter({ lat: waypoint.lat, lng: waypoint.lng })
-            setZoom(15) // 周辺も見えるズームレベル
+            setZoom(14) // 周辺も見えるズームレベル
             // ハイライト表示
             setHighlightedWaypointIndex(wpIndex)
             // 3秒後にハイライトをクリア

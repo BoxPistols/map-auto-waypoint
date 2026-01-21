@@ -620,20 +620,24 @@ const Map = ({
     })
   }, [])
 
-  // Handle double click on polygon - delete
-  const handleDoubleClick = useCallback((e) => {
+  // Handle polygon right-click for context menu
+  const handlePolygonRightClick = useCallback((e) => {
     const features = e.features || []
     const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
 
-    if (polygonFeature && onPolygonDelete) {
+    if (polygonFeature) {
       e.preventDefault()
       const polygonId = polygonFeature.properties.id
       const polygon = polygons.find(p => p.id === polygonId)
-      if (polygon && confirm(`「${polygon.name}」を削除しますか?`)) {
-        onPolygonDelete(polygonId)
+      if (polygon) {
+        setPolygonContextMenu({
+          isOpen: true,
+          position: { x: e.point.x, y: e.point.y },
+          polygon
+        })
       }
     }
-  }, [polygons, onPolygonDelete])
+  }, [polygons])
 
   // Handle polygon creation from draw control
   const handleCreate = useCallback((features) => {
@@ -825,7 +829,6 @@ const Map = ({
         {...viewState}
         onMove={e => setViewState(e.viewState)}
         onClick={handleClick}
-        onDblClick={handleDoubleClick}
         onMouseDown={handleSelectionStart}
         onMouseMove={handleSelectionMove}
         onMouseUp={handleSelectionEnd}

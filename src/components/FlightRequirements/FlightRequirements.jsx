@@ -206,6 +206,20 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
 
   // 最小化時のフローティングアイコン
   if (minimized) {
+    // ステータスに応じたバッジの色
+    const getBadgeColor = (status) => {
+      switch (status) {
+        case 'ok':
+          return '#28a745';
+        case 'warning':
+          return '#ffc107';
+        case 'error':
+          return '#dc3545';
+        default:
+          return '#6c757d';
+      }
+    };
+
     return (
       <div
         className="flight-requirements-minimized-icon"
@@ -213,26 +227,40 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
         title="飛行要件サマリーを表示"
         style={{
           position: 'fixed',
-          bottom: '20px',
+          top: '80px',
           left: sidebarCollapsed ? '80px' : '340px',
           zIndex: 1000,
-          backgroundColor: 'var(--bg-primary, #fff)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          borderRadius: '50%',
-          width: '48px',
-          height: '48px',
+          backgroundColor: 'rgba(30, 30, 30, 0.85)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.25)',
+          borderRadius: '12px',
+          padding: '10px 14px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
+          gap: '8px',
           cursor: 'pointer',
-          transition: 'left 0.3s ease',
-          border: '1px solid var(--border-color, #e0e0e0)',
+          transition: 'left 0.3s ease, background-color 0.2s',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
         }}
       >
-        {results ? (
-          getStatusIcon(results.overallStatus)
-        ) : (
-          <ClipboardCheck size={24} color="var(--text-secondary, #666)" />
+        <ClipboardCheck size={20} color="rgba(255, 255, 255, 0.9)" />
+        <span style={{
+          fontSize: '13px',
+          fontWeight: 500,
+          color: 'rgba(255, 255, 255, 0.9)',
+        }}>
+          飛行要件
+        </span>
+        {results && (
+          <span
+            style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              backgroundColor: getBadgeColor(results.overallStatus),
+              marginLeft: '4px',
+            }}
+          />
         )}
       </div>
     );
