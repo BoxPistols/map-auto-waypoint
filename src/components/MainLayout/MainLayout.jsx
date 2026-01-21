@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getSetting, isDIDAvoidanceModeEnabled } from '../../services/settingsService'
+import { getDetailedCollisionResults } from '../../services/riskService'
 import Map from '../Map/Map'
 import SearchForm from '../SearchForm/SearchForm'
 import PolygonList from '../PolygonList/PolygonList'
@@ -115,6 +116,56 @@ function MainLayout() {
 
   // Highlighted waypoint (for FlightAssistant WP click)
   const [highlightedWaypointIndex, setHighlightedWaypointIndex] = useState(null)
+
+  // ============================================
+  // 自動衝突検出 (RBush空間インデックス使用)
+  // ============================================
+  useEffect(() => {
+    if (!waypoints || waypoints.length === 0) {
+      setWaypointIssueFlagsById({})
+      setDidHighlightedWaypointIndices(new Set())
+      return
+    }
+
+    // 衝突検出を非同期で実行（パフォーマンス考慮）
+    const checkCollisions = () => {
+      try {
+        const { results, byType } = getDetailedCollisionResults(waypoints)
+
+        const newFlags = {}
+        const didSet = new Set()
+
+        for (const [waypointId, result] of results.entries()) {
+          if (result.isColliding) {
+            const wp = waypoints.find(w => w.id === waypointId)
+            const hasDID = result.collisionType === 'DID'
+            const hasAirport = result.collisionType === 'AIRPORT' || result.collisionType === 'MILITARY'
+            const hasProhibited = result.collisionType === 'RED_ZONE' || result.collisionType === 'YELLOW_ZONE'
+
+            newFlags[waypointId] = { hasDID, hasAirport, hasProhibited }
+
+            if (hasDID && wp) {
+              didSet.add(wp.index)
+            }
+          }
+        }
+
+        setWaypointIssueFlagsById(newFlags)
+        setDidHighlightedWaypointIndices(didSet)
+
+        // 衝突があった場合のみコンソールに出力（開発時）
+        if (import.meta.env.DEV && Object.keys(byType).length > 0) {
+          console.log('[CollisionCheck] 衝突検出結果:', byType)
+        }
+      } catch (error) {
+        console.warn('[CollisionCheck] 衝突検出エラー:', error)
+      }
+    }
+
+    // debounce: 300ms待ってから実行
+    const timeoutId = setTimeout(checkCollisions, 300)
+    return () => clearTimeout(timeoutId)
+  }, [waypoints])
 
   // Toggle sidebar collapsed state
   const toggleSidebar = useCallback(() => {
