@@ -170,8 +170,18 @@ export interface Airport {
   surfaces?: AirportSurface[]
 }
 
+/** 制限表面の種類 */
+export type RestrictionSurfaceKind =
+  | 'approach' // 進入表面
+  | 'transitional' // 転移表面
+  | 'horizontal' // 水平表面
+  | 'conical' // 円錐表面
+  | 'outer_horizontal' // 外側水平表面
+  | 'extended_approach' // 延長進入表面
+  | 'other' // その他
+
 export interface AirportSurface {
-  type: 'horizontal' | 'conical' | 'approach' | 'transitional'
+  type: RestrictionSurfaceKind
   heightLimit: number // meters
   geometry: GeoJSON.Geometry
 }
@@ -340,6 +350,7 @@ export interface LayerVisibility {
   is3D: boolean
   showDID: boolean
   showAirportZones: boolean
+  showRestrictionSurfaces: boolean
   showRedZones: boolean
   showYellowZones: boolean
   showHeliports: boolean

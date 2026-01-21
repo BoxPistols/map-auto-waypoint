@@ -132,6 +132,22 @@ export {
 } from './services/noFlyZones'
 
 // ============================================
+// Services - Restriction Surfaces (制限表面)
+// ============================================
+export {
+  KOKUAREA_TILE_URL,
+  RESTRICTION_SURFACE_STYLES,
+  fillKokuareaTileUrl,
+  getVisibleTileCoordinates,
+  classifyRestrictionSurface,
+  enrichRestrictionSurfaceFeature,
+  fetchRestrictionSurfaceTiles,
+  getRestrictionSurfaceLayerStyles,
+  RestrictionSurfaceService
+} from './services/restrictionSurfaces'
+export type { RestrictionSurfaceKind, RestrictionSurfaceProperties } from './services/restrictionSurfaces'
+
+// ============================================
 // Services - Weather
 // ============================================
 export {
