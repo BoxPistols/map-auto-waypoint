@@ -340,6 +340,10 @@ const HelpModal = ({ onClose }) => {
                   <td>飛行要件サマリーを開く / 閉じる</td>
                 </tr>
                 <tr>
+                  <td><kbd>O</kbd></td>
+                  <td>天気予報パネルを開く / 閉じる</td>
+                </tr>
+                <tr>
                   <td><kbd>S</kbd></td>
                   <td>サイドバーを開く / 閉じる</td>
                 </tr>
