@@ -160,6 +160,42 @@ export {
 } from './services/weather'
 export type { WeatherOverlayId } from './services/weather'
 
+// Weather API (Open-Meteo)
+export {
+  fetchWeather,
+  fetchPrefectureWeather,
+  fetchAllPrefecturesWeather,
+  findNearestPrefecture,
+  isDroneFlightSafe,
+  getWeatherDescription,
+  formatHourlyTime,
+  formatDailyDate,
+  getPrefecturesByRegion,
+  getAllRegions,
+  WeatherApiService,
+  JAPAN_PREFECTURES
+} from './services/weatherApi'
+export type {
+  WeatherData,
+  HourlyForecast,
+  DailyForecast,
+  PrefectureWeather
+} from './services/weatherApi'
+
+// Sunrise/Sunset Service
+export {
+  fetchSunriseSunset,
+  getCivilTwilightEnd,
+  isDaylight,
+  getMinutesUntilTwilightEnd,
+  getGoldenHours,
+  getDroneFlightWindow,
+  formatSunTimes,
+  formatSunTimesDetailed,
+  SunriseSunsetService
+} from './services/sunriseSunset'
+export type { SunriseSunsetData, SunTimesRequest } from './services/sunriseSunset'
+
 // ============================================
 // Services - Custom Layers
 // ============================================
@@ -212,3 +248,18 @@ export type {
   PolygonCollisionResult,
   RBushItem
 } from './utils/collision'
+
+// ============================================
+// Utils - Mesh Code (JMA)
+// ============================================
+export {
+  latLngToMeshCode,
+  meshCodeToLatLng,
+  meshCodeToBBox,
+  getSurroundingMeshCodes,
+  isValidMeshCode,
+  getFirstLevelMeshCode,
+  getSecondLevelMeshCode,
+  MESH_LEVELS,
+  MeshCodeService
+} from './utils/meshCode'
