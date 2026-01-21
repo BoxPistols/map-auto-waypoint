@@ -17,6 +17,7 @@ import {
   Check,
   Minimize2,
   Maximize2,
+  ClipboardCheck,
 } from 'lucide-react';
 import {
   checkAllLegalRequirements,
@@ -52,7 +53,7 @@ function FlightRequirements({
   });
   const [showProcedures, setShowProcedures] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
-  const [minimized, setMinimized] = useState(false);
+  const [minimized, setMinimized] = useState(true);
 
   // チェック実行
   const runCheck = useCallback(async () => {
@@ -116,6 +117,21 @@ function FlightRequirements({
 
   // ステータスアイコン
   const getStatusIcon = (status) => {
+    switch (status) {
+      case 'ok':
+        return <CheckCircle className="status-icon ok" size={24} />;
+      case 'warning':
+        return <AlertTriangle className="status-icon warning" size={24} />;
+      case 'error':
+        return <XCircle className="status-icon error" size={24} />;
+      case 'info':
+        return <Info className="status-icon info" size={24} />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusIconSmall = (status) => {
     switch (status) {
       case 'ok':
         return <CheckCircle className="status-icon ok" size={16} />;
@@ -188,6 +204,40 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
 
   if (!isOpen) return null;
 
+  // 最小化時のフローティングアイコン
+  if (minimized) {
+    return (
+      <div
+        className="flight-requirements-minimized-icon"
+        onClick={() => setMinimized(false)}
+        title="飛行要件サマリーを表示"
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: sidebarCollapsed ? '80px' : '340px',
+          zIndex: 1000,
+          backgroundColor: 'var(--bg-primary, #fff)',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          borderRadius: '50%',
+          width: '48px',
+          height: '48px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          transition: 'left 0.3s ease',
+          border: '1px solid var(--border-color, #e0e0e0)',
+        }}
+      >
+        {results ? (
+          getStatusIcon(results.overallStatus)
+        ) : (
+          <ClipboardCheck size={24} color="var(--text-secondary, #666)" />
+        )}
+      </div>
+    );
+  }
+
   // ヘッダーアクション（最小化、更新ボタン）
   const headerActions = (
     <>
@@ -234,28 +284,19 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
       title="飛行要件サマリー"
       onClose={onClose}
       width={380}
-      maxHeight={minimized ? 'auto' : '70vh'}
+      maxHeight="70vh"
       bottom={20}
       left={sidebarCollapsed ? 80 : 340}
       headerActions={headerActions}
-      footer={!minimized ? footer : null}
-      className={`flight-requirements-panel ${minimized ? 'minimized' : ''}`}
+      footer={footer}
+      className="flight-requirements-panel"
     >
-      {minimized ? (
-        // 最小化時: ステータスのみ表示
-        results && (
-          <div className={`overall-status ${results.overallStatus}`}>
-            {getStatusIcon(results.overallStatus)}
-            <span className="status-text">{results.overallStatusText}</span>
-          </div>
-        )
-      ) : (
-        // 通常表示
+        {/* 通常表示 */}
         <div className="flight-requirements-content">
           {/* 全体ステータス */}
           {results && (
             <div className={`overall-status ${results.overallStatus}`}>
-              {getStatusIcon(results.overallStatus)}
+              {getStatusIconSmall(results.overallStatus)}
               <span className="status-text">{results.overallStatusText}</span>
               {results.procedures.length > 0 && (
                 <span className="procedure-count">
@@ -303,7 +344,7 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
                         <span>{category.categoryName}</span>
                       </div>
                       <div className="category-summary">
-                        {getStatusIcon(summary.status)}
+                        {getStatusIconSmall(summary.status)}
                         <span className={`summary-text ${summary.status}`}>
                           {summary.text}
                         </span>
@@ -320,7 +361,7 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
                         {category.items.map((item, idx) => (
                           <div key={idx} className={`item ${item.status}`}>
                             <div className="item-header">
-                              {getStatusIcon(item.status)}
+                              {getStatusIconSmall(item.status)}
                               <span className="item-name">{item.name}</span>
                               <span className={`item-status ${item.status}`}>
                                 {item.statusText}
@@ -488,7 +529,6 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
             </div>
           )}
         </div>
-      )}
     </GlassPanel>
   );
 }

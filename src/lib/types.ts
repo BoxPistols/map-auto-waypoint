@@ -601,16 +601,7 @@ export interface PolygonCollisionResult {
 // No-Fly Zone Types (Updated)
 // ============================================
 
-export type NoFlyZoneType = 'red' | 'yellow'
-
-export type NoFlyZoneCategory =
-  | 'imperial'      // 皇室施設
-  | 'government'    // 政府施設
-  | 'defense'       // 防衛施設
-  | 'us_military'   // 在日米軍施設
-  | 'nuclear'       // 原子力発電所
-  | 'political'     // 政党本部
-  | 'embassy'       // 外国公館
+// Note: DID data is based on 2020 (Reiwa 2) Census, but project targets 2026 regulations.
 
 export interface NoFlyFacility {
   /** Unique identifier */

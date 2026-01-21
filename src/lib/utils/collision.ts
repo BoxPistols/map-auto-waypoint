@@ -155,7 +155,13 @@ export function checkWaypointCollisionUnoptimized(
 
       if (isInside) {
         const zoneType = (feature.properties?.zoneType as CollisionType | undefined) ??
-          (feature.properties?.type as CollisionType | undefined) ?? 'DID'
+          (feature.properties?.type as CollisionType | undefined)
+
+        // zoneTypeが未定義の場合はスキップ
+        if (!zoneType) {
+          continue
+        }
+
         const areaName = (feature.properties?.name as string | undefined) ?? '不明なエリア'
         const priority = ZONE_PRIORITY[zoneType] ?? ZONE_PRIORITY.DEFAULT
         collisions.push({ zoneType, areaName, priority })
@@ -210,7 +216,13 @@ export function checkWaypointCollision(
     const isInside = turf.booleanPointInPolygon(point, candidate.feature)
     if (isInside) {
       const zoneType = (candidate.feature.properties?.zoneType as CollisionType | undefined) ??
-        (candidate.feature.properties?.type as CollisionType | undefined) ?? 'DID'
+        (candidate.feature.properties?.type as CollisionType | undefined)
+
+      // zoneTypeが未定義の場合はスキップ（誤検出防止）
+      if (!zoneType) {
+        continue
+      }
+
       const areaName = (candidate.feature.properties?.name as string | undefined) ?? '不明'
       const priority = ZONE_PRIORITY[zoneType] ?? ZONE_PRIORITY.DEFAULT
       collisions.push({ zoneType, areaName, priority })
@@ -319,7 +331,8 @@ export function checkPolygonCollision(
   let polygon
   try {
     polygon = turf.polygon(polygonCoords)
-  } catch {
+  } catch (error) {
+    console.warn('Invalid polygon coordinates:', error)
     return {
       isColliding: false,
       overlapArea: 0,
@@ -348,7 +361,6 @@ export function checkPolygonCollision(
              areaEstimate = turf.area(intersection)
           } else {
              // Fallback: if intersection exists but geometry calc fails, assume small overlap
-             // Log warning as requested
              console.warn('Intersection detected but geometry calculation failed', {
                polygon: polygon.geometry.type,
                feature: polyFeature.geometry.type

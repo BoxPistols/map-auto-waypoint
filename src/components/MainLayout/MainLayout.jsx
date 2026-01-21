@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getSetting, isDIDAvoidanceModeEnabled } from '../../services/settingsService'
-import { getDetailedCollisionResults } from '../../services/riskService'
+import { getDetailedCollisionResults, checkAllWaypointsDID } from '../../services/riskService'
 import Map from '../Map/Map'
 import SearchForm from '../SearchForm/SearchForm'
 import PolygonList from '../PolygonList/PolygonList'
@@ -29,6 +29,33 @@ import '../../App.scss'
 
 // Default center: Tokyo Tower
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
+
+// ポリゴンの境界からズームレベルを計算
+const calculateZoomForBounds = (geometry) => {
+  if (!geometry?.coordinates?.[0]) return 14
+
+  const coords = geometry.type === 'MultiPolygon'
+    ? geometry.coordinates.flat(2)
+    : geometry.coordinates[0]
+
+  if (coords.length === 0) return 14
+
+  const lats = coords.map(c => c[1])
+  const lngs = coords.map(c => c[0])
+
+  const latSpan = Math.max(...lats) - Math.min(...lats)
+  const lngSpan = Math.max(...lngs) - Math.min(...lngs)
+  const maxSpan = Math.max(latSpan, lngSpan)
+
+  // maxSpanに基づいてズームレベルを計算（パディング考慮）
+  if (maxSpan > 0.5) return 10
+  if (maxSpan > 0.2) return 11
+  if (maxSpan > 0.1) return 12
+  if (maxSpan > 0.05) return 13
+  if (maxSpan > 0.02) return 14
+  if (maxSpan > 0.01) return 15
+  return 16
+}
 
 // WP間の総距離を計算 (km)
 const calcTotalDistance = (wps) => {
@@ -118,7 +145,7 @@ function MainLayout() {
   const [highlightedWaypointIndex, setHighlightedWaypointIndex] = useState(null)
 
   // ============================================
-  // 自動衝突検出 (RBush空間インデックス使用)
+  // 自動衝突検出 (RBush空間インデックス + DID GeoJSON)
   // ============================================
   useEffect(() => {
     if (!waypoints || waypoints.length === 0) {
@@ -127,9 +154,12 @@ function MainLayout() {
       return
     }
 
+    let cancelled = false
+
     // 衝突検出を非同期で実行（パフォーマンス考慮）
-    const checkCollisions = () => {
+    const checkCollisions = async () => {
       try {
+        // 1. RBush空間インデックスによる空港・禁止区域検出
         const { results, byType } = getDetailedCollisionResults(waypoints)
 
         const newFlags = {}
@@ -150,12 +180,37 @@ function MainLayout() {
           }
         }
 
+        // 2. DID GeoJSONによるDID検出（非同期）
+        const didResult = await checkAllWaypointsDID(waypoints)
+
+        if (cancelled) return
+
+        if (didResult?.hasDIDWaypoints) {
+          for (const didWp of didResult.didWaypoints) {
+            const wp = waypoints.find(w => w.id === didWp.waypointId)
+            if (wp) {
+              // 既存のフラグにDIDを追加
+              if (newFlags[wp.id]) {
+                newFlags[wp.id].hasDID = true
+              } else {
+                newFlags[wp.id] = { hasDID: true, hasAirport: false, hasProhibited: false }
+              }
+              didSet.add(wp.index)
+            }
+          }
+        }
+
+        if (cancelled) return
+
         setWaypointIssueFlagsById(newFlags)
         setDidHighlightedWaypointIndices(didSet)
 
         // 衝突があった場合のみコンソールに出力（開発時）
-        if (import.meta.env.DEV && Object.keys(byType).length > 0) {
-          console.log('[CollisionCheck] 衝突検出結果:', byType)
+        if (import.meta.env.DEV && (Object.keys(byType).length > 0 || didResult?.hasDIDWaypoints)) {
+          console.log('[CollisionCheck] 衝突検出結果:', {
+            rbush: byType,
+            did: didResult?.hasDIDWaypoints ? `${didResult.didCount}件` : 'なし'
+          })
         }
       } catch (error) {
         console.warn('[CollisionCheck] 衝突検出エラー:', error)
@@ -164,7 +219,10 @@ function MainLayout() {
 
     // debounce: 300ms待ってから実行
     const timeoutId = setTimeout(checkCollisions, 300)
-    return () => clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      clearTimeout(timeoutId)
+    }
   }, [waypoints])
 
   // Toggle sidebar collapsed state
@@ -228,7 +286,8 @@ function MainLayout() {
     const center = getPolygonCenter(polygon.geometry)
     if (center) {
       setCenter(center)
-      setZoom(16)
+      const appropriateZoom = calculateZoomForBounds(polygon.geometry)
+      setZoom(appropriateZoom)
     }
 
     // Show notification with route optimization action
@@ -496,7 +555,9 @@ function MainLayout() {
     const center = getPolygonCenter(polygon)
     if (center) {
       setCenter(center)
-      setZoom(16)
+      // ポリゴン全体が見えるズームレベルを計算
+      const appropriateZoom = calculateZoomForBounds(polygon.geometry)
+      setZoom(appropriateZoom)
     }
     // 飛行要件パネルを表示
     setLastSearchResult(null)
@@ -637,9 +698,9 @@ function MainLayout() {
 
   // Handle waypoint select from sidebar - start editing parent polygon
   const handleWaypointSelect = useCallback((waypoint) => {
-    // Focus on waypoint location
+    // Focus on waypoint location (zoom 15で周辺も見える)
     setCenter({ lat: waypoint.lat, lng: waypoint.lng })
-    setZoom(18)
+    setZoom(15)
 
     // If waypoint belongs to a polygon, start editing that polygon
     if (waypoint.polygonId) {
@@ -1357,7 +1418,7 @@ function MainLayout() {
           if (waypoint) {
             // 地図の中心をWaypointに移動
             setCenter({ lat: waypoint.lat, lng: waypoint.lng })
-            setZoom(18) // より高いズームレベル
+            setZoom(15) // 周辺も見えるズームレベル
             // ハイライト表示
             setHighlightedWaypointIndex(wpIndex)
             // 3秒後にハイライトをクリア

@@ -584,6 +584,8 @@ export function generateRedZoneGeoJSON(): GeoJSON.FeatureCollection {
   }
 }
 
+const YELLOW_ZONE_BUFFER_KM = 0.3
+
 /**
  * Generate GeoJSON for yellow zones
  */
@@ -612,12 +614,12 @@ export function generateYellowZoneGeoJSON(): GeoJSON.FeatureCollection {
       name: facility.name + '周辺',
       nameEn: facility.nameEn ? facility.nameEn + ' (Perimeter)' : 'Perimeter',
       type: facility.type,
-      radiusKm: facility.radiusKm + 0.3, // 施設半径 + 0.3km周辺
+      radiusKm: facility.radiusKm + YELLOW_ZONE_BUFFER_KM, // 施設半径 + 0.3km周辺
       zone: 'yellow' as const,
       zoneType: 'YELLOW_ZONE',
       isPerimeter: true
     },
-    geometry: createCirclePolygon(facility.coordinates, facility.radiusKm + 0.3)
+    geometry: createCirclePolygon(facility.coordinates, facility.radiusKm + YELLOW_ZONE_BUFFER_KM)
   }))
 
   return {

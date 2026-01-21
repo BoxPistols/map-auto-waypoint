@@ -126,32 +126,18 @@ const fetchDIDGeoJSON = async (prefCode, prefName) => {
 
 /**
  * DID判定フォールバック
+ * GeoJSONデータが利用できない場合のデフォルト動作
+ * 誤検出を防ぐため、常にisDID=falseを返す
  */
-const checkDIDAreaFallback = (lat, lng) => {
-  const MAJOR_DID_AREAS = [
-    { name: '東京都心', lat: 35.6812, lng: 139.7671, radius: 15000 },
-    { name: '大阪市', lat: 34.6937, lng: 135.5023, radius: 15000 },
-    // 他主要都市...
-  ];
-
-  for (const did of MAJOR_DID_AREAS) {
-    const distance = getDistanceMeters(lat, lng, did.lat, did.lng);
-    if (distance < did.radius) {
-      return {
-        isDID: true,
-        area: did.name,
-        certainty: 'estimated',
-        source: 'fallback',
-        description: `${did.name}のDID内（推定）`
-      };
-    }
-  }
+const checkDIDAreaFallback = (_lat, _lng) => {
+  // GeoJSONデータが利用できない場合は、安全側に倒してDID外とする
+  // 以前は主要都市の円形エリアで推定していたが、誤検出の原因となっていた
   return {
     isDID: false,
     area: null,
-    certainty: 'estimated',
+    certainty: 'unknown',
     source: 'fallback',
-    description: 'DID外（推定）'
+    description: 'DID判定不可（GeoJSONデータなし）'
   };
 };
 

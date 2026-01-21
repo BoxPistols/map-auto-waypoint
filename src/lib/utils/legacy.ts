@@ -133,7 +133,9 @@ export function getExternalMapLinks(lat: number, lng: number): {
  * Check airspace restrictions for a given point
  * Returns both airport and no-fly zone restrictions
  *
- * @deprecated Use CollisionService.checkWaypointOptimized instead
+ * @deprecated Use CollisionService.checkWaypoint (Optimized) instead.
+ * This function uses unoptimized linear search and is retained for backward compatibility only.
+ *
  * @param lat Latitude
  * @param lng Longitude
  * @returns Array of restrictions found

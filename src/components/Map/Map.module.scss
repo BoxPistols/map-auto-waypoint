@@ -28,7 +28,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: #FF6B6B;
+  background: #3B82F6; // デフォルト: 青（セーフティゾーン - Tailwind blue-500）
   color: white;
   font-size: 12px;
   font-weight: bold;
@@ -86,11 +86,11 @@
     animation: didRingPulse 2s ease-in-out infinite;
   }
 
-  // 空港制限区域内のWP - オレンジ色
+  // 空港制限区域内のWP - オレンジ色 (Tailwind orange-500)
   &.inAirport {
-    background: #FF8C00;
-    border-color: #CC6600;
-    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.4), 0 4px 12px rgba(255, 140, 0, 0.3);
+    background: #F97316;
+    border-color: #EA580C;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.4), 0 4px 12px rgba(249, 115, 22, 0.3);
     animation: airportPulse 2s ease-in-out infinite;
   }
 
