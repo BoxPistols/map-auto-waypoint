@@ -212,3 +212,57 @@ export const formatDistance = (meters) => {
     return `${meters.toFixed(0)} m`
   }
 }
+
+/**
+ * Re-index waypoints to ensure globally unique sequential indices.
+ * Groups waypoints by polygon, sorts by local index, then assigns global index.
+ *
+ * @param {Array} waypoints - Array of waypoint objects
+ * @param {Object} options - Options
+ * @param {string} options.mode - 'global' (default) for continuous numbering, 'perPolygon' for per-polygon 1-based
+ * @returns {Array} Waypoints with updated indices
+ */
+export const reindexWaypoints = (waypoints, options = {}) => {
+  const { mode = 'global' } = options
+
+  if (!waypoints || waypoints.length === 0) {
+    return []
+  }
+
+  // Group waypoints by polygonId
+  const byPolygon = new Map()
+  for (const wp of waypoints) {
+    const key = wp.polygonId || wp.polygonName || 'default'
+    if (!byPolygon.has(key)) {
+      byPolygon.set(key, [])
+    }
+    byPolygon.get(key).push(wp)
+  }
+
+  // Sort each group by current index
+  for (const [key, wps] of byPolygon.entries()) {
+    byPolygon.set(key, wps.sort((a, b) => (a.index || 0) - (b.index || 0)))
+  }
+
+  // Re-index based on mode
+  const result = []
+
+  if (mode === 'perPolygon') {
+    // Per-polygon numbering (1-based for each polygon)
+    for (const [, wps] of byPolygon.entries()) {
+      wps.forEach((wp, i) => {
+        result.push({ ...wp, index: i + 1 })
+      })
+    }
+  } else {
+    // Global continuous numbering (default)
+    let globalIndex = 1
+    for (const [, wps] of byPolygon.entries()) {
+      for (const wp of wps) {
+        result.push({ ...wp, index: globalIndex++ })
+      }
+    }
+  }
+
+  return result
+}

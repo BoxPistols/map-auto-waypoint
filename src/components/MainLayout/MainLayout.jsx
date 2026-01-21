@@ -3,7 +3,7 @@ import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Su
 import { getSetting, isDIDAvoidanceModeEnabled } from '../../services/settingsService'
 import { getDetailedCollisionResults, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
 import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
-import Map from '../Map/Map'
+import MapComponent from '../Map/Map'
 import SearchForm from '../SearchForm/SearchForm'
 import PolygonList from '../PolygonList/PolygonList'
 import WaypointList from '../WaypointList/WaypointList'
@@ -13,7 +13,7 @@ import GridSettingsDialog from '../GridSettingsDialog/GridSettingsDialog'
 import HelpModal from '../HelpModal/HelpModal'
 import { saveSearchHistory } from '../../utils/storage'
 import { searchAddress } from '../../services/geocoding'
-import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints } from '../../services/waypointGenerator'
+import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints, reindexWaypoints } from '../../services/waypointGenerator'
 import { createPolygonFromSearchResult } from '../../services/polygonGenerator'
 import { addElevationToWaypoints } from '../../services/elevation'
 import FlightAssistant from '../FlightAssistant'
@@ -453,7 +453,7 @@ function MainLayout() {
 
     // Use generatePerimeterWaypoints to distribute waypoints evenly along the perimeter
     const newWaypoints = generatePerimeterWaypoints(polygon, waypointCount)
-    setWaypoints(prev => [...prev, ...newWaypoints])
+    setWaypoints(prev => reindexWaypoints([...prev, ...newWaypoints]))
 
     const center = getPolygonCenter(polygon.geometry)
     if (center) {
@@ -516,7 +516,7 @@ function MainLayout() {
   // Handle polygon delete
   const handlePolygonDelete = useCallback((id) => {
     setPolygons(prev => prev.filter(p => p.id !== id))
-    setWaypoints(prev => prev.filter(w => w.polygonId !== id))
+    setWaypoints(prev => reindexWaypoints(prev.filter(w => w.polygonId !== id)))
     if (selectedPolygonId === id) {
       setSelectedPolygonId(null)
     }
@@ -769,11 +769,11 @@ function MainLayout() {
     // Vertex-only generation
     const newWaypoints = polygonToWaypoints(polygon)
 
-    // Remove existing waypoints for this polygon
-    setWaypoints(prev => [
+    // Remove existing waypoints for this polygon and reindex
+    setWaypoints(prev => reindexWaypoints([
       ...prev.filter(w => w.polygonId !== polygon.id),
       ...newWaypoints
-    ])
+    ]))
     showNotification(`${newWaypoints.length} Waypointを生成しました`)
     setActivePanel('waypoints')
   }, [waypoints, setWaypoints, showNotification])
@@ -786,29 +786,22 @@ function MainLayout() {
     const { spacing, includeVertices } = settings
 
     let newWaypoints = []
-    let globalIndex = 1
 
     // Add vertex waypoints if requested
     if (includeVertices) {
       const vertexWaypoints = polygonToWaypoints(polygon)
-      vertexWaypoints.forEach(wp => {
-        wp.index = globalIndex++
-        newWaypoints.push(wp)
-      })
+      newWaypoints.push(...vertexWaypoints)
     }
 
     // Add grid waypoints
     const gridWaypoints = generateGridWaypoints(polygon, spacing)
-    gridWaypoints.forEach(wp => {
-      wp.index = globalIndex++
-      newWaypoints.push(wp)
-    })
+    newWaypoints.push(...gridWaypoints)
 
-    // Remove existing waypoints for this polygon and add new ones
-    setWaypoints(prev => [
+    // Remove existing waypoints for this polygon and reindex all
+    setWaypoints(prev => reindexWaypoints([
       ...prev.filter(w => w.polygonId !== polygon.id),
       ...newWaypoints
-    ])
+    ]))
 
     setShowGridSettings(null)
     setActivePanel('waypoints')
@@ -1009,12 +1002,12 @@ function MainLayout() {
         id: crypto.randomUUID(),
         lat: latlng.lat,
         lng: latlng.lng,
-        index: waypoints.length + 1,
+        index: 0, // Will be reindexed
         polygonId: null,
         polygonName: '手動追加',
         type: 'manual'
       }
-      setWaypoints(prev => [...prev, newWaypoint])
+      setWaypoints(prev => reindexWaypoints([...prev, newWaypoint]))
 
       // ダッシュボードに選択地点を設定
       setSelectedDashboardPoint({ lat: latlng.lat, lng: latlng.lng })
@@ -1024,7 +1017,7 @@ function MainLayout() {
 
       showNotification('Waypointを追加しました')
     }
-  }, [drawMode, waypoints.length, setWaypoints, showNotification, showDroneDashboard])
+  }, [drawMode, setWaypoints, showNotification, showDroneDashboard])
 
   // Mobile detection with resize listener
   useEffect(() => {
@@ -1301,7 +1294,7 @@ function MainLayout() {
 
         {/* Map */}
         <div className="map-section">
-          <Map
+          <MapComponent
             center={center}
             zoom={zoom}
             polygons={polygons}
@@ -1510,7 +1503,7 @@ function MainLayout() {
         onApplyRoute={(plan) => {
           // ルートのWaypointを追加
           if (plan.waypoints && plan.waypoints.length > 0) {
-            setWaypoints(prev => [...prev, ...plan.waypoints])
+            setWaypoints(prev => reindexWaypoints([...prev, ...plan.waypoints]))
             showNotification(`${plan.waypoints.length}個のWaypointを追加しました`, 'success')
           }
         }}
