@@ -1,12 +1,57 @@
 /**
  * リスク判定サービス
  * 飛行計画のリスク分析、申請コスト計算
+ *
+ * Phase 2対応: RBush空間インデックスによる高速衝突検出を使用
  */
 
-import { checkAirspaceRestrictions, AIRPORT_ZONES, getDistanceMeters } from '../lib';
+import {
+  checkAirspaceRestrictions,
+  AIRPORT_ZONES,
+  getDistanceMeters,
+  // 新しいCollisionService (RBush版)
+  CollisionService,
+  createSpatialIndex,
+  checkWaypointsCollisionBatch,
+  getCollisionSummary,
+  ZONE_PRIORITY,
+  // GeoJSON生成関数
+  generateAirportGeoJSON,
+  generateAllNoFlyGeoJSON
+} from '../lib';
 import { checkDIDArea } from './didService';
 import { getPolygonCenter, calculatePolygonArea as getPolygonArea } from './waypointGenerator';
 import { checkUTMConflicts } from './supportServices';
+
+// グローバル空間インデックス（初期化後に再利用）
+let globalSpatialIndex = null;
+
+/**
+ * 全禁止区域のGeoJSONを結合して生成
+ */
+const generateAllProhibitedAreasGeoJSON = () => {
+  const airportGeoJSON = generateAirportGeoJSON();
+  const noFlyGeoJSON = generateAllNoFlyGeoJSON();
+
+  return {
+    type: 'FeatureCollection',
+    features: [
+      ...airportGeoJSON.features,
+      ...noFlyGeoJSON.features
+    ]
+  };
+};
+
+/**
+ * 空間インデックスを取得（遅延初期化）
+ */
+const getSpatialIndex = () => {
+  if (!globalSpatialIndex) {
+    const prohibitedAreas = generateAllProhibitedAreasGeoJSON();
+    globalSpatialIndex = createSpatialIndex(prohibitedAreas);
+  }
+  return globalSpatialIndex;
+};
 
 /**
  * 申請区分と費用データ
@@ -56,15 +101,50 @@ export const findNearestAirport = (lat, lng) => {
 };
 
 /**
- * 全Waypointの空域制限をチェック
+ * 全Waypointの空域制限をチェック（RBush版）
+ * Phase 2: 空間インデックスによる高速バッチ処理
  */
 export const checkAllWaypointsRestrictions = (waypoints) => {
+  if (!waypoints || waypoints.length === 0) {
+    return [];
+  }
+
+  const spatialIndex = getSpatialIndex();
   const allRestrictions = [];
   const checkedZones = new Set();
 
+  // RBushによるバッチ衝突検出
+  const waypointsForCheck = waypoints.map(wp => ({
+    id: wp.id,
+    coordinates: [wp.lng, wp.lat]
+  }));
+
+  const batchResults = checkWaypointsCollisionBatch(waypointsForCheck, spatialIndex);
+
+  // 衝突結果を旧形式に変換（後方互換性）
+  // batchResultsはMap<string, WaypointCollisionResult>
+  for (const [waypointId, result] of batchResults.entries()) {
+    if (result.isColliding) {
+      const key = `${result.collisionType}-${result.areaName}`;
+      if (!checkedZones.has(key)) {
+        checkedZones.add(key);
+        allRestrictions.push({
+          type: result.collisionType === 'AIRPORT' || result.collisionType === 'MILITARY'
+            ? 'airport'
+            : 'prohibited',
+          name: result.areaName || result.collisionType,
+          severity: result.severity === 'DANGER' ? 'critical' : 'high',
+          distance: 0, // RBush版では距離計算なし
+          radius: 0
+        });
+      }
+    }
+  }
+
+  // フォールバック: レガシー版でも確認（補完）
   for (const wp of waypoints) {
-    const restrictions = checkAirspaceRestrictions(wp.lat, wp.lng);
-    for (const r of restrictions) {
+    const legacyRestrictions = checkAirspaceRestrictions(wp.lat, wp.lng);
+    for (const r of legacyRestrictions) {
       const key = `${r.type}-${r.name}`;
       if (!checkedZones.has(key)) {
         checkedZones.add(key);
@@ -72,6 +152,7 @@ export const checkAllWaypointsRestrictions = (waypoints) => {
       }
     }
   }
+
   return allRestrictions;
 };
 
@@ -263,3 +344,65 @@ export const calculateApplicationCosts = (analysisResult) => {
     tips: ['DIPSでの申請を推奨']
   };
 };
+
+// ============================================
+// 新規追加: RBush版衝突検出API（Phase 2）
+// ============================================
+
+/**
+ * Waypoint毎の詳細な衝突検出結果を取得
+ * @param {Array} waypoints - Waypointリスト
+ * @returns {Object} 詳細な衝突検出結果
+ */
+export const getDetailedCollisionResults = (waypoints) => {
+  if (!waypoints || waypoints.length === 0) {
+    return {
+      results: new Map(),
+      summary: { totalWaypoints: 0, collidingCount: 0, dangerCount: 0, warningCount: 0, safeCount: 0 },
+      byType: {}
+    };
+  }
+
+  const spatialIndex = getSpatialIndex();
+  const waypointsForCheck = waypoints.map(wp => ({
+    id: wp.id,
+    coordinates: [wp.lng, wp.lat]
+  }));
+
+  const batchResults = checkWaypointsCollisionBatch(waypointsForCheck, spatialIndex);
+  const summary = getCollisionSummary(waypointsForCheck, spatialIndex);
+
+  // タイプ別に集計
+  const byType = {};
+  for (const [waypointId, result] of batchResults.entries()) {
+    if (result.isColliding && result.collisionType) {
+      const type = result.collisionType;
+      if (!byType[type]) {
+        byType[type] = { count: 0, waypointIds: [], severity: result.severity };
+      }
+      byType[type].count++;
+      byType[type].waypointIds.push(waypointId);
+    }
+  }
+
+  return {
+    results: batchResults,
+    summary,
+    byType
+  };
+};
+
+/**
+ * 空間インデックスを強制リフレッシュ
+ * カスタムレイヤー追加時などに使用
+ */
+export const refreshSpatialIndex = () => {
+  const prohibitedAreas = generateAllProhibitedAreasGeoJSON();
+  globalSpatialIndex = createSpatialIndex(prohibitedAreas);
+  return globalSpatialIndex;
+};
+
+/**
+ * CollisionServiceを直接エクスポート
+ */
+export { CollisionService };

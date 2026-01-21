@@ -612,12 +612,12 @@ export function generateYellowZoneGeoJSON(): GeoJSON.FeatureCollection {
       name: facility.name + '周辺',
       nameEn: facility.nameEn ? facility.nameEn + ' (Perimeter)' : 'Perimeter',
       type: facility.type,
-      radiusKm: 0.5, // 0.2km敷地 + 0.3km周辺
+      radiusKm: facility.radiusKm + 0.3, // 施設半径 + 0.3km周辺
       zone: 'yellow' as const,
       zoneType: 'YELLOW_ZONE',
       isPerimeter: true
     },
-    geometry: createCirclePolygon(facility.coordinates, 0.5)
+    geometry: createCirclePolygon(facility.coordinates, facility.radiusKm + 0.3)
   }))
 
   return {

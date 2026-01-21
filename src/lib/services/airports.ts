@@ -21,6 +21,7 @@
  */
 
 import type { Airport } from '../types'
+import { calculateDistance, createCirclePolygon } from '../utils/geo'
 
 export type AirportMarkerProperties = {
   id: string
@@ -862,53 +863,6 @@ export const HELIPORTS: Airport[] = [
     radiusKm: 0.2
   }
 ]
-
-/**
- * Haversine式で2点間の距離を計算（キロメートル）
- */
-export function calculateDistance(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-): number {
-  const R = 6371 // 地球の半径（キロメートル）
-  const dLat = ((lat2 - lat1) * Math.PI) / 180
-  const dLng = ((lng2 - lng1) * Math.PI) / 180
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return R * c
-}
-
-/**
- * 円形ポリゴンを生成
- */
-export function createCirclePolygon(
-  center: [number, number],
-  radiusKm: number,
-  points: number = 64
-): GeoJSON.Polygon {
-  const coords: [number, number][] = []
-  const [lng, lat] = center
-
-  for (let i = 0; i <= points; i++) {
-    const angle = (i / points) * 2 * Math.PI
-    // キロメートルから度への変換（近似）
-    const latOffset = (radiusKm / 111.32) * Math.cos(angle)
-    const lngOffset = (radiusKm / (111.32 * Math.cos((lat * Math.PI) / 180))) * Math.sin(angle)
-    coords.push([lng + lngOffset, lat + latOffset])
-  }
-
-  return {
-    type: 'Polygon',
-    coordinates: [coords]
-  }
-}
 
 /**
  * Get all airports (major + regional + military)

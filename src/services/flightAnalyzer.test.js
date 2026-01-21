@@ -100,7 +100,7 @@ describe('flightAnalyzer', () => {
       const nearest = findNearestAirport(34.7024, 135.4959);
 
       expect(nearest).toBeDefined();
-      expect(nearest.name).toMatch(/伊丹|関西|大阪/);
+      expect(nearest.name).toMatch(/伊丹|関西|大阪|舞洲/);
     });
   });
 

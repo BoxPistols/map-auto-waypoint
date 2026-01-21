@@ -177,7 +177,7 @@ export interface AirportSurface {
 }
 
 /** @deprecated Use Airport with new structure */
-export type LegacyAirportType = 'airport' | 'airfield' | 'military'
+export type LegacyAirportType = 'airport' | 'airfield' | 'military' | 'heliport'
 
 /** @deprecated Use Airport with new structure */
 export interface LegacyAirport {
@@ -194,7 +194,8 @@ export interface LegacyAirport {
 
 export type NoFlyZoneType = 'red' | 'yellow'
 
-export interface NoFlyZone {
+/** @deprecated Use NoFlyFacility with new structure */
+export interface LegacyNoFlyZone {
   /** Name of the zone */
   name: string
   /** Latitude */
@@ -611,7 +612,7 @@ export type NoFlyZoneCategory =
   | 'political'     // 政党本部
   | 'embassy'       // 外国公館
 
-export interface NoFlyZone {
+export interface NoFlyFacility {
   /** Unique identifier */
   id: string
   /** Name of the zone (Japanese) */

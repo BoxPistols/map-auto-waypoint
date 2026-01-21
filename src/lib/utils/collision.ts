@@ -139,7 +139,7 @@ export function createSpatialIndex(prohibitedAreas: FeatureCollection): RBush<RB
 /**
  * Check waypoint collision (unoptimized - for small datasets)
  */
-export function checkWaypointCollision(
+export function checkWaypointCollisionUnoptimized(
   waypointCoords: [number, number],
   prohibitedAreas: FeatureCollection
 ): WaypointCollisionResult {
@@ -193,7 +193,7 @@ export function checkWaypointCollision(
  * Check waypoint collision (optimized with RBush spatial index)
  * O(log n) performance for large datasets
  */
-export function checkWaypointCollisionOptimized(
+export function checkWaypointCollision(
   waypointCoords: [number, number],
   spatialIndex: RBush<RBushItem>
 ): WaypointCollisionResult {
@@ -340,17 +340,26 @@ export function checkPolygonCollision(
         const polyFeature = feature as Feature<Polygon | MultiPolygon>
         if (turf.booleanIntersects(polygon, polyFeature)) {
           intersects = true
-          const intersection = turf.intersect(
-            turf.featureCollection([polygon, polyFeature])
-          )
-          const areaEstimate =
-            intersection
-              ? turf.area(intersection)
-              : Math.min(polygonArea, turf.area(polyFeature)) * 0.01
+          // Fix: turf.intersect takes two geometries/features directly in v6
+          const intersection = turf.intersect(polygon, polyFeature)
+          
+          let areaEstimate = 0
+          if (intersection) {
+             areaEstimate = turf.area(intersection)
+          } else {
+             // Fallback: if intersection exists but geometry calc fails, assume small overlap
+             // Log warning as requested
+             console.warn('Intersection detected but geometry calculation failed', {
+               polygon: polygon.geometry.type,
+               feature: polyFeature.geometry.type
+             })
+             // Use 1% of the smaller area as a fallback estimate
+             areaEstimate = Math.min(polygonArea, turf.area(polyFeature)) * 0.01
+          }
           overlapArea += areaEstimate
         }
-      } catch {
-        // Skip invalid geometries
+      } catch (error) {
+        console.warn('Error in polygon collision check', error)
       }
     }
   }
@@ -390,7 +399,7 @@ export function checkWaypointsCollisionBatch(
   const results = new Map<string, WaypointCollisionResult>()
 
   for (const waypoint of waypoints) {
-    const result = checkWaypointCollisionOptimized(waypoint.coordinates, spatialIndex)
+    const result = checkWaypointCollision(waypoint.coordinates, spatialIndex)
     results.set(waypoint.id, result)
   }
 
@@ -405,7 +414,7 @@ export function hasAnyCollision(
   spatialIndex: RBush<RBushItem>
 ): boolean {
   for (const waypoint of waypoints) {
-    const result = checkWaypointCollisionOptimized(waypoint.coordinates, spatialIndex)
+    const result = checkWaypointCollision(waypoint.coordinates, spatialIndex)
     if (result.isColliding) {
       return true
     }
@@ -434,7 +443,7 @@ export function getCollisionSummary(
   const collisionsByType = new Map<CollisionType, number>()
 
   for (const waypoint of waypoints) {
-    const result = checkWaypointCollisionOptimized(waypoint.coordinates, spatialIndex)
+    const result = checkWaypointCollision(waypoint.coordinates, spatialIndex)
 
     if (result.isColliding) {
       collidingCount++
@@ -528,8 +537,8 @@ export function getZoneTypeLabel(zoneType: CollisionType): string {
 
 export const CollisionService = {
   createSpatialIndex,
-  checkWaypoint: checkWaypointCollision,
-  checkWaypointOptimized: checkWaypointCollisionOptimized,
+  checkWaypoint: checkWaypointCollision, // Points to the optimized version now
+  checkWaypointUnoptimized: checkWaypointCollisionUnoptimized,
   checkPath: checkPathCollision,
   checkPolygon: checkPolygonCollision,
   checkBatch: checkWaypointsCollisionBatch,

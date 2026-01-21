@@ -70,7 +70,7 @@ function convertAirportToLegacy(airport: Airport): LegacyAirport {
  * Get all airports in legacy format for backward compatibility
  */
 export function getLegacyAirportZones(): LegacyAirport[] {
-  const allAirports = [...MAJOR_AIRPORTS, ...REGIONAL_AIRPORTS, ...MILITARY_BASES]
+  const allAirports = [...MAJOR_AIRPORTS, ...REGIONAL_AIRPORTS, ...MILITARY_BASES, ...HELIPORTS]
   return allAirports.map(convertAirportToLegacy)
 }
 
@@ -133,6 +133,7 @@ export function getExternalMapLinks(lat: number, lng: number): {
  * Check airspace restrictions for a given point
  * Returns both airport and no-fly zone restrictions
  *
+ * @deprecated Use CollisionService.checkWaypointOptimized instead
  * @param lat Latitude
  * @param lng Longitude
  * @returns Array of restrictions found
