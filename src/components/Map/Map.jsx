@@ -579,10 +579,8 @@ const Map = ({
           e.preventDefault()
           toggleLayer('showRainCloud')
           break
-        case 'o': // Wind toggle
-          e.preventDefault()
-          toggleLayer('showWind')
-          break
+        // 'o' key is reserved for Weather Forecast panel (MainLayout.jsx)
+        // Wind toggle will be re-enabled when the feature is implemented
         case 't': // Radio zones (LTE) toggle
           e.preventDefault()
           toggleLayer('showRadioZones')
