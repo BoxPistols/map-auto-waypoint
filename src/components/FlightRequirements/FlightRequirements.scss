@@ -1,92 +1,84 @@
-.flight-requirements {
-  position: fixed;
-  top: 60px;
-  left: 340px;
-  width: 400px;
-  max-height: calc(100vh - 80px);
-  background: var(--bg-primary, #ffffff);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--border-color, #e0e0e0);
-  transition: left 0.3s ease, max-height 0.3s ease;
-
-  // サイドバー折りたたみ時
-  &.sidebar-collapsed {
-    left: 70px;
-  }
-
-  // 最小化時
+// GlassPanelベースのFlightRequirements
+.flight-requirements-panel {
+  // 最小化時のスタイル調整
   &.minimized {
-    max-height: none;
-    overflow: visible;
-
-    .overall-status,
-    .loading-state,
-    .error-state,
-    .categories,
-    .procedures-section,
-    .external-links,
-    .requirements-footer {
+    .flight-requirements-content {
       display: none;
     }
   }
 
   // モバイル対応
   @media (max-width: 768px) {
-    left: 16px;
+    left: 16px !important;
     right: 16px;
-    width: auto;
-    top: auto;
-    bottom: 80px;
-    max-height: 60vh;
-
-    &.sidebar-collapsed {
-      left: 16px;
-    }
+    width: auto !important;
+    bottom: 80px !important;
   }
 }
 
-// ヘッダー
-.requirements-header {
+// ヘッダーアクションボタン
+.header-action-btn {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.7);
+  border-radius: 6px;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
-  background: var(--bg-secondary, #f8f9fa);
+  justify-content: center;
 
-  h3 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin: 0;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-primary, #1a1a1a);
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 1);
   }
 
-  .header-actions {
-    display: flex;
-    gap: 4px;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 
-    button {
-      background: none;
-      border: none;
-      padding: 6px;
-      cursor: pointer;
-      color: var(--text-secondary, #666);
-      border-radius: 6px;
-      transition: all 0.2s;
+  .spinning {
+    animation: spin 1s linear infinite;
+  }
+}
+
+// ライトモード対応
+:global([data-theme="light"]) .header-action-btn {
+  color: rgba(0, 0, 0, 0.54);
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.87);
+  }
+}
+
+// フッターコンテンツ
+.requirements-footer-content {
+  .disclaimer {
+    margin: 0 0 4px;
+
+    a {
+      color: #4fc3f7;
+      text-decoration: none;
 
       &:hover {
-        background: var(--bg-hover, #e9ecef);
-        color: var(--text-primary, #1a1a1a);
+        text-decoration: underline;
       }
     }
+  }
+
+  .checked-at {
+    margin: 0;
+    opacity: 0.7;
+    font-size: 10px;
+  }
+}
+
+:global([data-theme="light"]) .requirements-footer-content {
+  .disclaimer a {
+    color: #0288d1;
   }
 }
 

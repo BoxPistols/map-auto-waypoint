@@ -13,7 +13,6 @@ import {
   FileText,
   Clock,
   RefreshCw,
-  X,
   Clipboard,
   Check,
   Minimize2,
@@ -24,6 +23,7 @@ import {
   generateExternalLinks,
 } from '../../services/legalRequirements';
 import { getPolygonCenter } from '../../services/waypointGenerator';
+import { GlassPanel } from '../GlassPanel';
 import './FlightRequirements.scss';
 
 /**
@@ -188,297 +188,308 @@ ${procedure.link ? `参考: ${procedure.link}` : ''}`;
 
   if (!isOpen) return null;
 
-  const panelClasses = [
-    'flight-requirements',
-    sidebarCollapsed ? 'sidebar-collapsed' : '',
-    minimized ? 'minimized' : '',
-  ].filter(Boolean).join(' ');
+  // ヘッダーアクション（最小化、更新ボタン）
+  const headerActions = (
+    <>
+      <button
+        className="header-action-btn"
+        onClick={() => setMinimized(!minimized)}
+        title={minimized ? '展開' : '最小化'}
+      >
+        {minimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+      </button>
+      <button
+        className="header-action-btn"
+        onClick={runCheck}
+        disabled={isLoading || (!polygon && !searchResult)}
+        title={!polygon && !searchResult ? 'ポリゴンまたは検索結果が必要です' : '再チェック'}
+      >
+        <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
+      </button>
+    </>
+  );
+
+  // フッター
+  const footer = results && (
+    <div className="requirements-footer-content">
+      <p className="disclaimer">
+        ※ 本チェックは参考情報です。最終的な判断は
+        <a
+          href="https://www.ossportal.dips.mlit.go.jp/portal/top/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          DIPS 2.0
+        </a>
+        等の公式情報をご確認ください。
+      </p>
+      <p className="checked-at">
+        チェック日時: {new Date(results.checkedAt).toLocaleString('ja-JP')}
+      </p>
+    </div>
+  );
 
   return (
-    <div className={panelClasses}>
-      <div className="requirements-header">
-        <h3>
-          <FileText size={18} />
-          飛行要件サマリー
-        </h3>
-        <div className="header-actions">
-          <button
-            className="minimize-btn"
-            onClick={() => setMinimized(!minimized)}
-            title={minimized ? '展開' : '最小化'}
-          >
-            {minimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
-          </button>
-          <button
-            className="refresh-btn"
-            onClick={runCheck}
-            disabled={isLoading || (!polygon && !searchResult)}
-            title={!polygon && !searchResult ? 'ポリゴンまたは検索結果が必要です' : '再チェック'}
-          >
-            <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
-          </button>
-          <button className="close-btn" onClick={onClose} title="閉じる">
-            <X size={18} />
-          </button>
-        </div>
-      </div>
-
-      {/* 全体ステータス */}
-      {results && (
-        <div className={`overall-status ${results.overallStatus}`}>
-          {getStatusIcon(results.overallStatus)}
-          <span className="status-text">{results.overallStatusText}</span>
-          {results.procedures.length > 0 && (
-            <span className="procedure-count">
-              {results.procedures.length}件の手続き
-            </span>
+    <GlassPanel
+      title="飛行要件サマリー"
+      onClose={onClose}
+      width={380}
+      maxHeight={minimized ? 'auto' : '70vh'}
+      bottom={20}
+      left={sidebarCollapsed ? 80 : 340}
+      headerActions={headerActions}
+      footer={!minimized ? footer : null}
+      className={`flight-requirements-panel ${minimized ? 'minimized' : ''}`}
+    >
+      {minimized ? (
+        // 最小化時: ステータスのみ表示
+        results && (
+          <div className={`overall-status ${results.overallStatus}`}>
+            {getStatusIcon(results.overallStatus)}
+            <span className="status-text">{results.overallStatusText}</span>
+          </div>
+        )
+      ) : (
+        // 通常表示
+        <div className="flight-requirements-content">
+          {/* 全体ステータス */}
+          {results && (
+            <div className={`overall-status ${results.overallStatus}`}>
+              {getStatusIcon(results.overallStatus)}
+              <span className="status-text">{results.overallStatusText}</span>
+              {results.procedures.length > 0 && (
+                <span className="procedure-count">
+                  {results.procedures.length}件の手続き
+                </span>
+              )}
+            </div>
           )}
-        </div>
-      )}
 
-      {/* ローディング */}
-      {isLoading && (
-        <div className="loading-state">
-          <RefreshCw className="spinning" size={24} />
-          <span>チェック中...</span>
-        </div>
-      )}
+          {/* ローディング */}
+          {isLoading && (
+            <div className="loading-state">
+              <RefreshCw className="spinning" size={24} />
+              <span>チェック中...</span>
+            </div>
+          )}
 
-      {/* エラー */}
-      {error && (
-        <div className="error-state">
-          <XCircle size={20} />
-          <span>{error}</span>
-          <button onClick={runCheck}>再試行</button>
-        </div>
-      )}
+          {/* エラー */}
+          {error && (
+            <div className="error-state">
+              <XCircle size={20} />
+              <span>{error}</span>
+              <button onClick={runCheck}>再試行</button>
+            </div>
+          )}
 
-      {/* カテゴリ別結果 */}
-      {results && !isLoading && (
-        <div className="categories">
-          {results.categories.map((category) => {
-            const summary = getCategorySummary(category);
-            const isExpanded = expandedCategories[category.category];
+          {/* カテゴリ別結果 */}
+          {results && !isLoading && (
+            <div className="categories">
+              {results.categories.map((category) => {
+                const summary = getCategorySummary(category);
+                const isExpanded = expandedCategories[category.category];
 
-            return (
-              <div
-                key={category.category}
-                className={`category ${summary.status}`}
-              >
-                <div
-                  className="category-header"
-                  onClick={() => toggleCategory(category.category)}
-                >
-                  <div className="category-title">
-                    {getCategoryIcon(category.categoryIcon)}
-                    <span>{category.categoryName}</span>
-                  </div>
-                  <div className="category-summary">
-                    {getStatusIcon(summary.status)}
-                    <span className={`summary-text ${summary.status}`}>
-                      {summary.text}
-                    </span>
-                    {isExpanded ? (
-                      <ChevronUp size={16} />
-                    ) : (
-                      <ChevronDown size={16} />
-                    )}
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="category-items">
-                    {category.items.map((item, idx) => (
-                      <div key={idx} className={`item ${item.status}`}>
-                        <div className="item-header">
-                          {getStatusIcon(item.status)}
-                          <span className="item-name">{item.name}</span>
-                          <span className={`item-status ${item.status}`}>
-                            {item.statusText}
-                          </span>
-                        </div>
-                        {item.description && (
-                          <p className="item-description">{item.description}</p>
-                        )}
-                        {item.action && (
-                          <p className="item-action">
-                            <span className="action-label">対応:</span>
-                            {item.action}
-                          </p>
-                        )}
-                        {item.notes && (
-                          <ul className="item-notes">
-                            {item.notes.map((note, i) => (
-                              <li key={i}>{note}</li>
-                            ))}
-                          </ul>
-                        )}
-                        {item.link && (
-                          <a
-                            href={item.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="item-link"
-                          >
-                            {item.linkText || 'リンク'}
-                            <ExternalLink size={12} />
-                          </a>
+                return (
+                  <div
+                    key={category.category}
+                    className={`category ${summary.status}`}
+                  >
+                    <div
+                      className="category-header"
+                      onClick={() => toggleCategory(category.category)}
+                    >
+                      <div className="category-title">
+                        {getCategoryIcon(category.categoryIcon)}
+                        <span>{category.categoryName}</span>
+                      </div>
+                      <div className="category-summary">
+                        {getStatusIcon(summary.status)}
+                        <span className={`summary-text ${summary.status}`}>
+                          {summary.text}
+                        </span>
+                        {isExpanded ? (
+                          <ChevronUp size={16} />
+                        ) : (
+                          <ChevronDown size={16} />
                         )}
                       </div>
-                    ))}
+                    </div>
+
+                    {isExpanded && (
+                      <div className="category-items">
+                        {category.items.map((item, idx) => (
+                          <div key={idx} className={`item ${item.status}`}>
+                            <div className="item-header">
+                              {getStatusIcon(item.status)}
+                              <span className="item-name">{item.name}</span>
+                              <span className={`item-status ${item.status}`}>
+                                {item.statusText}
+                              </span>
+                            </div>
+                            {item.description && (
+                              <p className="item-description">{item.description}</p>
+                            )}
+                            {item.action && (
+                              <p className="item-action">
+                                <span className="action-label">対応:</span>
+                                {item.action}
+                              </p>
+                            )}
+                            {item.notes && (
+                              <ul className="item-notes">
+                                {item.notes.map((note, i) => (
+                                  <li key={i}>{note}</li>
+                                ))}
+                              </ul>
+                            )}
+                            {item.link && (
+                              <a
+                                href={item.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="item-link"
+                              >
+                                {item.linkText || 'リンク'}
+                                <ExternalLink size={12} />
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 必要手続き一覧 */}
+          {results && results.procedures.length > 0 && (
+            <div className="procedures-section">
+              <div
+                className="procedures-header"
+                onClick={() => setShowProcedures(!showProcedures)}
+              >
+                <h4>
+                  <FileText size={16} />
+                  必要な手続き
+                  <span className="count">{results.procedures.length}</span>
+                </h4>
+                {showProcedures ? (
+                  <ChevronUp size={16} />
+                ) : (
+                  <ChevronDown size={16} />
                 )}
               </div>
-            );
-          })}
-        </div>
-      )}
 
-      {/* 必要手続き一覧 */}
-      {results && results.procedures.length > 0 && (
-        <div className="procedures-section">
-          <div
-            className="procedures-header"
-            onClick={() => setShowProcedures(!showProcedures)}
-          >
-            <h4>
-              <FileText size={16} />
-              必要な手続き
-              <span className="count">{results.procedures.length}</span>
-            </h4>
-            {showProcedures ? (
-              <ChevronUp size={16} />
-            ) : (
-              <ChevronDown size={16} />
-            )}
-          </div>
+              {showProcedures && (
+                <div className="procedures-list">
+                  {results.procedures.map((procedure) => (
+                    <div
+                      key={procedure.id}
+                      className={`procedure ${procedure.priority}`}
+                    >
+                      <div className="procedure-header">
+                        <span
+                          className={`priority-badge ${procedure.priority}`}
+                        >
+                          {procedure.priority === 'critical'
+                            ? '最優先'
+                            : procedure.priority === 'high'
+                            ? '高'
+                            : '中'}
+                        </span>
+                        <span className="procedure-name">{procedure.name}</span>
+                        <button
+                          className="copy-btn"
+                          onClick={() => copyProcedure(procedure)}
+                          title="コピー"
+                        >
+                          {copiedId === procedure.id ? (
+                            <Check size={14} />
+                          ) : (
+                            <Clipboard size={14} />
+                          )}
+                        </button>
+                      </div>
 
-          {showProcedures && (
-            <div className="procedures-list">
-              {results.procedures.map((procedure) => (
-                <div
-                  key={procedure.id}
-                  className={`procedure ${procedure.priority}`}
-                >
-                  <div className="procedure-header">
-                    <span
-                      className={`priority-badge ${procedure.priority}`}
-                    >
-                      {procedure.priority === 'critical'
-                        ? '最優先'
-                        : procedure.priority === 'high'
-                        ? '高'
-                        : '中'}
-                    </span>
-                    <span className="procedure-name">{procedure.name}</span>
-                    <button
-                      className="copy-btn"
-                      onClick={() => copyProcedure(procedure)}
-                      title="コピー"
-                    >
-                      {copiedId === procedure.id ? (
-                        <Check size={14} />
-                      ) : (
-                        <Clipboard size={14} />
+                      <p className="procedure-description">
+                        {procedure.description}
+                      </p>
+
+                      <div className="procedure-meta">
+                        <span className="estimated-days">
+                          <Clock size={12} />
+                          約{procedure.estimatedDays}日
+                        </span>
+                      </div>
+
+                      <div className="procedure-steps">
+                        <strong>手順:</strong>
+                        <ol>
+                          {procedure.steps.map((step, i) => (
+                            <li key={i}>{step}</li>
+                          ))}
+                        </ol>
+                      </div>
+
+                      {procedure.documents && procedure.documents.length > 0 && (
+                        <div className="procedure-documents">
+                          <strong>必要書類:</strong>
+                          <ul>
+                            {procedure.documents.map((doc, i) => (
+                              <li key={i}>{doc}</li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
-                    </button>
-                  </div>
 
-                  <p className="procedure-description">
-                    {procedure.description}
-                  </p>
+                      {procedure.notes && (
+                        <p className="procedure-notes">※ {procedure.notes}</p>
+                      )}
 
-                  <div className="procedure-meta">
-                    <span className="estimated-days">
-                      <Clock size={12} />
-                      約{procedure.estimatedDays}日
-                    </span>
-                  </div>
-
-                  <div className="procedure-steps">
-                    <strong>手順:</strong>
-                    <ol>
-                      {procedure.steps.map((step, i) => (
-                        <li key={i}>{step}</li>
-                      ))}
-                    </ol>
-                  </div>
-
-                  {procedure.documents && procedure.documents.length > 0 && (
-                    <div className="procedure-documents">
-                      <strong>必要書類:</strong>
-                      <ul>
-                        {procedure.documents.map((doc, i) => (
-                          <li key={i}>{doc}</li>
-                        ))}
-                      </ul>
+                      {procedure.link && (
+                        <a
+                          href={procedure.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="procedure-link"
+                        >
+                          {procedure.linkText}
+                          <ExternalLink size={12} />
+                        </a>
+                      )}
                     </div>
-                  )}
-
-                  {procedure.notes && (
-                    <p className="procedure-notes">※ {procedure.notes}</p>
-                  )}
-
-                  {procedure.link && (
-                    <a
-                      href={procedure.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="procedure-link"
-                    >
-                      {procedure.linkText}
-                      <ExternalLink size={12} />
-                    </a>
-                  )}
+                  ))}
                 </div>
-              ))}
+              )}
+            </div>
+          )}
+
+          {/* 外部リンク */}
+          {results && (
+            <div className="external-links">
+              <h4>参考リンク</h4>
+              <div className="links-grid">
+                {generateExternalLinks(results).map((link) => (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="external-link"
+                  >
+                    <span className="link-name">{link.name}</span>
+                    <span className="link-desc">{link.description}</span>
+                    <ExternalLink size={12} />
+                  </a>
+                ))}
+              </div>
             </div>
           )}
         </div>
       )}
-
-      {/* 外部リンク */}
-      {results && (
-        <div className="external-links">
-          <h4>参考リンク</h4>
-          <div className="links-grid">
-            {generateExternalLinks(results).map((link) => (
-              <a
-                key={link.id}
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="external-link"
-              >
-                <span className="link-name">{link.name}</span>
-                <span className="link-desc">{link.description}</span>
-                <ExternalLink size={12} />
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* フッター */}
-      {results && (
-        <div className="requirements-footer">
-          <p className="disclaimer">
-            ※ 本チェックは参考情報です。最終的な判断は
-            <a
-              href="https://www.ossportal.dips.mlit.go.jp/portal/top/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              DIPS 2.0
-            </a>
-            等の公式情報をご確認ください。
-          </p>
-          <p className="checked-at">
-            チェック日時: {new Date(results.checkedAt).toLocaleString('ja-JP')}
-          </p>
-        </div>
-      )}
-    </div>
+    </GlassPanel>
   );
 }
 
