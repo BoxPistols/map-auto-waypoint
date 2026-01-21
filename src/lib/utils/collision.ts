@@ -44,6 +44,7 @@ export interface PolygonCollisionResult {
   overlapRatio: number
   severity: CollisionSeverity
   message: string
+  intersectionPolygons?: Feature<Polygon | MultiPolygon>[]
 }
 
 // RBush item type for spatial indexing
@@ -344,6 +345,7 @@ export function checkPolygonCollision(
 
   let overlapArea = 0
   const polygonArea = turf.area(polygon)
+  const intersectionPolygons: Feature<Polygon | MultiPolygon>[] = []
 
   let intersects = false
   for (const feature of prohibitedAreas.features) {
@@ -355,10 +357,12 @@ export function checkPolygonCollision(
           intersects = true
           // Fix: turf.intersect takes two geometries/features directly in v6
           const intersection = turf.intersect(polygon, polyFeature)
-          
+
           let areaEstimate = 0
           if (intersection) {
              areaEstimate = turf.area(intersection)
+             // Collect intersection polygon for visualization
+             intersectionPolygons.push(intersection as Feature<Polygon | MultiPolygon>)
           } else {
              // Fallback: if intersection exists but geometry calc fails, assume small overlap
              console.warn('Intersection detected but geometry calculation failed', {
@@ -384,7 +388,8 @@ export function checkPolygonCollision(
       overlapArea,
       overlapRatio,
       severity: overlapRatio > 0.2 ? 'DANGER' : 'WARNING',
-      message: `ポリゴンが禁止エリアと${Math.round(overlapRatio * 100)}%重複しています`
+      message: `ポリゴンが禁止エリアと${Math.round(overlapRatio * 100)}%重複しています`,
+      intersectionPolygons
     }
   }
 

@@ -15,6 +15,7 @@ import {
   checkWaypointsCollisionBatch,
   getCollisionSummary,
   checkPathCollision,
+  checkPolygonCollision,
   ZONE_PRIORITY,
   // GeoJSON生成関数
   generateAirportGeoJSON,
@@ -246,6 +247,69 @@ export const checkFlightPathCollision = (waypoints) => {
     affectedSegments,
     severity: result.severity,
     message: result.message
+  };
+};
+
+/**
+ * 全ポリゴンが禁止エリアと重複しているか判定
+ * @param {Array} polygons - ポリゴン配列
+ * @returns {Object} 衝突結果 { hasCollisions, polygonResults, totalOverlapArea, intersectionPolygons }
+ */
+export const checkAllPolygonsCollision = (polygons) => {
+  if (!polygons || polygons.length === 0) {
+    return {
+      hasCollisions: false,
+      polygonResults: [],
+      totalOverlapArea: 0,
+      intersectionPolygons: []
+    };
+  }
+
+  // 禁止エリアのGeoJSONを取得
+  const prohibitedAreas = generateAllProhibitedAreasGeoJSON();
+
+  const polygonResults = [];
+  let totalOverlapArea = 0;
+  const allIntersectionPolygons = [];
+
+  for (const polygon of polygons) {
+    if (!polygon?.geometry?.coordinates?.[0]) continue;
+
+    const result = checkPolygonCollision(
+      polygon.geometry.coordinates,
+      prohibitedAreas
+    );
+
+    if (result.isColliding) {
+      polygonResults.push({
+        polygonId: polygon.id,
+        polygonName: polygon.name,
+        ...result
+      });
+      totalOverlapArea += result.overlapArea;
+
+      // 交差ポリゴンを収集（可視化用）
+      if (result.intersectionPolygons) {
+        result.intersectionPolygons.forEach(ip => {
+          allIntersectionPolygons.push({
+            ...ip,
+            properties: {
+              ...ip.properties,
+              polygonId: polygon.id,
+              overlapRatio: result.overlapRatio,
+              severity: result.severity
+            }
+          });
+        });
+      }
+    }
+  }
+
+  return {
+    hasCollisions: polygonResults.length > 0,
+    polygonResults,
+    totalOverlapArea,
+    intersectionPolygons: allIntersectionPolygons
   };
 };
 
