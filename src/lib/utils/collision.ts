@@ -532,6 +532,13 @@ export function getZoneTypeLabel(zoneType: CollisionType): string {
 }
 
 // ============================================
+// Alias Exports (for backward compatibility)
+// ============================================
+
+// checkWaypointCollision IS the optimized version (uses RBush)
+export const checkWaypointCollisionOptimized = checkWaypointCollision
+
+// ============================================
 // Service Export
 // ============================================
 
