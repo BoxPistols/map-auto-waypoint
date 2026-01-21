@@ -1,6 +1,6 @@
 /**
- * ドローン運用ダッシュボード
- * 飛行安全性の総合評価パネル
+ * 飛行安全性チェッカー
+ * 地点の飛行可否を総合評価
  */
 
 import { useState, useMemo } from 'react'
@@ -39,7 +39,7 @@ export default function DroneOperationDashboard({
     <div className={`${styles.dashboard} ${darkMode ? styles.dark : ''}`}>
       {/* ヘッダー */}
       <div className={styles.header}>
-        <h3 className={styles.title}>ドローン運用ダッシュボード</h3>
+        <h3 className={styles.title}>飛行安全性チェッカー</h3>
         <div className={styles.headerActions}>
           <button
             className={styles.iconButton}

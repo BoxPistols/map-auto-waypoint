@@ -86,7 +86,7 @@ export default function FlightPlanChecker({ lat, lng, darkMode = false, compact 
       </div>
 
       {/* 詳細理由 */}
-      {!compact && safety.reasons.length > 0 && (
+      {!compact && safety.reasons?.length > 0 && (
         <div className={styles.reasons}>
           <h4 className={styles.reasonsTitle}>詳細</h4>
           <ul className={styles.reasonsList}>

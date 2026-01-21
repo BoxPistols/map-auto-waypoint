@@ -32,11 +32,11 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 6px 16px;
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
   color: var(--color-header-text);
   z-index: 100;
   flex-shrink: 0;
@@ -44,8 +44,8 @@ body {
 
 // Light mode header
 [data-theme="light"] .app-header {
-  background: rgba(30, 41, 59, 0.85);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(30, 41, 59, 0.65);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .app-title {

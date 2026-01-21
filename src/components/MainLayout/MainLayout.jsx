@@ -638,7 +638,7 @@ function MainLayout() {
             e.preventDefault()
             setShowWeatherForecast(prev => !prev)
             break
-          case 'u': // Toggle Drone Dashboard
+          case 'k': // Toggle Safety Checker
             e.preventDefault()
             setShowDroneDashboard(prev => !prev)
             break
@@ -1485,7 +1485,7 @@ function MainLayout() {
         sidebarCollapsed={sidebarCollapsed}
       />
 
-      {/* Drone Operation Dashboard (ドローン運用ダッシュボード) */}
+      {/* Safety Checker (飛行安全性チェッカー) */}
       {showDroneDashboard && (
         <DroneOperationDashboard
           selectedPoint={selectedDashboardPoint}
