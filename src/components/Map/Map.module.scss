@@ -86,11 +86,11 @@
     animation: didRingPulse 2s ease-in-out infinite;
   }
 
-  // 空港制限区域内のWP - オレンジ色 (Tailwind orange-500)
+  // 空港制限区域内のWP - 紫色 (Tailwind purple-500)
   &.inAirport {
-    background: #F97316;
-    border-color: #EA580C;
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.4), 0 4px 12px rgba(249, 115, 22, 0.3);
+    background: #A855F7;
+    border-color: #9333EA;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.4), 0 4px 12px rgba(168, 85, 247, 0.3);
     animation: airportPulse 2s ease-in-out infinite;
   }
 
@@ -375,6 +375,17 @@
 .toggleButton.activeRadioZones {
   background: #a855f7;
   color: white;
+}
+
+.toggleButton.activeCrosshair {
+  background: #e53935;
+  color: white;
+}
+
+.toggleButton.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .toggleButton.loading {

@@ -1,8 +1,11 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
+import ContextMenu from '../ContextMenu'
+import FocusCrosshair from '../FocusCrosshair'
+import CoordinateDisplay from '../CoordinateDisplay'
 import {
   getAirportZonesGeoJSON,
   getRedZonesGeoJSON,
@@ -167,8 +170,17 @@ const Map = ({
   const [selectedWaypointIds, setSelectedWaypointIds] = useState(new Set())
   const [isSelecting, setIsSelecting] = useState(false)
 
+  // Context menu state for right-click
+  const [contextMenu, setContextMenu] = useState(null) // { isOpen, position, waypoint }
+
   // Load map settings from localStorage (must be before viewState init)
   const initialSettings = useMemo(() => loadMapSettings(), [])
+
+  // Focus crosshair state
+  const [showCrosshair, setShowCrosshair] = useState(initialSettings.showCrosshair ?? false)
+
+  // Coordinate display state
+  const [coordinateDisplay, setCoordinateDisplay] = useState(null) // { lng, lat, screenX, screenY }
 
   const [viewState, setViewState] = useState({
     latitude: center.lat,
@@ -218,9 +230,10 @@ const Map = ({
   useEffect(() => {
     saveMapSettings({
       ...layerVisibility,
+      showCrosshair,
       mapStyleId
     })
-  }, [layerVisibility, mapStyleId])
+  }, [layerVisibility, showCrosshair, mapStyleId])
 
   // 雨雲レーダーソースを取得
   useEffect(() => {
@@ -566,6 +579,10 @@ const Map = ({
           e.preventDefault()
           toggleLayer('showRadioZones')
           break
+        case 'x': // Crosshair toggle
+          e.preventDefault()
+          setShowCrosshair(prev => !prev)
+          break
       }
     }
 
@@ -590,6 +607,18 @@ const Map = ({
       }, e)
     }
   }, [onMapClick, onPolygonSelect, drawMode])
+
+  // Handle crosshair click to show center coordinates
+  const handleCrosshairClick = useCallback(() => {
+    if (!mapRef.current) return
+    const center = mapRef.current.getMap().getCenter()
+    setCoordinateDisplay({
+      lng: center.lng,
+      lat: center.lat,
+      screenX: window.innerWidth / 2,
+      screenY: window.innerHeight / 2
+    })
+  }, [])
 
   // Handle double click on polygon - delete
   const handleDoubleClick = useCallback((e) => {
@@ -633,13 +662,72 @@ const Map = ({
     }
   }, [onPolygonDelete])
 
-  // Handle waypoint double click - delete
-  const handleWaypointDoubleClick = useCallback((e, wp) => {
+  // Handle waypoint double click - now disabled (use right-click menu instead)
+  const handleWaypointDoubleClick = useCallback((e, _wp) => {
     e.stopPropagation()
-    if (onWaypointDelete && confirm(`Waypoint #${wp.index} を削除しますか?`)) {
-      onWaypointDelete(wp.id)
+    // Disabled: use right-click context menu for delete
+  }, [])
+
+  // Handle waypoint right-click - open context menu
+  const handleWaypointRightClick = useCallback((e, wp) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenu({
+      isOpen: true,
+      position: { x: e.clientX, y: e.clientY },
+      waypoint: wp
+    })
+  }, [])
+
+  // Handle context menu actions
+  const handleContextMenuAction = useCallback((action, data) => {
+    if (!contextMenu?.waypoint) return
+    const wp = contextMenu.waypoint
+
+    switch (action) {
+      case 'delete':
+        if (onWaypointDelete) {
+          onWaypointDelete(wp.id)
+        }
+        break
+      case 'copy-coords':
+        const coordStr = `${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}`
+        navigator.clipboard.writeText(coordStr)
+        break
+      case 'copy-coords-dms':
+        const latDeg = Math.floor(Math.abs(wp.lat))
+        const latMin = Math.floor((Math.abs(wp.lat) - latDeg) * 60)
+        const latSec = ((Math.abs(wp.lat) - latDeg - latMin / 60) * 3600).toFixed(2)
+        const latDir = wp.lat >= 0 ? 'N' : 'S'
+        const lngDeg = Math.floor(Math.abs(wp.lng))
+        const lngMin = Math.floor((Math.abs(wp.lng) - lngDeg) * 60)
+        const lngSec = ((Math.abs(wp.lng) - lngDeg - lngMin / 60) * 3600).toFixed(2)
+        const lngDir = wp.lng >= 0 ? 'E' : 'W'
+        const dmsStr = `${latDeg}°${latMin}'${latSec}"${latDir} ${lngDeg}°${lngMin}'${lngSec}"${lngDir}`
+        navigator.clipboard.writeText(dmsStr)
+        break
+      case 'focus':
+        if (onWaypointClick) {
+          onWaypointClick(wp)
+        }
+        break
+      default:
+        break
     }
-  }, [onWaypointDelete])
+  }, [contextMenu, onWaypointDelete, onWaypointClick])
+
+  // Build context menu items for waypoint
+  const waypointContextMenuItems = useMemo(() => {
+    if (!contextMenu?.waypoint) return []
+    const wp = contextMenu.waypoint
+    return [
+      { id: 'header', type: 'header', label: `WP #${wp.index}` },
+      { id: 'copy-coords', icon: '📋', label: '座標をコピー (decimal)', action: 'copy-coords' },
+      { id: 'copy-coords-dms', icon: '🌐', label: '座標をコピー (DMS)', action: 'copy-coords-dms' },
+      { id: 'divider1', divider: true },
+      { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
+    ]
+  }, [contextMenu])
 
   // Handle selection box for bulk waypoint operations
   const handleSelectionStart = useCallback((e) => {
@@ -1246,8 +1334,9 @@ const Map = ({
                         }
                         title={`#${wp.index} - ${
                             wp.polygonName || 'Waypoint'
-                        }${multiLabel}`}
+                        }${multiLabel} (右クリックでメニュー)`}
                         onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
+                        onContextMenu={(e) => handleWaypointRightClick(e, wp)}
                     >
                         {wp.index}
                     </div>
@@ -1375,9 +1464,10 @@ const Map = ({
             <CloudRain size={18} />
           </button>
           <button
-            className={`${styles.toggleButton} ${layerVisibility.showWind ? styles.activeWind : ''}`}
-            onClick={() => toggleLayer('showWind')}
-            data-tooltip={`風向・風量 [O]`}
+            className={`${styles.toggleButton} ${styles.disabled}`}
+            onClick={() => {}}
+            disabled
+            data-tooltip={`風向・風量 [O] (準備中)`}
             data-tooltip-pos="left"
           >
             <Wind size={18} />
@@ -1398,6 +1488,14 @@ const Map = ({
             data-tooltip-pos="left"
           >
             {layerVisibility.is3D ? <Box size={18} /> : <Rotate3D size={18} />}
+          </button>
+          <button
+            className={`${styles.toggleButton} ${showCrosshair ? styles.activeCrosshair : ''}`}
+            onClick={() => setShowCrosshair(prev => !prev)}
+            data-tooltip={`クロスヘア [X]`}
+            data-tooltip-pos="left"
+          >
+            <Crosshair size={18} />
           </button>
 
           {/* 地図スタイル切り替え */}
@@ -1439,11 +1537,45 @@ const Map = ({
           <span>編集中: 頂点をドラッグ / 完了ボタンで保存</span>
         ) : (
           <>
-            <span>ポリゴン: クリック=選択 / ダブルクリック=削除</span>
-            <span>Waypoint: ドラッグ=移動 / ダブルクリック=削除</span>
+            <span>ポリゴン: クリック=選択</span>
+            <span>Waypoint: ドラッグ=移動 / 右クリック=メニュー</span>
           </>
         )}
       </div>
+
+      {/* Waypoint Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          isOpen={contextMenu.isOpen}
+          position={contextMenu.position}
+          menuItems={waypointContextMenuItems}
+          onClose={() => setContextMenu(null)}
+          onAction={handleContextMenuAction}
+          title={contextMenu.waypoint ? `WP #${contextMenu.waypoint.index}` : null}
+        />
+      )}
+
+      {/* Focus Crosshair */}
+      <FocusCrosshair
+        visible={showCrosshair}
+        design="square"
+        color="#e53935"
+        size={40}
+        onClick={handleCrosshairClick}
+      />
+
+      {/* Coordinate Display */}
+      {coordinateDisplay && (
+        <CoordinateDisplay
+          lng={coordinateDisplay.lng}
+          lat={coordinateDisplay.lat}
+          screenX={coordinateDisplay.screenX}
+          screenY={coordinateDisplay.screenY}
+          darkMode={true}
+          onClose={() => setCoordinateDisplay(null)}
+          autoFade={true}
+        />
+      )}
     </div>
   )
 }

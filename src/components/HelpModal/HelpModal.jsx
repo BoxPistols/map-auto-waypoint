@@ -410,10 +410,6 @@ const HelpModal = ({ onClose }) => {
                   <td>雨雲 ON/OFF</td>
                 </tr>
                 <tr>
-                  <td><kbd>O</kbd></td>
-                  <td>風向・風量 ON/OFF</td>
-                </tr>
-                <tr>
                   <td><kbd>T</kbd></td>
                   <td>電波種(LTE) ON/OFF</td>
                 </tr>
@@ -424,6 +420,10 @@ const HelpModal = ({ onClose }) => {
                 <tr>
                   <td><kbd>M</kbd></td>
                   <td>地図スタイル切り替え</td>
+                </tr>
+                <tr>
+                  <td><kbd>X</kbd></td>
+                  <td>クロスヘア ON/OFF</td>
                 </tr>
               </tbody>
             </table>

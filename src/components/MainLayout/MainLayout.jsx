@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getSetting, isDIDAvoidanceModeEnabled } from '../../services/settingsService'
 import { getDetailedCollisionResults, checkAllWaypointsDID } from '../../services/riskService'
+import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
 import Map from '../Map/Map'
 import SearchForm from '../SearchForm/SearchForm'
 import PolygonList from '../PolygonList/PolygonList'
@@ -144,6 +145,40 @@ function MainLayout() {
   // Highlighted waypoint (for FlightAssistant WP click)
   const [highlightedWaypointIndex, setHighlightedWaypointIndex] = useState(null)
 
+  // DIDデータプリロード完了フラグ
+  const [didDataReady, setDidDataReady] = useState(false)
+  const didPreloadAttemptedRef = useRef(false)
+
+  // ============================================
+  // DIDデータのプリロード（初回ロード時）
+  // ============================================
+  useEffect(() => {
+    if (!waypoints || waypoints.length === 0) return
+    if (didPreloadAttemptedRef.current) return // 既にプリロード試行済み
+
+    didPreloadAttemptedRef.current = true
+
+    // キャッシュが既に準備できているかチェック
+    if (isAllDIDCacheReady(waypoints)) {
+      setDidDataReady(true)
+      return
+    }
+
+    // DIDデータをプリロード
+    const preload = async () => {
+      try {
+        await preloadDIDDataForCoordinates(waypoints)
+        setDidDataReady(true)
+        console.log('[DID] Preload complete, triggering re-check')
+      } catch (error) {
+        console.warn('[DID] Preload failed:', error)
+        setDidDataReady(true) // エラーでも続行
+      }
+    }
+
+    preload()
+  }, [waypoints])
+
   // ============================================
   // 自動衝突検出 (RBush空間インデックス + DID GeoJSON)
   // ============================================
@@ -223,7 +258,7 @@ function MainLayout() {
       cancelled = true
       clearTimeout(timeoutId)
     }
-  }, [waypoints])
+  }, [waypoints, didDataReady]) // didDataReadyが変わったら再実行
 
   // Toggle sidebar collapsed state
   const toggleSidebar = useCallback(() => {

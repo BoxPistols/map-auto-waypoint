@@ -206,11 +206,77 @@ export const checkDIDArea = async (lat, lng) => {
 export const isPositionInDIDSync = (lat, lng) => {
   const prefecture = getPrefectureFromCoords(lat, lng);
   if (!prefecture) return false;
-  
+
   const cacheKey = `pref_${prefecture.code}`;
   if (didPrefectureCache.has(cacheKey)) {
     const geojson = didPrefectureCache.get(cacheKey);
     return !!checkPointInDIDGeoJSON(geojson, lat, lng);
   }
   return checkDIDAreaFallback(lat, lng).isDID;
+};
+
+/**
+ * 指定された座標リストに基づいてDIDデータをプリロード
+ * 初回ロード時の遅延判定を回避するために使用
+ * @param {Array<{lat: number, lng: number}>} coordinates - 座標リスト
+ * @returns {Promise<Set<string>>} - ロードされた都道府県コードのセット
+ */
+export const preloadDIDDataForCoordinates = async (coordinates) => {
+  if (!coordinates || coordinates.length === 0) {
+    return new Set();
+  }
+
+  // 座標から必要な都道府県を特定
+  const prefecturesToLoad = new Set();
+  for (const coord of coordinates) {
+    const pref = getPrefectureFromCoords(coord.lat, coord.lng);
+    if (pref) {
+      prefecturesToLoad.add(JSON.stringify({ code: pref.code, name: pref.name }));
+    }
+  }
+
+  // 並列でDIDデータをフェッチ
+  const loadPromises = Array.from(prefecturesToLoad).map(async (prefJson) => {
+    const pref = JSON.parse(prefJson);
+    try {
+      await fetchDIDGeoJSON(pref.code, pref.name);
+      return pref.code;
+    } catch (error) {
+      console.warn(`[DID] Failed to preload ${pref.name}:`, error);
+      return null;
+    }
+  });
+
+  const results = await Promise.all(loadPromises);
+  const loadedCodes = new Set(results.filter(Boolean));
+
+  if (loadedCodes.size > 0) {
+    console.log(`[DID] Preloaded ${loadedCodes.size} prefecture(s):`, Array.from(loadedCodes).join(', '));
+  }
+
+  return loadedCodes;
+};
+
+/**
+ * DIDキャッシュが特定の都道府県に対してロード済みかチェック
+ * @param {number} lat - 緯度
+ * @param {number} lng - 経度
+ * @returns {boolean} - キャッシュにデータがあるか
+ */
+export const isDIDCacheReady = (lat, lng) => {
+  const prefecture = getPrefectureFromCoords(lat, lng);
+  if (!prefecture) return true; // 日本国外はチェック不要
+
+  const cacheKey = `pref_${prefecture.code}`;
+  return didPrefectureCache.has(cacheKey);
+};
+
+/**
+ * 複数座標のDIDキャッシュ準備状態をチェック
+ * @param {Array<{lat: number, lng: number}>} coordinates - 座標リスト
+ * @returns {boolean} - 全ての座標に対してキャッシュが準備できているか
+ */
+export const isAllDIDCacheReady = (coordinates) => {
+  if (!coordinates || coordinates.length === 0) return true;
+  return coordinates.every(coord => isDIDCacheReady(coord.lat, coord.lng));
 };

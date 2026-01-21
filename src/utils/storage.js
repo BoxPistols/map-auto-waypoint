@@ -26,6 +26,8 @@ const DEFAULT_MAP_SETTINGS = {
   showRainCloud: false,
   showWind: false,
   showRadioZones: false,
+  // UIコントロール
+  showCrosshair: false,
   mapStyleId: 'osm'
 }
 
