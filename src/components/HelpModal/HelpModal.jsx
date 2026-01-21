@@ -140,7 +140,7 @@ const HelpModal = ({ onClose }) => {
                 <tr>
                   <td><Trash2 size={14} /></td>
                   <td>削除</td>
-                  <td>ポリゴンと関連Waypointを削除</td>
+                  <td>サイドバーのアイコン、または地図上で右クリックメニューから削除</td>
                 </tr>
               </tbody>
             </table>
@@ -181,9 +181,9 @@ const HelpModal = ({ onClose }) => {
 
             <h3>Waypointの編集</h3>
             <ul>
-              <li><strong>ダブルクリック:</strong> 番号・緯度・経度を直接編集</li>
+              <li><strong>サイドバーでダブルクリック:</strong> 番号・緯度・経度を直接編集</li>
               <li><strong>ドラッグ:</strong> マップ上でWaypointマーカーを移動</li>
-              <li><strong>削除:</strong> 各行のゴミ箱アイコンで個別削除</li>
+              <li><strong>削除:</strong> サイドバーのゴミ箱アイコン、または地図上で右クリックメニューから削除</li>
             </ul>
 
             <h3>標高取得</h3>

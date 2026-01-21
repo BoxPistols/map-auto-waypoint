@@ -172,6 +172,7 @@ const Map = ({
 
   // Context menu state for right-click
   const [contextMenu, setContextMenu] = useState(null) // { isOpen, position, waypoint }
+  const [polygonContextMenu, setPolygonContextMenu] = useState(null) // { isOpen, position, polygon }
 
   // Load map settings from localStorage (must be before viewState init)
   const initialSettings = useMemo(() => loadMapSettings(), [])
@@ -666,12 +667,6 @@ const Map = ({
     }
   }, [onPolygonDelete])
 
-  // Handle waypoint double click - now disabled (use right-click menu instead)
-  const handleWaypointDoubleClick = useCallback((e, _wp) => {
-    e.stopPropagation()
-    // Disabled: use right-click context menu for delete
-  }, [])
-
   // Handle waypoint right-click - open context menu
   const handleWaypointRightClick = useCallback((e, wp) => {
     e.preventDefault()
@@ -684,7 +679,7 @@ const Map = ({
   }, [])
 
   // Handle context menu actions
-  const handleContextMenuAction = useCallback((action, data) => {
+  const handleContextMenuAction = useCallback((action, _data) => {
     if (!contextMenu?.waypoint) return
     const wp = contextMenu.waypoint
 
@@ -732,6 +727,41 @@ const Map = ({
       { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
     ]
   }, [contextMenu])
+
+  // Handle polygon context menu actions
+  const handlePolygonContextMenuAction = useCallback((action) => {
+    if (!polygonContextMenu?.polygon) return
+    const polygon = polygonContextMenu.polygon
+
+    switch (action) {
+      case 'delete':
+        if (onPolygonDelete) {
+          if (confirm(`「${polygon.name}」を削除しますか？`)) {
+            onPolygonDelete(polygon.id)
+          }
+        }
+        break
+      case 'select':
+        if (onPolygonSelect) {
+          onPolygonSelect(polygon.id)
+        }
+        break
+      default:
+        break
+    }
+  }, [polygonContextMenu, onPolygonDelete, onPolygonSelect])
+
+  // Build context menu items for polygon
+  const polygonContextMenuItems = useMemo(() => {
+    if (!polygonContextMenu?.polygon) return []
+    const polygon = polygonContextMenu.polygon
+    return [
+      { id: 'header', type: 'header', label: polygon.name },
+      { id: 'select', icon: '👆', label: '選択', action: 'select' },
+      { id: 'divider1', divider: true },
+      { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
+    ]
+  }, [polygonContextMenu])
 
   // Handle selection box for bulk waypoint operations
   const handleSelectionStart = useCallback((e) => {
@@ -829,6 +859,7 @@ const Map = ({
         {...viewState}
         onMove={e => setViewState(e.viewState)}
         onClick={handleClick}
+        onContextMenu={handlePolygonRightClick}
         onMouseDown={handleSelectionStart}
         onMouseMove={handleSelectionMove}
         onMouseUp={handleSelectionEnd}
@@ -1338,7 +1369,6 @@ const Map = ({
                         title={`#${wp.index} - ${
                             wp.polygonName || 'Waypoint'
                         }${multiLabel} (右クリックでメニュー)`}
-                        onDoubleClick={(e) => handleWaypointDoubleClick(e, wp)}
                         onContextMenu={(e) => handleWaypointRightClick(e, wp)}
                     >
                         {wp.index}
@@ -1555,6 +1585,18 @@ const Map = ({
           onClose={() => setContextMenu(null)}
           onAction={handleContextMenuAction}
           title={contextMenu.waypoint ? `WP #${contextMenu.waypoint.index}` : null}
+        />
+      )}
+
+      {/* Polygon Context Menu */}
+      {polygonContextMenu && (
+        <ContextMenu
+          isOpen={polygonContextMenu.isOpen}
+          position={polygonContextMenu.position}
+          menuItems={polygonContextMenuItems}
+          onClose={() => setPolygonContextMenu(null)}
+          onAction={handlePolygonContextMenuAction}
+          title={polygonContextMenu.polygon?.name}
         />
       )}
 
