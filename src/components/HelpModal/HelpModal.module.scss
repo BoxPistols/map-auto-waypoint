@@ -320,13 +320,19 @@
 
 .shortcutTable {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   margin: 12px 0 20px;
   font-size: 13px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
   td {
     padding: 10px 12px;
     border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
 
     &:first-child {
       width: 150px;
@@ -336,6 +342,7 @@
 
     &:nth-child(2) {
       word-break: keep-all;
+      color: var(--color-text);
     }
   }
 
@@ -343,7 +350,7 @@
     display: inline-block;
     padding: 4px 8px;
     font-family: inherit;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     color: var(--color-text);
     background: var(--color-bg-tertiary);
@@ -354,7 +361,20 @@
     white-space: nowrap;
   }
 
-  tbody tr:hover {
+  tbody tr:hover td {
+    background: var(--color-bg-secondary);
+  }
+}
+
+:global([data-theme="light"]) .shortcutTable {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  td {
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  tbody tr:hover td {
     background: var(--color-bg-secondary);
   }
 }
