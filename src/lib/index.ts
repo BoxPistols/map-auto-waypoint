@@ -263,3 +263,45 @@ export {
   MESH_LEVELS,
   MeshCodeService
 } from './utils/meshCode'
+
+// ============================================
+// Services - Network Coverage
+// ============================================
+export {
+  checkLTEAvailability,
+  estimateSignalStrength,
+  getNetworkCoverage,
+  getSignalStrengthLabel,
+  getSignalStrengthColor,
+  NetworkCoverageService
+} from './services/networkCoverage'
+export type {
+  SignalStrength,
+  NetworkCoverageInfo,
+  NetworkCoverageRequest
+} from './services/networkCoverage'
+
+// ============================================
+// Hooks - Operation Safety
+// ============================================
+export {
+  useFlightWindow,
+  useNetworkCoverage,
+  useWeatherMesh,
+  useCurrentWeatherForecast,
+  classifyWindLevel,
+  useOperationSafety,
+  getSafetyLevelColor,
+  getSafetyLevelText
+} from './hooks'
+export type {
+  FlightWindowResult,
+  NetworkCoverageResult,
+  MeshWeatherForecast,
+  MeshTimeSeriesData,
+  WeatherMeshResult,
+  WindLevel,
+  SafetyLevel,
+  SafetyReason,
+  OperationSafetyResult
+} from './hooks'

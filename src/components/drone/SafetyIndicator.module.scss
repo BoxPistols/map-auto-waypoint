@@ -1,0 +1,35 @@
+.indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.label {
+  font-size: 14px;
+  color: var(--text-primary, #333);
+  flex: 1;
+}
+
+.value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary, #666);
+}
+
+// ダークモード対応
+:global([data-theme="dark"]) {
+  .label {
+    color: #e5e7eb;
+  }
+  .value {
+    color: #9ca3af;
+  }
+}

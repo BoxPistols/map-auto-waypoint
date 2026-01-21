@@ -184,6 +184,7 @@ function MainLayout() {
 
   // ============================================
   // 自動衝突検出 (RBush空間インデックス + DID GeoJSON)
+  // 初期ロード時・リロード時・waypoint変更時に常時実行
   // ============================================
   useEffect(() => {
     if (!waypoints || waypoints.length === 0) {
@@ -195,10 +196,10 @@ function MainLayout() {
 
     let cancelled = false
 
-    // 衝突検出を非同期で実行（パフォーマンス考慮）
+    // 衝突検出を非同期で実行
     const checkCollisions = async () => {
       try {
-        // 1. RBush空間インデックスによる空港・禁止区域検出
+        // 1. RBush空間インデックスによる空港・禁止区域検出（即座に実行）
         const { results, byType } = getDetailedCollisionResults(waypoints)
 
         const newFlags = {}
@@ -219,29 +220,31 @@ function MainLayout() {
           }
         }
 
-        // 2. DID GeoJSONによるDID検出（非同期）
-        const didResult = await checkAllWaypointsDID(waypoints)
+        // 2. DID GeoJSONによるDID検出（非同期・エラーでも継続）
+        try {
+          const didResult = await checkAllWaypointsDID(waypoints)
+
+          if (!cancelled && didResult?.hasDIDWaypoints) {
+            for (const didWp of didResult.didWaypoints) {
+              const wp = waypoints.find(w => w.id === didWp.waypointId)
+              if (wp) {
+                if (newFlags[wp.id]) {
+                  newFlags[wp.id].hasDID = true
+                } else {
+                  newFlags[wp.id] = { hasDID: true, hasAirport: false, hasProhibited: false }
+                }
+                didSet.add(wp.index)
+              }
+            }
+          }
+        } catch (didError) {
+          // DIDチェック失敗しても他の判定は続行
+          console.warn('[CollisionCheck] DIDチェックエラー（継続）:', didError)
+        }
 
         if (cancelled) return
 
-        if (didResult?.hasDIDWaypoints) {
-          for (const didWp of didResult.didWaypoints) {
-            const wp = waypoints.find(w => w.id === didWp.waypointId)
-            if (wp) {
-              // 既存のフラグにDIDを追加
-              if (newFlags[wp.id]) {
-                newFlags[wp.id].hasDID = true
-              } else {
-                newFlags[wp.id] = { hasDID: true, hasAirport: false, hasProhibited: false }
-              }
-              didSet.add(wp.index)
-            }
-          }
-        }
-
         // 3. 危険セグメント検出（両端点が同一制限区域内のセグメント）
-        // 旧: 経路境界横切り検出は無効化
-        // 新: 両端点が同じゾーン内にある場合のみ危険セグメントとして表示
         const dangerSegments = []
 
         // ポリゴンごとにWaypointをグループ化
@@ -255,7 +258,7 @@ function MainLayout() {
         }
 
         // 各ポリゴン内のセグメントをチェック
-        for (const [polygonId, polygonWaypoints] of waypointsByPolygon.entries()) {
+        for (const [, polygonWaypoints] of waypointsByPolygon.entries()) {
           if (polygonWaypoints.length < 2) continue
 
           const sortedWaypoints = [...polygonWaypoints].sort((a, b) => a.index - b.index)
@@ -266,19 +269,18 @@ function MainLayout() {
             const flagsFrom = newFlags[wpFrom.id] || {}
             const flagsTo = newFlags[wpTo.id] || {}
 
-            // 両端点が同じ制限区域内かチェック
             let segmentType = null
             let segmentColor = null
 
             if (flagsFrom.hasDID && flagsTo.hasDID) {
               segmentType = 'DID'
-              segmentColor = '#dc2626' // 赤
+              segmentColor = '#dc2626'
             } else if (flagsFrom.hasAirport && flagsTo.hasAirport) {
               segmentType = 'AIRPORT'
-              segmentColor = '#9333ea' // 紫
+              segmentColor = '#9333ea'
             } else if (flagsFrom.hasProhibited && flagsTo.hasProhibited) {
               segmentType = 'PROHIBITED'
-              segmentColor = '#dc2626' // 赤
+              segmentColor = '#dc2626'
             }
 
             if (segmentType) {
@@ -286,31 +288,25 @@ function MainLayout() {
                 fromWaypoint: wpFrom,
                 toWaypoint: wpTo,
                 segmentType,
-                segmentColor,
-                polygonId
+                segmentColor
               })
             }
           }
         }
 
-        if (cancelled) return
-
         setWaypointIssueFlagsById(newFlags)
         setDidHighlightedWaypointIndices(didSet)
-        // 新しい危険セグメント形式でセット
         setPathCollisionResult(dangerSegments.length > 0 ? {
           isColliding: true,
           dangerSegments,
-          // 旧形式との互換性のため空配列
           intersectionPoints: [],
           affectedSegments: []
         } : null)
 
-        // 衝突があった場合のみコンソールに出力（開発時）
-        if (import.meta.env.DEV && (Object.keys(byType).length > 0 || didResult?.hasDIDWaypoints || dangerSegments.length > 0)) {
-          console.log('[CollisionCheck] 衝突検出結果:', {
+        if (import.meta.env.DEV && (Object.keys(byType).length > 0 || didSet.size > 0 || dangerSegments.length > 0)) {
+          console.log('[CollisionCheck] 自動検出結果:', {
             rbush: byType,
-            did: didResult?.hasDIDWaypoints ? `${didResult.didCount}件` : 'なし',
+            did: didSet.size > 0 ? `${didSet.size}件` : 'なし',
             dangerSegments: dangerSegments.length > 0 ? `${dangerSegments.length}セグメント` : 'なし'
           })
         }
@@ -319,13 +315,52 @@ function MainLayout() {
       }
     }
 
-    // debounce: 300ms待ってから実行
-    const timeoutId = setTimeout(checkCollisions, 300)
+    // 即座に実行（debounce短縮: 100ms）
+    const timeoutId = setTimeout(checkCollisions, 100)
     return () => {
       cancelled = true
       clearTimeout(timeoutId)
     }
-  }, [waypoints, didDataReady]) // didDataReadyが変わったら再実行
+  }, [waypoints]) // waypointsのみに依存（didDataReady削除で初期ロード時も実行）
+
+  // DIDデータ準備完了時に再チェック
+  useEffect(() => {
+    if (didDataReady && waypoints && waypoints.length > 0) {
+      // waypointsを強制的に更新して再チェックをトリガー
+      // （既にuseEffectが走っているので、ここでは追加のDIDチェックのみ）
+      const recheckDID = async () => {
+        try {
+          const didResult = await checkAllWaypointsDID(waypoints)
+          if (didResult?.hasDIDWaypoints) {
+            setWaypointIssueFlagsById(prev => {
+              const updated = { ...prev }
+              for (const didWp of didResult.didWaypoints) {
+                if (updated[didWp.waypointId]) {
+                  updated[didWp.waypointId].hasDID = true
+                } else {
+                  updated[didWp.waypointId] = { hasDID: true, hasAirport: false, hasProhibited: false }
+                }
+              }
+              return updated
+            })
+            setDidHighlightedWaypointIndices(prev => {
+              const newSet = new Set(prev)
+              for (const didWp of didResult.didWaypoints) {
+                newSet.add(didWp.waypointIndex)
+              }
+              return newSet
+            })
+            if (import.meta.env.DEV) {
+              console.log('[CollisionCheck] DIDデータ準備完了、再チェック:', didResult.didCount + '件')
+            }
+          }
+        } catch (error) {
+          console.warn('[CollisionCheck] DID再チェックエラー:', error)
+        }
+      }
+      recheckDID()
+    }
+  }, [didDataReady, waypoints])
 
   // ============================================
   // ポリゴン衝突検出
