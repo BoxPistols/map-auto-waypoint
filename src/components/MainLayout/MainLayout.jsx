@@ -22,6 +22,7 @@ import FlightRequirements from '../FlightRequirements'
 import FlightPlanner from '../FlightPlanner'
 import RouteOptimizer from '../RouteOptimizer'
 import { WeatherForecastPanel } from '../WeatherForecast'
+import { DroneOperationDashboard } from '../drone'
 import { useDroneData } from '../../hooks/useDroneData'
 import { useNotification } from '../../hooks/useNotification'
 import { useTheme } from '../../hooks/useTheme'
@@ -116,6 +117,8 @@ function MainLayout() {
   const [showFlightPlanner, setShowFlightPlanner] = useState(false)
   const [showRouteOptimizer, setShowRouteOptimizer] = useState(false)
   const [showWeatherForecast, setShowWeatherForecast] = useState(false)
+  const [showDroneDashboard, setShowDroneDashboard] = useState(false)
+  const [selectedDashboardPoint, setSelectedDashboardPoint] = useState(null)
   const [optimizedRoute, setOptimizedRoute] = useState(null)
   const [lastSearchResult, setLastSearchResult] = useState(null)
   
@@ -208,14 +211,17 @@ function MainLayout() {
         for (const [waypointId, result] of results.entries()) {
           if (result.isColliding) {
             const wp = waypoints.find(w => w.id === waypointId)
-            const hasDID = result.collisionType === 'DID'
+            // RBush空間インデックスにはDIDは含まれていないはず
+            // (airports + noFlyZones のみ)
+            const hasDID = false // RBushからはDID判定しない
             const hasAirport = result.collisionType === 'AIRPORT' || result.collisionType === 'MILITARY'
             const hasProhibited = result.collisionType === 'RED_ZONE' || result.collisionType === 'YELLOW_ZONE'
 
             newFlags[waypointId] = { hasDID, hasAirport, hasProhibited }
 
-            if (hasDID && wp) {
-              didSet.add(wp.index)
+            // デバッグ: RBushで何が検出されたか
+            if (import.meta.env.DEV && wp) {
+              console.log(`[CollisionCheck] RBush: WP${wp.index} -> ${result.collisionType} (${result.areaName})`)
             }
           }
         }
@@ -228,6 +234,10 @@ function MainLayout() {
             for (const didWp of didResult.didWaypoints) {
               const wp = waypoints.find(w => w.id === didWp.waypointId)
               if (wp) {
+                // デバッグ: どの座標がDID判定されたか
+                if (import.meta.env.DEV) {
+                  console.log(`[CollisionCheck] DID検出: WP${wp.index} (${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}) -> ${didWp.area}`)
+                }
                 if (newFlags[wp.id]) {
                   newFlags[wp.id].hasDID = true
                 } else {
@@ -628,6 +638,10 @@ function MainLayout() {
             e.preventDefault()
             setShowWeatherForecast(prev => !prev)
             break
+          case 'u': // Toggle Drone Dashboard
+            e.preventDefault()
+            setShowDroneDashboard(prev => !prev)
+            break
           case 'f': // Toggle Full Map Mode
             e.preventDefault()
             setFullMapMode(prev => {
@@ -1001,9 +1015,16 @@ function MainLayout() {
         type: 'manual'
       }
       setWaypoints(prev => [...prev, newWaypoint])
+
+      // ダッシュボードに選択地点を設定
+      setSelectedDashboardPoint({ lat: latlng.lat, lng: latlng.lng })
+      if (!showDroneDashboard) {
+        setShowDroneDashboard(true)
+      }
+
       showNotification('Waypointを追加しました')
     }
-  }, [drawMode, waypoints.length, setWaypoints, showNotification])
+  }, [drawMode, waypoints.length, setWaypoints, showNotification, showDroneDashboard])
 
   // Mobile detection with resize listener
   useEffect(() => {
@@ -1470,6 +1491,15 @@ function MainLayout() {
         center={center}
         sidebarCollapsed={sidebarCollapsed}
       />
+
+      {/* Drone Operation Dashboard (ドローン運用ダッシュボード) */}
+      {showDroneDashboard && (
+        <DroneOperationDashboard
+          selectedPoint={selectedDashboardPoint}
+          onClose={() => setShowDroneDashboard(false)}
+          darkMode={theme === THEMES.DARK}
+        />
+      )}
 
       {/* Flight Planner (目的ベースOOUI) */}
       <FlightPlanner

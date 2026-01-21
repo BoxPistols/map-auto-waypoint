@@ -448,15 +448,20 @@ body {
   padding: 12px 24px;
   font-size: 13px;
   color: white;
-  background: rgba(0, 0, 0, 0.75);
-  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
   text-align: center;
   line-height: 1.5;
   z-index: 100;
   pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 
   &.editing {
-    background: rgba(69, 183, 209, 0.9);
+    background: rgba(69, 183, 209, 0.85);
+    border-color: rgba(255, 255, 255, 0.2);
   }
 }
 
@@ -474,7 +479,7 @@ body {
   z-index: 1000;
 }
 
-// Notification
+// Notification - Glassmorphism
 .notification {
   position: fixed;
   bottom: 24px;
@@ -483,19 +488,24 @@ body {
   padding: 12px 24px;
   font-size: 14px;
   color: white;
-  background: var(--color-header-bg);
-  border-radius: 8px;
-  box-shadow: var(--shadow-lg);
+  background: rgba(30, 41, 59, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   z-index: 1100;
   animation: slideUp 0.3s ease;
 
   &.error {
-    background: var(--color-danger);
+    background: rgba(239, 68, 68, 0.9);
+    border-color: rgba(255, 255, 255, 0.15);
     color: white;
   }
 
   &.success {
-    background: var(--color-success);
+    background: rgba(16, 185, 129, 0.9);
+    border-color: rgba(255, 255, 255, 0.15);
     color: white;
   }
 
@@ -1052,7 +1062,7 @@ body {
   }
 }
 
-// フルマップモードトグルボタン
+// フルマップモードトグルボタン - Glassmorphism
 .full-map-toggle {
   position: absolute;
   top: 10px;
@@ -1063,13 +1073,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
   border-radius: 10px;
   color: var(--color-text-secondary);
   cursor: pointer;
   z-index: 200;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--glass-shadow);
   transition: all 0.2s ease;
 
   &:hover {
@@ -1106,16 +1118,16 @@ body {
   justify-content: center;
   gap: 4px;
   padding: 8px 12px;
-  background: rgba(var(--color-bg-elevated-rgb), 0.88);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--color-border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
   color: var(--color-text-secondary);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--glass-shadow);
   transition: all 0.2s ease;
 
   svg {
