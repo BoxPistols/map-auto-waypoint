@@ -449,6 +449,24 @@ const HelpModal = ({ onClose }) => {
               ※ 入力フォームにフォーカス中はショートカット無効
             </p>
 
+            <h3>ポリゴン編集モード</h3>
+            <table className={styles.shortcutTable}>
+              <tbody>
+                <tr>
+                  <td>ダブルクリック</td>
+                  <td>ポリゴン形状の編集開始</td>
+                </tr>
+                <tr>
+                  <td>外側をクリック</td>
+                  <td>編集完了</td>
+                </tr>
+                <tr>
+                  <td><kbd>Escape</kbd></td>
+                  <td>編集キャンセル</td>
+                </tr>
+              </tbody>
+            </table>
+
             <h3>Waypoint操作</h3>
             <table className={styles.shortcutTable}>
               <tbody>

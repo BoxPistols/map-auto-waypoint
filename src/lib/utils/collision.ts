@@ -362,7 +362,11 @@ export function checkPolygonCollision(
           if (intersection) {
              areaEstimate = turf.area(intersection)
              // Collect intersection polygon for visualization
-             intersectionPolygons.push(intersection as Feature<Polygon | MultiPolygon>)
+             // Only include Polygon or MultiPolygon geometries (filter out LineString, Point, GeometryCollection)
+             const geomType = intersection.geometry?.type
+             if (geomType === 'Polygon' || geomType === 'MultiPolygon') {
+               intersectionPolygons.push(intersection as Feature<Polygon | MultiPolygon>)
+             }
           } else {
              // Fallback: if intersection exists but geometry calc fails, assume small overlap
              console.warn('Intersection detected but geometry calculation failed', {

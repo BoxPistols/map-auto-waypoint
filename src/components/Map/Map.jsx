@@ -161,6 +161,7 @@ const Map = ({
   onPolygonSelect,
   onPolygonEditStart,
   onPolygonEditComplete,
+  onEditFinish,
   onMapClick,
   onWaypointClick,
   onWaypointDelete,
@@ -559,35 +560,22 @@ const Map = ({
     }
   }, [recommendedWaypoints, waypoints])
 
-  // Path collision overlay GeoJSON (intersection points and dangerous segments)
+  // Path collision overlay GeoJSON (danger segments where both endpoints are in same zone)
   const pathCollisionGeoJSON = useMemo(() => {
     if (!pathCollisionResult || !pathCollisionResult.isColliding) return null
 
     const features = []
 
-    // Add intersection point markers
-    pathCollisionResult.intersectionPoints.forEach((coord, idx) => {
-      features.push({
-        type: 'Feature',
-        properties: {
-          type: 'intersection',
-          index: idx
-        },
-        geometry: {
-          type: 'Point',
-          coordinates: coord
-        }
-      })
-    })
-
-    // Add dangerous segment lines
-    pathCollisionResult.affectedSegments?.forEach((segment) => {
+    // 新形式: dangerSegments（両端点が同一制限区域内）
+    pathCollisionResult.dangerSegments?.forEach((segment, idx) => {
       if (segment.fromWaypoint && segment.toWaypoint) {
         features.push({
           type: 'Feature',
           properties: {
-            type: 'dangerous-segment',
-            index: segment.index
+            type: 'danger-segment',
+            segmentType: segment.segmentType,
+            color: segment.segmentColor,
+            index: idx
           },
           geometry: {
             type: 'LineString',
@@ -753,6 +741,12 @@ const Map = ({
     const features = e.features || []
     const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
 
+    // If in edit mode and clicking outside the polygon, finish editing
+    if (editingPolygon && !polygonFeature) {
+      onEditFinish?.()
+      return
+    }
+
     if (polygonFeature) {
       onPolygonSelect?.(polygonFeature.properties.id)
       return
@@ -764,7 +758,7 @@ const Map = ({
         lng: e.lngLat.lng
       }, e)
     }
-  }, [onMapClick, onPolygonSelect, drawMode])
+  }, [onMapClick, onPolygonSelect, drawMode, editingPolygon, onEditFinish])
 
   // Handle crosshair click to show center coordinates
   const handleCrosshairClick = useCallback(() => {
@@ -1451,42 +1445,15 @@ const Map = ({
         {/* Path collision overlay - intersection points and dangerous segments */}
         {pathCollisionGeoJSON && (
           <Source id="path-collision-overlay" type="geojson" data={pathCollisionGeoJSON}>
-            {/* Dangerous segment lines (red highlight) */}
+            {/* Danger segment lines (both endpoints in same restricted zone) */}
             <Layer
               id="path-collision-segments"
               type="line"
-              filter={['==', ['get', 'type'], 'dangerous-segment']}
+              filter={['==', ['get', 'type'], 'danger-segment']}
               paint={{
-                'line-color': '#FF0000',
-                'line-width': 6,
-                'line-opacity': 0.7
-              }}
-            />
-            {/* Intersection point markers */}
-            <Layer
-              id="path-collision-points"
-              type="circle"
-              filter={['==', ['get', 'type'], 'intersection']}
-              paint={{
-                'circle-radius': 10,
-                'circle-color': '#FF0000',
-                'circle-stroke-color': '#FFFFFF',
-                'circle-stroke-width': 3,
-                'circle-opacity': 0.9
-              }}
-            />
-            {/* Warning icon/label at intersection */}
-            <Layer
-              id="path-collision-labels"
-              type="symbol"
-              filter={['==', ['get', 'type'], 'intersection']}
-              layout={{
-                'text-field': '⚠',
-                'text-size': 16,
-                'text-offset': [0, 0]
-              }}
-              paint={{
-                'text-color': '#FFFFFF'
+                'line-color': ['get', 'color'],
+                'line-width': 5,
+                'line-opacity': 0.8
               }}
             />
           </Source>
@@ -1887,7 +1854,7 @@ const Map = ({
       {/* Instructions overlay */}
       <div className={styles.instructions}>
         {editingPolygon ? (
-          <span>編集中: 頂点をドラッグ / 完了ボタンで保存</span>
+          <span>編集中: 頂点をドラッグ / 外側クリックで完了 / ESCでキャンセル</span>
         ) : (
           <>
             <span>ポリゴン: クリック=選択</span>

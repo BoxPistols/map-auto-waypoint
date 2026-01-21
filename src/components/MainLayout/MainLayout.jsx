@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getSetting, isDIDAvoidanceModeEnabled } from '../../services/settingsService'
-import { getDetailedCollisionResults, checkAllWaypointsDID, checkFlightPathCollision, checkAllPolygonsCollision } from '../../services/riskService'
+import { getDetailedCollisionResults, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
 import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
 import Map from '../Map/Map'
 import SearchForm from '../SearchForm/SearchForm'
@@ -239,21 +239,79 @@ function MainLayout() {
           }
         }
 
-        // 3. 飛行経路の衝突検出（Waypoint間のライン）
-        const pathResult = checkFlightPathCollision(waypoints)
+        // 3. 危険セグメント検出（両端点が同一制限区域内のセグメント）
+        // 旧: 経路境界横切り検出は無効化
+        // 新: 両端点が同じゾーン内にある場合のみ危険セグメントとして表示
+        const dangerSegments = []
+
+        // ポリゴンごとにWaypointをグループ化
+        const waypointsByPolygon = new Map()
+        for (const wp of waypoints) {
+          const polygonId = wp.polygonId || wp.polygonName || 'default'
+          if (!waypointsByPolygon.has(polygonId)) {
+            waypointsByPolygon.set(polygonId, [])
+          }
+          waypointsByPolygon.get(polygonId).push(wp)
+        }
+
+        // 各ポリゴン内のセグメントをチェック
+        for (const [polygonId, polygonWaypoints] of waypointsByPolygon.entries()) {
+          if (polygonWaypoints.length < 2) continue
+
+          const sortedWaypoints = [...polygonWaypoints].sort((a, b) => a.index - b.index)
+
+          for (let i = 0; i < sortedWaypoints.length - 1; i++) {
+            const wpFrom = sortedWaypoints[i]
+            const wpTo = sortedWaypoints[i + 1]
+            const flagsFrom = newFlags[wpFrom.id] || {}
+            const flagsTo = newFlags[wpTo.id] || {}
+
+            // 両端点が同じ制限区域内かチェック
+            let segmentType = null
+            let segmentColor = null
+
+            if (flagsFrom.hasDID && flagsTo.hasDID) {
+              segmentType = 'DID'
+              segmentColor = '#dc2626' // 赤
+            } else if (flagsFrom.hasAirport && flagsTo.hasAirport) {
+              segmentType = 'AIRPORT'
+              segmentColor = '#9333ea' // 紫
+            } else if (flagsFrom.hasProhibited && flagsTo.hasProhibited) {
+              segmentType = 'PROHIBITED'
+              segmentColor = '#dc2626' // 赤
+            }
+
+            if (segmentType) {
+              dangerSegments.push({
+                fromWaypoint: wpFrom,
+                toWaypoint: wpTo,
+                segmentType,
+                segmentColor,
+                polygonId
+              })
+            }
+          }
+        }
 
         if (cancelled) return
 
         setWaypointIssueFlagsById(newFlags)
         setDidHighlightedWaypointIndices(didSet)
-        setPathCollisionResult(pathResult.isColliding ? pathResult : null)
+        // 新しい危険セグメント形式でセット
+        setPathCollisionResult(dangerSegments.length > 0 ? {
+          isColliding: true,
+          dangerSegments,
+          // 旧形式との互換性のため空配列
+          intersectionPoints: [],
+          affectedSegments: []
+        } : null)
 
         // 衝突があった場合のみコンソールに出力（開発時）
-        if (import.meta.env.DEV && (Object.keys(byType).length > 0 || didResult?.hasDIDWaypoints || pathResult.isColliding)) {
+        if (import.meta.env.DEV && (Object.keys(byType).length > 0 || didResult?.hasDIDWaypoints || dangerSegments.length > 0)) {
           console.log('[CollisionCheck] 衝突検出結果:', {
             rbush: byType,
             did: didResult?.hasDIDWaypoints ? `${didResult.didCount}件` : 'なし',
-            path: pathResult.isColliding ? `${pathResult.intersectionPoints.length}箇所` : 'なし'
+            dangerSegments: dangerSegments.length > 0 ? `${dangerSegments.length}セグメント` : 'なし'
           })
         }
       } catch (error) {
@@ -443,12 +501,8 @@ function MainLayout() {
     setEditingPolygon(polygon)
     setSelectedPolygonId(polygon.id)
     setDrawMode(false) // Disable draw mode when editing
-    const center = getPolygonCenter(polygon)
-    if (center) {
-      setCenter(center)
-      setZoom(14)
-    }
-    showNotification('ポリゴンを編集中です。頂点をドラッグして変更してください。')
+    // Note: Don't auto-zoom - user is already at appropriate zoom when double-clicking
+    showNotification('ポリゴンを編集中です。頂点をドラッグして変更、または外側をクリックで完了。')
   }, [setSelectedPolygonId, showNotification])
 
   // Keyboard shortcuts
@@ -495,6 +549,14 @@ function MainLayout() {
         } else {
           handleUndo()
         }
+        return
+      }
+
+      // ESC key - cancel editing mode
+      if (e.key === 'Escape' && editingPolygon) {
+        e.preventDefault()
+        setEditingPolygon(null)
+        showNotification('編集をキャンセルしました')
         return
       }
 
@@ -556,7 +618,7 @@ function MainLayout() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleUndo, handleRedo, sidebarCollapsed, selectedPolygonId, polygons, handleEditPolygonShape, toggleTheme])
+  }, [handleUndo, handleRedo, sidebarCollapsed, selectedPolygonId, polygons, handleEditPolygonShape, toggleTheme, editingPolygon, showNotification])
 
   // Handle polygon shape edit complete
   const handlePolygonEditComplete = useCallback((updatedFeature) => {
@@ -1205,6 +1267,7 @@ function MainLayout() {
             onPolygonSelect={handlePolygonSelectFromMap}
             onPolygonEditStart={handleEditPolygonShape}
             onPolygonEditComplete={handlePolygonEditComplete}
+            onEditFinish={handleFinishEditing}
             onMapClick={handleMapClick}
             onWaypointClick={handleWaypointClickOnMap}
             onWaypointDelete={handleWaypointDelete}
@@ -1233,6 +1296,8 @@ function MainLayout() {
               「{editingPolygon.name}」を編集中
               <br />
               頂点をドラッグして変更 / 中点クリックで頂点追加
+              <br />
+              <span style={{ opacity: 0.8, fontSize: '0.85em' }}>外側クリックで完了 / ESCでキャンセル</span>
             </div>
           )}
 

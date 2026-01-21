@@ -94,7 +94,7 @@ const DrawControl = forwardRef(({
             'fill-opacity': 0.4
           }
         },
-        // Polygon outline - inactive
+        // Polygon outline - inactive (dashed to indicate edit mode)
         {
           id: 'gl-draw-polygon-stroke-inactive',
           type: 'line',
@@ -105,10 +105,11 @@ const DrawControl = forwardRef(({
           },
           paint: {
             'line-color': '#45B7D1',
-            'line-width': 2
+            'line-width': 2,
+            'line-dasharray': [4, 3]
           }
         },
-        // Polygon outline - active
+        // Polygon outline - active (dashed to indicate edit mode)
         {
           id: 'gl-draw-polygon-stroke-active',
           type: 'line',
@@ -119,7 +120,8 @@ const DrawControl = forwardRef(({
           },
           paint: {
             'line-color': '#45B7D1',
-            'line-width': 3
+            'line-width': 3,
+            'line-dasharray': [4, 3]
           }
         },
         // Vertex points - inactive
