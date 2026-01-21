@@ -125,7 +125,7 @@ const HelpModal = ({ onClose }) => {
                 <tr>
                   <td><PenTool size={14} /></td>
                   <td>形状を編集</td>
-                  <td>頂点をドラッグして変形、中点クリックで頂点追加</td>
+                  <td>サイドバーのアイコン、または地図上でダブルクリック・右クリックメニューから編集開始</td>
                 </tr>
                 <tr>
                   <td><Pencil size={14} /></td>

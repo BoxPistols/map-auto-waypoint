@@ -153,6 +153,7 @@ const Map = ({
   onPolygonUpdate,
   onPolygonDelete,
   onPolygonSelect,
+  onPolygonEditStart,
   onPolygonEditComplete,
   onMapClick,
   onWaypointClick,
@@ -621,6 +622,21 @@ const Map = ({
     })
   }, [])
 
+  // Handle double-click on polygon to enter edit mode
+  const handleDoubleClick = useCallback((e) => {
+    const features = e.features || []
+    const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
+
+    if (polygonFeature && onPolygonEditStart) {
+      e.preventDefault()
+      const polygonId = polygonFeature.properties.id
+      const polygon = polygons.find(p => p.id === polygonId)
+      if (polygon) {
+        onPolygonEditStart(polygon)
+      }
+    }
+  }, [polygons, onPolygonEditStart])
+
   // Handle polygon right-click for context menu
   const handlePolygonRightClick = useCallback((e) => {
     const features = e.features || []
@@ -686,7 +702,9 @@ const Map = ({
     switch (action) {
       case 'delete':
         if (onWaypointDelete) {
-          onWaypointDelete(wp.id)
+          if (confirm(`Waypoint #${wp.index} を削除しますか？`)) {
+            onWaypointDelete(wp.id)
+          }
         }
         break
       case 'copy-coords':
@@ -746,10 +764,15 @@ const Map = ({
           onPolygonSelect(polygon.id)
         }
         break
+      case 'edit':
+        if (onPolygonEditStart) {
+          onPolygonEditStart(polygon)
+        }
+        break
       default:
         break
     }
-  }, [polygonContextMenu, onPolygonDelete, onPolygonSelect])
+  }, [polygonContextMenu, onPolygonDelete, onPolygonSelect, onPolygonEditStart])
 
   // Build context menu items for polygon
   const polygonContextMenuItems = useMemo(() => {
@@ -758,6 +781,7 @@ const Map = ({
     return [
       { id: 'header', type: 'header', label: polygon.name },
       { id: 'select', icon: '👆', label: '選択', action: 'select' },
+      { id: 'edit', icon: '✏️', label: '形状を編集', action: 'edit' },
       { id: 'divider1', divider: true },
       { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
     ]
@@ -859,6 +883,7 @@ const Map = ({
         {...viewState}
         onMove={e => setViewState(e.viewState)}
         onClick={handleClick}
+        onDblClick={handleDoubleClick}
         onContextMenu={handlePolygonRightClick}
         onMouseDown={handleSelectionStart}
         onMouseMove={handleSelectionMove}

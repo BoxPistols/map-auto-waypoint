@@ -1166,6 +1166,7 @@ function MainLayout() {
             onPolygonUpdate={handlePolygonUpdate}
             onPolygonDelete={handlePolygonDelete}
             onPolygonSelect={handlePolygonSelectFromMap}
+            onPolygonEditStart={handleEditPolygonShape}
             onPolygonEditComplete={handlePolygonEditComplete}
             onMapClick={handleMapClick}
             onWaypointClick={handleWaypointClickOnMap}
