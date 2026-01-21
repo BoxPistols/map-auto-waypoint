@@ -544,9 +544,15 @@ const Map = ({
           e.preventDefault()
           toggleLayer('showHeliports')
           break
-        case 'm': // Map style picker toggle
-          e.preventDefault()
-          setShowStylePicker(prev => !prev)
+        case 'm': // Map style cycle (M: next, Shift+M: previous)
+          {
+            e.preventDefault()
+            const styleKeys = Object.keys(MAP_STYLES)
+            const currentIndex = styleKeys.indexOf(mapStyleId)
+            const nextIndex = (currentIndex + 1) % styleKeys.length
+            const prevIndex = (currentIndex - 1 + styleKeys.length) % styleKeys.length
+            setMapStyleId(styleKeys[e.shiftKey ? prevIndex : nextIndex])
+          }
           break
         case '3': // 3D toggle
           e.preventDefault()
@@ -590,7 +596,7 @@ const Map = ({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggle3D, toggleLayer])
+  }, [toggle3D, toggleLayer, mapStyleId])
 
   // Handle map click
   const handleClick = useCallback((e) => {
@@ -1561,7 +1567,7 @@ const Map = ({
             <button
               className={`${styles.toggleButton} ${showStylePicker ? styles.active : ''}`}
               onClick={() => setShowStylePicker(!showStylePicker)}
-              data-tooltip="地図スタイル [M]"
+              data-tooltip="地図スタイル [M: 次へ / Shift+M: 前へ]"
               data-tooltip-pos="left"
             >
               <Layers size={18} />

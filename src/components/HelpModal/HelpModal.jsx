@@ -419,7 +419,11 @@ const HelpModal = ({ onClose }) => {
                 </tr>
                 <tr>
                   <td><kbd>M</kbd></td>
-                  <td>地図スタイル切り替え</td>
+                  <td>地図スタイル切り替え（次へ）</td>
+                </tr>
+                <tr>
+                  <td><kbd>Shift</kbd> + <kbd>M</kbd></td>
+                  <td>地図スタイル切り替え（前へ）</td>
                 </tr>
                 <tr>
                   <td><kbd>X</kbd></td>
