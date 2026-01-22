@@ -16,14 +16,27 @@
   :global(.maplibregl-ctrl-scale) {
     background: rgba(var(--color-bg-elevated-rgb), 0.85);
     border-radius: 4px;
-    padding: 2px 6px;
+    padding: 2px 4px;
     font-size: 12px;
     color: var(--color-text);
+    margin: 6px auto;
+    opacity: 0.8;
   }
 
   :global(.maplibregl-ctrl-bottom-left) {
-    left: 12px;
-    bottom: 12px;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center; 
+    width: 100%;
+    max-width: 100px;
+    margin: 0 auto;
+    z-index: 1000;
+    position: absolute; 
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 4px; 
   }
 
   :global(.maplibregl-ctrl-attrib) {
@@ -33,6 +46,7 @@
     border: 1px solid var(--color-border);
     border-radius: 4px;
     white-space: nowrap;
+    opacity: 0.5;
   }
 
   :global(.maplibregl-ctrl-attrib a),
