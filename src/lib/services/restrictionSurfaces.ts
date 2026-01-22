@@ -112,8 +112,14 @@ export const KOKUAREA_TILE_ZOOM = 8
 /** kokuarea 取得用プロキシエンドポイント */
 export const KOKUAREA_PROXY_ENDPOINT = '/api/kokuarea'
 
+const isLocalhost = (): boolean => {
+  if (typeof window === 'undefined') return false
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+}
+
 const shouldUseKokuareaProxy = (): boolean => {
   if (import.meta.env.DEV) return true
+  if (isLocalhost()) return true
   if (import.meta.env.VITE_USE_KOKUAREA_PROXY === 'true') return true
   return import.meta.env.VITE_USE_PROXY_API === 'true'
 }
