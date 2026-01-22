@@ -227,6 +227,14 @@ const Map = ({
   const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
   const [showStylePicker, setShowStylePicker] = useState(false)
   const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false)
+  const hasDuplicateWaypointIndices = useMemo(() => {
+    const seen = new Set()
+    for (const wp of waypoints) {
+      if (seen.has(wp.index)) return true
+      seen.add(wp.index)
+    }
+    return false
+  }, [waypoints])
 
   // レイヤー表示状態を更新するヘルパー関数
   const toggleLayer = useCallback((layerKey) => {
@@ -1588,11 +1596,16 @@ const Map = ({
                 (rw) => rw.id === wp.id
             )
             const flags = waypointIssueFlagsById && wp.id ? waypointIssueFlagsById[wp.id] : null
-            // DID判定はwaypointIssueFlagsById (ID-based) を使用
-            // didHighlightedWaypointIndices (index-based) は使用しない（cross-polygon contamination防止）
+            const didFromIndex =
+                !hasDuplicateWaypointIndices &&
+                didHighlightedWaypointIndices instanceof Set &&
+                didHighlightedWaypointIndices.has(wp.index)
+            // DID判定はwaypointIssueFlagsById (ID-based) を優先
+            // index-based は重複インデックスがない場合のみフォールバック
             const isInDID =
                 (flags?.hasDID || false) ||
-                (recommendedWp?.hasDID || false)
+                (recommendedWp?.hasDID || false) ||
+                didFromIndex
             const isInAirport = (flags?.hasAirport || false) || (recommendedWp?.hasAirport || false)
             const isInProhibited = (flags?.hasProhibited || false) || (recommendedWp?.hasProhibited || false)
 
