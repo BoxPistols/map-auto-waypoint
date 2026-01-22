@@ -42,6 +42,7 @@ function FlightRequirements({
   isOpen,
   onClose,
   sidebarCollapsed = false,
+  initialMinimized = true,
 }) {
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +54,7 @@ function FlightRequirements({
   });
   const [showProcedures, setShowProcedures] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
-  const [minimized, setMinimized] = useState(true);
+  const [minimized, setMinimized] = useState(initialMinimized);
 
   // チェック実行
   const runCheck = useCallback(async () => {
