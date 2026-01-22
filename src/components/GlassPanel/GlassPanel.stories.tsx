@@ -85,7 +85,7 @@ export const WithFooter: Story = {
     ),
     footer: (
       <div style={{ textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '12px' }}>
-        最終更新: 2024/01/22 15:30
+        最終更新: 2時間前
       </div>
     ),
     width: 320,

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ComponentType } from 'react'
-import Map from './Map.jsx'
+import Map from './Map'
+import type { WaypointIssueFlags } from '../../lib/types'
 
 type PolygonData = {
   id: string
@@ -20,12 +21,6 @@ type WaypointData = {
   type: 'vertex' | 'grid' | 'manual' | 'perimeter'
   polygonName?: string
   polygonId?: string
-}
-
-type WaypointIssueFlags = {
-  hasDID?: boolean
-  hasAirport?: boolean
-  hasProhibited?: boolean
 }
 
 type DangerSegment = {

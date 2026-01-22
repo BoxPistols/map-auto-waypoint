@@ -210,7 +210,6 @@ const Map = ({
       setWindSource(null)
     }
   }, [layerVisibility.showWind])
-  // この行は不要な重複のため削除（直前の useEffect で同じ setWindSource を処理済み）
 
   // parent から center/zoom が変化したとき viewState を同期
   useEffect(() => {
@@ -222,7 +221,7 @@ const Map = ({
         zoom: zoom
       }))
     }
-  }, [center, zoom])
+  }, [center?.lat, center?.lng, zoom])
 
   // Memoize airspace GeoJSON data
   const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
