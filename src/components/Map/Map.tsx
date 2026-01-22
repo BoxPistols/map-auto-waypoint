@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer, AttributionControl } from 'react-map-gl/maplibre'
 import type { MapRef, MapLayerMouseEvent, MarkerDragEvent } from 'react-map-gl/maplibre'
 import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, ChevronRight, ChevronLeft } from 'lucide-react'
@@ -196,15 +196,23 @@ const Map = ({
   // Fetch wind source
   useEffect(() => {
     if (layerVisibility.showWind) {
+      // VITE_OPENWEATHER_API_KEY が未設定の場合にも null を渡す
+      // @ts-expect-error Vite の環境変数型エラーを抑制（Vite環境用）
       const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY as string | undefined
-      const config = getWindLayerSourceConfig(apiKey || null)
-      setWindSource(config)
+      if (apiKey) {
+        const config = getWindLayerSourceConfig(apiKey)
+        setWindSource(config)
+      } else {
+        setWindSource(null)
+        console.warn('OpenWeather APIキーが設定されていません。（VITE_OPENWEATHER_API_KEY）')
+      }
     } else {
       setWindSource(null)
     }
   }, [layerVisibility.showWind])
+  // この行は不要な重複のため削除（直前の useEffect で同じ setWindSource を処理済み）
 
-  // Sync viewState when center/zoom props change from parent
+  // parent から center/zoom が変化したとき viewState を同期
   useEffect(() => {
     if (center && zoom) {
       setViewState(prev => ({
@@ -214,7 +222,7 @@ const Map = ({
         zoom: zoom
       }))
     }
-  }, [center.lat, center.lng, zoom])
+  }, [center, zoom])
 
   // Memoize airspace GeoJSON data
   const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
