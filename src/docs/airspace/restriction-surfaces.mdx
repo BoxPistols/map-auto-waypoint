@@ -32,14 +32,54 @@ export const meta = {
 
 ## 6つの制限表面（航空法第2条第8項〜第13項）
 
-| 種別 | 定義（航空法） | 勾配 | 参考URL |
-|------|--------------|------|---------|
-| **進入表面** (Approach Surface) | 着陸帯の短辺に接続し、水平面に対し上方へ伸びる平面。進入区域は着陸帯中心線の延長3,000mまで広がる | **1:50** (上方) | [東京航空局](https://www.cab.mlit.go.jp/tcab/restriction/02.html) |
-| **水平表面** (Horizontal Surface) | 空港標点の垂直上方45mの点を中心とする水平面 | 高さ45m、半径**4,000m** | [東京航空局](https://www.cab.mlit.go.jp/tcab/restriction/02.html) |
-| **転移表面** (Transitional Surface) | 進入表面の斜辺および着陸帯の長辺を含む平面で、外側上方へ伸び、水平表面との接線で終わる | **1:7** (外側上方) | [東京航空局](https://www.cab.mlit.go.jp/tcab/restriction/02.html) |
-| **延長進入表面** (Extended Approach) | 進入表面をさらに外側へ延長した平面 | **1:50** (水平距離15,000mまで) | [東京航空局](https://www.cab.mlit.go.jp/tcab/restriction/02.html) |
-| **円錐表面** (Conical Surface) | 水平表面の外縁に接続し、外側上方へ伸びる円錐面 | **1:50** (外側上方、半径16,500m) | [東京航空局](https://www.cab.mlit.go.jp/tcab/restriction/02.html) |
-| **外側水平表面** (Outer Horizontal) | より大型の空港に適用される外側の水平面 | 半径**24,000m** | [東京航空局](https://www.cab.mlit.go.jp/tcab/restriction/02.html) |
+<table>
+  <thead>
+    <tr>
+      <th>種別</th>
+      <th>定義（航空法）</th>
+      <th>勾配</th>
+      <th>参考URL</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>進入表面</strong> (Approach Surface)</td>
+      <td>着陸帯の短辺に接続し、水平面に対し上方へ伸びる平面。進入区域は着陸帯中心線の延長3,000mまで広がる</td>
+      <td><strong>1:50</strong> (上方)</td>
+      <td><a href="https://www.cab.mlit.go.jp/tcab/restriction/02.html">東京航空局</a></td>
+    </tr>
+    <tr>
+      <td><strong>水平表面</strong> (Horizontal Surface)</td>
+      <td>空港標点の垂直上方45mの点を中心とする水平面</td>
+      <td>高さ45m、半径<strong>4,000m</strong></td>
+      <td><a href="https://www.cab.mlit.go.jp/tcab/restriction/02.html">東京航空局</a></td>
+    </tr>
+    <tr>
+      <td><strong>転移表面</strong> (Transitional Surface)</td>
+      <td>進入表面の斜辺および着陸帯の長辺を含む平面で、外側上方へ伸び、水平表面との接線で終わる</td>
+      <td><strong>1:7</strong> (外側上方)</td>
+      <td><a href="https://www.cab.mlit.go.jp/tcab/restriction/02.html">東京航空局</a></td>
+    </tr>
+    <tr>
+      <td><strong>延長進入表面</strong> (Extended Approach)</td>
+      <td>進入表面をさらに外側へ延長した平面</td>
+      <td><strong>1:50</strong> (水平距離15,000mまで)</td>
+      <td><a href="https://www.cab.mlit.go.jp/tcab/restriction/02.html">東京航空局</a></td>
+    </tr>
+    <tr>
+      <td><strong>円錐表面</strong> (Conical Surface)</td>
+      <td>水平表面の外縁に接続し、外側上方へ伸びる円錐面</td>
+      <td><strong>1:50</strong> (外側上方、半径16,500m)</td>
+      <td><a href="https://www.cab.mlit.go.jp/tcab/restriction/02.html">東京航空局</a></td>
+    </tr>
+    <tr>
+      <td><strong>外側水平表面</strong> (Outer Horizontal)</td>
+      <td>より大型の空港に適用される外側の水平面</td>
+      <td>半径<strong>24,000m</strong></td>
+      <td><a href="https://www.cab.mlit.go.jp/tcab/restriction/02.html">東京航空局</a></td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
@@ -62,13 +102,36 @@ https://maps.gsi.go.jp/xyz/kokuarea/{z}/{x}/{y}.geojson
 
 #### データ仕様
 
-| 項目 | 内容 |
-|------|------|
-| **提供形式** | GeoJSON (Polygon) |
-| **ズームレベル** | z=8 固定 |
-| **更新日** | 2025年2月14日（タイルメタデータより） |
-| **データ内容** | 制限表面の形状ポリゴンと名称 |
-| **公式地図** | [地理院地図 kokuarea レイヤー](https://maps.gsi.go.jp/#12/37.414305/137.059499/&base=std&ls=std%7Ckokuarea&disp=11&lcd=kokuarea&vs=c1g1j0h0k0l0u0t0z0r0s0m0f1&d=m) |
+<table>
+  <thead>
+    <tr>
+      <th>項目</th>
+      <th>内容</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>提供形式</strong></td>
+      <td>GeoJSON (Polygon)</td>
+    </tr>
+    <tr>
+      <td><strong>ズームレベル</strong></td>
+      <td>z=8 固定</td>
+    </tr>
+    <tr>
+      <td><strong>更新日</strong></td>
+      <td>2025年2月14日（タイルメタデータより）</td>
+    </tr>
+    <tr>
+      <td><strong>データ内容</strong></td>
+      <td>制限表面の形状ポリゴンと名称</td>
+    </tr>
+    <tr>
+      <td><strong>公式地図</strong></td>
+      <td><a href="https://maps.gsi.go.jp/#12/37.414305/137.059499/&base=std&ls=std%7Ckokuarea&disp=11&lcd=kokuarea&vs=c1g1j0h0k0l0u0t0z0r0s0m0f1&d=m">地理院地図 kokuarea レイヤー</a></td>
+    </tr>
+  </tbody>
+</table>
 
 #### 重要な注意事項（国土地理院より）
 
@@ -117,14 +180,47 @@ kokuarea タイルのGeoJSONには、`name` プロパティに制限表面の種
 
 アプリケーションは `name` 属性から以下のキーワードを検出して分類します：
 
-| キーワード | 分類 | 表示色 |
-|-----------|------|-------|
-| 「進入表面」 | Approach Surface | 緑色 |
-| 「延長進入表面」 | Extended Approach | 淡緑色 |
-| 「転移表面」 | Transitional Surface | 黄色 |
-| 「水平表面」 | Horizontal Surface | 紫色 |
-| 「外側水平表面」 | Outer Horizontal | 淡紫色 |
-| 「円錐表面」 | Conical Surface | 濃紫色 |
+<table>
+  <thead>
+    <tr>
+      <th>キーワード</th>
+      <th>分類</th>
+      <th>表示色</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>「進入表面」</td>
+      <td>Approach Surface</td>
+      <td>緑色</td>
+    </tr>
+    <tr>
+      <td>「延長進入表面」</td>
+      <td>Extended Approach</td>
+      <td>淡緑色</td>
+    </tr>
+    <tr>
+      <td>「転移表面」</td>
+      <td>Transitional Surface</td>
+      <td>黄色</td>
+    </tr>
+    <tr>
+      <td>「水平表面」</td>
+      <td>Horizontal Surface</td>
+      <td>紫色</td>
+    </tr>
+    <tr>
+      <td>「外側水平表面」</td>
+      <td>Outer Horizontal</td>
+      <td>淡紫色</td>
+    </tr>
+    <tr>
+      <td>「円錐表面」</td>
+      <td>Conical Surface</td>
+      <td>濃紫色</td>
+    </tr>
+  </tbody>
+</table>
 
 実装: `src/lib/services/restrictionSurfaces.ts:258-308`
 
@@ -368,14 +464,40 @@ kokuarea タイルのGeoJSONには、`name` プロパティに制限表面の種
 
 ## 実装ファイル
 
-| ファイル | 内容 |
-|----------|------|
-| `src/lib/services/restrictionSurfaces.ts` | 制限表面データ取得・分類ロジック |
-| `src/lib/services/airports.ts` | 空港データ（フォールバック円形用） |
-| `src/hooks/useCustomLayers.js` | MapLibre カスタムレイヤー管理 |
-| `src/components/Map/Map.jsx` | 地図表示とレイヤー制御 |
-| `api/kokuarea.js` | GSI タイルプロキシ（CORS対策） |
-| `vite.config.js` | 開発環境プロキシ設定 |
+<table>
+  <thead>
+    <tr>
+      <th>ファイル</th>
+      <th>内容</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>src/lib/services/restrictionSurfaces.ts</code></td>
+      <td>制限表面データ取得・分類ロジック</td>
+    </tr>
+    <tr>
+      <td><code>src/lib/services/airports.ts</code></td>
+      <td>空港データ（フォールバック円形用）</td>
+    </tr>
+    <tr>
+      <td><code>src/hooks/useCustomLayers.js</code></td>
+      <td>MapLibre カスタムレイヤー管理</td>
+    </tr>
+    <tr>
+      <td><code>src/components/Map/Map.jsx</code></td>
+      <td>地図表示とレイヤー制御</td>
+    </tr>
+    <tr>
+      <td><code>api/kokuarea.js</code></td>
+      <td>GSI タイルプロキシ（CORS対策）</td>
+    </tr>
+    <tr>
+      <td><code>vite.config.js</code></td>
+      <td>開発環境プロキシ設定</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
