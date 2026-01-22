@@ -437,7 +437,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   /**
    * 推奨プランを適用（除外設定を考慮）
    */
-  const handleApplyOptimization = () => {
+  const handleApplyOptimization = async () => {
     if (!optimizationPlan?.hasIssues) return;
 
     // 除外されたWPは元の位置を保持

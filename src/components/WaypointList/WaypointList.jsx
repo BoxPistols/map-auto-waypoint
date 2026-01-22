@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Trash2, Mountain, Pencil, Check, Route } from 'lucide-react'
 import { formatElevation } from '../../services/elevation'
 import { getWaypointNumberingMode } from '../../services/settingsService'
+import ConfirmDialog from '../ConfirmDialog/ConfirmDialog'
+import { useConfirmDialog } from '../../hooks/useConfirmDialog'
 import styles from './WaypointList.module.scss'
 
 const WaypointList = ({
@@ -19,6 +21,7 @@ const WaypointList = ({
   const [editingField, setEditingField] = useState(null) // 'name' | 'lat' | 'lng' | 'index'
   const [editValue, setEditValue] = useState('')
   const inputRef = useRef(null)
+  const { dialogState, showConfirm, handleConfirm, handleCancel } = useConfirmDialog()
 
   // Focus input when editing starts
   useEffect(() => {
@@ -155,8 +158,15 @@ const WaypointList = ({
           </button>
           <button
             className={styles.clearButton}
-            onClick={() => {
-              if (confirm('すべてのWaypointを削除しますか？')) {
+            onClick={async () => {
+              const confirmed = await showConfirm({
+                title: 'Waypoint全削除',
+                message: 'すべてのWaypointを削除しますか？',
+                confirmText: '削除',
+                cancelText: 'キャンセル',
+                variant: 'danger'
+              })
+              if (confirmed) {
                 onClear?.()
               }
             }}
