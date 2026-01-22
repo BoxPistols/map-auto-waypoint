@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { MapPin, Grid3X3, Pencil, Trash2, PenTool, Link2, Unlink2 } from 'lucide-react'
 import { calculatePolygonArea, calculatePolygonPerimeter, formatArea, formatDistance } from '../../services/waypointGenerator'
+import ConfirmDialog from '../ConfirmDialog/ConfirmDialog'
+import { useConfirmDialog } from '../../hooks/useConfirmDialog'
 import styles from './PolygonList.module.scss'
 
 const PolygonList = ({
@@ -16,6 +18,7 @@ const PolygonList = ({
 }) => {
   const [editingId, setEditingId] = useState(null)
   const [editingName, setEditingName] = useState('')
+  const { dialogState, showConfirm, handleConfirm, handleCancel } = useConfirmDialog()
 
   const handleStartEdit = (polygon) => {
     setEditingId(polygon.id)
@@ -143,9 +146,16 @@ const PolygonList = ({
                   </button>
                   <button
                     className={`${styles.actionButton} ${styles.deleteButton}`}
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation()
-                      if (confirm(`「${polygon.name}」を削除しますか？`)) {
+                      const confirmed = await showConfirm({
+                        title: 'ポリゴンの削除',
+                        message: `「${polygon.name}」を削除しますか？`,
+                        confirmText: '削除',
+                        cancelText: 'キャンセル',
+                        variant: 'danger'
+                      })
+                      if (confirmed) {
                         onDelete?.(polygon.id)
                       }
                     }}
@@ -195,6 +205,16 @@ const PolygonList = ({
           )
         })}
       </ul>
+      <ConfirmDialog
+        isOpen={dialogState.isOpen}
+        title={dialogState.title}
+        message={dialogState.message}
+        confirmText={dialogState.confirmText}
+        cancelText={dialogState.cancelText}
+        variant={dialogState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   )
 }
