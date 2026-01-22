@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Trash2, Mountain, Pencil, Check, Route } from 'lucide-react'
 import { formatElevation } from '../../services/elevation'
+import { getWaypointNumberingMode } from '../../services/settingsService'
 import styles from './WaypointList.module.scss'
 
 const WaypointList = ({
@@ -118,6 +119,17 @@ const WaypointList = ({
     return acc
   }, {})
 
+  // perPolygonモード時のプレフィックス生成
+  const isPerPolygonMode = getWaypointNumberingMode() === 'perPolygon'
+  const getDisplayIndex = (wp) => {
+    if (isPerPolygonMode && wp.polygonName) {
+      // ポリゴン名の頭文字をプレフィックスとして使用
+      const prefix = wp.polygonName.charAt(0)
+      return `${prefix}-${wp.index}`
+    }
+    return wp.index
+  }
+
   return (
     <div className={styles.waypointList}>
       <div className={styles.header}>
@@ -211,7 +223,7 @@ const WaypointList = ({
                         }}
                         title="ダブルクリックで編集"
                       >
-                        {wp.index}
+                        {getDisplayIndex(wp)}
                       </span>
                     )}
 
