@@ -115,11 +115,3 @@ export const resetSettings = () => {
   localStorage.removeItem(SETTINGS_KEY);
   return { ...DEFAULT_SETTINGS };
 };
-
-/**
- * Waypoint番号体系モードを取得
- * @returns {'global' | 'perPolygon'} 番号体系モード
- */
-export const getWaypointNumberingMode = () => {
-  return getSetting('waypointNumberingMode') || 'global';
-};
