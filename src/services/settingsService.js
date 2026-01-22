@@ -19,6 +19,8 @@ const DEFAULT_SETTINGS = {
   airportAvoidanceMargin: 300,
   // 禁止区域回避マージン（メートル）
   prohibitedAvoidanceMargin: 300,
+  // Waypoint番号体系: 'global'(全体連番) | 'perPolygon'(ポリゴンごと1から)
+  waypointNumberingMode: 'global',
 };
 
 /**
@@ -88,6 +90,22 @@ export const isDIDAvoidanceModeEnabled = () => {
  */
 export const setDIDAvoidanceMode = (enabled) => {
   return setSetting('didAvoidanceMode', enabled);
+};
+
+/**
+ * Waypoint番号体系を取得
+ * @returns {'global' | 'perPolygon'}
+ */
+export const getWaypointNumberingMode = () => {
+  return getSetting('waypointNumberingMode') || 'global';
+};
+
+/**
+ * Waypoint番号体系を設定
+ * @param {'global' | 'perPolygon'} mode
+ */
+export const setWaypointNumberingMode = (mode) => {
+  return setSetting('waypointNumberingMode', mode);
 };
 
 /**

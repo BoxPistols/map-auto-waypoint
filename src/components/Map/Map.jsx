@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer, AttributionControl } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair, Signal } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import ContextMenu from '../ContextMenu'
@@ -17,7 +17,9 @@ import {
   getRadioInterferenceZonesGeoJSON,
   getGeographicFeaturesSourceConfig,
   getRainViewerSourceConfig,
-  getWindLayerSourceConfig
+  getWindLayerSourceConfig,
+  getLTECoverageGeoJSON,
+  get5GCoverageGeoJSON
 } from '../../lib'
 import {
   fetchRestrictionSurfaceTiles,
@@ -222,7 +224,8 @@ const Map = ({
     showGeoFeatures: initialSettings.showGeoFeatures ?? false,
     showRainCloud: initialSettings.showRainCloud ?? false,
     showWind: initialSettings.showWind ?? false,
-    showRadioZones: initialSettings.showRadioZones ?? false
+    showRadioZones: initialSettings.showRadioZones ?? false,
+    showNetworkCoverage: initialSettings.showNetworkCoverage ?? false
   })
 
   const [rainCloudSource, setRainCloudSource] = useState(null)
@@ -431,6 +434,9 @@ const Map = ({
   const mannedAircraftZonesGeoJSON = useMemo(() => getMannedAircraftZonesGeoJSON(), [])
   const radioInterferenceZonesGeoJSON = useMemo(() => getRadioInterferenceZonesGeoJSON(), [])
   const geoFeaturesSourceConfig = useMemo(() => getGeographicFeaturesSourceConfig(), [])
+  // ネットワークカバレッジGeoJSON
+  const lteCoverageGeoJSON = useMemo(() => getLTECoverageGeoJSON(), [])
+  const fiveGCoverageGeoJSON = useMemo(() => get5GCoverageGeoJSON(), [])
 
   // GeoJSONレイヤーの設定配列（データ駆動でレンダリング）
   const geoJsonLayerConfigs = useMemo(() => [
@@ -481,8 +487,33 @@ const Map = ({
       labelColor: '#7c3aed',
       labelSize: 10,
       labelField: ['concat', ['get', 'name'], ' (', ['get', 'frequency'], ')']  // 特別なラベルフィールド
+    },
+    {
+      id: 'lte-coverage',
+      show: layerVisibility.showNetworkCoverage,
+      data: lteCoverageGeoJSON,
+      fillColor: '#10b981',
+      fillOpacity: 0.1,
+      lineColor: '#059669',
+      lineWidth: 1,
+      lineDasharray: [4, 2],
+      labelColor: '#047857',
+      labelSize: 9,
+      labelField: ['get', 'name']
+    },
+    {
+      id: '5g-coverage',
+      show: layerVisibility.showNetworkCoverage,
+      data: fiveGCoverageGeoJSON,
+      fillColor: '#06b6d4',
+      fillOpacity: 0.15,
+      lineColor: '#0891b2',
+      lineWidth: 2,
+      labelColor: '#0e7490',
+      labelSize: 10,
+      labelField: ['get', 'name']
     }
-  ], [layerVisibility.showEmergencyAirspace, layerVisibility.showRemoteIdZones, layerVisibility.showMannedAircraftZones, layerVisibility.showRadioZones, emergencyAirspaceGeoJSON, remoteIdZonesGeoJSON, mannedAircraftZonesGeoJSON, radioInterferenceZonesGeoJSON])
+  ], [layerVisibility.showEmergencyAirspace, layerVisibility.showRemoteIdZones, layerVisibility.showMannedAircraftZones, layerVisibility.showRadioZones, layerVisibility.showNetworkCoverage, emergencyAirspaceGeoJSON, remoteIdZonesGeoJSON, mannedAircraftZonesGeoJSON, radioInterferenceZonesGeoJSON, lteCoverageGeoJSON, fiveGCoverageGeoJSON])
 
   // Memoize optimized route GeoJSON (lines connecting waypoints in optimal order)
   const optimizedRouteGeoJSON = useMemo(() => {
@@ -773,6 +804,10 @@ const Map = ({
         case 't': // Radio zones (LTE) toggle
           e.preventDefault()
           toggleLayer('showRadioZones')
+          break
+        case 'l': // Network coverage (LTE/5G) toggle
+          e.preventDefault()
+          toggleLayer('showNetworkCoverage')
           break
         case 'x': // Crosshair toggle
           e.preventDefault()
@@ -1848,6 +1883,14 @@ const Map = ({
             data-tooltip-pos="left"
           >
             <Wifi size={18} />
+          </button>
+          <button
+            className={`${styles.toggleButton} ${layerVisibility.showNetworkCoverage ? styles.activeNetworkCoverage : ''}`}
+            onClick={() => toggleLayer('showNetworkCoverage')}
+            data-tooltip={`通信カバレッジ [L]`}
+            data-tooltip-pos="left"
+          >
+            <Signal size={18} />
           </button>
 
           <button

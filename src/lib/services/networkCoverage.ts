@@ -7,6 +7,8 @@
  * ユーザー報告データとの統合を検討
  */
 
+import { createCirclePolygon } from '../utils/geo'
+
 export type SignalStrength = 'excellent' | 'good' | 'fair' | 'poor' | 'none'
 
 export interface NetworkCoverageInfo {
@@ -192,10 +194,62 @@ export function getSignalStrengthColor(strength: SignalStrength): string {
   }
 }
 
+// ============================================
+// GeoJSON Generation Functions
+// ============================================
+
+/**
+ * LTEカバレッジエリアのGeoJSON生成
+ * 主要都市圏の広域カバレッジを表示
+ */
+export function generateLTECoverageGeoJSON(): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = MAJOR_URBAN_AREAS.map((area) => ({
+    type: 'Feature',
+    properties: {
+      id: `lte-${area.name}`,
+      name: `${area.name} LTE`,
+      type: 'LTE',
+      signalStrength: 'good',
+      carriers: ['docomo', 'au', 'softbank', 'rakuten']
+    },
+    geometry: createCirclePolygon([area.lng, area.lat], area.radius)
+  }))
+
+  return {
+    type: 'FeatureCollection',
+    features
+  }
+}
+
+/**
+ * 5GカバレッジエリアのGeoJSON生成
+ * 主要都市の中心部のみ（半径5km）
+ */
+export function generate5GCoverageGeoJSON(): GeoJSON.FeatureCollection {
+  const features: GeoJSON.Feature[] = MAJOR_URBAN_AREAS.map((area) => ({
+    type: 'Feature',
+    properties: {
+      id: `5g-${area.name}`,
+      name: `${area.name} 5G`,
+      type: '5G',
+      signalStrength: 'excellent',
+      carriers: ['docomo', 'au', 'softbank']
+    },
+    geometry: createCirclePolygon([area.lng, area.lat], 5)
+  }))
+
+  return {
+    type: 'FeatureCollection',
+    features
+  }
+}
+
 export const NetworkCoverageService = {
   checkLTEAvailability,
   estimateSignalStrength,
   getNetworkCoverage,
   getSignalStrengthLabel,
-  getSignalStrengthColor
+  getSignalStrengthColor,
+  generateLTECoverage: generateLTECoverageGeoJSON,
+  generate5GCoverage: generate5GCoverageGeoJSON
 }
