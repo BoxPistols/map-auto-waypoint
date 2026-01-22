@@ -22,8 +22,7 @@ import FlightRequirements from '../FlightRequirements'
 import FlightPlanner from '../FlightPlanner'
 import RouteOptimizer from '../RouteOptimizer'
 import { WeatherForecastPanel } from '../WeatherForecast'
-// TODO: Issue #39 - DroneOperationDashboard でエラー発生のため一時コメントアウト
-// import { DroneOperationDashboard } from '../drone'
+import { DroneOperationDashboard } from '../drone'
 import { useDroneData } from '../../hooks/useDroneData'
 import { useNotification } from '../../hooks/useNotification'
 import { useTheme } from '../../hooks/useTheme'
@@ -118,9 +117,8 @@ function MainLayout() {
   const [showFlightPlanner, setShowFlightPlanner] = useState(false)
   const [showRouteOptimizer, setShowRouteOptimizer] = useState(false)
   const [showWeatherForecast, setShowWeatherForecast] = useState(false)
-  // TODO: Issue #39 - 安全性チェッカーのエラー解決後に復活
-  // const [showDroneDashboard, setShowDroneDashboard] = useState(false)
-  // const [selectedDashboardPoint, setSelectedDashboardPoint] = useState(null)
+  const [showDroneDashboard, setShowDroneDashboard] = useState(false)
+  const [selectedDashboardPoint, setSelectedDashboardPoint] = useState(null)
   const [optimizedRoute, setOptimizedRoute] = useState(null)
   const [lastSearchResult, setLastSearchResult] = useState(null)
   
@@ -1489,15 +1487,14 @@ function MainLayout() {
         sidebarCollapsed={sidebarCollapsed}
       />
 
-      {/* TODO: Issue #XX - 安全性チェッカーのエラー解決後に復活 */}
       {/* Safety Checker (飛行安全性チェッカー) */}
-      {/* {showDroneDashboard && (
+      {showDroneDashboard && (
         <DroneOperationDashboard
           selectedPoint={selectedDashboardPoint}
           onClose={() => setShowDroneDashboard(false)}
           darkMode={theme === THEMES.DARK}
         />
-      )} */}
+      )}
 
       {/* Flight Planner (目的ベースOOUI) */}
       <FlightPlanner

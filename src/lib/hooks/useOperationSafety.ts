@@ -291,11 +291,15 @@ export function useOperationSafety(
     ])
   }, [refetchWeather, refetchNetwork, refetchFlightWindow])
 
+  const reasons = Array.isArray(safetyEvaluation?.reasons)
+    ? safetyEvaluation.reasons
+    : []
+
   return {
-    canFly: safetyEvaluation.canFly,
-    reasons: safetyEvaluation.reasons,
-    safetyLevel: safetyEvaluation.safetyLevel,
-    nextSafeWindow: safetyEvaluation.nextSafeWindow,
+    canFly: safetyEvaluation?.canFly ?? false,
+    reasons,
+    safetyLevel: safetyEvaluation?.safetyLevel ?? 'prohibited',
+    nextSafeWindow: safetyEvaluation?.nextSafeWindow ?? null,
     loading,
     error,
     refetch,
