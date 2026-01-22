@@ -1082,7 +1082,7 @@ const Map = ({
               id="airport-zones-fill"
               type="fill"
               paint={{
-                'fill-color': '#ff9800',
+                'fill-color': '#7B1FA2',
                 'fill-opacity': 0.15
               }}
             />
@@ -1090,7 +1090,7 @@ const Map = ({
               id="airport-zones-outline"
               type="line"
               paint={{
-                'line-color': '#ff9800',
+                'line-color': '#6A1B9A',
                 'line-width': 2,
                 'line-dasharray': [4, 2]
               }}
@@ -1104,7 +1104,7 @@ const Map = ({
                 'text-anchor': 'center'
               }}
               paint={{
-                'text-color': '#e65100',
+                'text-color': '#4A148C',
                 'text-halo-color': '#fff',
                 'text-halo-width': 1
               }}
