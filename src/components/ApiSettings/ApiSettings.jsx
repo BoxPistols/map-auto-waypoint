@@ -13,6 +13,7 @@ import {
   Plane,
   Ban,
   Home,
+  Hash,
 } from 'lucide-react';
 import {
   hasApiKey,
@@ -27,7 +28,7 @@ import {
   setLocalModelName,
   isLocalModel
 } from '../../services/openaiService';
-import { getSetting, setSetting, resetSettings } from '../../services/settingsService';
+import { getSetting, setSetting, resetSettings, getWaypointNumberingMode, setWaypointNumberingMode } from '../../services/settingsService';
 import ModelHelpModal from './ModelHelpModal';
 import './ApiSettings.scss';
 
@@ -42,6 +43,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const [didWarningOnly, setDidWarningOnly] = useState(getSetting('didWarningOnlyMode') ?? false);
   const [localEndpoint, setLocalEndpointState] = useState(getLocalEndpoint());
   const [localModelName, setLocalModelNameState] = useState(getLocalModelName());
+  const [waypointNumbering, setWaypointNumbering] = useState(getWaypointNumberingMode());
   const modalRef = useRef(null);
 
   // ローカルLLMが選択されているかどうか
@@ -53,6 +55,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
       setAvoidanceDistance(getSetting('didAvoidanceDistance') || 100);
       setDidAvoidanceMode(getSetting('didAvoidanceMode') ?? false);
       setDidWarningOnly(getSetting('didWarningOnlyMode') ?? false);
+      setWaypointNumbering(getWaypointNumberingMode());
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -410,6 +413,47 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                       </div>
                   </div>
 
+                  <hr className='settings-divider' />
+
+                  {/* Waypoint番号設定 */}
+                  <div className='settings-section'>
+                      <h3><Hash size={14} /> Waypoint番号</h3>
+                      <div className='numbering-mode-selector'>
+                          <label className='radio-item'>
+                              <input
+                                  type='radio'
+                                  name='waypointNumbering'
+                                  value='global'
+                                  checked={waypointNumbering === 'global'}
+                                  onChange={(e) => {
+                                      setWaypointNumbering(e.target.value);
+                                      setWaypointNumberingMode(e.target.value);
+                                  }}
+                              />
+                              <span className='radio-label'>
+                                  <strong>全体連番</strong>
+                                  <small>WP1, WP2, ... WP20</small>
+                              </span>
+                          </label>
+                          <label className='radio-item'>
+                              <input
+                                  type='radio'
+                                  name='waypointNumbering'
+                                  value='perPolygon'
+                                  checked={waypointNumbering === 'perPolygon'}
+                                  onChange={(e) => {
+                                      setWaypointNumbering(e.target.value);
+                                      setWaypointNumberingMode(e.target.value);
+                                  }}
+                              />
+                              <span className='radio-label'>
+                                  <strong>エリアごと連番</strong>
+                                  <small>東京-WP1, 大阪-WP1, ...</small>
+                              </span>
+                          </label>
+                      </div>
+                  </div>
+
                   <div className='settings-footer'>
                       <p className='settings-note'>
                           ※ 設定はブラウザに保存（サーバー送信なし）
@@ -422,6 +466,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                                   setAvoidanceDistance(100);
                                   setDidAvoidanceMode(false);
                                   setDidWarningOnly(false);
+                                  setWaypointNumbering('global');
                               }
                           }}
                       >
