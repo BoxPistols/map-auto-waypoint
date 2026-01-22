@@ -35,6 +35,8 @@ export type RestrictionSurfaceProperties = Record<string, unknown> & {
   name?: string
 }
 
+export type RestrictionSurfaceFeature = GeoJSON.Feature<GeoJSON.Geometry, RestrictionSurfaceProperties>
+
 /** 制限表面のスタイル定義 */
 export const RESTRICTION_SURFACE_STYLES: Record<
   RestrictionSurfaceKind,
@@ -112,6 +114,10 @@ export const KOKUAREA_TILE_ZOOM = 8
 /** kokuarea 取得用プロキシエンドポイント */
 export const KOKUAREA_PROXY_ENDPOINT = '/api/kokuarea'
 
+const MAX_TILE_CACHE = 200
+const tileFeatureCache = new Map<string, RestrictionSurfaceFeature[]>()
+const inflightTileRequests = new Map<string, Promise<RestrictionSurfaceFeature[]>>()
+
 const shouldUseKokuareaProxy = (): boolean => {
   if (import.meta.env.DEV) return true
   if (import.meta.env.VITE_USE_KOKUAREA_PROXY === 'true') return true
@@ -138,6 +144,51 @@ export function buildKokuareaTileUrl(z: number, x: number, y: number): string {
     return `${KOKUAREA_PROXY_ENDPOINT}?${params.toString()}`
   }
   return fillKokuareaTileUrl(KOKUAREA_TILE_URL, z, x, y)
+}
+
+const getTileKey = (tile: { z: number; x: number; y: number }): string =>
+  `${tile.z}/${tile.x}/${tile.y}`
+
+const storeTileCache = (key: string, features: RestrictionSurfaceFeature[]): void => {
+  if (!tileFeatureCache.has(key) && tileFeatureCache.size >= MAX_TILE_CACHE) {
+    const oldestKey = tileFeatureCache.keys().next().value
+    if (oldestKey) {
+      tileFeatureCache.delete(oldestKey)
+    }
+  }
+  tileFeatureCache.set(key, features)
+}
+
+const fetchRestrictionSurfaceTile = async (
+  tile: { z: number; x: number; y: number }
+): Promise<RestrictionSurfaceFeature[]> => {
+  const key = getTileKey(tile)
+  const cached = tileFeatureCache.get(key)
+  if (cached) return cached
+
+  const inflight = inflightTileRequests.get(key)
+  if (inflight) return inflight
+
+  const request = (async (): Promise<RestrictionSurfaceFeature[]> => {
+    try {
+      const url = buildKokuareaTileUrl(tile.z, tile.x, tile.y)
+      const response = await fetch(url)
+      if (!response.ok) return []
+
+      const geojson = (await response.json()) as GeoJSON.FeatureCollection
+      if (!geojson.features) return []
+
+      return geojson.features.map((feature) => enrichRestrictionSurfaceFeature(feature))
+    } catch {
+      return []
+    }
+  })()
+
+  inflightTileRequests.set(key, request)
+  const features = await request
+  inflightTileRequests.delete(key)
+  storeTileCache(key, features)
+  return features
 }
 
 /**
@@ -269,28 +320,16 @@ export async function fetchRestrictionSurfaceTiles(
   const z = KOKUAREA_TILE_ZOOM
   const tiles = getVisibleTileCoordinates(bounds, z)
 
-  const features: GeoJSON.Feature[] = []
-
-  await Promise.all(
-    tiles.map(async (tile) => {
-      try {
-        const url = buildKokuareaTileUrl(tile.z, tile.x, tile.y)
-        const response = await fetch(url)
-
-        if (!response.ok) return
-
-        const geojson = (await response.json()) as GeoJSON.FeatureCollection
-
-        if (geojson.features) {
-          for (const feature of geojson.features) {
-            features.push(enrichRestrictionSurfaceFeature(feature))
-          }
-        }
-      } catch {
-        // タイルが存在しない場合は無視
-      }
-    })
+  const tileFeatureGroups = await Promise.all(
+    tiles.map((tile) => fetchRestrictionSurfaceTile(tile))
   )
+
+  const features: RestrictionSurfaceFeature[] = []
+  for (const tileFeatures of tileFeatureGroups) {
+    if (tileFeatures.length > 0) {
+      features.push(...tileFeatures)
+    }
+  }
 
   return {
     type: 'FeatureCollection',

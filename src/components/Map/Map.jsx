@@ -187,6 +187,7 @@ const Map = ({
   const initialAirportOverlay = Boolean(
     initialSettings.showAirportZones || initialSettings.showRestrictionSurfaces
   )
+  const [isMapReady, setIsMapReady] = useState(false)
 
   // Focus crosshair state
   const [showCrosshair, setShowCrosshair] = useState(initialSettings.showCrosshair ?? false)
@@ -301,7 +302,7 @@ const Map = ({
 
   // 制限表面データを取得（表示範囲変更時）
   useEffect(() => {
-    if (!isAirportOverlayEnabled || !mapRef.current) {
+    if (!isAirportOverlayEnabled || !isMapReady || !mapRef.current) {
       setRestrictionSurfacesData(null)
       return
     }
@@ -367,7 +368,7 @@ const Map = ({
         mapInstance.off('moveend', handleMoveEnd)
       }
     }
-  }, [isAirportOverlayEnabled])
+  }, [isAirportOverlayEnabled, isMapReady])
 
   // Sync viewState when center/zoom props change from parent (e.g., WP click)
   useEffect(() => {
@@ -1047,6 +1048,7 @@ const Map = ({
         onClick={handleClick}
         onDblClick={handleDoubleClick}
         onContextMenu={handlePolygonRightClick}
+        onLoad={() => setIsMapReady(true)}
         onMouseDown={handleSelectionStart}
         onMouseMove={handleSelectionMove}
         onMouseUp={handleSelectionEnd}
