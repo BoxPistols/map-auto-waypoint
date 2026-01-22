@@ -27,6 +27,8 @@ import { useDroneData } from '../../hooks/useDroneData'
 import { useNotification } from '../../hooks/useNotification'
 import { useTheme } from '../../hooks/useTheme'
 import { useCustomLayers } from '../../hooks/useCustomLayers'
+import { useConfirmDialog } from '../../hooks/useConfirmDialog'
+import ConfirmDialog from '../ConfirmDialog/ConfirmDialog'
 import '../../App.scss'
 
 // Default center: Tokyo Tower
@@ -86,6 +88,7 @@ function MainLayout() {
   
   const { notification, showNotification, hideNotification } = useNotification()
   const { theme, toggleTheme, THEMES } = useTheme()
+  const { dialogState, showConfirm, handleConfirm, handleCancel } = useConfirmDialog()
 
   // Map state
   const [center, setCenter] = useState(DEFAULT_CENTER)
@@ -746,7 +749,7 @@ function MainLayout() {
   }, [setSelectedPolygonId])
 
   // Generate waypoints from single polygon
-  const handleGenerateWaypoints = useCallback((polygon, options = {}) => {
+  const handleGenerateWaypoints = useCallback(async (polygon, options = {}) => {
     const { includeGrid = false } = options
 
     // If grid is requested, show settings dialog
@@ -762,7 +765,14 @@ function MainLayout() {
 
     if (existingVertexWaypoints.length > 0) {
       // Ask for confirmation before regenerating
-      if (!confirm('既存のWaypointがあります。ポリゴンの頂点位置から再生成しますか？\n（現在のWaypoint位置は失われます）')) {
+      const confirmed = await showConfirm({
+        title: 'Waypoint再生成',
+        message: '既存のWaypointがあります。ポリゴンの頂点位置から再生成しますか？（現在のWaypoint位置は失われます）',
+        confirmText: '再生成',
+        cancelText: 'キャンセル',
+        variant: 'warning'
+      })
+      if (!confirmed) {
         return
       }
     }
@@ -777,7 +787,7 @@ function MainLayout() {
     ], { mode: getWaypointNumberingMode() }))
     showNotification(`${newWaypoints.length} Waypointを生成しました`)
     setActivePanel('waypoints')
-  }, [waypoints, setWaypoints, showNotification])
+  }, [waypoints, setWaypoints, showNotification, showConfirm])
 
   // Handle grid settings confirm
   const handleGridSettingsConfirm = useCallback((settings) => {
@@ -1661,7 +1671,18 @@ function MainLayout() {
                   </>
                 )}
               </div>
-            )}    </div>
+            )}
+            <ConfirmDialog
+              isOpen={dialogState.isOpen}
+              title={dialogState.title}
+              message={dialogState.message}
+              confirmText={dialogState.confirmText}
+              cancelText={dialogState.cancelText}
+              variant={dialogState.variant}
+              onConfirm={handleConfirm}
+              onCancel={handleCancel}
+            />
+    </div>
   )
 }
 

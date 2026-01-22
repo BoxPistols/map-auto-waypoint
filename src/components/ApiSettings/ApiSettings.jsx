@@ -30,6 +30,8 @@ import {
 } from '../../services/openaiService';
 import { getSetting, setSetting, resetSettings, getWaypointNumberingMode, setWaypointNumberingMode } from '../../services/settingsService';
 import ModelHelpModal from './ModelHelpModal';
+import ConfirmDialog from '../ConfirmDialog/ConfirmDialog';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import './ApiSettings.scss';
 
 function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
@@ -45,6 +47,7 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   const [localModelName, setLocalModelNameState] = useState(getLocalModelName());
   const [waypointNumbering, setWaypointNumbering] = useState(getWaypointNumberingMode());
   const modalRef = useRef(null);
+  const { dialogState, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
 
   // ローカルLLMが選択されているかどうか
   const isLocalSelected = isLocalModel(selectedModelId);
@@ -104,8 +107,15 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
   };
 
   // OpenAI APIキー削除
-  const handleDeleteApiKey = () => {
-    if (confirm('OpenAI APIキーを削除しますか？')) {
+  const handleDeleteApiKey = async () => {
+    const confirmed = await showConfirm({
+      title: 'APIキーの削除',
+      message: 'OpenAI APIキーを削除しますか？',
+      confirmText: '削除',
+      cancelText: 'キャンセル',
+      variant: 'danger'
+    });
+    if (confirmed) {
       localStorage.removeItem('openai_api_key');
       setHasKey(false);
       notifyStatusChange('openai', 'deleted');
@@ -460,8 +470,15 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
                       </p>
                       <button
                           className='reset-btn'
-                          onClick={() => {
-                              if (confirm('判定設定をデフォルトに戻しますか？\n（APIキーは削除されません）')) {
+                          onClick={async () => {
+                              const confirmed = await showConfirm({
+                                  title: '設定リセット',
+                                  message: '判定設定をデフォルトに戻しますか？（APIキーは削除されません）',
+                                  confirmText: 'リセット',
+                                  cancelText: 'キャンセル',
+                                  variant: 'warning'
+                              });
+                              if (confirmed) {
                                   resetSettings();
                                   setAvoidanceDistance(100);
                                   setDidAvoidanceMode(false);
@@ -479,6 +496,16 @@ function ApiSettings({ isOpen, onClose, onApiStatusChange }) {
           {isModelHelpOpen && (
               <ModelHelpModal onClose={() => setIsModelHelpOpen(false)} />
           )}
+          <ConfirmDialog
+              isOpen={dialogState.isOpen}
+              title={dialogState.title}
+              message={dialogState.message}
+              confirmText={dialogState.confirmText}
+              cancelText={dialogState.cancelText}
+              variant={dialogState.variant}
+              onConfirm={handleConfirm}
+              onCancel={handleCancel}
+          />
       </div>
   )
 }
