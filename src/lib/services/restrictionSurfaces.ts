@@ -36,6 +36,14 @@ export type RestrictionSurfaceProperties = Record<string, unknown> & {
 }
 
 export type RestrictionSurfaceFeature = GeoJSON.Feature<GeoJSON.Geometry, RestrictionSurfaceProperties>
+export type TileRange = {
+  z: number
+  xMin: number
+  xMax: number
+  yMin: number
+  yMax: number
+  count: number
+}
 
 /** 制限表面のスタイル定義 */
 export const RESTRICTION_SURFACE_STYLES: Record<
@@ -113,6 +121,8 @@ export const KOKUAREA_TILE_URL = 'https://maps.gsi.go.jp/xyz/kokuarea/{z}/{x}/{y
 export const KOKUAREA_TILE_ZOOM = 8
 /** kokuarea 取得用プロキシエンドポイント */
 export const KOKUAREA_PROXY_ENDPOINT = '/api/kokuarea'
+/** 1回の描画で取得する最大タイル数 */
+export const KOKUAREA_MAX_TILES = 64
 
 const MAX_TILE_CACHE = 200
 const tileFeatureCache = new Map<string, RestrictionSurfaceFeature[]>()
@@ -210,20 +220,32 @@ function toTileY(lat: number, z: number): number {
 }
 
 /**
+ * 表示範囲内のタイル範囲を取得
+ */
+export function getVisibleTileRange(
+  bounds: { west: number; east: number; south: number; north: number },
+  z: number
+): TileRange {
+  const xMin = toTileX(bounds.west, z)
+  const xMax = toTileX(bounds.east, z)
+  const yMin = toTileY(bounds.north, z)
+  const yMax = toTileY(bounds.south, z)
+  const count = (xMax - xMin + 1) * (yMax - yMin + 1)
+
+  return { z, xMin, xMax, yMin, yMax, count }
+}
+
+/**
  * 表示範囲内のタイル座標一覧を取得
  */
 export function getVisibleTileCoordinates(
   bounds: { west: number; east: number; south: number; north: number },
   z: number
 ): Array<{ z: number; x: number; y: number }> {
-  const xMin = toTileX(bounds.west, z)
-  const xMax = toTileX(bounds.east, z)
-  const yMin = toTileY(bounds.north, z)
-  const yMax = toTileY(bounds.south, z)
-
+  const range = getVisibleTileRange(bounds, z)
   const tiles: Array<{ z: number; x: number; y: number }> = []
-  for (let x = xMin; x <= xMax; x++) {
-    for (let y = yMin; y <= yMax; y++) {
+  for (let x = range.xMin; x <= range.xMax; x++) {
+    for (let y = range.yMin; y <= range.yMax; y++) {
       tiles.push({ z, x, y })
     }
   }
@@ -318,7 +340,20 @@ export async function fetchRestrictionSurfaceTiles(
 ): Promise<GeoJSON.FeatureCollection> {
   // kokuarea は z=8 のみ提供されるため固定
   const z = KOKUAREA_TILE_ZOOM
-  const tiles = getVisibleTileCoordinates(bounds, z)
+  const range = getVisibleTileRange(bounds, z)
+  if (range.count > KOKUAREA_MAX_TILES) {
+    return {
+      type: 'FeatureCollection',
+      features: []
+    }
+  }
+
+  const tiles: Array<{ z: number; x: number; y: number }> = []
+  for (let x = range.xMin; x <= range.xMax; x++) {
+    for (let y = range.yMin; y <= range.yMax; y++) {
+      tiles.push({ z, x, y })
+    }
+  }
 
   const tileFeatureGroups = await Promise.all(
     tiles.map((tile) => fetchRestrictionSurfaceTile(tile))
@@ -363,9 +398,11 @@ export function getRestrictionSurfaceLayerStyles(): {
 export const RestrictionSurfaceService = {
   TILE_URL: KOKUAREA_TILE_URL,
   PROXY_ENDPOINT: KOKUAREA_PROXY_ENDPOINT,
+  MAX_TILES: KOKUAREA_MAX_TILES,
   STYLES: RESTRICTION_SURFACE_STYLES,
   fillTileUrl: fillKokuareaTileUrl,
   buildTileUrl: buildKokuareaTileUrl,
+  getVisibleTileRange,
   getVisibleTiles: getVisibleTileCoordinates,
   classify: classifyRestrictionSurface,
   enrichFeature: enrichRestrictionSurfaceFeature,

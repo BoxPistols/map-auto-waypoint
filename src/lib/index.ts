@@ -137,9 +137,11 @@ export {
 export {
   KOKUAREA_TILE_URL,
   KOKUAREA_PROXY_ENDPOINT,
+  KOKUAREA_MAX_TILES,
   RESTRICTION_SURFACE_STYLES,
   fillKokuareaTileUrl,
   buildKokuareaTileUrl,
+  getVisibleTileRange,
   getVisibleTileCoordinates,
   classifyRestrictionSurface,
   enrichRestrictionSurfaceFeature,

@@ -21,7 +21,10 @@ import {
 } from '../../lib'
 import {
   fetchRestrictionSurfaceTiles,
-  RESTRICTION_SURFACE_STYLES
+  RESTRICTION_SURFACE_STYLES,
+  getVisibleTileRange,
+  KOKUAREA_TILE_ZOOM,
+  KOKUAREA_MAX_TILES
 } from '../../lib/services/restrictionSurfaces'
 import { loadMapSettings, saveMapSettings } from '../../utils/storage'
 import styles from './Map.module.scss'
@@ -177,6 +180,7 @@ const Map = ({
   const [selectionBox, setSelectionBox] = useState(null) // {startX, startY, endX, endY}
   const [selectedWaypointIds, setSelectedWaypointIds] = useState(new Set())
   const [isSelecting, setIsSelecting] = useState(false)
+  const lastRestrictionSurfaceKey = useRef(null)
 
   // Context menu state for right-click
   const [contextMenu, setContextMenu] = useState(null) // { isOpen, position, waypoint }
@@ -311,6 +315,7 @@ const Map = ({
   // 制限表面データを取得（表示範囲変更時）
   useEffect(() => {
     if (!isAirportOverlayEnabled || !isMapReady || !mapRef.current) {
+      lastRestrictionSurfaceKey.current = null
       setRestrictionSurfacesData(null)
       return
     }
@@ -327,9 +332,32 @@ const Map = ({
 
       // ズームレベルが低すぎる場合は取得しない（パフォーマンス対策）
       if (zoom < 8) {
+        lastRestrictionSurfaceKey.current = null
         setRestrictionSurfacesData(null)
         return
       }
+
+      const range = getVisibleTileRange(
+        {
+          west: bounds.getWest(),
+          east: bounds.getEast(),
+          south: bounds.getSouth(),
+          north: bounds.getNorth()
+        },
+        KOKUAREA_TILE_ZOOM
+      )
+      const rangeKey = `${range.z}:${range.xMin}-${range.xMax}:${range.yMin}-${range.yMax}`
+
+      if (range.count > KOKUAREA_MAX_TILES) {
+        lastRestrictionSurfaceKey.current = rangeKey
+        setRestrictionSurfacesData(null)
+        return
+      }
+
+      if (lastRestrictionSurfaceKey.current === rangeKey) {
+        return
+      }
+      lastRestrictionSurfaceKey.current = rangeKey
 
       try {
         const data = await fetchRestrictionSurfaceTiles(
@@ -1269,6 +1297,7 @@ const Map = ({
             <Layer
               id="restriction-surfaces-label"
               type="symbol"
+              minzoom={10}
               layout={{
                 'text-field': ['coalesce', ['get', '__surface_label'], ['get', 'name']],
                 'text-size': 10,
