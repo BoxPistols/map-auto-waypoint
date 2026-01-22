@@ -41,7 +41,10 @@ export default function FlightPlanChecker({ lat, lng, darkMode = false, compact 
   // 安全性評価
   const safety = useOperationSafety(lat, lng, meshCode)
 
-  if (safety.loading) {
+  // reasonsが配列であることを保証（防御的コーディング）
+  const safeReasons = Array.isArray(safety?.reasons) ? safety.reasons : []
+
+  if (safety?.loading) {
     return (
       <div className={`${styles.container} ${darkMode ? styles.dark : ''}`}>
         <div className={styles.loading}>
@@ -52,7 +55,7 @@ export default function FlightPlanChecker({ lat, lng, darkMode = false, compact 
     )
   }
 
-  if (safety.error) {
+  if (safety?.error) {
     return (
       <div className={`${styles.container} ${darkMode ? styles.dark : ''}`}>
         <div className={styles.error}>
@@ -63,9 +66,9 @@ export default function FlightPlanChecker({ lat, lng, darkMode = false, compact 
     )
   }
 
-  const StatusIcon = safety.canFly ? CheckCircle : XCircle
-  const statusColor = getSafetyLevelColor(safety.safetyLevel)
-  const statusText = getSafetyLevelText(safety.safetyLevel)
+  const StatusIcon = safety?.canFly ? CheckCircle : XCircle
+  const statusColor = getSafetyLevelColor(safety?.safetyLevel ?? 'prohibited')
+  const statusText = getSafetyLevelText(safety?.safetyLevel ?? 'prohibited')
 
   return (
     <div className={`${styles.container} ${darkMode ? styles.dark : ''} ${compact ? styles.compact : ''}`}>
@@ -77,7 +80,7 @@ export default function FlightPlanChecker({ lat, lng, darkMode = false, compact 
         />
         <div className={styles.statusText}>
           <span className={styles.flyStatus} style={{ color: statusColor }}>
-            {safety.canFly ? '飛行可能' : '飛行不可'}
+            {safety?.canFly ? '飛行可能' : '飛行不可'}
           </span>
           <span className={styles.levelBadge} style={{ backgroundColor: statusColor }}>
             {statusText}
@@ -86,11 +89,11 @@ export default function FlightPlanChecker({ lat, lng, darkMode = false, compact 
       </div>
 
       {/* 詳細理由 */}
-      {!compact && safety.reasons?.length > 0 && (
+      {!compact && safeReasons.length > 0 && (
         <div className={styles.reasons}>
           <h4 className={styles.reasonsTitle}>詳細</h4>
           <ul className={styles.reasonsList}>
-            {safety.reasons.map((reason, index) => {
+            {safeReasons.map((reason, index) => {
               const Icon = SEVERITY_ICONS[reason.severity] || Info
               const color = SEVERITY_COLORS[reason.severity] || '#6b7280'
               return (
@@ -105,11 +108,11 @@ export default function FlightPlanChecker({ lat, lng, darkMode = false, compact 
       )}
 
       {/* 次の安全時間帯 */}
-      {!safety.canFly && safety.nextSafeWindow && !compact && (
+      {!safety?.canFly && safety?.nextSafeWindow && !compact && (
         <div className={styles.nextWindow}>
           <span className={styles.nextWindowLabel}>次の飛行可能時間帯:</span>
           <span className={styles.nextWindowTime}>
-            {safety.nextSafeWindow.toLocaleString('ja-JP', {
+            {safety?.nextSafeWindow?.toLocaleString('ja-JP', {
               month: 'short',
               day: 'numeric',
               hour: '2-digit',
@@ -120,35 +123,35 @@ export default function FlightPlanChecker({ lat, lng, darkMode = false, compact 
       )}
 
       {/* 気象データサマリー */}
-      {!compact && safety.weatherData && (
+      {!compact && safety?.weatherData && (
         <div className={styles.weatherSummary}>
           <div className={styles.weatherItem}>
             <span className={styles.weatherLabel}>風速</span>
             <span className={styles.weatherValue}>
-              {safety.weatherData.windSpeed?.toFixed(1) || '-'} m/s
+              {safety?.weatherData?.windSpeed?.toFixed(1) || '-'} m/s
             </span>
           </div>
           <div className={styles.weatherItem}>
             <span className={styles.weatherLabel}>降水確率</span>
             <span className={styles.weatherValue}>
-              {safety.weatherData.precipitationProbability || 0}%
+              {safety?.weatherData?.precipitationProbability ?? 0}%
             </span>
           </div>
           <div className={styles.weatherItem}>
             <span className={styles.weatherLabel}>気温</span>
             <span className={styles.weatherValue}>
-              {safety.weatherData.temperature?.toFixed(1) || '-'}°C
+              {safety?.weatherData?.temperature?.toFixed(1) || '-'}°C
             </span>
           </div>
         </div>
       )}
 
       {/* 飛行可能時間 */}
-      {!compact && safety.flightWindowData?.flightAllowedNow && (
+      {!compact && safety?.flightWindowData?.flightAllowedNow && (
         <div className={styles.flightWindow}>
           <span className={styles.flightWindowLabel}>薄明終了まで</span>
           <span className={styles.flightWindowTime}>
-            {safety.flightWindowData.minutesRemaining}分
+            {safety?.flightWindowData?.minutesRemaining ?? '-'}分
           </span>
         </div>
       )}

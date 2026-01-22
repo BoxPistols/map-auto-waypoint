@@ -69,13 +69,14 @@ export function useWeatherMesh(
   hours: number = 24
 ): WeatherMeshResult {
   const [data, setData] = useState<MeshTimeSeriesData | null>(null)
-  const [loading, setLoading] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchData = useCallback(async () => {
     if (!meshCode) {
       setError('メッシュコードが必要です')
       setData(null)
+      setLoading(false)
       return
     }
 
