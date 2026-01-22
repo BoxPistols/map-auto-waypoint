@@ -277,12 +277,20 @@ export {
   getNetworkCoverage,
   getSignalStrengthLabel,
   getSignalStrengthColor,
+  generateLTECoverageGeoJSON,
+  generate5GCoverageGeoJSON,
   NetworkCoverageService
 } from './services/networkCoverage'
 export type {
   SignalStrength,
   NetworkCoverageInfo,
   NetworkCoverageRequest
+} from './services/networkCoverage'
+
+// Function aliases for network coverage
+export {
+  generateLTECoverageGeoJSON as getLTECoverageGeoJSON,
+  generate5GCoverageGeoJSON as get5GCoverageGeoJSON
 } from './services/networkCoverage'
 
 // ============================================
