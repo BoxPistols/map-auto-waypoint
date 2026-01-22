@@ -1,7 +1,12 @@
+:root {
+  --chat-fab-offset-x: 48px;
+  --chat-fab-size: 56px;
+}
+
 .flight-assistant-fab {
   position: fixed;
   bottom: 24px;
-  right: 24px;
+  right: calc(24px + var(--chat-fab-offset-x, 0px));
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -1610,6 +1615,11 @@
 
 // タブレット (768px以下)
 @media (max-width: 768px) {
+  :root {
+    --chat-fab-offset-x: 44px;
+    --chat-fab-size: 52px;
+  }
+
   .flight-assistant {
     left: 12px;
     right: 12px;
@@ -1645,7 +1655,7 @@
     width: 52px;
     height: 52px;
     bottom: 16px;
-    right: 16px;
+    right: calc(16px + var(--chat-fab-offset-x, 0px));
   }
 
   .flight-assistant-header {
@@ -1712,6 +1722,11 @@
 
 // 大型スマートフォン (600px以下)
 @media (max-width: 600px) {
+  :root {
+    --chat-fab-offset-x: 40px;
+    --chat-fab-size: 48px;
+  }
+
   .flight-assistant {
     left: 10px;
     right: 10px;
@@ -1741,7 +1756,7 @@
     width: 48px;
     height: 48px;
     bottom: 12px;
-    right: 12px;
+    right: calc(12px + var(--chat-fab-offset-x, 0px));
   }
 
   .chat-logs-panel {
@@ -1779,6 +1794,11 @@
 
 // 標準スマートフォン (480px以下)
 @media (max-width: 480px) {
+  :root {
+    --chat-fab-offset-x: 36px;
+    --chat-fab-size: 44px;
+  }
+
   .flight-assistant {
     left: 8px;
     right: 8px;
@@ -1819,7 +1839,7 @@
     width: 44px;
     height: 44px;
     bottom: 10px;
-    right: 10px;
+    right: calc(10px + var(--chat-fab-offset-x, 0px));
 
     svg {
       width: 20px;
@@ -2104,6 +2124,11 @@
 
 // 小型スマートフォン (375px以下)
 @media (max-width: 375px) {
+  :root {
+    --chat-fab-offset-x: 32px;
+    --chat-fab-size: 40px;
+  }
+
   .flight-assistant {
     left: 6px;
     right: 6px;
@@ -2116,7 +2141,7 @@
     width: 40px;
     height: 40px;
     bottom: 8px;
-    right: 8px;
+    right: calc(8px + var(--chat-fab-offset-x, 0px));
   }
 
   .flight-assistant-header {
@@ -2147,6 +2172,11 @@
 
 // 超小型スマートフォン (320px以下)
 @media (max-width: 320px) {
+  :root {
+    --chat-fab-offset-x: 28px;
+    --chat-fab-size: 36px;
+  }
+
   .flight-assistant {
     left: 4px;
     right: 4px;
@@ -2158,7 +2188,7 @@
     width: 36px;
     height: 36px;
     bottom: 6px;
-    right: 6px;
+    right: calc(6px + var(--chat-fab-offset-x, 0px));
   }
 
   .flight-assistant-header {
@@ -2191,7 +2221,7 @@
 
   .flight-assistant-fab {
     bottom: 12px;
-    right: 12px;
+    right: calc(12px + var(--chat-fab-offset-x, 0px));
   }
 }
 
@@ -2229,7 +2259,7 @@
   // FABのみsafe-area対応（パネルは左右固定のためleft/rightで調整済み）
   .flight-assistant-fab {
     bottom: calc(16px + env(safe-area-inset-bottom));
-    right: calc(16px + env(safe-area-inset-right));
+    right: calc(16px + env(safe-area-inset-right) + var(--chat-fab-offset-x, 0px));
   }
 
   @media (max-width: 768px) {
@@ -2257,7 +2287,7 @@
 
     .flight-assistant-fab {
       bottom: calc(10px + env(safe-area-inset-bottom));
-      right: calc(10px + env(safe-area-inset-right));
+      right: calc(10px + env(safe-area-inset-right) + var(--chat-fab-offset-x, 0px));
     }
   }
 

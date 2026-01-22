@@ -1,6 +1,17 @@
 import { useState, useMemo, useEffect } from 'react'
-import { FileJson, FileSpreadsheet, Map, Download, X, Eye, ChevronLeft, Plane, Mountain } from 'lucide-react'
-import { exportToJSON, exportToCSV, exportPolygonsToGeoJSON, exportFullBackup, exportToNOTAM, generateNOTAMPreview, getPolygonOrderFromWaypoints } from '../../utils/exporters'
+import { FileJson, FileSpreadsheet, Map, Download, X, Eye, ChevronLeft, Plane, Mountain, Globe } from 'lucide-react'
+import {
+  exportToJSON,
+  exportToCSV,
+  exportToDMSCSV,
+  exportToDMS,
+  exportPolygonsToGeoJSON,
+  exportPolygonsToKML,
+  exportFullBackup,
+  generateDMSPreview,
+  generatePolygonKMLPreview,
+  getPolygonOrderFromWaypoints
+} from '../../utils/exporters'
 import { exportAllData } from '../../utils/storage'
 import styles from './ExportPanel.module.scss'
 
@@ -16,12 +27,49 @@ const generateWaypointJSONPreview = (waypoints) => {
   }))
 }
 
+const decimalToDMSPreview = (decimal, isLatitude = true) => {
+  const absolute = Math.abs(decimal)
+  const degrees = Math.floor(absolute)
+  const minutesDecimal = (absolute - degrees) * 60
+  const minutes = Math.floor(minutesDecimal)
+  const seconds = Math.round((minutesDecimal - minutes) * 60)
+
+  let finalSeconds = seconds
+  let finalMinutes = minutes
+  let finalDegrees = degrees
+
+  if (finalSeconds === 60) {
+    finalSeconds = 0
+    finalMinutes += 1
+  }
+  if (finalMinutes === 60) {
+    finalMinutes = 0
+    finalDegrees += 1
+  }
+
+  const prefix = isLatitude ? '北緯' : '東経'
+  return `${prefix}${finalDegrees}°${finalMinutes}'${finalSeconds}"`
+}
+
 const generateWaypointCSVPreview = (waypoints) => {
   const headers = ['番号', '緯度', '経度', '標高', 'ポリゴン名', '種別']
   const rows = waypoints.map((wp, index) => [
     index + 1,
     wp.lat.toFixed(6),
     wp.lng.toFixed(6),
+    wp.elevation ? wp.elevation.toFixed(1) : '-',
+    wp.polygonName || '',
+    wp.type === 'manual' ? '手動' : wp.type === 'grid' ? 'グリッド' : '頂点'
+  ])
+  return { headers, rows }
+}
+
+const generateWaypointDMSCSVPreview = (waypoints) => {
+  const headers = ['番号', '緯度（DMS）', '経度（DMS）', '標高', 'ポリゴン名', '種別']
+  const rows = waypoints.map((wp, index) => [
+    index + 1,
+    Number.isFinite(wp.lat) ? decimalToDMSPreview(wp.lat, true) : '-',
+    Number.isFinite(wp.lng) ? decimalToDMSPreview(wp.lng, false) : '-',
     wp.elevation ? wp.elevation.toFixed(1) : '-',
     wp.polygonName || '',
     wp.type === 'manual' ? '手動' : wp.type === 'grid' ? 'グリッド' : '頂点'
@@ -46,17 +94,17 @@ const generatePolygonGeoJSONPreview = (polygons) => {
 }
 
 const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
-  const [previewMode, setPreviewMode] = useState(null) // null | 'waypoint-json' | 'waypoint-csv' | 'waypoint-notam' | 'polygon-geojson' | 'backup'
+  const [previewMode, setPreviewMode] = useState(null) // null | 'waypoint-json' | 'waypoint-csv' | 'waypoint-dms' | 'waypoint-dms-csv' | 'polygon-geojson' | 'polygon-kml' | 'backup'
   const [notamAltitudes, setNotamAltitudes] = useState({}) // { [polygonId]: number }
 
-  // Get polygon list for NOTAM altitude input
+  // DMSテキストの高度入力に使うポリゴン一覧
   const notamPolygons = useMemo(() => {
     return getPolygonOrderFromWaypoints(waypoints, polygons)
   }, [waypoints, polygons])
 
-  // Initialize altitudes when entering NOTAM mode
+  // DMSテキストモードの高度入力を初期化
   useEffect(() => {
-    if (previewMode === 'waypoint-notam') {
+    if (previewMode === 'waypoint-dms') {
       const initialAltitudes = {}
       notamPolygons.forEach(p => {
         if (notamAltitudes[p.id] === undefined) {
@@ -84,10 +132,14 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
         return JSON.stringify(generateWaypointJSONPreview(waypoints), null, 2)
       case 'waypoint-csv':
         return generateWaypointCSVPreview(waypoints)
-      case 'waypoint-notam':
-        return generateNOTAMPreview(waypoints, polygons, notamAltitudes)
+      case 'waypoint-dms':
+        return generateDMSPreview(waypoints, polygons, notamAltitudes)
+      case 'waypoint-dms-csv':
+        return generateWaypointDMSCSVPreview(waypoints)
       case 'polygon-geojson':
         return JSON.stringify(generatePolygonGeoJSONPreview(polygons), null, 2)
+      case 'polygon-kml':
+        return generatePolygonKMLPreview(polygons)
       case 'backup':
         return JSON.stringify(exportAllData(), null, 2)
       default:
@@ -105,9 +157,19 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
     exportToCSV(waypoints)
   }
 
+  const handleExportWaypointsDMSCSV = () => {
+    if (waypoints.length === 0) return
+    exportToDMSCSV(waypoints)
+  }
+
   const handleExportPolygonsGeoJSON = () => {
     if (polygons.length === 0) return
     exportPolygonsToGeoJSON(polygons)
+  }
+
+  const handleExportPolygonsKML = () => {
+    if (polygons.length === 0) return
+    exportPolygonsToKML(polygons)
   }
 
   const handleExportBackup = () => {
@@ -115,9 +177,9 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
     exportFullBackup(data)
   }
 
-  const handleExportNOTAM = () => {
+  const handleExportDMS = () => {
     if (waypoints.length === 0) return
-    exportToNOTAM(waypoints, polygons, notamAltitudes)
+    exportToDMS(waypoints, polygons, notamAltitudes)
   }
 
   // Preview mode title
@@ -125,8 +187,10 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
     switch (previewMode) {
       case 'waypoint-json': return 'Waypoint JSON プレビュー'
       case 'waypoint-csv': return 'Waypoint CSV プレビュー'
-      case 'waypoint-notam': return 'NOTAM形式 プレビュー（度分秒）'
+      case 'waypoint-dms': return 'DMSテキスト プレビュー（度分秒）'
+      case 'waypoint-dms-csv': return 'DMS CSV プレビュー（度分秒）'
       case 'polygon-geojson': return 'ポリゴン GeoJSON プレビュー'
+      case 'polygon-kml': return 'ポリゴン KML プレビュー'
       case 'backup': return 'バックアップ プレビュー'
       default: return ''
     }
@@ -134,7 +198,7 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
 
   // Render preview content
   const renderPreview = () => {
-    if (previewMode === 'waypoint-csv' && previewData) {
+    if ((previewMode === 'waypoint-csv' || previewMode === 'waypoint-dms-csv') && previewData) {
       const { headers, rows } = previewData
       return (
         <div className={styles.csvPreview}>
@@ -161,8 +225,8 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
       )
     }
 
-    // NOTAM format - plain text with DMS coordinates and altitude input
-    if (previewMode === 'waypoint-notam' && previewData) {
+    // DMSテキスト（度分秒）＋高度入力
+    if (previewMode === 'waypoint-dms' && previewData) {
       return (
         <div className={styles.notamPreview}>
           {/* Altitude input section */}
@@ -238,8 +302,10 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               switch (previewMode) {
                 case 'waypoint-json': handleExportWaypointsJSON(); break
                 case 'waypoint-csv': handleExportWaypointsCSV(); break
-                case 'waypoint-notam': handleExportNOTAM(); break
+                case 'waypoint-dms': handleExportDMS(); break
+                case 'waypoint-dms-csv': handleExportWaypointsDMSCSV(); break
                 case 'polygon-geojson': handleExportPolygonsGeoJSON(); break
+                case 'polygon-kml': handleExportPolygonsKML(); break
                 case 'backup': handleExportBackup(); break
               }
             }}
@@ -290,14 +356,24 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               CSV
             </button>
             <button
-              className={`${styles.exportButton} ${styles.notamButton}`}
-              onClick={() => setPreviewMode('waypoint-notam')}
+              className={`${styles.exportButton} ${styles.dmsButton}`}
+              onClick={() => setPreviewMode('waypoint-dms')}
               disabled={waypoints.length === 0}
-              data-tooltip="NOTAM通知用（度分秒形式）"
+              data-tooltip="DMSテキスト（度分秒形式）"
             >
               <Eye size={16} />
               <Plane size={16} />
-              NOTAM
+              DMS
+            </button>
+            <button
+              className={styles.exportButton}
+              onClick={() => setPreviewMode('waypoint-dms-csv')}
+              disabled={waypoints.length === 0}
+              data-tooltip="DMS CSV（度分秒形式）"
+            >
+              <Eye size={16} />
+              <FileSpreadsheet size={16} />
+              DMS CSV
             </button>
           </div>
         </div>
@@ -318,6 +394,16 @@ const ExportPanel = ({ waypoints = [], polygons = [], onClose }) => {
               <Eye size={16} />
               <Map size={16} />
               GeoJSON
+            </button>
+            <button
+              className={styles.exportButton}
+              onClick={() => setPreviewMode('polygon-kml')}
+              disabled={polygons.length === 0}
+              data-tooltip="Google Earth互換KML"
+            >
+              <Eye size={16} />
+              <Globe size={16} />
+              KML
             </button>
           </div>
         </div>

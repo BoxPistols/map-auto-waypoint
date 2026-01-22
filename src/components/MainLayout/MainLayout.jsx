@@ -1548,8 +1548,25 @@ function MainLayout() {
               }
             }
           }
-          setDidHighlightedWaypointIndices(didSet)
-          setWaypointIssueFlagsById(flagsById)
+          setDidHighlightedWaypointIndices(prev => {
+            const merged = new Set(prev)
+            for (const index of didSet) {
+              merged.add(index)
+            }
+            return merged
+          })
+          setWaypointIssueFlagsById(prev => {
+            const merged = { ...prev }
+            for (const [waypointId, nextFlags] of Object.entries(flagsById)) {
+              const prevFlags = merged[waypointId] || {}
+              merged[waypointId] = {
+                hasDID: Boolean(prevFlags.hasDID || nextFlags.hasDID),
+                hasAirport: Boolean(prevFlags.hasAirport || nextFlags.hasAirport),
+                hasProhibited: Boolean(prevFlags.hasProhibited || nextFlags.hasProhibited)
+              }
+            }
+            return merged
+          })
 
           // 推奨位置のオーバーレイ表示
           const didWarningOnly = getSetting('didWarningOnlyMode')

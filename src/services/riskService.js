@@ -125,7 +125,7 @@ export const checkAllWaypointsRestrictions = (waypoints) => {
 
   // 衝突結果を旧形式に変換（後方互換性）
   // batchResultsはMap<string, WaypointCollisionResult>
-  for (const [waypointId, result] of batchResults.entries()) {
+  for (const [_waypointId, result] of batchResults.entries()) {
     if (result.isColliding) {
       const key = `${result.collisionType}-${result.areaName}`;
       if (!checkedZones.has(key)) {

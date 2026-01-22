@@ -8,7 +8,6 @@
  */
 
 import * as turf from '@turf/turf';
-import { getDistanceMeters } from '../lib/utils/geo';
 
 /**
  * DIDデータのキャッシュ（都道府県単位）

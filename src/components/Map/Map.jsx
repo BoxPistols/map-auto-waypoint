@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
-import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair, Mountain } from 'lucide-react'
+import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer, AttributionControl } from 'react-map-gl/maplibre'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import ContextMenu from '../ContextMenu'
@@ -21,7 +21,10 @@ import {
 } from '../../lib'
 import {
   fetchRestrictionSurfaceTiles,
-  RESTRICTION_SURFACE_STYLES
+  RESTRICTION_SURFACE_STYLES,
+  getVisibleTileRange,
+  KOKUAREA_TILE_ZOOM,
+  KOKUAREA_MAX_TILES
 } from '../../lib/services/restrictionSurfaces'
 import { loadMapSettings, saveMapSettings } from '../../utils/storage'
 import styles from './Map.module.scss'
@@ -177,6 +180,7 @@ const Map = ({
   const [selectionBox, setSelectionBox] = useState(null) // {startX, startY, endX, endY}
   const [selectedWaypointIds, setSelectedWaypointIds] = useState(new Set())
   const [isSelecting, setIsSelecting] = useState(false)
+  const lastRestrictionSurfaceKey = useRef(null)
 
   // Context menu state for right-click
   const [contextMenu, setContextMenu] = useState(null) // { isOpen, position, waypoint }
@@ -184,6 +188,10 @@ const Map = ({
 
   // Load map settings from localStorage (must be before viewState init)
   const initialSettings = useMemo(() => loadMapSettings(), [])
+  const initialAirportOverlay = Boolean(
+    initialSettings.showAirportZones || initialSettings.showRestrictionSurfaces
+  )
+  const [isMapReady, setIsMapReady] = useState(false)
 
   // Focus crosshair state
   const [showCrosshair, setShowCrosshair] = useState(initialSettings.showCrosshair ?? false)
@@ -202,8 +210,8 @@ const Map = ({
   // レイヤー表示状態を単一オブジェクトで管理
   const [layerVisibility, setLayerVisibility] = useState({
     is3D: initialSettings.is3D,
-    showAirportZones: initialSettings.showAirportZones,
-    showRestrictionSurfaces: initialSettings.showRestrictionSurfaces ?? false,
+    showAirportZones: initialAirportOverlay,
+    showRestrictionSurfaces: initialAirportOverlay,
     showRedZones: initialSettings.showRedZones ?? false,
     showYellowZones: initialSettings.showYellowZones ?? false,
     showHeliports: initialSettings.showHeliports ?? false,
@@ -223,6 +231,14 @@ const Map = ({
   const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
   const [showStylePicker, setShowStylePicker] = useState(false)
   const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false)
+  const hasDuplicateWaypointIndices = useMemo(() => {
+    const seen = new Set()
+    for (const wp of waypoints) {
+      if (seen.has(wp.index)) return true
+      seen.add(wp.index)
+    }
+    return false
+  }, [waypoints])
 
   // レイヤー表示状態を更新するヘルパー関数
   const toggleLayer = useCallback((layerKey) => {
@@ -230,6 +246,16 @@ const Map = ({
       ...prev,
       [layerKey]: !prev[layerKey]
     }))
+  }, [])
+  const toggleAirportOverlay = useCallback(() => {
+    setLayerVisibility(prev => {
+      const nextValue = !(prev.showAirportZones || prev.showRestrictionSurfaces)
+      return {
+        ...prev,
+        showAirportZones: nextValue,
+        showRestrictionSurfaces: nextValue
+      }
+    })
   }, [])
 
   // isMobile is now passed as a prop from App.jsx to avoid duplication
@@ -283,9 +309,13 @@ const Map = ({
     }
   }, [layerVisibility.showWind])
 
+  const isAirportOverlayEnabled =
+    layerVisibility.showAirportZones || layerVisibility.showRestrictionSurfaces
+
   // 制限表面データを取得（表示範囲変更時）
   useEffect(() => {
-    if (!layerVisibility.showRestrictionSurfaces || !mapRef.current) {
+    if (!isAirportOverlayEnabled || !isMapReady || !mapRef.current) {
+      lastRestrictionSurfaceKey.current = null
       setRestrictionSurfacesData(null)
       return
     }
@@ -302,9 +332,32 @@ const Map = ({
 
       // ズームレベルが低すぎる場合は取得しない（パフォーマンス対策）
       if (zoom < 8) {
+        lastRestrictionSurfaceKey.current = null
         setRestrictionSurfacesData(null)
         return
       }
+
+      const range = getVisibleTileRange(
+        {
+          west: bounds.getWest(),
+          east: bounds.getEast(),
+          south: bounds.getSouth(),
+          north: bounds.getNorth()
+        },
+        KOKUAREA_TILE_ZOOM
+      )
+      const rangeKey = `${range.z}:${range.xMin}-${range.xMax}:${range.yMin}-${range.yMax}`
+
+      if (range.count > KOKUAREA_MAX_TILES) {
+        lastRestrictionSurfaceKey.current = rangeKey
+        setRestrictionSurfacesData(null)
+        return
+      }
+
+      if (lastRestrictionSurfaceKey.current === rangeKey) {
+        return
+      }
+      lastRestrictionSurfaceKey.current = rangeKey
 
       try {
         const data = await fetchRestrictionSurfaceTiles(
@@ -351,7 +404,7 @@ const Map = ({
         mapInstance.off('moveend', handleMoveEnd)
       }
     }
-  }, [layerVisibility.showRestrictionSurfaces])
+  }, [isAirportOverlayEnabled, isMapReady])
 
   // Sync viewState when center/zoom props change from parent (e.g., WP click)
   useEffect(() => {
@@ -664,13 +717,9 @@ const Map = ({
           e.preventDefault()
           toggleLayer('showDID')
           break
-        case 'a': // Airport zones toggle
+        case 'a': // Airport zones + restriction surfaces toggle
           e.preventDefault()
-          toggleLayer('showAirportZones')
-          break
-        case 'k': // Restriction surfaces (kokuarea) toggle
-          e.preventDefault()
-          toggleLayer('showRestrictionSurfaces')
+          toggleAirportOverlay()
           break
         case 'r': // Red zones toggle
           e.preventDefault()
@@ -734,7 +783,7 @@ const Map = ({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggle3D, toggleLayer, mapStyleId])
+  }, [toggle3D, toggleLayer, toggleAirportOverlay, mapStyleId])
 
   // Handle map click
   const handleClick = useCallback((e) => {
@@ -1035,21 +1084,24 @@ const Map = ({
         onClick={handleClick}
         onDblClick={handleDoubleClick}
         onContextMenu={handlePolygonRightClick}
+        onLoad={() => setIsMapReady(true)}
         onMouseDown={handleSelectionStart}
         onMouseMove={handleSelectionMove}
         onMouseUp={handleSelectionEnd}
         interactiveLayerIds={interactiveLayerIds}
         mapStyle={currentMapStyle}
         style={{ width: '100%', height: '100%' }}
+        attributionControl={false}
         doubleClickZoom={false}
         maxZoom={20}
         dragPan={!isSelecting}
         touchZoomRotate={true}
         touchPitch={true}
       >
-        {/* ナビゲーションコントロール - モバイルでは下に移動 */}
-        <NavigationControl position={isMobile ? "bottom-right" : "top-right"} visualizePitch={true} />
+        {/* ナビゲーションコントロール - 右下固定 */}
+        <NavigationControl position="bottom-right" visualizePitch={true} />
         <ScaleControl position="bottom-left" unit="metric" />
+        <AttributionControl position="bottom-left" />
 
         <DrawControl
           position="top-left"
@@ -1062,13 +1114,13 @@ const Map = ({
         />
 
         {/* Airport restriction zones */}
-        {layerVisibility.showAirportZones && (
+        {isAirportOverlayEnabled && !restrictionSurfacesData && (
           <Source id="airport-zones" type="geojson" data={airportZonesGeoJSON}>
             <Layer
               id="airport-zones-fill"
               type="fill"
               paint={{
-                'fill-color': '#ff9800',
+                'fill-color': '#7B1FA2',
                 'fill-opacity': 0.15
               }}
             />
@@ -1076,7 +1128,7 @@ const Map = ({
               id="airport-zones-outline"
               type="line"
               paint={{
-                'line-color': '#ff9800',
+                'line-color': '#6A1B9A',
                 'line-width': 2,
                 'line-dasharray': [4, 2]
               }}
@@ -1090,7 +1142,7 @@ const Map = ({
                 'text-anchor': 'center'
               }}
               paint={{
-                'text-color': '#e65100',
+                'text-color': '#4A148C',
                 'text-halo-color': '#fff',
                 'text-halo-width': 1
               }}
@@ -1208,7 +1260,7 @@ const Map = ({
         )}
 
         {/* 制限表面 (航空法に基づく空港周辺の制限表面) */}
-        {layerVisibility.showRestrictionSurfaces && restrictionSurfacesData && (
+        {isAirportOverlayEnabled && restrictionSurfacesData && (
           <Source id="restriction-surfaces" type="geojson" data={restrictionSurfacesData}>
             <Layer
               id="restriction-surfaces-fill"
@@ -1245,6 +1297,7 @@ const Map = ({
             <Layer
               id="restriction-surfaces-label"
               type="symbol"
+              minzoom={10}
               layout={{
                 'text-field': ['coalesce', ['get', '__surface_label'], ['get', 'name']],
                 'text-size': 10,
@@ -1572,11 +1625,16 @@ const Map = ({
                 (rw) => rw.id === wp.id
             )
             const flags = waypointIssueFlagsById && wp.id ? waypointIssueFlagsById[wp.id] : null
-            // DID判定はwaypointIssueFlagsById (ID-based) を使用
-            // didHighlightedWaypointIndices (index-based) は使用しない（cross-polygon contamination防止）
+            const didFromIndex =
+                !hasDuplicateWaypointIndices &&
+                didHighlightedWaypointIndices instanceof Set &&
+                didHighlightedWaypointIndices.has(wp.index)
+            // DID判定はwaypointIssueFlagsById (ID-based) を優先
+            // index-based は重複インデックスがない場合のみフォールバック
             const isInDID =
                 (flags?.hasDID || false) ||
-                (recommendedWp?.hasDID || false)
+                (recommendedWp?.hasDID || false) ||
+                didFromIndex
             const isInAirport = (flags?.hasAirport || false) || (recommendedWp?.hasAirport || false)
             const isInProhibited = (flags?.hasProhibited || false) || (recommendedWp?.hasProhibited || false)
 
@@ -1702,19 +1760,11 @@ const Map = ({
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showAirportZones ? styles.activeAirport : ''}`}
-            onClick={() => toggleLayer('showAirportZones')}
-            data-tooltip={`空港制限区域 [A]`}
+            onClick={toggleAirportOverlay}
+            data-tooltip={`空港制限表面 [A]`}
             data-tooltip-pos="left"
           >
             <Plane size={18} />
-          </button>
-          <button
-            className={`${styles.toggleButton} ${layerVisibility.showRestrictionSurfaces ? styles.activeRestrictionSurfaces : ''}`}
-            onClick={() => toggleLayer('showRestrictionSurfaces')}
-            data-tooltip={`制限表面 [K]`}
-            data-tooltip-pos="left"
-          >
-            <Mountain size={18} />
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showRedZones ? styles.activeRed : ''}`}

@@ -1,17 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { CustomLayerService } from '../lib/services/customLayers'
 
 export function useCustomLayers() {
-  const [customLayers, setCustomLayers] = useState([])
-  const [visibleCustomLayerIds, setVisibleCustomLayerIds] = useState(new Set())
-
-  // Load custom layers on mount
-  useEffect(() => {
-    const layers = CustomLayerService.getAll()
-    setCustomLayers(layers)
-    // Initially show all custom layers
-    setVisibleCustomLayerIds(new Set(layers.map(l => l.id)))
-  }, [])
+  const initialLayers = useMemo(() => CustomLayerService.getAll(), [])
+  const [customLayers, setCustomLayers] = useState(initialLayers)
+  const [visibleCustomLayerIds, setVisibleCustomLayerIds] = useState(
+    () => new Set(initialLayers.map(l => l.id))
+  )
 
   const handleCustomLayerAdded = useCallback((layer) => {
     setCustomLayers(prev => [...prev, layer])

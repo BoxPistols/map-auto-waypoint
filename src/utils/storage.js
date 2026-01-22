@@ -14,6 +14,7 @@ const DEFAULT_MAP_SETTINGS = {
   is3D: false,
   showDID: false,
   showAirportZones: false,
+  showRestrictionSurfaces: false,
   showNoFlyZones: false,
   showRedZones: false,
   showYellowZones: false,

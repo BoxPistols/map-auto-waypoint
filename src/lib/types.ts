@@ -416,6 +416,12 @@ export interface Waypoint {
 // GeoJSON Layer Config Types
 // ============================================
 
+export type MapLibreTextFieldExpression =
+  | ['get', string]
+  | ['concat', ...(string | number | boolean | MapLibreTextFieldExpression)[]]
+
+export type MapLibreTextFieldValue = string | MapLibreTextFieldExpression
+
 export interface GeoJsonLayerStyle {
   fillColor: string
   fillOpacity: number
@@ -424,7 +430,7 @@ export interface GeoJsonLayerStyle {
   lineDasharray?: number[]
   labelColor: string
   labelSize: number
-  labelField?: unknown[] // MapLibre expression
+  labelField?: MapLibreTextFieldValue
 }
 
 export interface GeoJsonLayerConfig {
