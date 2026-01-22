@@ -8,7 +8,7 @@
  * - 電波干渉区域（LTE/5G）
  */
 
-import type { EmergencyAirspace, RemoteIdZone, MannedAircraftZone, RadioInterferenceZone } from '../types'
+import type { EmergencyAirspace, RemoteIdZone, MannedAircraftZone, RadioInterferenceZone, NetworkCoverageZone } from '../types'
 
 /**
  * 緊急用務空域（災害時などの一時的な飛行制限エリア）
@@ -76,6 +76,58 @@ export const RADIO_INTERFERENCE_ZONES: RadioInterferenceZone[] = [
   { name: '京都タワー', lat: 34.9875, lng: 135.7592, radius: 600, type: 'radio', frequency: 'LTE' },
   { name: '横浜ランドマークタワー', lat: 35.4550, lng: 139.6325, radius: 1000, type: 'radio', frequency: 'LTE' },
   { name: 'あべのハルカス', lat: 34.6463, lng: 135.5133, radius: 1000, type: 'radio', frequency: 'LTE/5G' }
+]
+
+/**
+ * LTEカバレッジエリア（通信可能エリア）
+ * ドローン運用時の通信環境を可視化
+ */
+export const LTE_COVERAGE_ZONES: NetworkCoverageZone[] = [
+  // 主要都市部の広域カバレッジ
+  { name: '東京23区', lat: 35.6762, lng: 139.6503, radius: 25000, type: 'lte', signalStrength: 5 },
+  { name: '横浜市', lat: 35.4437, lng: 139.6380, radius: 18000, type: 'lte', signalStrength: 5 },
+  { name: '大阪市', lat: 34.6937, lng: 135.5023, radius: 20000, type: 'lte', signalStrength: 5 },
+  { name: '名古屋市', lat: 35.1815, lng: 136.9066, radius: 16000, type: 'lte', signalStrength: 5 },
+  { name: '札幌市', lat: 43.0618, lng: 141.3545, radius: 15000, type: 'lte', signalStrength: 5 },
+  { name: '福岡市', lat: 33.5904, lng: 130.4017, radius: 14000, type: 'lte', signalStrength: 5 },
+  { name: '神戸市', lat: 34.6901, lng: 135.1956, radius: 12000, type: 'lte', signalStrength: 5 },
+  { name: '京都市', lat: 35.0116, lng: 135.7681, radius: 12000, type: 'lte', signalStrength: 5 },
+  { name: '仙台市', lat: 38.2682, lng: 140.8694, radius: 11000, type: 'lte', signalStrength: 4 },
+  { name: '広島市', lat: 34.3853, lng: 132.4553, radius: 10000, type: 'lte', signalStrength: 4 },
+  // 郊外・中規模都市
+  { name: '千葉市', lat: 35.6074, lng: 140.1065, radius: 10000, type: 'lte', signalStrength: 4 },
+  { name: 'さいたま市', lat: 35.8617, lng: 139.6455, radius: 10000, type: 'lte', signalStrength: 4 },
+  { name: '川崎市', lat: 35.5309, lng: 139.7028, radius: 12000, type: 'lte', signalStrength: 5 },
+  { name: '相模原市', lat: 35.5703, lng: 139.3769, radius: 8000, type: 'lte', signalStrength: 3 },
+  { name: '新潟市', lat: 37.9026, lng: 139.0232, radius: 9000, type: 'lte', signalStrength: 4 },
+  { name: '浜松市', lat: 34.7108, lng: 137.7261, radius: 8000, type: 'lte', signalStrength: 4 },
+  { name: '静岡市', lat: 34.9769, lng: 138.3831, radius: 8000, type: 'lte', signalStrength: 4 },
+  { name: '岡山市', lat: 34.6552, lng: 133.9195, radius: 8000, type: 'lte', signalStrength: 4 },
+  { name: '熊本市', lat: 32.8031, lng: 130.7079, radius: 8000, type: 'lte', signalStrength: 4 },
+  { name: '鹿児島市', lat: 31.5966, lng: 130.5571, radius: 8000, type: 'lte', signalStrength: 4 }
+]
+
+/**
+ * 5Gカバレッジエリア（高速通信可能エリア）
+ * 主要都市部の5Gサービスエリア
+ */
+export const FIVEG_COVERAGE_ZONES: NetworkCoverageZone[] = [
+  // 5G Sub-6 GHz展開エリア
+  { name: '東京都心（5G）', lat: 35.6762, lng: 139.6503, radius: 15000, type: '5g', signalStrength: 5 },
+  { name: '大阪市（5G）', lat: 34.6937, lng: 135.5023, radius: 12000, type: '5g', signalStrength: 5 },
+  { name: '横浜市（5G）', lat: 35.4437, lng: 139.6380, radius: 10000, type: '5g', signalStrength: 4 },
+  { name: '名古屋市（5G）', lat: 35.1815, lng: 136.9066, radius: 10000, type: '5g', signalStrength: 4 },
+  { name: '札幌市（5G）', lat: 43.0618, lng: 141.3545, radius: 8000, type: '5g', signalStrength: 4 },
+  { name: '福岡市（5G）', lat: 33.5904, lng: 130.4017, radius: 8000, type: '5g', signalStrength: 4 },
+  { name: '神戸市（5G）', lat: 34.6901, lng: 135.1956, radius: 7000, type: '5g', signalStrength: 4 },
+  { name: '京都市（5G）', lat: 35.0116, lng: 135.7681, radius: 7000, type: '5g', signalStrength: 4 },
+  // 主要駅・空港周辺の5Gスポット
+  { name: '羽田空港（5G）', lat: 35.5494, lng: 139.7798, radius: 3000, type: '5g', signalStrength: 5 },
+  { name: '成田空港（5G）', lat: 35.7653, lng: 140.3863, radius: 3000, type: '5g', signalStrength: 5 },
+  { name: '関西国際空港（5G）', lat: 34.4273, lng: 135.2440, radius: 3000, type: '5g', signalStrength: 5 },
+  { name: '新大阪駅（5G）', lat: 34.7336, lng: 135.5001, radius: 2000, type: '5g', signalStrength: 5 },
+  { name: '品川駅（5G）', lat: 35.6284, lng: 139.7387, radius: 2000, type: '5g', signalStrength: 5 },
+  { name: '東京駅（5G）', lat: 35.6812, lng: 139.7671, radius: 2000, type: '5g', signalStrength: 5 }
 ]
 
 // ============================================
@@ -169,6 +221,55 @@ export function getRadioInterferenceZonesGeoJSON(): GeoJSON.FeatureCollection {
   }
 }
 
+/**
+ * LTEカバレッジエリアをGeoJSON Feature Collectionに変換
+ */
+export function getLTECoverageGeoJSON(): GeoJSON.FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: LTE_COVERAGE_ZONES.map(zone => createCircleFeature({
+      ...zone,
+      type: 'radio',
+      frequency: 'LTE'
+    }, 64))
+  }
+}
+
+/**
+ * 5GカバレッジエリアをGeoJSON Feature Collectionに変換
+ */
+export function get5GCoverageGeoJSON(): GeoJSON.FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: FIVEG_COVERAGE_ZONES.map(zone => createCircleFeature({
+      ...zone,
+      type: 'radio',
+      frequency: '5G'
+    }, 64))
+  }
+}
+
+/**
+ * 統合ネットワークカバレッジGeoJSON（LTE + 5G）
+ */
+export function getNetworkCoverageGeoJSON(): GeoJSON.FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: [
+      ...LTE_COVERAGE_ZONES.map(zone => createCircleFeature({
+        ...zone,
+        type: 'radio',
+        frequency: 'LTE'
+      }, 64)),
+      ...FIVEG_COVERAGE_ZONES.map(zone => createCircleFeature({
+        ...zone,
+        type: 'radio',
+        frequency: '5G'
+      }, 64))
+    ]
+  }
+}
+
 // ============================================
 // フィルタリング関数
 // ============================================
@@ -195,8 +296,29 @@ export function getGliderFields(): MannedAircraftZone[] {
 }
 
 /**
- * 5G対応エリアを取得
+ * 5G対応エリアを取得（電波干渉区域）
  */
 export function get5GZones(): RadioInterferenceZone[] {
   return RADIO_INTERFERENCE_ZONES.filter(zone => zone.frequency.includes('5G'))
+}
+
+/**
+ * 高信号強度のLTEエリアを取得
+ */
+export function getStrongLTEZones(): NetworkCoverageZone[] {
+  return LTE_COVERAGE_ZONES.filter(zone => (zone.signalStrength ?? 0) >= 4)
+}
+
+/**
+ * 高信号強度の5Gエリアを取得
+ */
+export function getStrong5GZones(): NetworkCoverageZone[] {
+  return FIVEG_COVERAGE_ZONES.filter(zone => (zone.signalStrength ?? 0) >= 4)
+}
+
+/**
+ * 全ネットワークカバレッジゾーンを取得
+ */
+export function getAllNetworkCoverageZones(): NetworkCoverageZone[] {
+  return [...LTE_COVERAGE_ZONES, ...FIVEG_COVERAGE_ZONES]
 }

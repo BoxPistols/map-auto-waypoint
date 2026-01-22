@@ -122,7 +122,7 @@ export {
 } from './services/airports'
 
 // ============================================
-// Services - UTM Zones (if exists)
+// Services - UTM Zones
 // ============================================
 export {
   generateEmergencyAirspaceGeoJSON as getEmergencyAirspaceGeoJSON,
@@ -130,6 +130,18 @@ export {
   generateMannedAircraftZonesGeoJSON as getMannedAircraftZonesGeoJSON,
   generateRadioInterferenceZonesGeoJSON as getRadioInterferenceZonesGeoJSON
 } from './services/noFlyZones'
+
+// Network Coverage (LTE/5G)
+export {
+  LTE_COVERAGE_ZONES,
+  FIVEG_COVERAGE_ZONES,
+  getLTECoverageGeoJSON,
+  get5GCoverageGeoJSON,
+  getNetworkCoverageGeoJSON,
+  getStrongLTEZones,
+  getStrong5GZones,
+  getAllNetworkCoverageZones
+} from './services/utmZones'
 
 // ============================================
 // Services - Restriction Surfaces (制限表面)

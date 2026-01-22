@@ -299,6 +299,27 @@ export interface RadioInterferenceZone {
   frequency: string
 }
 
+/**
+ * Network Coverage Zone (通信カバレッジエリア)
+ * LTE/5G通信可能エリア
+ */
+export interface NetworkCoverageZone {
+  /** Name of the zone */
+  name: string
+  /** Latitude */
+  lat: number
+  /** Longitude */
+  lng: number
+  /** Coverage radius in meters */
+  radius: number
+  /** Zone type */
+  type: 'lte' | '5g'
+  /** Signal strength (0-5) */
+  signalStrength?: number
+  /** Carrier name (optional) */
+  carrier?: string
+}
+
 // ============================================
 // Weather Data Types
 // ============================================
