@@ -8,16 +8,62 @@
   }
 
   :global(.maplibregl-ctrl-group) {
-    background: #fff;
+    background: var(--color-bg-elevated);
     border-radius: 4px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   }
 
   :global(.maplibregl-ctrl-scale) {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(var(--color-bg-elevated-rgb), 0.85);
     border-radius: 4px;
     padding: 2px 6px;
     font-size: 12px;
+    color: var(--color-text);
+  }
+
+  :global(.maplibregl-ctrl-bottom-right) {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  :global(.maplibregl-ctrl-attrib) {
+    margin: 0 0 6px 0;
+    padding: 2px 6px;
+    background: rgba(var(--color-bg-elevated-rgb), 0.85);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  :global(.maplibregl-ctrl-attrib a),
+  :global(.maplibregl-ctrl-attrib button) {
+    color: var(--color-text-secondary);
+  }
+
+  :global(.maplibregl-ctrl-attrib-inner) {
+    white-space: nowrap;
+  }
+}
+
+[data-theme="dark"] .mapContainer {
+  :global(.maplibregl-ctrl-group) {
+    background: rgba(var(--color-bg-elevated-rgb), 0.9);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  :global(.maplibregl-ctrl-group button) {
+    filter: invert(1);
+  }
+
+  :global(.maplibregl-ctrl-attrib) {
+    background: rgba(var(--color-bg-elevated-rgb), 0.9);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+  }
+
+  :global(.maplibregl-ctrl-attrib a:hover) {
+    color: var(--color-text);
   }
 }
 
@@ -323,11 +369,6 @@
 
 .toggleButton.activeAirport {
   background: #ff9800;
-  color: white;
-}
-
-.toggleButton.activeRestrictionSurfaces {
-  background: #7B1FA2;
   color: white;
 }
 

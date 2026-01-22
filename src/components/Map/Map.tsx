@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
-import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
+import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer, AttributionControl } from 'react-map-gl/maplibre'
 import type { MapRef, MapLayerMouseEvent, MarkerDragEvent } from 'react-map-gl/maplibre'
 import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, ChevronRight, ChevronLeft } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -671,14 +671,16 @@ const Map = ({
         interactiveLayerIds={interactiveLayerIds}
         mapStyle={currentMapStyle}
         style={{ width: '100%', height: '100%' }}
+        attributionControl={false}
         doubleClickZoom={false}
         maxZoom={20}
         dragPan={!isSelecting}
         touchZoomRotate={true}
         touchPitch={true}
       >
-        <NavigationControl position={isMobile ? "bottom-right" : "top-right"} visualizePitch={true} />
+        <NavigationControl position="bottom-right" visualizePitch={true} />
         <ScaleControl position="bottom-left" unit="metric" />
+        <AttributionControl position="bottom-right" />
 
         <DrawControl
           ref={drawControlRef}

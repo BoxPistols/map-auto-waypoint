@@ -136,8 +136,10 @@ export {
 // ============================================
 export {
   KOKUAREA_TILE_URL,
+  KOKUAREA_PROXY_ENDPOINT,
   RESTRICTION_SURFACE_STYLES,
   fillKokuareaTileUrl,
+  buildKokuareaTileUrl,
   getVisibleTileCoordinates,
   classifyRestrictionSurface,
   enrichRestrictionSurfaceFeature,

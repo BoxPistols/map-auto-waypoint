@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
-import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair, Mountain } from 'lucide-react'
+import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer, AttributionControl } from 'react-map-gl/maplibre'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import ContextMenu from '../ContextMenu'
@@ -184,6 +184,9 @@ const Map = ({
 
   // Load map settings from localStorage (must be before viewState init)
   const initialSettings = useMemo(() => loadMapSettings(), [])
+  const initialAirportOverlay = Boolean(
+    initialSettings.showAirportZones || initialSettings.showRestrictionSurfaces
+  )
 
   // Focus crosshair state
   const [showCrosshair, setShowCrosshair] = useState(initialSettings.showCrosshair ?? false)
@@ -202,8 +205,8 @@ const Map = ({
   // レイヤー表示状態を単一オブジェクトで管理
   const [layerVisibility, setLayerVisibility] = useState({
     is3D: initialSettings.is3D,
-    showAirportZones: initialSettings.showAirportZones,
-    showRestrictionSurfaces: initialSettings.showRestrictionSurfaces ?? false,
+    showAirportZones: initialAirportOverlay,
+    showRestrictionSurfaces: initialAirportOverlay,
     showRedZones: initialSettings.showRedZones ?? false,
     showYellowZones: initialSettings.showYellowZones ?? false,
     showHeliports: initialSettings.showHeliports ?? false,
@@ -230,6 +233,16 @@ const Map = ({
       ...prev,
       [layerKey]: !prev[layerKey]
     }))
+  }, [])
+  const toggleAirportOverlay = useCallback(() => {
+    setLayerVisibility(prev => {
+      const nextValue = !(prev.showAirportZones || prev.showRestrictionSurfaces)
+      return {
+        ...prev,
+        showAirportZones: nextValue,
+        showRestrictionSurfaces: nextValue
+      }
+    })
   }, [])
 
   // isMobile is now passed as a prop from App.jsx to avoid duplication
@@ -283,9 +296,12 @@ const Map = ({
     }
   }, [layerVisibility.showWind])
 
+  const isAirportOverlayEnabled =
+    layerVisibility.showAirportZones || layerVisibility.showRestrictionSurfaces
+
   // 制限表面データを取得（表示範囲変更時）
   useEffect(() => {
-    if (!layerVisibility.showRestrictionSurfaces || !mapRef.current) {
+    if (!isAirportOverlayEnabled || !mapRef.current) {
       setRestrictionSurfacesData(null)
       return
     }
@@ -351,7 +367,7 @@ const Map = ({
         mapInstance.off('moveend', handleMoveEnd)
       }
     }
-  }, [layerVisibility.showRestrictionSurfaces])
+  }, [isAirportOverlayEnabled])
 
   // Sync viewState when center/zoom props change from parent (e.g., WP click)
   useEffect(() => {
@@ -664,13 +680,9 @@ const Map = ({
           e.preventDefault()
           toggleLayer('showDID')
           break
-        case 'a': // Airport zones toggle
+        case 'a': // Airport zones + restriction surfaces toggle
           e.preventDefault()
-          toggleLayer('showAirportZones')
-          break
-        case 'k': // Restriction surfaces (kokuarea) toggle
-          e.preventDefault()
-          toggleLayer('showRestrictionSurfaces')
+          toggleAirportOverlay()
           break
         case 'r': // Red zones toggle
           e.preventDefault()
@@ -734,7 +746,7 @@ const Map = ({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggle3D, toggleLayer, mapStyleId])
+  }, [toggle3D, toggleLayer, toggleAirportOverlay, mapStyleId])
 
   // Handle map click
   const handleClick = useCallback((e) => {
@@ -1041,15 +1053,17 @@ const Map = ({
         interactiveLayerIds={interactiveLayerIds}
         mapStyle={currentMapStyle}
         style={{ width: '100%', height: '100%' }}
+        attributionControl={false}
         doubleClickZoom={false}
         maxZoom={20}
         dragPan={!isSelecting}
         touchZoomRotate={true}
         touchPitch={true}
       >
-        {/* ナビゲーションコントロール - モバイルでは下に移動 */}
-        <NavigationControl position={isMobile ? "bottom-right" : "top-right"} visualizePitch={true} />
+        {/* ナビゲーションコントロール - 右下固定 */}
+        <NavigationControl position="bottom-right" visualizePitch={true} />
         <ScaleControl position="bottom-left" unit="metric" />
+        <AttributionControl position="bottom-right" />
 
         <DrawControl
           position="top-left"
@@ -1062,7 +1076,7 @@ const Map = ({
         />
 
         {/* Airport restriction zones */}
-        {layerVisibility.showAirportZones && (
+        {isAirportOverlayEnabled && !restrictionSurfacesData && (
           <Source id="airport-zones" type="geojson" data={airportZonesGeoJSON}>
             <Layer
               id="airport-zones-fill"
@@ -1208,7 +1222,7 @@ const Map = ({
         )}
 
         {/* 制限表面 (航空法に基づく空港周辺の制限表面) */}
-        {layerVisibility.showRestrictionSurfaces && restrictionSurfacesData && (
+        {isAirportOverlayEnabled && restrictionSurfacesData && (
           <Source id="restriction-surfaces" type="geojson" data={restrictionSurfacesData}>
             <Layer
               id="restriction-surfaces-fill"
@@ -1702,19 +1716,11 @@ const Map = ({
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showAirportZones ? styles.activeAirport : ''}`}
-            onClick={() => toggleLayer('showAirportZones')}
-            data-tooltip={`空港制限区域 [A]`}
+            onClick={toggleAirportOverlay}
+            data-tooltip={`空港制限表面 [A]`}
             data-tooltip-pos="left"
           >
             <Plane size={18} />
-          </button>
-          <button
-            className={`${styles.toggleButton} ${layerVisibility.showRestrictionSurfaces ? styles.activeRestrictionSurfaces : ''}`}
-            onClick={() => toggleLayer('showRestrictionSurfaces')}
-            data-tooltip={`制限表面 [K]`}
-            data-tooltip-pos="left"
-          >
-            <Mountain size={18} />
           </button>
           <button
             className={`${styles.toggleButton} ${layerVisibility.showRedZones ? styles.activeRed : ''}`}

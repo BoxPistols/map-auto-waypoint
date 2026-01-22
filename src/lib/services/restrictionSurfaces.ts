@@ -107,12 +107,37 @@ export const RESTRICTION_SURFACE_STYLES: Record<
 
 /** GSI kokuarea ベクトルタイルURL */
 export const KOKUAREA_TILE_URL = 'https://maps.gsi.go.jp/xyz/kokuarea/{z}/{x}/{y}.geojson'
+/** kokuarea は z=8 のみ提供 */
+export const KOKUAREA_TILE_ZOOM = 8
+/** kokuarea 取得用プロキシエンドポイント */
+export const KOKUAREA_PROXY_ENDPOINT = '/api/kokuarea'
+
+const shouldUseKokuareaProxy = (): boolean => {
+  if (import.meta.env.DEV) return true
+  if (import.meta.env.VITE_USE_KOKUAREA_PROXY === 'true') return true
+  return import.meta.env.VITE_USE_PROXY_API === 'true'
+}
 
 /**
  * タイルURLをz/x/y座標で展開
  */
 export function fillKokuareaTileUrl(template: string, z: number, x: number, y: number): string {
   return template.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y))
+}
+
+/**
+ * kokuarea タイルURLを環境に応じて生成
+ */
+export function buildKokuareaTileUrl(z: number, x: number, y: number): string {
+  if (shouldUseKokuareaProxy()) {
+    const params = new URLSearchParams({
+      z: String(z),
+      x: String(x),
+      y: String(y)
+    })
+    return `${KOKUAREA_PROXY_ENDPOINT}?${params.toString()}`
+  }
+  return fillKokuareaTileUrl(KOKUAREA_TILE_URL, z, x, y)
 }
 
 /**
@@ -240,8 +265,8 @@ export async function fetchRestrictionSurfaceTiles(
   bounds: { west: number; east: number; south: number; north: number },
   zoom: number = 10
 ): Promise<GeoJSON.FeatureCollection> {
-  // ズームレベルを制限（kokuareaは10-14程度が適切）
-  const z = Math.max(10, Math.min(14, Math.floor(zoom)))
+  // kokuarea は z=8 のみ提供されるため固定
+  const z = KOKUAREA_TILE_ZOOM
   const tiles = getVisibleTileCoordinates(bounds, z)
 
   const features: GeoJSON.Feature[] = []
@@ -249,7 +274,7 @@ export async function fetchRestrictionSurfaceTiles(
   await Promise.all(
     tiles.map(async (tile) => {
       try {
-        const url = fillKokuareaTileUrl(KOKUAREA_TILE_URL, tile.z, tile.x, tile.y)
+        const url = buildKokuareaTileUrl(tile.z, tile.x, tile.y)
         const response = await fetch(url)
 
         if (!response.ok) return
@@ -298,8 +323,10 @@ export function getRestrictionSurfaceLayerStyles(): {
 
 export const RestrictionSurfaceService = {
   TILE_URL: KOKUAREA_TILE_URL,
+  PROXY_ENDPOINT: KOKUAREA_PROXY_ENDPOINT,
   STYLES: RESTRICTION_SURFACE_STYLES,
   fillTileUrl: fillKokuareaTileUrl,
+  buildTileUrl: buildKokuareaTileUrl,
   getVisibleTiles: getVisibleTileCoordinates,
   classify: classifyRestrictionSurface,
   enrichFeature: enrichRestrictionSurfaceFeature,

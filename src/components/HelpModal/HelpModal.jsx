@@ -243,8 +243,8 @@ const HelpModal = ({ onClose }) => {
                   <td>人口集中地区（国土地理院）</td>
                 </tr>
                 <tr>
-                  <td><Layers size={14} /> 空港</td>
-                  <td>空港周辺エリア（要注意区域）</td>
+                  <td><Layers size={14} /> 空港制限表面</td>
+                  <td>航空法の制限表面（空港周辺）</td>
                 </tr>
                 <tr>
                   <td><Layers size={14} /> 飛行禁止</td>
@@ -375,7 +375,7 @@ const HelpModal = ({ onClose }) => {
                 </tr>
                 <tr>
                   <td><kbd>A</kbd></td>
-                  <td>空港エリア ON/OFF</td>
+                  <td>空港制限表面 ON/OFF</td>
                 </tr>
                 <tr>
                   <td><kbd>R</kbd></td>
