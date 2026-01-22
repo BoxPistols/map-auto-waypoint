@@ -1063,7 +1063,7 @@ const Map = ({
         {/* ナビゲーションコントロール - 右下固定 */}
         <NavigationControl position="bottom-right" visualizePitch={true} />
         <ScaleControl position="bottom-left" unit="metric" />
-        <AttributionControl position="bottom-right" />
+        <AttributionControl position="bottom-left" />
 
         <DrawControl
           position="top-left"

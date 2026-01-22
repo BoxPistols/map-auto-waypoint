@@ -29,6 +29,7 @@ import type {
   MapCenter,
   LayerVisibility,
   BaseMapKey,
+  MapLibreTextFieldValue,
   PolygonData,
   Waypoint,
   RecommendedWaypoint,
@@ -43,6 +44,7 @@ import styles from './Map.module.scss'
 // Default center: Tokyo Tower
 const DEFAULT_CENTER: MapCenter = { lat: 35.6585805, lng: 139.7454329 }
 const DEFAULT_ZOOM = 12
+const DEFAULT_LABEL_FIELD: MapLibreTextFieldValue = ['get', 'name']
 
 interface ViewState {
   latitude: number
@@ -70,7 +72,7 @@ interface GeoJsonLayerConfigItem {
   lineDasharray?: number[]
   labelColor: string
   labelSize: number
-  labelField?: unknown[]
+  labelField?: MapLibreTextFieldValue
 }
 
 const Map = ({
@@ -127,6 +129,7 @@ const Map = ({
   const [layerVisibility, setLayerVisibility] = useState<LayerVisibility>({
     is3D: initialSettings.is3D,
     showAirportZones: initialSettings.showAirportZones,
+    showRestrictionSurfaces: initialSettings.showRestrictionSurfaces ?? false,
     showRedZones: initialSettings.showRedZones ?? false,
     showYellowZones: initialSettings.showYellowZones ?? false,
     showHeliports: initialSettings.showHeliports ?? false,
@@ -680,7 +683,7 @@ const Map = ({
       >
         <NavigationControl position="bottom-right" visualizePitch={true} />
         <ScaleControl position="bottom-left" unit="metric" />
-        <AttributionControl position="bottom-right" />
+        <AttributionControl position="bottom-left" />
 
         <DrawControl
           ref={drawControlRef}
@@ -876,7 +879,7 @@ const Map = ({
               id={`${config.id}-label`}
               type="symbol"
               layout={{
-                'text-field': config.labelField || ['get', 'name'],
+                'text-field': config.labelField ?? DEFAULT_LABEL_FIELD,
                 'text-size': config.labelSize,
                 'text-anchor': 'center'
               }}

@@ -21,8 +21,8 @@
     color: var(--color-text);
   }
 
-  :global(.maplibregl-ctrl-bottom-right) {
-    right: 12px;
+  :global(.maplibregl-ctrl-bottom-left) {
+    left: 12px;
     bottom: 12px;
   }
 
