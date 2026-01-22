@@ -9,7 +9,9 @@ import {
   readGeoJSONFile,
   downloadAsFile
 } from '../../lib/services/customLayers'
-import { X, Plus, Download, Trash2, Layers as LayersIcon } from 'lucide-react'
+import { X, Plus, Download, Trash2, Layers as LayersIcon, AlertCircle } from 'lucide-react'
+import ConfirmDialog from '../ConfirmDialog/ConfirmDialog'
+import { useConfirmDialog } from '../../hooks/useConfirmDialog'
 import './CustomLayerManager.scss'
 
 /**
@@ -32,6 +34,7 @@ export function CustomLayerManager({
   const [isOpen, setIsOpen] = useState(false)
   const [customLayers, setCustomLayers] = useState([])
   const [importing, setImporting] = useState(false)
+  const [error, setError] = useState(null)
   const [newLayerConfig, setNewLayerConfig] = useState({
     name: '',
     category: 'custom',
@@ -39,6 +42,7 @@ export function CustomLayerManager({
     opacity: 0.5
   })
   const fileInputRef = useRef(null)
+  const { dialogState, showConfirm, handleConfirm, handleCancel } = useConfirmDialog()
 
   // Load layers on mount
   useEffect(() => {
@@ -83,9 +87,10 @@ export function CustomLayerManager({
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
-    } catch (error) {
-      console.error('Failed to import GeoJSON:', error)
-      alert('GeoJSONファイルの読み込みに失敗しました')
+    } catch (err) {
+      console.error('Failed to import GeoJSON:', err)
+      setError('GeoJSONファイルの読み込みに失敗しました')
+      setTimeout(() => setError(null), 5000)
     } finally {
       setImporting(false)
     }
@@ -94,8 +99,16 @@ export function CustomLayerManager({
   /**
    * Handles layer deletion
    */
-  const handleRemoveLayer = (layerId) => {
-    if (window.confirm('このレイヤーを削除しますか？')) {
+  const handleRemoveLayer = async (layerId) => {
+    const confirmed = await showConfirm({
+      title: 'レイヤーの削除',
+      message: 'このレイヤーを削除しますか？',
+      confirmText: '削除',
+      cancelText: 'キャンセル',
+      variant: 'danger'
+    })
+
+    if (confirmed) {
       CustomLayerService.remove(layerId)
       setCustomLayers(CustomLayerService.getAll())
       if (onLayerRemoved) {
@@ -240,7 +253,30 @@ export function CustomLayerManager({
             一括書き出し
           </button>
         </div>
+
+        {/* Error Toast */}
+        {error && (
+          <div className="error-toast">
+            <AlertCircle size={16} />
+            <span>{error}</span>
+            <button onClick={() => setError(null)}>
+              <X size={14} />
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={dialogState.isOpen}
+        title={dialogState.title}
+        message={dialogState.message}
+        confirmText={dialogState.confirmText}
+        cancelText={dialogState.cancelText}
+        variant={dialogState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   )
 }

@@ -31,6 +31,8 @@ import {
   Settings,
   Sliders
 } from 'lucide-react';
+import ConfirmDialog from '../ConfirmDialog/ConfirmDialog';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
 import {
   hasApiKey,
   getFlightAdvice,
@@ -96,6 +98,7 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   // 個別推奨の除外設定（拒否されたwaypointId）
   const [excludedRecommendations, setExcludedRecommendations] = useState(new Set());
   const messagesEndRef = useRef(null);
+  const { dialogState, showConfirm, handleConfirm, handleCancel } = useConfirmDialog();
   const panelRef = useRef(null);
   const resizeRef = useRef({ startX: 0, startY: 0, startWidth: 0, startHeight: 0 });
 
@@ -151,7 +154,10 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
         content: `[保存完了] "${newLog.name}" として保存しました`
       }]);
     } catch {
-      alert('保存に失敗しました');
+      setMessages(prev => [...prev, {
+        role: 'system',
+        content: '[エラー] 保存に失敗しました'
+      }]);
     }
   };
 
@@ -167,8 +173,16 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
   };
 
   // チャットログを削除
-  const handleDeleteChatLog = (logId) => {
-    if (confirm('このチャットログを削除しますか？')) {
+  const handleDeleteChatLog = async (logId) => {
+    const confirmed = await showConfirm({
+      title: 'チャットログの削除',
+      message: 'このチャットログを削除しますか？',
+      confirmText: '削除',
+      cancelText: 'キャンセル',
+      variant: 'danger'
+    });
+
+    if (confirmed) {
       deleteChatLog(logId);
       if (currentLogId === logId) {
         setCurrentLogId(null);
@@ -454,7 +468,15 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
 
     const message = `${modifiedCount}個のWaypointを安全な位置に移動します。適用しますか？`;
 
-    if (confirm(message)) {
+    const confirmed = await showConfirm({
+      title: 'Waypoint移動の適用',
+      message,
+      confirmText: '適用',
+      cancelText: 'キャンセル',
+      variant: 'warning'
+    });
+
+    if (confirmed) {
       onApplyPlan(plan);
       setOptimizationPlan(null);
       setShowOptimization(false);
@@ -1326,6 +1348,18 @@ function FlightAssistant({ polygons, waypoints, onApplyPlan, onOptimizationUpdat
           <Send size={18} />
         </button>
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={dialogState.isOpen}
+        title={dialogState.title}
+        message={dialogState.message}
+        confirmText={dialogState.confirmText}
+        cancelText={dialogState.cancelText}
+        variant={dialogState.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 }
