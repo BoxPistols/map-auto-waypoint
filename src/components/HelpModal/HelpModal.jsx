@@ -40,7 +40,7 @@ const HelpModal = ({ onClose }) => {
             <h2>Drone Waypoint について</h2>
             <p className={styles.lead}>
               ドローン点検のための飛行エリア（ポリゴン）とWaypoint（経由点）を管理し、
-              NOTAM申請用の座標データを作成するアプリケーションです。
+              DMS（度分秒）形式の座標データを作成できるアプリケーションです。
             </p>
 
             <h3>主な機能</h3>
@@ -76,8 +76,8 @@ const HelpModal = ({ onClose }) => {
               <li>
                 <Plane size={18} />
                 <div>
-                  <strong>NOTAM形式出力</strong>
-                  <span>航空局への通知用に度分秒形式で座標を出力</span>
+                  <strong>DMS形式出力</strong>
+                  <span>度分秒形式で座標をテキスト/CSV出力</span>
                 </div>
               </li>
             </ul>
@@ -88,7 +88,7 @@ const HelpModal = ({ onClose }) => {
               <li>「描画モード」でポリゴンを作成、または GeoJSON/KML をインポート</li>
               <li>ポリゴンから Waypoint を生成（頂点 or グリッド）</li>
               <li>必要に応じて標高を取得</li>
-              <li>NOTAM形式またはCSV/JSONでエクスポート</li>
+              <li>DMS形式またはCSV/JSONでエクスポート</li>
             </ol>
           </div>
         )
@@ -281,14 +281,18 @@ const HelpModal = ({ onClose }) => {
                   <td>Excel等で開く、一覧確認</td>
                 </tr>
                 <tr>
-                  <td><strong>NOTAM</strong></td>
-                  <td>航空局への通知用（度分秒形式）</td>
+                  <td><strong>DMS</strong></td>
+                  <td>度分秒形式（テキスト）</td>
+                </tr>
+                <tr>
+                  <td><strong>DMS CSV</strong></td>
+                  <td>度分秒形式をCSVで出力</td>
                 </tr>
               </tbody>
             </table>
 
-            <h3>NOTAM形式について</h3>
-            <p>航空局へのNOTAM通知用に度分秒（60進数）形式で出力します。</p>
+            <h3>DMS形式について</h3>
+            <p>度分秒（60進数）形式で座標を出力します。</p>
             <ul>
               <li>座標: 北緯37°23'36" 東経136°55'28"</li>
               <li>各範囲ごとに海抜高度を入力可能</li>
@@ -296,7 +300,7 @@ const HelpModal = ({ onClose }) => {
             </ul>
 
             <h3>ポリゴンエクスポート</h3>
-            <p><strong>GeoJSON形式</strong>で出力。他のGISツールやアプリで読み込み可能。</p>
+            <p><strong>GeoJSON/KML形式</strong>で出力。他のGISツールやGoogle Earthで読み込み可能。</p>
 
             <h3>フルバックアップ</h3>
             <p>すべてのデータ（ポリゴン、Waypoint）を1つのJSONファイルに保存。</p>

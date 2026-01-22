@@ -1,5 +1,4 @@
-// Convert decimal degrees to DMS (度分秒) format
-// Example: 35.658580 -> "35°39'31""
+// 10進数の緯度経度を度分秒（DMS）に変換
 const decimalToDMS = (decimal, isLatitude = true) => {
   const absolute = Math.abs(decimal)
   const degrees = Math.floor(absolute)
@@ -25,9 +24,99 @@ const decimalToDMS = (decimal, isLatitude = true) => {
   return `${prefix}${finalDegrees}°${finalMinutes}'${finalSeconds}"`
 }
 
-// Format coordinate pair in NOTAM style
-const formatCoordinateNOTAM = (lat, lng) => {
+const formatCoordinateDMS = (lat, lng) => {
   return `${decimalToDMS(lat, true)} ${decimalToDMS(lng, false)}`
+}
+
+const escapeXml = (value) => {
+  if (value === null || value === undefined) return ''
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
+const buildWaypointKML = (waypoints) => {
+  const placemarks = waypoints.map((wp, index) => {
+    const name = escapeXml(wp.polygonName || `Waypoint ${index + 1}`)
+    const altitude = Number.isFinite(wp.elevation) ? wp.elevation : 0
+    return [
+      '<Placemark>',
+      `  <name>${name}</name>`,
+      '  <Point>',
+      `    <coordinates>${wp.lng},${wp.lat},${altitude}</coordinates>`,
+      '  </Point>',
+      '</Placemark>'
+    ].join('\n')
+  })
+
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<kml xmlns="http://www.opengis.net/kml/2.2">',
+    '  <Document>',
+    '    <name>Waypoints</name>',
+    placemarks.join('\n'),
+    '  </Document>',
+    '</kml>'
+  ].join('\n')
+}
+
+const buildPolygonKML = (polygons) => {
+  const placemarks = polygons.flatMap((polygon, index) => {
+    const name = escapeXml(polygon.name || `Polygon ${index + 1}`)
+    const geometry = polygon.geometry
+    if (!geometry) return []
+
+    const polygonCoords = geometry.type === 'Polygon'
+      ? [geometry.coordinates]
+      : geometry.type === 'MultiPolygon'
+      ? geometry.coordinates
+      : []
+
+    return polygonCoords.map((rings, ringIndex) => {
+      const [outerRing, ...innerRings] = rings
+      const outerCoords = outerRing
+        .map(([lng, lat]) => `${lng},${lat},0`)
+        .join(' ')
+
+      const innerBlocks = innerRings.map(ring => {
+        const coords = ring.map(([lng, lat]) => `${lng},${lat},0`).join(' ')
+        return [
+          '      <innerBoundaryIs>',
+          '        <LinearRing>',
+          `          <coordinates>${coords}</coordinates>`,
+          '        </LinearRing>',
+          '      </innerBoundaryIs>'
+        ].join('\n')
+      })
+
+      return [
+        '<Placemark>',
+        `  <name>${name}${ringIndex > 0 ? ` (${ringIndex + 1})` : ''}</name>`,
+        '  <Polygon>',
+        '    <outerBoundaryIs>',
+        '      <LinearRing>',
+        `        <coordinates>${outerCoords}</coordinates>`,
+        '      </LinearRing>',
+        '    </outerBoundaryIs>',
+        innerBlocks.join('\n'),
+        '  </Polygon>',
+        '</Placemark>'
+      ].filter(Boolean).join('\n')
+    })
+  })
+
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<kml xmlns="http://www.opengis.net/kml/2.2">',
+    '  <Document>',
+    '    <name>Polygons</name>',
+    placemarks.join('\n'),
+    '  </Document>',
+    '</kml>'
+  ].join('\n')
 }
 
 // Export waypoints to JSON
@@ -85,6 +174,53 @@ export const exportToCSV = (waypoints, filename = null) => {
   URL.revokeObjectURL(url)
 }
 
+// DMS形式でWaypointをCSVにエクスポート
+export const exportToDMSCSV = (waypoints, filename = null) => {
+  const date = new Date().toISOString().split('T')[0]
+  const BOM = '\uFEFF'
+
+  const headers = ['番号', '緯度（DMS）', '経度（DMS）', 'ポリゴン名', '種別']
+  const rows = waypoints.map((wp, index) => {
+    const polygonName = wp.polygonName || ''
+    const type = wp.type === 'manual' ? '手動' : '頂点'
+    return [
+      index + 1,
+      decimalToDMS(wp.lat, true),
+      decimalToDMS(wp.lng, false),
+      `"${polygonName.replace(/"/g, '""')}"`,
+      type
+    ].join(',')
+  })
+
+  const csv = BOM + [headers.join(','), ...rows].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename || `waypoints_dms_${date}.csv`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+// WaypointをKMLにエクスポート
+export const exportWaypointsToKML = (waypoints, filename = null) => {
+  const date = new Date().toISOString().split('T')[0]
+  const kml = buildWaypointKML(waypoints)
+  const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' })
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename || `waypoints_${date}.kml`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
 // Export polygons to GeoJSON
 export const exportPolygonsToGeoJSON = (polygons, filename = null) => {
   const date = new Date().toISOString().split('T')[0]
@@ -116,10 +252,9 @@ export const exportPolygonsToGeoJSON = (polygons, filename = null) => {
   URL.revokeObjectURL(url)
 }
 
-// Export to NOTAM format (度分秒/DMS for aviation)
-// Groups waypoints by polygon with DMS coordinates
-// altitudes: { [polygonId]: number } - altitude for each polygon
-export const exportToNOTAM = (waypoints, polygons = [], altitudes = {}, filename = null) => {
+// WaypointをDMSテキスト形式でエクスポート
+// altitudes: { [polygonId]: number } - ポリゴンごとの高度
+export const exportToDMS = (waypoints, polygons = [], altitudes = {}, filename = null) => {
   const date = new Date().toISOString().split('T')[0]
   const BOM = '\uFEFF' // UTF-8 BOM for Excel
 
@@ -147,7 +282,7 @@ export const exportToNOTAM = (waypoints, polygons = [], altitudes = {}, filename
     content += `【範囲${index + 1} ${polygonName}】\n`
 
     wps.forEach(wp => {
-      content += formatCoordinateNOTAM(wp.lat, wp.lng) + '\n'
+      content += formatCoordinateDMS(wp.lat, wp.lng) + '\n'
     })
 
     content += '\n'
@@ -170,7 +305,23 @@ export const exportToNOTAM = (waypoints, polygons = [], altitudes = {}, filename
 
   const link = document.createElement('a')
   link.href = url
-  link.download = filename || `notam_${date}.txt`
+  link.download = filename || `waypoints_dms_${date}.txt`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+// ポリゴンをKMLにエクスポート
+export const exportPolygonsToKML = (polygons, filename = null) => {
+  const date = new Date().toISOString().split('T')[0]
+  const kml = buildPolygonKML(polygons)
+  const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' })
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename || `polygons_${date}.kml`
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
@@ -198,8 +349,8 @@ export const getPolygonOrderFromWaypoints = (waypoints, polygons) => {
   return result
 }
 
-// Generate NOTAM preview data (for ExportPanel)
-export const generateNOTAMPreview = (waypoints, polygons = [], altitudes = {}) => {
+// DMSテキストプレビュー生成
+export const generateDMSPreview = (waypoints, polygons = [], altitudes = {}) => {
   // Group waypoints by polygon
   const waypointsByPolygon = {}
   const polygonOrder = []
@@ -224,7 +375,7 @@ export const generateNOTAMPreview = (waypoints, polygons = [], altitudes = {}) =
     content += `【範囲${index + 1} ${polygonName}】\n`
 
     wps.forEach(wp => {
-      content += formatCoordinateNOTAM(wp.lat, wp.lng) + '\n'
+      content += formatCoordinateDMS(wp.lat, wp.lng) + '\n'
     })
 
     content += '\n'
@@ -242,6 +393,14 @@ export const generateNOTAMPreview = (waypoints, polygons = [], altitudes = {}) =
   })
 
   return content
+}
+
+export const generateWaypointKMLPreview = (waypoints) => {
+  return buildWaypointKML(waypoints)
+}
+
+export const generatePolygonKMLPreview = (polygons) => {
+  return buildPolygonKML(polygons)
 }
 
 // Export full backup
