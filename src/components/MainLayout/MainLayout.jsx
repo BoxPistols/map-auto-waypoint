@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
-import { getSetting, isDIDAvoidanceModeEnabled } from '../../services/settingsService'
+import { getSetting, isDIDAvoidanceModeEnabled, getWaypointNumberingMode } from '../../services/settingsService'
 import { getDetailedCollisionResults, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
 import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
 import MapComponent from '../Map/Map'
@@ -455,7 +455,7 @@ function MainLayout() {
 
     // Use generatePerimeterWaypoints to distribute waypoints evenly along the perimeter
     const newWaypoints = generatePerimeterWaypoints(polygon, waypointCount)
-    setWaypoints(prev => reindexWaypoints([...prev, ...newWaypoints]))
+    setWaypoints(prev => reindexWaypoints([...prev, ...newWaypoints], { mode: getWaypointNumberingMode() }))
 
     const center = getPolygonCenter(polygon.geometry)
     if (center) {
@@ -518,7 +518,7 @@ function MainLayout() {
   // Handle polygon delete
   const handlePolygonDelete = useCallback((id) => {
     setPolygons(prev => prev.filter(p => p.id !== id))
-    setWaypoints(prev => reindexWaypoints(prev.filter(w => w.polygonId !== id)))
+    setWaypoints(prev => reindexWaypoints(prev.filter(w => w.polygonId !== id), { mode: getWaypointNumberingMode() }))
     if (selectedPolygonId === id) {
       setSelectedPolygonId(null)
     }
@@ -776,7 +776,7 @@ function MainLayout() {
     setWaypoints(prev => reindexWaypoints([
       ...prev.filter(w => w.polygonId !== polygon.id),
       ...newWaypoints
-    ]))
+    ], { mode: getWaypointNumberingMode() }))
     showNotification(`${newWaypoints.length} Waypointを生成しました`)
     setActivePanel('waypoints')
   }, [waypoints, setWaypoints, showNotification])
@@ -804,7 +804,7 @@ function MainLayout() {
     setWaypoints(prev => reindexWaypoints([
       ...prev.filter(w => w.polygonId !== polygon.id),
       ...newWaypoints
-    ]))
+    ], { mode: getWaypointNumberingMode() }))
 
     setShowGridSettings(null)
     setActivePanel('waypoints')
@@ -898,29 +898,24 @@ function MainLayout() {
     }
   }, [setSelectedPolygonId])
 
-  // Reindex waypoints to ensure sequential indices
-  const reindexWaypoints = useCallback((wps) => {
-    return wps.map((wp, idx) => ({ ...wp, index: idx + 1 }))
-  }, [])
-
-  // Handle waypoint delete
+  // Handle waypoint delete (uses reindexWaypoints from waypointGenerator with mode)
   const handleWaypointDelete = useCallback((id) => {
     setWaypoints(prev => {
       const filtered = prev.filter(w => w.id !== id)
-      return reindexWaypoints(filtered)
+      return reindexWaypoints(filtered, { mode: getWaypointNumberingMode() })
     })
     showNotification('Waypointを削除しました（番号再整理済）')
-  }, [reindexWaypoints, setWaypoints, showNotification])
+  }, [setWaypoints, showNotification])
 
   // Handle bulk waypoint delete
   const handleWaypointsBulkDelete = useCallback((ids) => {
     const idSet = new Set(ids)
     setWaypoints(prev => {
       const filtered = prev.filter(w => !idSet.has(w.id))
-      return reindexWaypoints(filtered)
+      return reindexWaypoints(filtered, { mode: getWaypointNumberingMode() })
     })
     showNotification(`${ids.length} 個のWaypointを削除しました（番号再整理済）`)
-  }, [reindexWaypoints, setWaypoints, showNotification])
+  }, [setWaypoints, showNotification])
 
   // Handle waypoint move (drag on map) - rebuild polygon from all waypoints
   const handleWaypointMove = useCallback((id, newLat, newLng) => {
@@ -1010,7 +1005,7 @@ function MainLayout() {
         polygonName: '手動追加',
         type: 'manual'
       }
-      setWaypoints(prev => reindexWaypoints([...prev, newWaypoint]))
+      setWaypoints(prev => reindexWaypoints([...prev, newWaypoint], { mode: getWaypointNumberingMode() }))
 
       // TODO: Issue #39 - 安全性チェッカーのエラー解決後に復活
       // ダッシュボードに選択地点を設定
@@ -1508,7 +1503,7 @@ function MainLayout() {
         onApplyRoute={(plan) => {
           // ルートのWaypointを追加
           if (plan.waypoints && plan.waypoints.length > 0) {
-            setWaypoints(prev => reindexWaypoints([...prev, ...plan.waypoints]))
+            setWaypoints(prev => reindexWaypoints([...prev, ...plan.waypoints], { mode: getWaypointNumberingMode() }))
             showNotification(`${plan.waypoints.length}個のWaypointを追加しました`, 'success')
           }
         }}
