@@ -11,6 +11,13 @@ const config: StorybookConfig = {
     autodocs: 'tag',
   },
   staticDirs: ['../public'],
+  viteFinal: async (config) => {
+    // GitHub Pages用のbase path設定
+    if (process.env.NODE_ENV === 'production') {
+      config.base = '/map-auto-waypoint/storybook/'
+    }
+    return config
+  },
 }
 
 export default config
