@@ -248,12 +248,81 @@ const HelpModal = ({ onClose }) => {
                 </tr>
                 <tr>
                   <td><Layers size={14} /> 飛行禁止</td>
-                  <td>飛行禁止区域</td>
+                  <td>飛行禁止区域（370施設）</td>
                 </tr>
               </tbody>
             </table>
             <p className={styles.hint}>
               オーバーレイの状態はlocalStorageに保存されます。
+            </p>
+
+            <h3>レイヤーコントロール（グループ機能）</h3>
+            <p>飛行禁止区域は14カテゴリーに分類され、効率的な管理が可能です。</p>
+            <table className={styles.table}>
+              <tbody>
+                <tr>
+                  <td className={styles.labelCell}>グループトグル</td>
+                  <td>グループ名の横のスイッチで、カテゴリー内の全施設を一括ON/OFF</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>お気に入り</td>
+                  <td>⭐アイコンでお気に入りに追加。よく使うグループを上部に固定表示</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>個別トグル</td>
+                  <td>各施設のチェックボックスで個別にON/OFF可能</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3>施設詳細の表示</h3>
+            <p>地図上の禁止区域施設（円形マーカー）をクリックすると、詳細情報をポップアップ表示します。</p>
+            <ul>
+              <li><strong>基本情報:</strong> 施設名、種類、座標、制限半径</li>
+              <li><strong>原子力施設:</strong> 稼働状況、原子炉数、発電容量、運営事業者</li>
+              <li><strong>その他施設:</strong> 所在地、カテゴリー、説明</li>
+            </ul>
+
+            <h3>原子力発電所の色分け</h3>
+            <p>原子力施設は稼働状況に応じて色分け表示されます。</p>
+            <table className={styles.table}>
+              <tbody>
+                <tr>
+                  <td className={styles.labelCell}>🔴 赤</td>
+                  <td>運転中（Operational）</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>🟠 橙</td>
+                  <td>停止中（Stopped）</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>🟡 黄</td>
+                  <td>廃炉作業中（Decommissioning）</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>⚪ 灰</td>
+                  <td>廃炉完了（Decommissioned）</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3>禁止区域カテゴリー（14種類、370施設）</h3>
+            <ul className={styles.featureList}>
+              <li>
+                <div>
+                  <strong>🔴 レッドゾーン（54施設）</strong>
+                  <span>政府機関、皇室、原発、防衛施設 - 飛行禁止</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>🟡 イエローゾーン（316施設）</strong>
+                  <span>都道府県庁、警察、刑務所、自衛隊、外国公館、重要インフラ - 事前通報必要</span>
+                </div>
+              </li>
+            </ul>
+            <p className={styles.hint}>
+              詳細は小型無人機等飛行禁止法およびDIPS 2.0で確認してください。
             </p>
           </div>
         )

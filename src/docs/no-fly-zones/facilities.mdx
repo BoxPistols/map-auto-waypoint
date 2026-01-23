@@ -1,0 +1,299 @@
+export const meta = {
+  title: 'Docs/No-Fly Zones/禁止区域施設データ'
+}
+
+# 禁止区域施設データ（No-Fly Zone Facilities）
+
+**小型無人機等飛行禁止法**および**航空法**に基づく飛行禁止区域の施設データベースです。
+
+> ⚠️ **免責事項**
+>
+> このドキュメントはアプリケーションの実装説明です。実際の飛行計画においては、必ず以下の公式情報に従ってください：
+> - 警察庁「小型無人機等飛行禁止法」
+> - 国土交通省 航空局
+> - DIPS 2.0（ドローン情報基盤システム）
+> - 各施設管理者の公式情報
+>
+> **本表示は安全理解の補助であり、飛行許可・承認の可否を保証するものではありません。**
+
+---
+
+## データ概要
+
+本アプリケーションでは、日本全国の飛行禁止区域施設を **370施設** 収録しています（Issue #29で110施設から拡張）。
+
+### 対象施設カテゴリー（14種類）
+
+| カテゴリー | 英語名 | 施設数 | ゾーン | 説明 |
+|-----------|--------|--------|--------|------|
+| 🏛 **政府機関** | `government` | 23 | 🔴 Red | 国会、首相官邸、最高裁など国の中枢機関 |
+| 👑 **皇室関連** | `imperial` | 4 | 🔴 Red | 皇居、御所、離宮など |
+| ⚛️ **原子力施設** | `nuclear` | 17 | 🔴 Red | 原子力発電所、再処理施設 |
+| 🛡 **防衛施設** | `defense` | 10 | 🔴 Red | 防衛省本省など重要防衛拠点 |
+| 🏢 **都道府県庁** | `prefecture` | 47 | 🟡 Yellow | 全国の都道府県庁舎 |
+| 👮 **警察施設** | `police` | 47 | 🟡 Yellow | 都道府県警察本部 |
+| ⚖️ **刑務所・拘置所** | `prison` | 55 | 🟡 Yellow | 法務省管轄の矯正施設 |
+| 🪖 **自衛隊施設** | `military_jsdf` | 44 | 🟡 Yellow | 自衛隊基地・駐屯地 |
+| 🏛 **外国公館** | `foreign_mission` | 50 | 🟡 Yellow | 大使館、総領事館 |
+| ⚡ **エネルギー施設** | `energy` | 10 | 🟡 Yellow | 火力発電所など重要電力施設 |
+| 💧 **ダム・浄水場** | `water` | 16 | 🟡 Yellow | 主要ダム、浄水施設 |
+| 🏗 **重要インフラ** | `infrastructure` | 29 | 🟡 Yellow | 港湾、大学、病院、金融機関など |
+
+### ゾーン分類
+
+#### 🔴 レッドゾーン（Red Zone）
+- **法的根拠**: 小型無人機等飛行禁止法 第9条
+- **対象施設**: 国会、首相官邸、皇居、原発、防衛施設など
+- **制限内容**: 原則として施設周辺300m（原発は半径約9.6km）の飛行が禁止
+- **罰則**: 1年以下の懲役または50万円以下の罰金
+
+#### 🟡 イエローゾーン（Yellow Zone）
+- **法的根拠**: 小型無人機等飛行禁止法 第10条、各自治体条例
+- **対象施設**: 外国公館、都道府県庁、警察、刑務所など
+- **制限内容**: 施設管理者への事前通報が必要（通常300m圏内）
+- **罰則**: 事前通報なしの場合、警察官による退去命令（従わない場合は罰則）
+
+---
+
+## データ構造
+
+### TypeScript インターフェース
+
+```typescript
+export interface NoFlyFacility {
+  id: string                      // 一意識別子
+  name: string                    // 日本語名称
+  nameEn?: string                 // 英語名称（オプション）
+  type: FacilityType              // 施設タイプ
+  coordinates: [number, number]   // [経度, 緯度]
+  radiusKm: number                // 制限半径（km）
+  zone: 'red' | 'yellow'          // ゾーン分類
+  category?: string               // カテゴリー補足
+  source?: string                 // データソース
+
+  // 原子力発電所固有の情報
+  operationalStatus?: OperationalStatus
+  reactorCount?: number           // 原子炉数
+  capacity?: string               // 発電容量
+  operator?: string               // 運営事業者
+
+  // 施設の詳細情報
+  address?: string                // 所在地
+  description?: string            // 説明
+  established?: string            // 設立年
+  lastUpdated?: string            // 最終更新日
+}
+```
+
+### 施設タイプ（FacilityType）
+
+```typescript
+export type FacilityType =
+  | 'government'      // 政府機関
+  | 'imperial'        // 皇室関連
+  | 'nuclear'         // 原子力施設
+  | 'defense'         // 防衛施設
+  | 'foreign_mission' // 外国公館
+  | 'prefecture'      // 都道府県庁
+  | 'police'          // 警察施設
+  | 'prison'          // 刑務所・拘置所
+  | 'military_jsdf'   // 自衛隊施設
+  | 'energy'          // エネルギー施設
+  | 'water'           // ダム・浄水場
+  | 'infrastructure'  // その他重要インフラ
+```
+
+---
+
+## 原子力発電所の運用状況
+
+原子力施設には、稼働状況を示す `operationalStatus` プロパティがあり、地図上で色分け表示されます。
+
+### 運用ステータス（OperationalStatus）
+
+```typescript
+export type OperationalStatus =
+  | 'operational'      // 運転中
+  | 'stopped'          // 停止中
+  | 'decommissioning'  // 廃炉作業中
+  | 'decommissioned'   // 廃炉完了
+  | 'planned'          // 計画中
+```
+
+### 視覚表示（色分け）
+
+| ステータス | 表示色 | アイコン色 | 説明 |
+|-----------|--------|-----------|------|
+| **運転中** (operational) | 🔴 赤 | `#dc2626` | 現在稼働中の原子炉 |
+| **停止中** (stopped) | 🟠 橙 | `#f97316` | 一時停止中（再稼働可能性あり） |
+| **廃炉作業中** (decommissioning) | 🟡 黄 | `#eab308` | 廃炉作業進行中 |
+| **廃炉完了** (decommissioned) | ⚪ 灰 | `#9ca3af` | 廃炉作業完了 |
+
+### 実装例
+
+```typescript
+{
+  id: 'nuclear-takahama',
+  name: '高浜発電所',
+  nameEn: 'Takahama Nuclear Power Plant',
+  type: 'nuclear',
+  coordinates: [135.5025, 35.5219],
+  radiusKm: 9.6,
+  zone: 'red',
+  operationalStatus: 'operational',  // 運転中
+  reactorCount: 4,
+  capacity: '3,392MW',
+  operator: '関西電力',
+  description: '福井県大飯郡高浜町に立地する原子力発電所'
+}
+```
+
+---
+
+## 使用方法
+
+### 1. 地図上での表示
+
+ControlGroupコンポーネントでカテゴリーごとにON/OFF切り替えが可能：
+
+```tsx
+<ControlGroup
+  groupToggle={true}
+  groupEnabled={isNuclearEnabled}
+  onGroupToggle={() => setIsNuclearEnabled(!isNuclearEnabled)}
+  favoritable={true}
+  isFavorite={favorites.includes('nuclear')}
+  onFavoriteToggle={() => toggleFavorite('nuclear')}
+>
+  <Control name="原子力発電所" />
+</ControlGroup>
+```
+
+### 2. 施設詳細の表示
+
+施設をクリックすると、FacilityPopupコンポーネントで詳細情報を表示：
+
+```tsx
+<FacilityPopup
+  facility={selectedFacility}
+  screenX={clickX}
+  screenY={clickY}
+  onClose={() => setSelectedFacility(null)}
+/>
+```
+
+### 3. プログラムからのアクセス
+
+```typescript
+import { NO_FLY_FACILITIES, getFacilitiesByType } from '@/lib/services/noFlyZones'
+
+// 全施設を取得
+const allFacilities = NO_FLY_FACILITIES
+
+// 原子力施設のみ取得
+const nuclearFacilities = getFacilitiesByType('nuclear')
+
+// レッドゾーンのみ取得
+const redZones = NO_FLY_FACILITIES.filter(f => f.zone === 'red')
+
+// 運転中の原発のみ取得
+const operationalNuclear = NO_FLY_FACILITIES.filter(
+  f => f.type === 'nuclear' && f.operationalStatus === 'operational'
+)
+```
+
+---
+
+## データソース
+
+| カテゴリー | データソース |
+|-----------|-------------|
+| 政府機関・皇室 | 警察庁「小型無人機等飛行禁止法対象施設」 |
+| 原子力施設 | 原子力規制委員会「原子力発電所一覧」 |
+| 防衛施設 | 防衛省「自衛隊施設一覧」 |
+| 都道府県庁 | 各都道府県公式サイト |
+| 警察施設 | 警察庁「都道府県警察本部一覧」 |
+| 刑務所 | 法務省「矯正施設一覧」 |
+| 外国公館 | 外務省「駐日外国公館リスト」 |
+| インフラ施設 | 各省庁公開情報 |
+
+### 更新履歴
+
+- **2026-01-23**: Issue #29で110施設から370施設に拡張
+  - 都道府県庁: 47施設追加（全国網羅）
+  - 警察本部: 47施設追加（全国網羅）
+  - 刑務所・拘置所: 55施設追加
+  - 自衛隊施設: 44施設追加
+  - 外国公館: 50施設追加
+  - その他インフラ: 77施設追加
+
+---
+
+## 法的根拠
+
+### 小型無人機等飛行禁止法
+
+正式名称：**国会議事堂、内閣総理大臣官邸その他の国の重要な施設等、外国公館等及び原子力事業所の周辺地域の上空における小型無人機等の飛行の禁止に関する法律**
+
+- **制定**: 平成28年（2016年）4月7日
+- **最終改正**: 令和4年（2022年）6月17日
+- **所管**: 警察庁
+
+#### 主要条文
+
+- **第9条**: 対象施設周辺地域の上空における飛行の禁止
+- **第10条**: 対象外国公館等周辺地域での飛行（事前通報義務）
+- **第11条**: 警察官等による退去命令
+- **第15条**: 罰則規定
+
+### 航空法
+
+- **第132条の85**: 人口集中地区上空の飛行禁止
+- **第132条の86**: 空港等周辺の上空の飛行禁止
+
+---
+
+## 参考リンク
+
+| サービス | URL | 用途 |
+|----------|-----|------|
+| 警察庁（小型無人機等飛行禁止法） | https://www.npa.go.jp/bureau/security/kogatamujinki/ | 対象施設マップ・通報先 |
+| DIPS 2.0 | https://www.ossportal.dips.mlit.go.jp/ | 飛行許可申請 |
+| 国土交通省（無人航空機） | https://www.mlit.go.jp/koku/koku_fr10_000041.html | 飛行ルール詳細 |
+| 原子力規制委員会 | https://www.nra.go.jp/ | 原発施設情報 |
+
+---
+
+## 開発者向け情報
+
+### データファイル
+
+- **パス**: `src/lib/services/noFlyZones.ts`
+- **エクスポート**: `NO_FLY_FACILITIES`（配列）
+- **フォーマット**: TypeScript / GeoJSON互換
+
+### 関連コンポーネント
+
+- `ControlGroup`: レイヤーコントロール（グループトグル・お気に入り機能）
+- `FacilityPopup`: 施設詳細ポップアップ
+- `Map`: 地図上での施設表示
+
+### Storybook
+
+各コンポーネントのStoriesで実際の表示を確認できます：
+
+- [ControlGroup Stories](/story/map-controlgroup--default)
+- [FacilityPopup Stories](/story/map-facilitypopup--nuclear-operational)
+
+---
+
+## 注意事項
+
+1. **座標精度**: 施設の中心座標は公開情報を基に設定していますが、誤差がある可能性があります
+2. **制限半径**: 法律で定められた標準値を使用していますが、施設により異なる場合があります
+3. **最新情報**: 施設の追加・廃止・変更は随時発生します。最新情報は必ず公式サイトで確認してください
+4. **責任**: 本データを使用した結果について、開発者は一切の責任を負いません
+
+---
+
+> 💡 **Tip**: 実際の飛行計画では、本アプリの情報を参考にした上で、必ずDIPS 2.0や各施設管理者への確認を行ってください。

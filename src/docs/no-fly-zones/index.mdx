@@ -1,0 +1,160 @@
+import { Meta } from '@storybook/blocks'
+
+<Meta title="Docs/No-Fly Zones/概要" />
+
+# 禁止区域機能（Issue #29）
+
+**Issue #29**で実装した飛行禁止区域データベースと関連UI機能の概要です。
+
+---
+
+## 🎯 実装機能
+
+### 1. 施設データベース拡充
+- **110施設 → 370施設**に拡張（260施設追加）
+- **14カテゴリー**に分類
+- **レッドゾーン**: 54施設（政府、皇室、原発、防衛）
+- **イエローゾーン**: 316施設（都道府県庁、警察、刑務所、自衛隊、外国公館、インフラ）
+
+### 2. グループトグル機能
+カテゴリー単位でレイヤーを一括ON/OFF
+
+```tsx
+<ControlGroup
+  groupToggle={true}
+  groupEnabled={isGroupEnabled}
+  onGroupToggle={() => setIsGroupEnabled(!isGroupEnabled)}
+>
+  {/* 個別コントロール */}
+</ControlGroup>
+```
+
+**特徴:**
+- スイッチ1つでカテゴリー内の全施設を制御
+- LocalStorageに状態を保存
+- 視覚的なフィードバック（アニメーション）
+
+### 3. お気に入り機能
+よく使うカテゴリーを上部に固定表示
+
+```tsx
+<ControlGroup
+  favoritable={true}
+  isFavorite={favorites.includes('nuclear')}
+  onFavoriteToggle={() => toggleFavorite('nuclear')}
+>
+  {/* コントロール */}
+</ControlGroup>
+```
+
+**特徴:**
+- ⭐アイコンでお気に入り登録
+- お気に入りグループを最上部に表示
+- ワンクリックでアクセス向上
+
+### 4. 施設詳細ポップアップ
+地図上の施設をクリックして詳細情報を表示
+
+```tsx
+<FacilityPopup
+  facility={selectedFacility}
+  screenX={clickX}
+  screenY={clickY}
+  onClose={() => setSelectedFacility(null)}
+/>
+```
+
+**表示情報:**
+- 基本情報: 名称、種類、座標、半径
+- 原発固有: 稼働状況、炉数、容量、事業者
+- その他: 所在地、カテゴリー、説明
+
+### 5. 原発稼働状況の色分け
+運転状態に応じた視覚化
+
+| ステータス | 色 | カラーコード |
+|-----------|---|-------------|
+| 運転中 | 🔴 赤 | `#dc2626` |
+| 停止中 | 🟠 橙 | `#f97316` |
+| 廃炉作業中 | 🟡 黄 | `#eab308` |
+| 廃炉完了 | ⚪ 灰 | `#9ca3af` |
+
+---
+
+## 📊 データ構造
+
+### NoFlyFacility インターフェース
+
+```typescript
+interface NoFlyFacility {
+  id: string
+  name: string
+  nameEn?: string
+  type: FacilityType
+  coordinates: [number, number]  // [lng, lat]
+  radiusKm: number
+  zone: 'red' | 'yellow'
+
+  // 原発固有
+  operationalStatus?: 'operational' | 'stopped' | 'decommissioning' | 'decommissioned'
+  reactorCount?: number
+  capacity?: string
+  operator?: string
+
+  // 詳細情報
+  category?: string
+  description?: string
+  address?: string
+}
+```
+
+### 14カテゴリー
+
+1. 🏛 **政府機関** (government) - 23施設
+2. 👑 **皇室関連** (imperial) - 4施設
+3. ⚛️ **原子力施設** (nuclear) - 17施設
+4. 🛡 **防衛施設** (defense) - 10施設
+5. 🏢 **都道府県庁** (prefecture) - 47施設
+6. 👮 **警察施設** (police) - 47施設
+7. ⚖️ **刑務所・拘置所** (prison) - 55施設
+8. 🪖 **自衛隊施設** (military_jsdf) - 44施設
+9. 🏛 **外国公館** (foreign_mission) - 50施設
+10. ⚡ **エネルギー施設** (energy) - 10施設
+11. 💧 **ダム・浄水場** (water) - 16施設
+12. 🏗 **重要インフラ** (infrastructure) - 29施設
+
+---
+
+## 🎨 コンポーネント
+
+### ControlGroup
+レイヤーコントロールのグループ化とお気に入り機能
+
+- **Stories**: [ControlGroup](/story/map-controlgroup--default)
+- **ファイル**: `src/components/Map/ControlGroup.jsx`
+
+### FacilityPopup
+施設詳細ポップアップ
+
+- **Stories**: [FacilityPopup](/story/map-facilitypopup--nuclear-operational)
+- **ファイル**: `src/components/FacilityPopup/FacilityPopup.jsx`
+
+---
+
+## 📖 関連ドキュメント
+
+- [施設データ詳細](/story/docs-no-fly-zones-禁止区域施設データ--docs)
+- [空港制限表面](/story/docs-airspace-空港制限表面--docs)
+
+---
+
+## ⚠️ 免責事項
+
+本機能は飛行計画の事前調査を支援するツールです。
+
+**最終的な判断には必ず以下の公式情報をご確認ください:**
+- 警察庁「小型無人機等飛行禁止法」
+- DIPS 2.0（国土交通省）
+- 各施設管理者の公式情報
+
+**本アプリの情報は参考情報であり、飛行許可・承認の可否を保証するものではありません。**
