@@ -1317,6 +1317,7 @@ function MainLayout() {
             optimizedRoute={optimizedRoute}
             onHomePointMove={handleHomePointMove}
             isMobile={isMobile}
+            isChatOpen={showChat}
             onPolygonCreate={handlePolygonCreate}
             onPolygonUpdate={handlePolygonUpdate}
             onPolygonDelete={handlePolygonDelete}

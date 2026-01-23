@@ -436,6 +436,32 @@ const HelpModal = ({ onClose }) => {
               </tbody>
             </table>
 
+            <h3>禁止区域カテゴリー</h3>
+            <table className={styles.shortcutTable}>
+              <tbody>
+                <tr>
+                  <td><kbd>Q</kbd></td>
+                  <td>原子力発電所 ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>p</kbd> (小文字)</td>
+                  <td>都道府県庁 ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>K</kbd></td>
+                  <td>警察本部 ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>J</kbd></td>
+                  <td>刑務所・拘置所 ON/OFF</td>
+                </tr>
+                <tr>
+                  <td><kbd>B</kbd></td>
+                  <td>自衛隊施設 ON/OFF</td>
+                </tr>
+              </tbody>
+            </table>
+
             <h3>編集操作</h3>
             <table className={styles.shortcutTable}>
               <tbody>

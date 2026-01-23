@@ -1,0 +1,140 @@
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: var(--color-text);
+  background: rgba(var(--color-bg-elevated-rgb), 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+
+  &:hover {
+    background: rgba(var(--color-bg-elevated-rgb), 0.95);
+    border-color: var(--color-primary);
+    transform: translateX(-2px);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.groupIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.chevron {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  background: rgba(var(--color-bg-elevated-rgb), 0.9);
+  border-radius: 3px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+
+  .groupHeader:hover & {
+    opacity: 1;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.groupContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 6px;
+  margin-left: 3px;
+  border-left: 2px solid rgba(var(--color-primary-rgb), 0.3);
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ダークモード
+[data-theme="dark"] {
+  .groupHeader {
+    background: rgba(var(--color-bg-elevated-rgb), 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+
+    &:hover {
+      background: rgba(var(--color-bg-elevated-rgb), 0.95);
+      border-color: var(--color-primary);
+    }
+  }
+
+  .chevron {
+    background: rgba(var(--color-bg-elevated-rgb), 0.95);
+  }
+
+  .groupContent {
+    border-left-color: rgba(var(--color-primary-rgb), 0.4);
+  }
+}
+
+// モバイル対応
+@media (max-width: 768px) {
+  .groupHeader {
+    width: 40px;
+    height: 40px;
+  }
+
+  .groupIcon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .groupContent {
+    padding-left: 4px;
+    gap: 3px;
+  }
+}
+
+@media (max-width: 640px) {
+  .groupHeader {
+    width: 36px;
+    height: 36px;
+  }
+
+  .groupIcon {
+    font-size: 16px;
+  }
+}

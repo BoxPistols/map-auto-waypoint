@@ -87,6 +87,7 @@ export {
   NO_FLY_FACILITIES,
   getFacilitiesByZone,
   getFacilitiesByType,
+  getFacilitiesByCategory,
   generateRedZoneGeoJSON,
   generateYellowZoneGeoJSON,
   generateAllNoFlyGeoJSON,
@@ -94,11 +95,21 @@ export {
   generateRemoteIDZoneGeoJSON,
   generateMannedAircraftZonesGeoJSON,
   generateRadioInterferenceZonesGeoJSON,
+  generateCategoryGeoJSON,
+  generateNuclearPlantsGeoJSON,
+  generatePrefecturesGeoJSON,
+  generatePoliceFacilitiesGeoJSON,
+  generatePrisonsGeoJSON,
+  generateJSDFFacilitiesGeoJSON,
   isInNoFlyZone,
   getNearbyNoFlyZones,
   getNuclearPlants,
   getUSMilitaryBases,
   getEmbassies,
+  getPrefectures,
+  getPoliceFacilities,
+  getPrisons,
+  getJSDFFacilities,
   toLegacyFormat,
   NoFlyZoneService
 } from './services/noFlyZones'
@@ -109,7 +120,7 @@ export {
   generateRedZoneGeoJSON as getRedZonesGeoJSON,
   generateYellowZoneGeoJSON as getYellowZonesGeoJSON
 } from './services/noFlyZones'
-export type { NoFlyFacility } from './services/noFlyZones'
+export type { NoFlyFacility, FacilityType, OperationalStatus } from './services/noFlyZones'
 
 // ============================================
 // Services - Heliports (if exists)

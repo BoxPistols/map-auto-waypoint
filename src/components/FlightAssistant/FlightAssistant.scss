@@ -39,10 +39,10 @@
 .flight-assistant {
   position: fixed;
   bottom: 24px;
-  right: 24px;
+  right: 60px;
   width: 400px;
   min-width: 360px;
-  max-height: min(600px, calc(100vh - 100px));
+  max-height: min(800px, calc(100vh - 80px));
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -64,7 +64,7 @@
     width: 640px;
     max-height: calc(100vh - 80px);
     bottom: 16px;
-    right: 16px;
+    right: 60px;
 
     .flight-assistant-messages {
       min-height: 0;

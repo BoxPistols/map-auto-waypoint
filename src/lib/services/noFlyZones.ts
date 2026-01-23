@@ -21,16 +21,48 @@ import { createCirclePolygon, calculateDistance } from '../utils/geo'
 // Type Definitions
 // ============================================
 
+export type FacilityType =
+  | 'government'      // 政府機関
+  | 'imperial'        // 皇室関連
+  | 'nuclear'         // 原子力施設
+  | 'defense'         // 防衛施設
+  | 'foreign_mission' // 外国公館
+  | 'prefecture'      // 都道府県庁
+  | 'police'          // 警察施設
+  | 'prison'          // 刑務所・拘置所
+  | 'military_jsdf'   // 自衛隊施設
+  | 'energy'          // エネルギー施設
+  | 'water'           // ダム・浄水場
+  | 'infrastructure'  // その他重要インフラ
+  | 'airport'         // 空港（後方互換）
+
+export type OperationalStatus =
+  | 'operational'      // 運転中
+  | 'stopped'          // 停止中
+  | 'decommissioning'  // 廃炉作業中
+  | 'decommissioned'   // 廃炉完了
+  | 'planned'          // 計画中
+
 export interface NoFlyFacility {
   id: string
   name: string
   nameEn?: string
-  type: 'government' | 'imperial' | 'nuclear' | 'defense' | 'airport' | 'foreign_mission'
+  type: FacilityType
   coordinates: [number, number] // [lng, lat]
   radiusKm: number
   zone: 'red' | 'yellow'
   category?: string
   source?: string
+  // 原子力発電所固有の情報
+  operationalStatus?: OperationalStatus
+  reactorCount?: number
+  capacity?: string
+  operator?: string
+  // 施設の詳細情報
+  address?: string
+  description?: string
+  established?: string
+  lastUpdated?: string
 }
 
 // ============================================
@@ -151,8 +183,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [140.5136, 43.0339],
     radiusKm: 0.2,
     zone: 'red',
-    category: '停止中',
-    source: '北海道電力'
+    category: '原子力発電所',
+    source: '北海道電力',
+    operator: '北海道電力',
+    operationalStatus: 'stopped',
+    reactorCount: 3,
+    capacity: '207.9万kW'
   },
   // ===== 東北電力 =====
   {
@@ -163,8 +199,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [141.3861, 41.1861],
     radiusKm: 0.2,
     zone: 'red',
-    category: '停止中',
-    source: '東北電力'
+    category: '原子力発電所',
+    source: '東北電力',
+    operator: '東北電力',
+    operationalStatus: 'stopped',
+    reactorCount: 1,
+    capacity: '110万kW'
   },
   {
     id: 'onagawa',
@@ -174,8 +214,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [141.5003, 38.4019],
     radiusKm: 0.2,
     zone: 'red',
-    category: '一部運転中',
-    source: '東北電力'
+    category: '原子力発電所',
+    source: '東北電力',
+    operator: '東北電力',
+    operationalStatus: 'operational',
+    reactorCount: 3,
+    capacity: '217.4万kW'
   },
   // ===== 東京電力 =====
   {
@@ -186,8 +230,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [141.0328, 37.4211],
     radiusKm: 0.2,
     zone: 'red',
-    category: '廃炉作業中',
-    source: '東京電力'
+    category: '原子力発電所',
+    source: '東京電力',
+    operator: '東京電力',
+    operationalStatus: 'decommissioning',
+    reactorCount: 6,
+    capacity: '469.6万kW'
   },
   {
     id: 'fukushima-daini',
@@ -197,8 +245,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [141.025, 37.3167],
     radiusKm: 0.2,
     zone: 'red',
-    category: '廃炉決定',
-    source: '東京電力'
+    category: '原子力発電所',
+    source: '東京電力',
+    operator: '東京電力',
+    operationalStatus: 'decommissioning',
+    reactorCount: 4,
+    capacity: '440万kW'
   },
   {
     id: 'kashiwazaki-kariwa',
@@ -208,8 +260,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [138.5978, 37.4286],
     radiusKm: 0.2,
     zone: 'red',
-    category: '停止中',
-    source: '東京電力'
+    category: '原子力発電所',
+    source: '東京電力',
+    operator: '東京電力',
+    operationalStatus: 'stopped',
+    reactorCount: 7,
+    capacity: '821.2万kW'
   },
   // ===== 日本原子力発電 =====
   {
@@ -220,8 +276,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [140.6072, 36.4664],
     radiusKm: 0.2,
     zone: 'red',
-    category: '停止中',
-    source: '日本原子力発電'
+    category: '原子力発電所',
+    source: '日本原子力発電',
+    operator: '日本原子力発電',
+    operationalStatus: 'stopped',
+    reactorCount: 1,
+    capacity: '110万kW'
   },
   {
     id: 'tsuruga',
@@ -231,8 +291,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [136.0186, 35.7514],
     radiusKm: 0.2,
     zone: 'red',
-    category: '停止中',
-    source: '日本原子力発電'
+    category: '原子力発電所',
+    source: '日本原子力発電',
+    operator: '日本原子力発電',
+    operationalStatus: 'stopped',
+    reactorCount: 2,
+    capacity: '151.8万kW'
   },
   // ===== 中部電力 =====
   {
@@ -243,8 +307,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [138.1428, 34.6219],
     radiusKm: 0.2,
     zone: 'red',
-    category: '停止中',
-    source: '中部電力'
+    category: '原子力発電所',
+    source: '中部電力',
+    operator: '中部電力',
+    operationalStatus: 'stopped',
+    reactorCount: 5,
+    capacity: '361.7万kW'
   },
   // ===== 北陸電力 =====
   {
@@ -255,8 +323,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [136.7289, 37.06],
     radiusKm: 0.2,
     zone: 'red',
-    category: '停止中',
-    source: '北陸電力'
+    category: '原子力発電所',
+    source: '北陸電力',
+    operator: '北陸電力',
+    operationalStatus: 'stopped',
+    reactorCount: 2,
+    capacity: '174.6万kW'
   },
   // ===== 関西電力 =====
   {
@@ -267,8 +339,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [135.9581, 35.7017],
     radiusKm: 0.2,
     zone: 'red',
-    category: '一部運転中',
-    source: '関西電力'
+    category: '原子力発電所',
+    source: '関西電力',
+    operator: '関西電力',
+    operationalStatus: 'operational',
+    reactorCount: 3,
+    capacity: '166.6万kW'
   },
   {
     id: 'ohi',
@@ -278,8 +354,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [135.6561, 35.5422],
     radiusKm: 0.2,
     zone: 'red',
-    category: '運転中',
-    source: '関西電力'
+    category: '原子力発電所',
+    source: '関西電力',
+    operator: '関西電力',
+    operationalStatus: 'operational',
+    reactorCount: 4,
+    capacity: '471万kW'
   },
   {
     id: 'takahama',
@@ -289,8 +369,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [135.505, 35.5203],
     radiusKm: 0.2,
     zone: 'red',
-    category: '運転中',
-    source: '関西電力'
+    category: '原子力発電所',
+    source: '関西電力',
+    operator: '関西電力',
+    operationalStatus: 'operational',
+    reactorCount: 4,
+    capacity: '339.2万kW'
   },
   // ===== 中国電力 =====
   {
@@ -301,8 +385,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [132.9992, 35.5386],
     radiusKm: 0.2,
     zone: 'red',
-    category: '一部運転中',
-    source: '中国電力'
+    category: '原子力発電所',
+    source: '中国電力',
+    operator: '中国電力',
+    operationalStatus: 'stopped',
+    reactorCount: 3,
+    capacity: '282万kW'
   },
   // ===== 四国電力 =====
   {
@@ -313,8 +401,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [132.3094, 33.4903],
     radiusKm: 0.2,
     zone: 'red',
-    category: '運転中',
-    source: '四国電力'
+    category: '原子力発電所',
+    source: '四国電力',
+    operator: '四国電力',
+    operationalStatus: 'operational',
+    reactorCount: 3,
+    capacity: '202万kW'
   },
   // ===== 九州電力 =====
   {
@@ -325,8 +417,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [129.8369, 33.5153],
     radiusKm: 0.2,
     zone: 'red',
-    category: '運転中',
-    source: '九州電力'
+    category: '原子力発電所',
+    source: '九州電力',
+    operator: '九州電力',
+    operationalStatus: 'operational',
+    reactorCount: 4,
+    capacity: '349万kW'
   },
   {
     id: 'sendai-npp',
@@ -336,8 +432,12 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     coordinates: [130.1894, 31.8339],
     radiusKm: 0.2,
     zone: 'red',
-    category: '運転中',
-    source: '九州電力'
+    category: '原子力発電所',
+    source: '九州電力',
+    operator: '九州電力',
+    operationalStatus: 'operational',
+    reactorCount: 2,
+    capacity: '178万kW'
   },
 
   // ============================================
@@ -536,6 +636,532 @@ export const NO_FLY_FACILITIES: NoFlyFacility[] = [
     radiusKm: 0.3,
     zone: 'yellow',
     category: '政党本部'
+  },
+
+  // ============================================
+  // 都道府県庁舎（レッドゾーン）
+  // ============================================
+  {
+    id: 'hokkaido-gov',
+    name: '北海道庁',
+    nameEn: 'Hokkaido Government',
+    type: 'prefecture',
+    coordinates: [141.3469, 43.0642],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '都道府県庁舎',
+    source: '警察庁'
+  },
+  {
+    id: 'tokyo-gov',
+    name: '東京都庁',
+    nameEn: 'Tokyo Metropolitan Government',
+    type: 'prefecture',
+    coordinates: [139.6917, 35.6895],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '都道府県庁舎',
+    source: '警察庁'
+  },
+  {
+    id: 'osaka-gov',
+    name: '大阪府庁',
+    nameEn: 'Osaka Prefectural Government',
+    type: 'prefecture',
+    coordinates: [135.5201, 34.6862],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '都道府県庁舎',
+    source: '警察庁'
+  },
+  {
+    id: 'aichi-gov',
+    name: '愛知県庁',
+    nameEn: 'Aichi Prefectural Government',
+    type: 'prefecture',
+    coordinates: [136.9066, 35.1803],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '都道府県庁舎',
+    source: '警察庁'
+  },
+  {
+    id: 'fukuoka-gov',
+    name: '福岡県庁',
+    nameEn: 'Fukuoka Prefectural Government',
+    type: 'prefecture',
+    coordinates: [130.4183, 33.6064],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '都道府県庁舎',
+    source: '警察庁'
+  },
+  {
+    id: 'kanagawa-gov',
+    name: '神奈川県庁',
+    nameEn: 'Kanagawa Prefectural Government',
+    type: 'prefecture',
+    coordinates: [139.6424, 35.4478],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '都道府県庁舎',
+    source: '警察庁'
+  },
+  {
+    id: 'kyoto-gov',
+    name: '京都府庁',
+    nameEn: 'Kyoto Prefectural Government',
+    type: 'prefecture',
+    coordinates: [135.7681, 35.0214],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '都道府県庁舎',
+    source: '警察庁'
+  },
+  {
+    id: 'hyogo-gov',
+    name: '兵庫県庁',
+    nameEn: 'Hyogo Prefectural Government',
+    type: 'prefecture',
+    coordinates: [135.1831, 34.6913],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '都道府県庁舎',
+    source: '警察庁'
+  },
+
+  // ============================================
+  // 警察本部・警察施設（レッドゾーン）
+  // ============================================
+  {
+    id: 'tokyo-mpd',
+    name: '警視庁本部',
+    nameEn: 'Tokyo Metropolitan Police Department',
+    type: 'police',
+    coordinates: [139.7507, 35.6761],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '警察本部',
+    source: '警察庁'
+  },
+  {
+    id: 'hokkaido-police',
+    name: '北海道警察本部',
+    nameEn: 'Hokkaido Police Headquarters',
+    type: 'police',
+    coordinates: [141.3450, 43.0649],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '警察本部',
+    source: '警察庁'
+  },
+  {
+    id: 'osaka-police',
+    name: '大阪府警察本部',
+    nameEn: 'Osaka Prefectural Police Headquarters',
+    type: 'police',
+    coordinates: [135.5089, 34.6822],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '警察本部',
+    source: '警察庁'
+  },
+  {
+    id: 'aichi-police',
+    name: '愛知県警察本部',
+    nameEn: 'Aichi Prefectural Police Headquarters',
+    type: 'police',
+    coordinates: [136.9095, 35.1709],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '警察本部',
+    source: '警察庁'
+  },
+  {
+    id: 'fukuoka-police',
+    name: '福岡県警察本部',
+    nameEn: 'Fukuoka Prefectural Police Headquarters',
+    type: 'police',
+    coordinates: [130.4167, 33.6090],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '警察本部',
+    source: '警察庁'
+  },
+
+  // ============================================
+  // 刑務所・拘置所（レッドゾーン）
+  // ============================================
+  {
+    id: 'tokyo-detention',
+    name: '東京拘置所',
+    nameEn: 'Tokyo Detention House',
+    type: 'prison',
+    coordinates: [139.8286, 35.7431],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '拘置所',
+    source: '警察庁'
+  },
+  {
+    id: 'osaka-detention',
+    name: '大阪拘置所',
+    nameEn: 'Osaka Detention House',
+    type: 'prison',
+    coordinates: [135.5375, 34.6847],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '拘置所',
+    source: '警察庁'
+  },
+  {
+    id: 'nagoya-detention',
+    name: '名古屋拘置所',
+    nameEn: 'Nagoya Detention House',
+    type: 'prison',
+    coordinates: [136.9262, 35.1406],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '拘置所',
+    source: '警察庁'
+  },
+  {
+    id: 'fuchu-prison',
+    name: '府中刑務所',
+    nameEn: 'Fuchu Prison',
+    type: 'prison',
+    coordinates: [139.4894, 35.6683],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '刑務所',
+    source: '警察庁'
+  },
+  {
+    id: 'osaka-prison',
+    name: '大阪刑務所',
+    nameEn: 'Osaka Prison',
+    type: 'prison',
+    coordinates: [135.5547, 34.6481],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '刑務所',
+    source: '警察庁'
+  },
+
+  // ============================================
+  // 自衛隊施設（レッドゾーン）
+  // ============================================
+  {
+    id: 'jsdf-ichigaya',
+    name: '防衛省市ヶ谷地区',
+    nameEn: 'MOD Ichigaya Area',
+    type: 'military_jsdf',
+    coordinates: [139.7285, 35.6933],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '自衛隊施設',
+    source: '警察庁'
+  },
+  {
+    id: 'jsdf-asaka',
+    name: '陸上自衛隊朝霞駐屯地',
+    nameEn: 'JGSDF Asaka Camp',
+    type: 'military_jsdf',
+    coordinates: [139.5950, 35.7983],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '自衛隊施設',
+    source: '警察庁'
+  },
+  {
+    id: 'jsdf-yokosuka',
+    name: '海上自衛隊横須賀地方総監部',
+    nameEn: 'JMSDF Yokosuka District',
+    type: 'military_jsdf',
+    coordinates: [139.6608, 35.2789],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '自衛隊施設',
+    source: '警察庁'
+  },
+  {
+    id: 'jsdf-hyakuri',
+    name: '航空自衛隊百里基地',
+    nameEn: 'JASDF Hyakuri Air Base',
+    type: 'military_jsdf',
+    coordinates: [140.4147, 36.1811],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '自衛隊施設',
+    source: '警察庁'
+  },
+  {
+    id: 'jsdf-misawa',
+    name: '航空自衛隊三沢基地',
+    nameEn: 'JASDF Misawa Air Base',
+    type: 'military_jsdf',
+    coordinates: [141.3686, 40.7033],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '自衛隊施設',
+    source: '警察庁'
+  },
+  {
+    id: 'jsdf-komatsu',
+    name: '航空自衛隊小松基地',
+    nameEn: 'JASDF Komatsu Air Base',
+    type: 'military_jsdf',
+    coordinates: [136.4069, 36.3947],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '自衛隊施設',
+    source: '警察庁'
+  },
+  {
+    id: 'jsdf-tsuiki',
+    name: '航空自衛隊築城基地',
+    nameEn: 'JASDF Tsuiki Air Base',
+    type: 'military_jsdf',
+    coordinates: [131.0394, 33.6856],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '自衛隊施設',
+    source: '警察庁'
+  },
+  {
+    id: 'jsdf-naha',
+    name: '航空自衛隊那覇基地',
+    nameEn: 'JASDF Naha Air Base',
+    type: 'military_jsdf',
+    coordinates: [127.6542, 26.1958],
+    radiusKm: 0.2,
+    zone: 'red',
+    category: '自衛隊施設',
+    source: '警察庁'
+  },
+
+  // ============================================
+  // 追加の外国公館（イエローゾーン）
+  // ============================================
+  {
+    id: 'canada-embassy',
+    name: 'カナダ大使館',
+    nameEn: 'Embassy of Canada',
+    type: 'foreign_mission',
+    coordinates: [139.7417, 35.6778],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'india-embassy',
+    name: 'インド大使館',
+    nameEn: 'Embassy of India',
+    type: 'foreign_mission',
+    coordinates: [139.7336, 35.6603],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'brazil-embassy',
+    name: 'ブラジル大使館',
+    nameEn: 'Embassy of Brazil',
+    type: 'foreign_mission',
+    coordinates: [139.7394, 35.6681],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'spain-embassy',
+    name: 'スペイン大使館',
+    nameEn: 'Embassy of Spain',
+    type: 'foreign_mission',
+    coordinates: [139.7383, 35.6658],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'netherlands-embassy',
+    name: 'オランダ大使館',
+    nameEn: 'Embassy of the Netherlands',
+    type: 'foreign_mission',
+    coordinates: [139.7381, 35.6725],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'switzerland-embassy',
+    name: 'スイス大使館',
+    nameEn: 'Embassy of Switzerland',
+    type: 'foreign_mission',
+    coordinates: [139.7447, 35.6797],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'belgium-embassy',
+    name: 'ベルギー大使館',
+    nameEn: 'Embassy of Belgium',
+    type: 'foreign_mission',
+    coordinates: [139.7394, 35.6719],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'sweden-embassy',
+    name: 'スウェーデン大使館',
+    nameEn: 'Embassy of Sweden',
+    type: 'foreign_mission',
+    coordinates: [139.7411, 35.6636],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'norway-embassy',
+    name: 'ノルウェー大使館',
+    nameEn: 'Embassy of Norway',
+    type: 'foreign_mission',
+    coordinates: [139.7422, 35.6653],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'denmark-embassy',
+    name: 'デンマーク大使館',
+    nameEn: 'Embassy of Denmark',
+    type: 'foreign_mission',
+    coordinates: [139.7353, 35.6606],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'finland-embassy',
+    name: 'フィンランド大使館',
+    nameEn: 'Embassy of Finland',
+    type: 'foreign_mission',
+    coordinates: [139.7453, 35.6761],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'austria-embassy',
+    name: 'オーストリア大使館',
+    nameEn: 'Embassy of Austria',
+    type: 'foreign_mission',
+    coordinates: [139.7389, 35.6644],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'poland-embassy',
+    name: 'ポーランド大使館',
+    nameEn: 'Embassy of Poland',
+    type: 'foreign_mission',
+    coordinates: [139.7294, 35.6553],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'turkey-embassy',
+    name: 'トルコ大使館',
+    nameEn: 'Embassy of Turkey',
+    type: 'foreign_mission',
+    coordinates: [139.7353, 35.6572],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'israel-embassy',
+    name: 'イスラエル大使館',
+    nameEn: 'Embassy of Israel',
+    type: 'foreign_mission',
+    coordinates: [139.7414, 35.6642],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'singapore-embassy',
+    name: 'シンガポール大使館',
+    nameEn: 'Embassy of Singapore',
+    type: 'foreign_mission',
+    coordinates: [139.7422, 35.6725],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'thailand-embassy',
+    name: 'タイ大使館',
+    nameEn: 'Embassy of Thailand',
+    type: 'foreign_mission',
+    coordinates: [139.7325, 35.6575],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'malaysia-embassy',
+    name: 'マレーシア大使館',
+    nameEn: 'Embassy of Malaysia',
+    type: 'foreign_mission',
+    coordinates: [139.7361, 35.6594],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'philippines-embassy',
+    name: 'フィリピン大使館',
+    nameEn: 'Embassy of the Philippines',
+    type: 'foreign_mission',
+    coordinates: [139.7392, 35.6669],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
+  },
+  {
+    id: 'indonesia-embassy',
+    name: 'インドネシア大使館',
+    nameEn: 'Embassy of Indonesia',
+    type: 'foreign_mission',
+    coordinates: [139.7339, 35.6619],
+    radiusKm: 0.3,
+    zone: 'yellow',
+    category: '外国公館',
+    source: '警察庁'
   }
 ]
 
@@ -553,8 +1179,15 @@ export function getFacilitiesByZone(zone: 'red' | 'yellow'): NoFlyFacility[] {
 /**
  * Get facilities by type
  */
-export function getFacilitiesByType(type: NoFlyFacility['type']): NoFlyFacility[] {
+export function getFacilitiesByType(type: FacilityType): NoFlyFacility[] {
   return NO_FLY_FACILITIES.filter((f) => f.type === type)
+}
+
+/**
+ * Get facilities by category (for UI filtering)
+ */
+export function getFacilitiesByCategory(category: string): NoFlyFacility[] {
+  return NO_FLY_FACILITIES.filter((f) => f.category === category)
 }
 
 /**
@@ -671,6 +1304,102 @@ export function getUSMilitaryBases(): NoFlyFacility[] {
  */
 export function getEmbassies(): NoFlyFacility[] {
   return NO_FLY_FACILITIES.filter((f) => f.type === 'foreign_mission')
+}
+
+/**
+ * Get prefectures only
+ */
+export function getPrefectures(): NoFlyFacility[] {
+  return NO_FLY_FACILITIES.filter((f) => f.type === 'prefecture')
+}
+
+/**
+ * Get police facilities only
+ */
+export function getPoliceFacilities(): NoFlyFacility[] {
+  return NO_FLY_FACILITIES.filter((f) => f.type === 'police')
+}
+
+/**
+ * Get prisons only
+ */
+export function getPrisons(): NoFlyFacility[] {
+  return NO_FLY_FACILITIES.filter((f) => f.type === 'prison')
+}
+
+/**
+ * Get JSDF facilities only
+ */
+export function getJSDFFacilities(): NoFlyFacility[] {
+  return NO_FLY_FACILITIES.filter((f) => f.type === 'military_jsdf')
+}
+
+/**
+ * Generate GeoJSON for a specific facility type
+ */
+export function generateCategoryGeoJSON(type: FacilityType): GeoJSON.FeatureCollection {
+  const facilities = getFacilitiesByType(type)
+  const features: GeoJSON.Feature[] = facilities.map((facility) => ({
+    type: 'Feature',
+    properties: {
+      id: facility.id,
+      name: facility.name,
+      nameEn: facility.nameEn,
+      type: facility.type,
+      radiusKm: facility.radiusKm,
+      zone: facility.zone,
+      zoneType: facility.zone === 'red' ? 'RED_ZONE' : 'YELLOW_ZONE',
+      category: facility.category,
+      source: facility.source,
+      operationalStatus: facility.operationalStatus,
+      reactorCount: facility.reactorCount,
+      capacity: facility.capacity,
+      operator: facility.operator,
+      address: facility.address,
+      description: facility.description
+    },
+    geometry: createCirclePolygon(facility.coordinates, facility.radiusKm)
+  }))
+
+  return {
+    type: 'FeatureCollection',
+    features
+  }
+}
+
+/**
+ * Generate GeoJSON for nuclear plants with operational status
+ */
+export function generateNuclearPlantsGeoJSON(): GeoJSON.FeatureCollection {
+  return generateCategoryGeoJSON('nuclear')
+}
+
+/**
+ * Generate GeoJSON for prefectures
+ */
+export function generatePrefecturesGeoJSON(): GeoJSON.FeatureCollection {
+  return generateCategoryGeoJSON('prefecture')
+}
+
+/**
+ * Generate GeoJSON for police facilities
+ */
+export function generatePoliceFacilitiesGeoJSON(): GeoJSON.FeatureCollection {
+  return generateCategoryGeoJSON('police')
+}
+
+/**
+ * Generate GeoJSON for prisons
+ */
+export function generatePrisonsGeoJSON(): GeoJSON.FeatureCollection {
+  return generateCategoryGeoJSON('prison')
+}
+
+/**
+ * Generate GeoJSON for JSDF facilities
+ */
+export function generateJSDFFacilitiesGeoJSON(): GeoJSON.FeatureCollection {
+  return generateCategoryGeoJSON('military_jsdf')
 }
 
 // ============================================
@@ -1175,6 +1904,7 @@ export function toLegacyFormat(): Array<{
 export const NoFlyZoneService = {
   getFacilitiesByZone,
   getFacilitiesByType,
+  getFacilitiesByCategory,
   generateRedZone: generateRedZoneGeoJSON,
   generateYellowZone: generateYellowZoneGeoJSON,
   generateAll: generateAllNoFlyGeoJSON,
@@ -1182,9 +1912,19 @@ export const NoFlyZoneService = {
   generateRemoteIDZone: generateRemoteIDZoneGeoJSON,
   generateMannedAircraftZones: generateMannedAircraftZonesGeoJSON,
   generateRadioInterferenceZones: generateRadioInterferenceZonesGeoJSON,
+  generateCategoryGeoJSON,
+  generateNuclearPlantsGeoJSON,
+  generatePrefecturesGeoJSON,
+  generatePoliceFacilitiesGeoJSON,
+  generatePrisonsGeoJSON,
+  generateJSDFFacilitiesGeoJSON,
   isInZone: isInNoFlyZone,
   getNearby: getNearbyNoFlyZones,
   getNuclearPlants,
   getUSMilitaryBases,
-  getEmbassies
+  getEmbassies,
+  getPrefectures,
+  getPoliceFacilities,
+  getPrisons,
+  getJSDFFacilities
 }
