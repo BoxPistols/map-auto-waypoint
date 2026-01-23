@@ -557,6 +557,14 @@ function MainLayout() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Ignore shortcuts when typing in input fields
+      // Cmd+K (Mac) or Ctrl+K (Win) for Search - must be before input check
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setIsSearchExpanded(true)
+        // SearchForm's useEffect will handle focus
+        return
+      }
+
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
         return
       }
@@ -671,7 +679,7 @@ function MainLayout() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleUndo, handleRedo, sidebarCollapsed, selectedPolygonId, polygons, handleEditPolygonShape, toggleTheme, editingPolygon, showNotification])
+  }, [handleUndo, handleRedo, sidebarCollapsed, selectedPolygonId, polygons, handleEditPolygonShape, toggleTheme, editingPolygon, showNotification, setIsSearchExpanded])
 
   // Handle polygon shape edit complete
   const handlePolygonEditComplete = useCallback((updatedFeature) => {
