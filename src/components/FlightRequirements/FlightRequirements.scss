@@ -675,7 +675,8 @@
 
 // ダークモード対応
 [data-theme='dark'] {
-  .flight-requirements {
+  .flight-requirements-panel,
+  .flight-requirements-content {
     --bg-primary: #1e1e1e;
     --bg-secondary: #252525;
     --bg-hover: #2d2d2d;
