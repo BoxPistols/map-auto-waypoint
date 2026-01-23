@@ -300,6 +300,37 @@ const Map = ({
     })
   }, [])
 
+  // 全レイヤーを一括ON/OFF
+  const allLayerKeys = [
+    'showAirportZones',
+    'showRestrictionSurfaces',
+    'showRedZones',
+    'showYellowZones',
+    'showHeliports',
+    'showDID',
+    'showEmergencyAirspace',
+    'showRemoteIdZones',
+    'showMannedAircraftZones',
+    'showRadioZones',
+    'showGeoFeatures',
+    'showRainCloud',
+    'showNetworkCoverage',
+    'showNuclearPlants',
+    'showPrefectures',
+    'showPolice',
+    'showPrisons',
+    'showJSDF'
+  ]
+
+  const allLayersEnabled = useMemo(() => {
+    return allLayerKeys.every(key => layerVisibility[key])
+  }, [layerVisibility])
+
+  const toggleAllLayers = useCallback(() => {
+    const newState = !allLayersEnabled
+    toggleGroupLayers(allLayerKeys, newState)
+  }, [allLayersEnabled, toggleGroupLayers, allLayerKeys])
+
   // お気に入りグループのトグル機能
   const toggleFavoriteGroup = useCallback((groupId) => {
     setFavoriteGroups(prev => {
@@ -2010,6 +2041,21 @@ const Map = ({
 
         {/* Controls - always visible on desktop, togglable on mobile */}
         <div className={`${styles.controlsGroup} ${isMobile && !mobileControlsExpanded ? styles.hidden : ''}`}>
+          {/* すべて一括ON/OFF */}
+          <ControlGroup
+            id="all-layers"
+            icon={<Layers size={18} />}
+            label="すべて"
+            defaultExpanded={false}
+            groupToggle={true}
+            groupEnabled={allLayersEnabled}
+            onGroupToggle={toggleAllLayers}
+          >
+            <div className={styles.masterToggleHint}>
+              全レイヤーを一括ON/OFF
+            </div>
+          </ControlGroup>
+
           {/* グループ1: 禁止区域 */}
           <ControlGroup
             id="restricted"

@@ -8,6 +8,7 @@ import { useState } from 'react'
  * Issue #29で実装された以下の機能を提供します：
  * - グループ全体のON/OFF機能
  * - お気に入り機能
+ * - アイコン + ラベルテキスト表示（tooltip依存を軽減）
  * - 開閉状態のlocalStorage永続化
  */
 const meta: Meta<typeof ControlGroup> = {

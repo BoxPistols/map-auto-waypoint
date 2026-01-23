@@ -68,6 +68,7 @@ const ControlGroup = ({
           data-tooltip-pos="left"
         >
           <span className={styles.groupIcon}>{icon}</span>
+          {label && <span className={styles.groupLabel}>{label}</span>}
           {groupToggle && (
             <input
               type="checkbox"

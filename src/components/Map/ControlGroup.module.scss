@@ -29,11 +29,12 @@
 .groupHeader {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
-  width: 36px;
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 36px;
+  width: auto;
   height: 36px;
-  padding: 0 4px;
+  padding: 0 8px 0 6px;
   color: var(--color-text);
   background: rgba(var(--color-bg-elevated-rgb), 0.88);
   backdrop-filter: blur(8px);
@@ -64,11 +65,21 @@
   align-items: center;
   justify-content: center;
   font-size: 18px;
+  flex-shrink: 0;
 
   svg {
     width: 18px;
     height: 18px;
   }
+}
+
+.groupLabel {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  margin-right: auto;
+  flex-shrink: 0;
+  padding-right: 20px; // chevronのスペースを確保
 }
 
 .groupCheckbox {

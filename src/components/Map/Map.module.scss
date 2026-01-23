@@ -1036,3 +1036,15 @@
     }
   }
 }
+
+// Master toggle hint
+.masterToggleHint {
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  background: rgba(var(--color-bg-elevated-rgb), 0.5);
+  border-radius: 4px;
+  font-weight: 500;
+}
+
