@@ -7,6 +7,7 @@ import ContextMenu from '../ContextMenu'
 import FocusCrosshair from '../FocusCrosshair'
 import CoordinateDisplay from '../CoordinateDisplay'
 import ControlGroup from './ControlGroup'
+import FacilityPopup from '../FacilityPopup/FacilityPopup'
 import {
   getAirportZonesGeoJSON,
   getRedZonesGeoJSON,
@@ -195,6 +196,9 @@ const Map = ({
   const [contextMenu, setContextMenu] = useState(null) // { isOpen, position, waypoint }
   const [polygonContextMenu, setPolygonContextMenu] = useState(null) // { isOpen, position, polygon }
 
+  // 施設ポップアップ状態
+  const [facilityPopup, setFacilityPopup] = useState(null) // { facility, screenX, screenY }
+
   // Load map settings from localStorage (must be before viewState init)
   const initialSettings = useMemo(() => loadMapSettings(), [])
   const initialAirportOverlay = Boolean(
@@ -247,6 +251,17 @@ const Map = ({
   const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
   const [showStylePicker, setShowStylePicker] = useState(false)
   const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false)
+
+  // お気に入りグループの状態管理
+  const [favoriteGroups, setFavoriteGroups] = useState(() => {
+    const stored = localStorage.getItem('favoriteLayerGroups')
+    return stored ? new Set(JSON.parse(stored)) : new Set()
+  })
+
+  // お気に入り状態をlocalStorageに保存
+  useEffect(() => {
+    localStorage.setItem('favoriteLayerGroups', JSON.stringify(Array.from(favoriteGroups)))
+  }, [favoriteGroups])
   const hasDuplicateWaypointIndices = useMemo(() => {
     const seen = new Set()
     for (const wp of waypoints) {
@@ -271,6 +286,30 @@ const Map = ({
         showAirportZones: nextValue,
         showRestrictionSurfaces: nextValue
       }
+    })
+  }, [])
+
+  // グループ全体のトグル機能
+  const toggleGroupLayers = useCallback((layerKeys, enabled) => {
+    setLayerVisibility(prev => {
+      const updates = {}
+      layerKeys.forEach(key => {
+        updates[key] = enabled
+      })
+      return { ...prev, ...updates }
+    })
+  }, [])
+
+  // お気に入りグループのトグル機能
+  const toggleFavoriteGroup = useCallback((groupId) => {
+    setFavoriteGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(groupId)) {
+        next.delete(groupId)
+      } else {
+        next.add(groupId)
+      }
+      return next
     })
   }, [])
 
@@ -463,13 +502,46 @@ const Map = ({
       id: 'nuclear-plants',
       show: layerVisibility.showNuclearPlants,
       data: nuclearPlantsGeoJSON,
-      fillColor: '#ff00ff',
-      fillOpacity: 0.3,
-      lineColor: '#cc00cc',
+      // 稼働状況による色分け（データドリブンスタイル）
+      fillColor: [
+        'match',
+        ['get', 'operationalStatus'],
+        'operational', '#dc2626',         // 運転中: 赤
+        'stopped', '#f97316',              // 停止中: オレンジ
+        'decommissioning', '#eab308',      // 廃炉作業中: 黄色
+        'decommissioned', '#6b7280',       // 廃炉完了: グレー
+        '#9333ea'                          // デフォルト: 紫
+      ],
+      fillOpacity: 0.35,
+      lineColor: [
+        'match',
+        ['get', 'operationalStatus'],
+        'operational', '#b91c1c',
+        'stopped', '#ea580c',
+        'decommissioning', '#ca8a04',
+        'decommissioned', '#4b5563',
+        '#7c3aed'
+      ],
       lineWidth: 2,
       lineDasharray: [3, 3],
-      labelColor: '#990099',
-      labelSize: 10
+      labelColor: '#7c3aed',
+      labelSize: 10,
+      // ラベルに施設名と稼働状況を表示
+      labelField: [
+        'concat',
+        ['get', 'name'],
+        ' (',
+        [
+          'match',
+          ['get', 'operationalStatus'],
+          'operational', '運転中',
+          'stopped', '停止中',
+          'decommissioning', '廃炉中',
+          'decommissioned', '廃炉完了',
+          ''
+        ],
+        ')'
+      ]
     },
     {
       id: 'prefectures',
@@ -945,6 +1017,30 @@ const Map = ({
     const features = e.features || []
     const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
 
+    // 施設レイヤーのフィーチャーをチェック（ポップアップ表示）
+    const facilityLayerIds = [
+      'nuclear-plants-fill',
+      'prefectures-fill',
+      'police-fill',
+      'prisons-fill',
+      'jsdf-fill',
+      'red-zones-fill',
+      'yellow-zones-fill'
+    ]
+    const facilityFeature = features.find(f =>
+      facilityLayerIds.includes(f.layer?.id)
+    )
+
+    if (facilityFeature) {
+      // 施設ポップアップを表示
+      setFacilityPopup({
+        facility: facilityFeature.properties,
+        screenX: e.point.x,
+        screenY: e.point.y
+      })
+      return
+    }
+
     // If in edit mode and clicking outside the polygon, finish editing
     if (editingPolygon && !polygonFeature) {
       onEditFinish?.()
@@ -1228,7 +1324,16 @@ const Map = ({
       }))
   }
 
-  const interactiveLayerIds = ['polygon-fill']
+  const interactiveLayerIds = [
+    'polygon-fill',
+    'nuclear-plants-fill',
+    'prefectures-fill',
+    'police-fill',
+    'prisons-fill',
+    'jsdf-fill',
+    'red-zones-fill',
+    'yellow-zones-fill'
+  ]
 
   return (
     <div className={styles.mapContainer}>
@@ -1906,7 +2011,36 @@ const Map = ({
         {/* Controls - always visible on desktop, togglable on mobile */}
         <div className={`${styles.controlsGroup} ${isMobile && !mobileControlsExpanded ? styles.hidden : ''}`}>
           {/* グループ1: 禁止区域 */}
-          <ControlGroup id="restricted" icon={<ShieldAlert size={18} />} label="禁止区域" defaultExpanded={false}>
+          <ControlGroup
+            id="restricted"
+            icon={<ShieldAlert size={18} />}
+            label="禁止区域"
+            defaultExpanded={false}
+            groupToggle={true}
+            groupEnabled={
+              layerVisibility.showRedZones ||
+              layerVisibility.showYellowZones ||
+              layerVisibility.showNuclearPlants ||
+              layerVisibility.showPrefectures ||
+              layerVisibility.showPolice ||
+              layerVisibility.showPrisons ||
+              layerVisibility.showJSDF
+            }
+            onGroupToggle={(enabled) => {
+              toggleGroupLayers([
+                'showRedZones',
+                'showYellowZones',
+                'showNuclearPlants',
+                'showPrefectures',
+                'showPolice',
+                'showPrisons',
+                'showJSDF'
+              ], enabled)
+            }}
+            favoritable={true}
+            isFavorite={favoriteGroups.has('restricted')}
+            onFavoriteToggle={() => toggleFavoriteGroup('restricted')}
+          >
             <button
               className={`${styles.toggleButton} ${layerVisibility.showRedZones ? styles.activeRed : ''}`}
               onClick={() => toggleLayer('showRedZones')}
@@ -1966,7 +2100,39 @@ const Map = ({
           </ControlGroup>
 
           {/* グループ2: 航空制限 */}
-          <ControlGroup id="aviation" icon={<Plane size={18} />} label="航空制限" defaultExpanded={false}>
+          <ControlGroup
+            id="aviation"
+            icon={<Plane size={18} />}
+            label="航空制限"
+            defaultExpanded={false}
+            groupToggle={true}
+            groupEnabled={
+              layerVisibility.showAirportZones ||
+              layerVisibility.showHeliports ||
+              layerVisibility.showEmergencyAirspace ||
+              layerVisibility.showRemoteIdZones ||
+              layerVisibility.showMannedAircraftZones
+            }
+            onGroupToggle={(enabled) => {
+              const updates = {
+                showHeliports: enabled,
+                showEmergencyAirspace: enabled,
+                showRemoteIdZones: enabled,
+                showMannedAircraftZones: enabled
+              }
+              if (enabled) {
+                updates.showAirportZones = true
+                updates.showRestrictionSurfaces = true
+              } else {
+                updates.showAirportZones = false
+                updates.showRestrictionSurfaces = false
+              }
+              setLayerVisibility(prev => ({ ...prev, ...updates }))
+            }}
+            favoritable={true}
+            isFavorite={favoriteGroups.has('aviation')}
+            onFavoriteToggle={() => toggleFavoriteGroup('aviation')}
+          >
             <button
               className={`${styles.toggleButton} ${layerVisibility.showAirportZones ? styles.activeAirport : ''}`}
               onClick={toggleAirportOverlay}
@@ -2010,7 +2176,28 @@ const Map = ({
           </ControlGroup>
 
           {/* グループ3: 環境 */}
-          <ControlGroup id="environment" icon={<Users size={18} />} label="環境" defaultExpanded={false}>
+          <ControlGroup
+            id="environment"
+            icon={<Users size={18} />}
+            label="環境"
+            defaultExpanded={false}
+            groupToggle={true}
+            groupEnabled={
+              layerVisibility.showDID ||
+              layerVisibility.showGeoFeatures ||
+              layerVisibility.showRainCloud
+            }
+            onGroupToggle={(enabled) => {
+              toggleGroupLayers([
+                'showDID',
+                'showGeoFeatures',
+                'showRainCloud'
+              ], enabled)
+            }}
+            favoritable={true}
+            isFavorite={favoriteGroups.has('environment')}
+            onFavoriteToggle={() => toggleFavoriteGroup('environment')}
+          >
             <button
               className={`${styles.toggleButton} ${layerVisibility.showDID ? styles.activeDID : ''}`}
               onClick={() => toggleLayer('showDID')}
@@ -2047,7 +2234,26 @@ const Map = ({
           </ControlGroup>
 
           {/* グループ4: 通信 */}
-          <ControlGroup id="network" icon={<Signal size={18} />} label="通信" defaultExpanded={false}>
+          <ControlGroup
+            id="network"
+            icon={<Signal size={18} />}
+            label="通信"
+            defaultExpanded={false}
+            groupToggle={true}
+            groupEnabled={
+              layerVisibility.showRadioZones ||
+              layerVisibility.showNetworkCoverage
+            }
+            onGroupToggle={(enabled) => {
+              toggleGroupLayers([
+                'showRadioZones',
+                'showNetworkCoverage'
+              ], enabled)
+            }}
+            favoritable={true}
+            isFavorite={favoriteGroups.has('network')}
+            onFavoriteToggle={() => toggleFavoriteGroup('network')}
+          >
             <button
               className={`${styles.toggleButton} ${layerVisibility.showRadioZones ? styles.activeRadioZones : ''}`}
               onClick={() => toggleLayer('showRadioZones')}
@@ -2173,6 +2379,16 @@ const Map = ({
           darkMode={true}
           onClose={() => setCoordinateDisplay(null)}
           autoFade={true}
+        />
+      )}
+
+      {/* Facility Popup */}
+      {facilityPopup && (
+        <FacilityPopup
+          facility={facilityPopup.facility}
+          screenX={facilityPopup.screenX}
+          screenY={facilityPopup.screenY}
+          onClose={() => setFacilityPopup(null)}
         />
       )}
     </div>

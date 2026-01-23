@@ -1206,7 +1206,13 @@ export function generateRedZoneGeoJSON(): GeoJSON.FeatureCollection {
       zone: facility.zone,
       zoneType: 'RED_ZONE',
       category: facility.category,
-      source: facility.source
+      source: facility.source,
+      coordinates: facility.coordinates,
+      operationalStatus: facility.operationalStatus,
+      reactorCount: facility.reactorCount,
+      capacity: facility.capacity,
+      operator: facility.operator,
+      description: facility.description
     },
     geometry: createCirclePolygon(facility.coordinates, facility.radiusKm)
   }))
@@ -1233,7 +1239,11 @@ export function generateYellowZoneGeoJSON(): GeoJSON.FeatureCollection {
       type: facility.type,
       radiusKm: facility.radiusKm,
       zone: facility.zone,
-      zoneType: 'YELLOW_ZONE'
+      zoneType: 'YELLOW_ZONE',
+      coordinates: facility.coordinates,
+      category: facility.category,
+      source: facility.source,
+      description: facility.description
     },
     geometry: createCirclePolygon(facility.coordinates, facility.radiusKm)
   }))
@@ -1351,6 +1361,7 @@ export function generateCategoryGeoJSON(type: FacilityType): GeoJSON.FeatureColl
       zoneType: facility.zone === 'red' ? 'RED_ZONE' : 'YELLOW_ZONE',
       category: facility.category,
       source: facility.source,
+      coordinates: facility.coordinates,
       operationalStatus: facility.operationalStatus,
       reactorCount: facility.reactorCount,
       capacity: facility.capacity,

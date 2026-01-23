@@ -2,16 +2,38 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+
+  &.favorite {
+    order: -1; // お気に入りは上部に表示
+
+    .headerContainer::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #fbbf24, #f59e0b);
+      border-radius: 2px;
+    }
+  }
+}
+
+.headerContainer {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  position: relative;
 }
 
 .groupHeader {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   width: 36px;
   height: 36px;
-  padding: 0;
+  padding: 0 4px;
   color: var(--color-text);
   background: rgba(var(--color-bg-elevated-rgb), 0.88);
   backdrop-filter: blur(8px);
@@ -30,6 +52,11 @@
   &:active {
     transform: scale(0.95);
   }
+
+  &.groupActive {
+    background: rgba(var(--color-primary-rgb), 0.15);
+    border-color: var(--color-primary);
+  }
 }
 
 .groupIcon {
@@ -42,6 +69,15 @@
     width: 18px;
     height: 18px;
   }
+}
+
+.groupCheckbox {
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .chevron {
@@ -60,6 +96,41 @@
 
   .groupHeader:hover & {
     opacity: 1;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+.favoriteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: var(--color-text);
+  background: rgba(var(--color-bg-elevated-rgb), 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+
+  &:hover {
+    opacity: 1;
+    background: rgba(var(--color-bg-elevated-rgb), 0.95);
+    border-color: var(--color-primary);
+  }
+
+  &.active {
+    opacity: 1;
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.15);
+    border-color: #fbbf24;
   }
 
   svg {
