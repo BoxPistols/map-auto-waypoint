@@ -24,20 +24,103 @@ export const meta = {
 
 ### 対象施設カテゴリー（14種類）
 
-| カテゴリー | 英語名 | 施設数 | ゾーン | 説明 |
-|-----------|--------|--------|--------|------|
-| 🏛 **政府機関** | `government` | 23 | 🔴 Red | 国会、首相官邸、最高裁など国の中枢機関 |
-| 👑 **皇室関連** | `imperial` | 4 | 🔴 Red | 皇居、御所、離宮など |
-| ⚛️ **原子力施設** | `nuclear` | 17 | 🔴 Red | 原子力発電所、再処理施設 |
-| 🛡 **防衛施設** | `defense` | 10 | 🔴 Red | 防衛省本省など重要防衛拠点 |
-| 🏢 **都道府県庁** | `prefecture` | 47 | 🟡 Yellow | 全国の都道府県庁舎 |
-| 👮 **警察施設** | `police` | 47 | 🟡 Yellow | 都道府県警察本部 |
-| ⚖️ **刑務所・拘置所** | `prison` | 55 | 🟡 Yellow | 法務省管轄の矯正施設 |
-| 🪖 **自衛隊施設** | `military_jsdf` | 44 | 🟡 Yellow | 自衛隊基地・駐屯地 |
-| 🏛 **外国公館** | `foreign_mission` | 50 | 🟡 Yellow | 大使館、総領事館 |
-| ⚡ **エネルギー施設** | `energy` | 10 | 🟡 Yellow | 火力発電所など重要電力施設 |
-| 💧 **ダム・浄水場** | `water` | 16 | 🟡 Yellow | 主要ダム、浄水施設 |
-| 🏗 **重要インフラ** | `infrastructure` | 29 | 🟡 Yellow | 港湾、大学、病院、金融機関など |
+<table>
+  <thead>
+    <tr>
+      <th>カテゴリー</th>
+      <th>英語名</th>
+      <th>施設数</th>
+      <th>ゾーン</th>
+      <th>説明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>🏛 <strong>政府機関</strong></td>
+      <td><code>government</code></td>
+      <td>23</td>
+      <td>🔴 Red</td>
+      <td>国会、首相官邸、最高裁など国の中枢機関</td>
+    </tr>
+    <tr>
+      <td>👑 <strong>皇室関連</strong></td>
+      <td><code>imperial</code></td>
+      <td>4</td>
+      <td>🔴 Red</td>
+      <td>皇居、御所、離宮など</td>
+    </tr>
+    <tr>
+      <td>⚛️ <strong>原子力施設</strong></td>
+      <td><code>nuclear</code></td>
+      <td>17</td>
+      <td>🔴 Red</td>
+      <td>原子力発電所、再処理施設</td>
+    </tr>
+    <tr>
+      <td>🛡 <strong>防衛施設</strong></td>
+      <td><code>defense</code></td>
+      <td>10</td>
+      <td>🔴 Red</td>
+      <td>防衛省本省など重要防衛拠点</td>
+    </tr>
+    <tr>
+      <td>🏢 <strong>都道府県庁</strong></td>
+      <td><code>prefecture</code></td>
+      <td>47</td>
+      <td>🟡 Yellow</td>
+      <td>全国の都道府県庁舎</td>
+    </tr>
+    <tr>
+      <td>👮 <strong>警察施設</strong></td>
+      <td><code>police</code></td>
+      <td>47</td>
+      <td>🟡 Yellow</td>
+      <td>都道府県警察本部</td>
+    </tr>
+    <tr>
+      <td>⚖️ <strong>刑務所・拘置所</strong></td>
+      <td><code>prison</code></td>
+      <td>55</td>
+      <td>🟡 Yellow</td>
+      <td>法務省管轄の矯正施設</td>
+    </tr>
+    <tr>
+      <td>🪖 <strong>自衛隊施設</strong></td>
+      <td><code>military_jsdf</code></td>
+      <td>44</td>
+      <td>🟡 Yellow</td>
+      <td>自衛隊基地・駐屯地</td>
+    </tr>
+    <tr>
+      <td>🏛 <strong>外国公館</strong></td>
+      <td><code>foreign_mission</code></td>
+      <td>50</td>
+      <td>🟡 Yellow</td>
+      <td>大使館、総領事館</td>
+    </tr>
+    <tr>
+      <td>⚡ <strong>エネルギー施設</strong></td>
+      <td><code>energy</code></td>
+      <td>10</td>
+      <td>🟡 Yellow</td>
+      <td>火力発電所など重要電力施設</td>
+    </tr>
+    <tr>
+      <td>💧 <strong>ダム・浄水場</strong></td>
+      <td><code>water</code></td>
+      <td>16</td>
+      <td>🟡 Yellow</td>
+      <td>主要ダム、浄水施設</td>
+    </tr>
+    <tr>
+      <td>🏗 <strong>重要インフラ</strong></td>
+      <td><code>infrastructure</code></td>
+      <td>29</td>
+      <td>🟡 Yellow</td>
+      <td>港湾、大学、病院、金融機関など</td>
+    </tr>
+  </tbody>
+</table>
 
 ### ゾーン分類
 
@@ -122,12 +205,42 @@ export type OperationalStatus =
 
 ### 視覚表示（色分け）
 
-| ステータス | 表示色 | アイコン色 | 説明 |
-|-----------|--------|-----------|------|
-| **運転中** (operational) | 🔴 赤 | `#dc2626` | 現在稼働中の原子炉 |
-| **停止中** (stopped) | 🟠 橙 | `#f97316` | 一時停止中（再稼働可能性あり） |
-| **廃炉作業中** (decommissioning) | 🟡 黄 | `#eab308` | 廃炉作業進行中 |
-| **廃炉完了** (decommissioned) | ⚪ 灰 | `#9ca3af` | 廃炉作業完了 |
+<table>
+  <thead>
+    <tr>
+      <th>ステータス</th>
+      <th>表示色</th>
+      <th>アイコン色</th>
+      <th>説明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>運転中</strong> (operational)</td>
+      <td>🔴 赤</td>
+      <td><code>#dc2626</code></td>
+      <td>現在稼働中の原子炉</td>
+    </tr>
+    <tr>
+      <td><strong>停止中</strong> (stopped)</td>
+      <td>🟠 橙</td>
+      <td><code>#f97316</code></td>
+      <td>一時停止中（再稼働可能性あり）</td>
+    </tr>
+    <tr>
+      <td><strong>廃炉作業中</strong> (decommissioning)</td>
+      <td>🟡 黄</td>
+      <td><code>#eab308</code></td>
+      <td>廃炉作業進行中</td>
+    </tr>
+    <tr>
+      <td><strong>廃炉完了</strong> (decommissioned)</td>
+      <td>⚪ 灰</td>
+      <td><code>#9ca3af</code></td>
+      <td>廃炉作業完了</td>
+    </tr>
+  </tbody>
+</table>
 
 ### 実装例
 
@@ -206,16 +319,48 @@ const operationalNuclear = NO_FLY_FACILITIES.filter(
 
 ## データソース
 
-| カテゴリー | データソース |
-|-----------|-------------|
-| 政府機関・皇室 | 警察庁「小型無人機等飛行禁止法対象施設」 |
-| 原子力施設 | 原子力規制委員会「原子力発電所一覧」 |
-| 防衛施設 | 防衛省「自衛隊施設一覧」 |
-| 都道府県庁 | 各都道府県公式サイト |
-| 警察施設 | 警察庁「都道府県警察本部一覧」 |
-| 刑務所 | 法務省「矯正施設一覧」 |
-| 外国公館 | 外務省「駐日外国公館リスト」 |
-| インフラ施設 | 各省庁公開情報 |
+<table>
+  <thead>
+    <tr>
+      <th>カテゴリー</th>
+      <th>データソース</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>政府機関・皇室</td>
+      <td>警察庁「小型無人機等飛行禁止法対象施設」</td>
+    </tr>
+    <tr>
+      <td>原子力施設</td>
+      <td>原子力規制委員会「原子力発電所一覧」</td>
+    </tr>
+    <tr>
+      <td>防衛施設</td>
+      <td>防衛省「自衛隊施設一覧」</td>
+    </tr>
+    <tr>
+      <td>都道府県庁</td>
+      <td>各都道府県公式サイト</td>
+    </tr>
+    <tr>
+      <td>警察施設</td>
+      <td>警察庁「都道府県警察本部一覧」</td>
+    </tr>
+    <tr>
+      <td>刑務所</td>
+      <td>法務省「矯正施設一覧」</td>
+    </tr>
+    <tr>
+      <td>外国公館</td>
+      <td>外務省「駐日外国公館リスト」</td>
+    </tr>
+    <tr>
+      <td>インフラ施設</td>
+      <td>各省庁公開情報</td>
+    </tr>
+  </tbody>
+</table>
 
 ### 更新履歴
 
@@ -255,12 +400,37 @@ const operationalNuclear = NO_FLY_FACILITIES.filter(
 
 ## 参考リンク
 
-| サービス | URL | 用途 |
-|----------|-----|------|
-| 警察庁（小型無人機等飛行禁止法） | https://www.npa.go.jp/bureau/security/kogatamujinki/ | 対象施設マップ・通報先 |
-| DIPS 2.0 | https://www.ossportal.dips.mlit.go.jp/ | 飛行許可申請 |
-| 国土交通省（無人航空機） | https://www.mlit.go.jp/koku/koku_fr10_000041.html | 飛行ルール詳細 |
-| 原子力規制委員会 | https://www.nra.go.jp/ | 原発施設情報 |
+<table>
+  <thead>
+    <tr>
+      <th>サービス</th>
+      <th>URL</th>
+      <th>用途</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>警察庁（小型無人機等飛行禁止法）</td>
+      <td>https://www.npa.go.jp/bureau/security/kogatamujinki/</td>
+      <td>対象施設マップ・通報先</td>
+    </tr>
+    <tr>
+      <td>DIPS 2.0</td>
+      <td>https://www.ossportal.dips.mlit.go.jp/</td>
+      <td>飛行許可申請</td>
+    </tr>
+    <tr>
+      <td>国土交通省（無人航空機）</td>
+      <td>https://www.mlit.go.jp/koku/koku_fr10_000041.html</td>
+      <td>飛行ルール詳細</td>
+    </tr>
+    <tr>
+      <td>原子力規制委員会</td>
+      <td>https://www.nra.go.jp/</td>
+      <td>原発施設情報</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 

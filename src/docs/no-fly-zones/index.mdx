@@ -19,14 +19,17 @@ import { Meta } from '@storybook/blocks'
 ### 2. グループトグル機能
 カテゴリー単位でレイヤーを一括ON/OFF
 
-```tsx
-<ControlGroup
-  groupToggle={true}
-  groupEnabled={isGroupEnabled}
-  onGroupToggle={() => setIsGroupEnabled(!isGroupEnabled)}
->
-  {/* 個別コントロール */}
-</ControlGroup>
+```javascript
+// グループトグル機能の例
+const ControlGroupExample = () => (
+  <ControlGroup
+    groupToggle={true}
+    groupEnabled={isGroupEnabled}
+    onGroupToggle={() => setIsGroupEnabled(!isGroupEnabled)}
+  >
+    {/* 個別コントロール */}
+  </ControlGroup>
+);
 ```
 
 **特徴:**
@@ -37,14 +40,17 @@ import { Meta } from '@storybook/blocks'
 ### 3. お気に入り機能
 よく使うカテゴリーを上部に固定表示
 
-```tsx
-<ControlGroup
-  favoritable={true}
-  isFavorite={favorites.includes('nuclear')}
-  onFavoriteToggle={() => toggleFavorite('nuclear')}
->
-  {/* コントロール */}
-</ControlGroup>
+```javascript
+// お気に入り機能の例
+const FavoriteExample = () => (
+  <ControlGroup
+    favoritable={true}
+    isFavorite={favorites.includes('nuclear')}
+    onFavoriteToggle={() => toggleFavorite('nuclear')}
+  >
+    {/* コントロール */}
+  </ControlGroup>
+);
 ```
 
 **特徴:**
@@ -72,12 +78,37 @@ import { Meta } from '@storybook/blocks'
 ### 5. 原発稼働状況の色分け
 運転状態に応じた視覚化
 
-| ステータス | 色 | カラーコード |
-|-----------|---|-------------|
-| 運転中 | 🔴 赤 | `#dc2626` |
-| 停止中 | 🟠 橙 | `#f97316` |
-| 廃炉作業中 | 🟡 黄 | `#eab308` |
-| 廃炉完了 | ⚪ 灰 | `#9ca3af` |
+<table>
+  <thead>
+    <tr>
+      <th>ステータス</th>
+      <th>色</th>
+      <th>カラーコード</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>運転中</td>
+      <td>🔴 赤</td>
+      <td><code>#dc2626</code></td>
+    </tr>
+    <tr>
+      <td>停止中</td>
+      <td>🟠 橙</td>
+      <td><code>#f97316</code></td>
+    </tr>
+    <tr>
+      <td>廃炉作業中</td>
+      <td>🟡 黄</td>
+      <td><code>#eab308</code></td>
+    </tr>
+    <tr>
+      <td>廃炉完了</td>
+      <td>⚪ 灰</td>
+      <td><code>#9ca3af</code></td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 

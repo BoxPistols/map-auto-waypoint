@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  width: 100%;
 
   &.favorite {
     order: -1; // お気に入りは上部に表示
@@ -24,6 +25,7 @@
   align-items: center;
   gap: 2px;
   position: relative;
+  width: 100%;
 }
 
 .groupHeader {
@@ -31,21 +33,22 @@
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
-  min-width: 36px;
-  width: auto;
+  flex: 1;
+  min-width: 0;
   height: 36px;
   padding: 0 8px 0 6px;
   color: var(--color-text);
-  background: rgba(var(--color-bg-elevated-rgb), 0.88);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--color-border);
+  background: rgba(var(--color-bg-elevated-rgb), 0.75);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
 
   &:hover {
-    background: rgba(var(--color-bg-elevated-rgb), 0.95);
+    background: rgba(var(--color-bg-elevated-rgb), 0.85);
     border-color: var(--color-primary);
     transform: translateX(-2px);
   }
@@ -55,7 +58,7 @@
   }
 
   &.groupActive {
-    background: rgba(var(--color-primary-rgb), 0.15);
+    background: rgba(var(--color-primary-rgb), 0.2);
     border-color: var(--color-primary);
   }
 }
@@ -139,24 +142,25 @@
   height: 20px;
   padding: 0;
   color: var(--color-text);
-  background: rgba(var(--color-bg-elevated-rgb), 0.88);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--color-border);
+  background: rgba(var(--color-bg-elevated-rgb), 0.75);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
-  opacity: 0.6;
+  opacity: 0.7;
 
   &:hover {
     opacity: 1;
-    background: rgba(var(--color-bg-elevated-rgb), 0.95);
+    background: rgba(var(--color-bg-elevated-rgb), 0.85);
     border-color: var(--color-primary);
   }
 
   &.active {
     opacity: 1;
     color: #fbbf24;
-    background: rgba(251, 191, 36, 0.15);
+    background: rgba(251, 191, 36, 0.2);
     border-color: #fbbf24;
   }
 
@@ -170,10 +174,12 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  width: 100%;
   padding-left: 6px;
   margin-left: 3px;
   border-left: 2px solid rgba(var(--color-primary-rgb), 0.3);
   animation: slideDown 0.2s ease;
+  box-sizing: border-box;
 }
 
 @keyframes slideDown {

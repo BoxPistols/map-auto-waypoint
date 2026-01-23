@@ -7,6 +7,7 @@ import ContextMenu from '../ContextMenu'
 import FocusCrosshair from '../FocusCrosshair'
 import CoordinateDisplay from '../CoordinateDisplay'
 import ControlGroup from './ControlGroup'
+import controlGroupStyles from './ControlGroup.module.scss'
 import FacilityPopup from '../FacilityPopup/FacilityPopup'
 import {
   getAirportZonesGeoJSON,
@@ -1171,11 +1172,12 @@ const Map = ({
           }
         }
         break
-      case 'copy-coords':
+      case 'copy-coords': {
         const coordStr = `${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}`
         navigator.clipboard.writeText(coordStr)
         break
-      case 'copy-coords-dms':
+      }
+      case 'copy-coords-dms': {
         const latDeg = Math.floor(Math.abs(wp.lat))
         const latMin = Math.floor((Math.abs(wp.lat) - latDeg) * 60)
         const latSec = ((Math.abs(wp.lat) - latDeg - latMin / 60) * 3600).toFixed(2)
@@ -1187,6 +1189,7 @@ const Map = ({
         const dmsStr = `${latDeg}°${latMin}'${latSec}"${latDir} ${lngDeg}°${lngMin}'${lngSec}"${lngDir}`
         navigator.clipboard.writeText(dmsStr)
         break
+      }
       case 'focus':
         if (onWaypointClick) {
           onWaypointClick(wp)
@@ -2025,19 +2028,19 @@ const Map = ({
         {/* Controls - always visible on desktop, togglable on mobile */}
         <div className={`${styles.controlsGroup} ${isMobile && !mobileControlsExpanded ? styles.hidden : ''}`}>
           {/* DID（単体ボタン） */}
-          <div className={`${styles.controlGroup} ${favoriteGroups.has('did') ? styles.favorite : ''}`}>
-            <div className={styles.headerContainer}>
+          <div className={`${controlGroupStyles.controlGroup} ${favoriteGroups.has('did') ? controlGroupStyles.favorite : ''}`}>
+            <div className={controlGroupStyles.headerContainer}>
               <button
-                className={`${styles.groupHeader} ${layerVisibility.showDID ? styles.groupActive : ''}`}
+                className={`${controlGroupStyles.groupHeader} ${layerVisibility.showDID ? controlGroupStyles.groupActive : ''}`}
                 onClick={() => toggleLayer('showDID')}
                 data-tooltip="国勢調査に基づく人口密集地 [D]"
                 data-tooltip-pos="left"
               >
-                <span className={styles.groupIcon}><Users size={18} /></span>
-                <span className={styles.groupLabel}>DID</span>
+                <span className={controlGroupStyles.groupIcon}><Users size={18} /></span>
+                <span className={controlGroupStyles.groupLabel}>DID</span>
               </button>
               <button
-                className={`${styles.favoriteButton} ${favoriteGroups.has('did') ? styles.active : ''}`}
+                className={`${controlGroupStyles.favoriteButton} ${favoriteGroups.has('did') ? controlGroupStyles.active : ''}`}
                 onClick={() => toggleFavoriteGroup('did')}
                 data-tooltip={favoriteGroups.has('did') ? 'お気に入り解除' : 'お気に入り'}
                 data-tooltip-pos="left"
