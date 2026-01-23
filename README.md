@@ -56,7 +56,18 @@ npm run build
 
 # 本番ビルド（Vercel用）
 npm run build:vercel
+
+# Storybook（コンポーネントカタログ）の起動
+npm run storybook
 ```
+
+## コンポーネント管理 (Storybook)
+
+本プロジェクトでは、UIコンポーネントの独立した開発とドキュメント化のために **Storybook** を導入しています。
+
+- **目的**: 地図、パネル、ダイアログなどのUI部品を、アプリケーション本体から切り離して単体テスト・調整するため。
+- **閲覧**: GitHub Pagesに本体と同時にデプロイされており、以下のURLから各コンポーネントの仕様（Props、バリエーション）を確認できます。
+- **URL**: [https://boxpistols.github.io/map-auto-waypoint/storybook/](https://boxpistols.github.io/map-auto-waypoint/storybook/)
 
 ## API 設定
 
