@@ -36,6 +36,9 @@ jobs:
           VITE_REINFOLIB_API_KEY: ${{ secrets.VITE_REINFOLIB_API_KEY }}
           VITE_OPENAI_API_KEY: ${{ secrets.VITE_OPENAI_API_KEY }}
 
+      - name: Build Storybook
+        run: npm run build-storybook -- -o dist/storybook
+
       - name: Add .nojekyll
         run: touch dist/.nojekyll
 
@@ -48,6 +51,8 @@ jobs:
           ls -la dist/
           echo "---"
           ls -la dist/assets/ || true
+          echo "---"
+          ls -la dist/storybook/ || true
           echo "---"
           head -20 dist/index.html
 
