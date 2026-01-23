@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer, AttributionControl } from 'react-map-gl/maplibre'
-import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair, Signal, Zap, Building, Shield, Lock, Target } from 'lucide-react'
+import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair, Signal, Zap, Building, Shield, Lock, Target, Star } from 'lucide-react'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import ContextMenu from '../ContextMenu'
@@ -37,6 +37,20 @@ import {
 } from '../../lib/services/restrictionSurfaces'
 import { loadMapSettings, saveMapSettings } from '../../utils/storage'
 import styles from './Map.module.scss'
+
+// レイヤー色定数
+const LAYER_COLORS = {
+  PREFECTURE: '#ff6600',
+  POLICE: '#0066ff',
+  PRISON: '#666666',
+  JSDF: '#00cc00',
+  EMERGENCY_AIRSPACE: '#ef4444',
+  REMOTE_ID: '#3b82f6',
+  MANNED_AIRCRAFT: '#ec4899',
+  RADIO_INTERFERENCE: '#a855f7',
+  LTE_COVERAGE: '#10b981',
+  FIVE_G_COVERAGE: '#06b6d4',
+}
 
 // 地図スタイル定義
 const MAP_STYLES = {
@@ -300,37 +314,6 @@ const Map = ({
     })
   }, [])
 
-  // 全レイヤーを一括ON/OFF
-  const allLayerKeys = [
-    'showAirportZones',
-    'showRestrictionSurfaces',
-    'showRedZones',
-    'showYellowZones',
-    'showHeliports',
-    'showDID',
-    'showEmergencyAirspace',
-    'showRemoteIdZones',
-    'showMannedAircraftZones',
-    'showRadioZones',
-    'showGeoFeatures',
-    'showRainCloud',
-    'showNetworkCoverage',
-    'showNuclearPlants',
-    'showPrefectures',
-    'showPolice',
-    'showPrisons',
-    'showJSDF'
-  ]
-
-  const allLayersEnabled = useMemo(() => {
-    return allLayerKeys.every(key => layerVisibility[key])
-  }, [layerVisibility])
-
-  const toggleAllLayers = useCallback(() => {
-    const newState = !allLayersEnabled
-    toggleGroupLayers(allLayerKeys, newState)
-  }, [allLayersEnabled, toggleGroupLayers, allLayerKeys])
-
   // お気に入りグループのトグル機能
   const toggleFavoriteGroup = useCallback((groupId) => {
     setFavoriteGroups(prev => {
@@ -578,7 +561,7 @@ const Map = ({
       id: 'prefectures',
       show: layerVisibility.showPrefectures,
       data: prefecturesGeoJSON,
-      fillColor: '#ff6600',
+      fillColor: LAYER_COLORS.PREFECTURE,
       fillOpacity: 0.25,
       lineColor: '#cc5200',
       lineWidth: 2,
@@ -589,7 +572,7 @@ const Map = ({
       id: 'police',
       show: layerVisibility.showPolice,
       data: policeFacilitiesGeoJSON,
-      fillColor: '#0066ff',
+      fillColor: LAYER_COLORS.POLICE,
       fillOpacity: 0.25,
       lineColor: '#0052cc',
       lineWidth: 2,
@@ -600,7 +583,7 @@ const Map = ({
       id: 'prisons',
       show: layerVisibility.showPrisons,
       data: prisonsGeoJSON,
-      fillColor: '#666666',
+      fillColor: LAYER_COLORS.PRISON,
       fillOpacity: 0.3,
       lineColor: '#4d4d4d',
       lineWidth: 2,
@@ -611,7 +594,7 @@ const Map = ({
       id: 'jsdf',
       show: layerVisibility.showJSDF,
       data: jsdfFacilitiesGeoJSON,
-      fillColor: '#00cc00',
+      fillColor: LAYER_COLORS.JSDF,
       fillOpacity: 0.25,
       lineColor: '#009900',
       lineWidth: 2,
@@ -622,7 +605,7 @@ const Map = ({
       id: 'emergency-airspace',
       show: layerVisibility.showEmergencyAirspace,
       data: emergencyAirspaceGeoJSON,
-      fillColor: '#ef4444',
+      fillColor: LAYER_COLORS.EMERGENCY_AIRSPACE,
       fillOpacity: 0.25,
       lineColor: '#dc2626',
       lineWidth: 2,
@@ -634,7 +617,7 @@ const Map = ({
       id: 'remote-id-zones',
       show: layerVisibility.showRemoteIdZones,
       data: remoteIdZonesGeoJSON,
-      fillColor: '#3b82f6',
+      fillColor: LAYER_COLORS.REMOTE_ID,
       fillOpacity: 0.15,
       lineColor: '#2563eb',
       lineWidth: 2,
@@ -646,7 +629,7 @@ const Map = ({
       id: 'manned-aircraft-zones',
       show: layerVisibility.showMannedAircraftZones,
       data: mannedAircraftZonesGeoJSON,
-      fillColor: '#ec4899',
+      fillColor: LAYER_COLORS.MANNED_AIRCRAFT,
       fillOpacity: 0.2,
       lineColor: '#db2777',
       lineWidth: 2,
@@ -657,7 +640,7 @@ const Map = ({
       id: 'radio-zones',
       show: layerVisibility.showRadioZones,
       data: radioInterferenceZonesGeoJSON,
-      fillColor: '#a855f7',
+      fillColor: LAYER_COLORS.RADIO_INTERFERENCE,
       fillOpacity: 0.2,
       lineColor: '#9333ea',
       lineWidth: 2,
@@ -670,7 +653,7 @@ const Map = ({
       id: 'lte-coverage',
       show: layerVisibility.showNetworkCoverage,
       data: lteCoverageGeoJSON,
-      fillColor: '#10b981',
+      fillColor: LAYER_COLORS.LTE_COVERAGE,
       fillOpacity: 0.1,
       lineColor: '#059669',
       lineWidth: 1,
@@ -683,7 +666,7 @@ const Map = ({
       id: '5g-coverage',
       show: layerVisibility.showNetworkCoverage,
       data: fiveGCoverageGeoJSON,
-      fillColor: '#06b6d4',
+      fillColor: LAYER_COLORS.FIVE_G_COVERAGE,
       fillOpacity: 0.15,
       lineColor: '#0891b2',
       lineWidth: 2,
@@ -2041,26 +2024,35 @@ const Map = ({
 
         {/* Controls - always visible on desktop, togglable on mobile */}
         <div className={`${styles.controlsGroup} ${isMobile && !mobileControlsExpanded ? styles.hidden : ''}`}>
-          {/* すべて一括ON/OFF */}
-          <ControlGroup
-            id="all-layers"
-            icon={<Layers size={18} />}
-            label="すべて"
-            defaultExpanded={false}
-            groupToggle={true}
-            groupEnabled={allLayersEnabled}
-            onGroupToggle={toggleAllLayers}
-          >
-            <div className={styles.masterToggleHint}>
-              全レイヤーを一括ON/OFF
+          {/* DID（単体ボタン） */}
+          <div className={`${styles.controlGroup} ${favoriteGroups.has('did') ? styles.favorite : ''}`}>
+            <div className={styles.headerContainer}>
+              <button
+                className={`${styles.groupHeader} ${layerVisibility.showDID ? styles.groupActive : ''}`}
+                onClick={() => toggleLayer('showDID')}
+                data-tooltip="国勢調査に基づく人口密集地 [D]"
+                data-tooltip-pos="left"
+              >
+                <span className={styles.groupIcon}><Users size={18} /></span>
+                <span className={styles.groupLabel}>DID</span>
+              </button>
+              <button
+                className={`${styles.favoriteButton} ${favoriteGroups.has('did') ? styles.active : ''}`}
+                onClick={() => toggleFavoriteGroup('did')}
+                data-tooltip={favoriteGroups.has('did') ? 'お気に入り解除' : 'お気に入り'}
+                data-tooltip-pos="left"
+              >
+                <Star size={14} fill={favoriteGroups.has('did') ? 'currentColor' : 'none'} />
+              </button>
             </div>
-          </ControlGroup>
+          </div>
 
           {/* グループ1: 禁止区域 */}
           <ControlGroup
             id="restricted"
             icon={<ShieldAlert size={18} />}
             label="禁止区域"
+            tooltip="飛行禁止・制限区域の各種施設"
             defaultExpanded={false}
             groupToggle={true}
             groupEnabled={
@@ -2090,58 +2082,65 @@ const Map = ({
             <button
               className={`${styles.toggleButton} ${layerVisibility.showRedZones ? styles.activeRed : ''}`}
               onClick={() => toggleLayer('showRedZones')}
-              data-tooltip={`レッドゾーン [R]`}
+              data-tooltip="政府機関・原発など飛行禁止区域 [R]"
               data-tooltip-pos="left"
             >
               <ShieldAlert size={18} />
+              <span className={styles.buttonLabel}>レッドゾーン</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showYellowZones ? styles.activeYellow : ''}`}
               onClick={() => toggleLayer('showYellowZones')}
-              data-tooltip={`イエローゾーン [Y]`}
+              data-tooltip="重要施設周辺の要事前調整区域 [Y]"
               data-tooltip-pos="left"
             >
               <Building2 size={18} />
+              <span className={styles.buttonLabel}>イエローゾーン</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showNuclearPlants ? styles.activeNuclear : ''}`}
               onClick={() => toggleLayer('showNuclearPlants')}
-              data-tooltip={`原子力発電所 [Q]`}
+              data-tooltip="原発施設の位置と稼働状況 [Q]"
               data-tooltip-pos="left"
             >
               <Zap size={18} />
+              <span className={styles.buttonLabel}>原発</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showPrefectures ? styles.activePrefecture : ''}`}
               onClick={() => toggleLayer('showPrefectures')}
-              data-tooltip={`都道府県庁 [p]`}
+              data-tooltip="都道府県庁舎の位置 [p]"
               data-tooltip-pos="left"
             >
               <Building size={18} />
+              <span className={styles.buttonLabel}>県庁</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showPolice ? styles.activePolice : ''}`}
               onClick={() => toggleLayer('showPolice')}
-              data-tooltip={`警察本部 [K]`}
+              data-tooltip="警察本部・警察署の位置 [K]"
               data-tooltip-pos="left"
             >
               <Shield size={18} />
+              <span className={styles.buttonLabel}>警察</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showPrisons ? styles.activePrison : ''}`}
               onClick={() => toggleLayer('showPrisons')}
-              data-tooltip={`刑務所・拘置所 [J]`}
+              data-tooltip="矯正施設の位置 [J]"
               data-tooltip-pos="left"
             >
               <Lock size={18} />
+              <span className={styles.buttonLabel}>刑務所</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showJSDF ? styles.activeJSDF : ''}`}
               onClick={() => toggleLayer('showJSDF')}
-              data-tooltip={`自衛隊施設 [B]`}
+              data-tooltip="自衛隊基地・駐屯地の位置 [B]"
               data-tooltip-pos="left"
             >
               <Target size={18} />
+              <span className={styles.buttonLabel}>自衛隊</span>
             </button>
           </ControlGroup>
 
@@ -2150,6 +2149,7 @@ const Map = ({
             id="aviation"
             icon={<Plane size={18} />}
             label="航空制限"
+            tooltip="航空法に基づく飛行制限区域"
             defaultExpanded={false}
             groupToggle={true}
             groupEnabled={
@@ -2182,60 +2182,64 @@ const Map = ({
             <button
               className={`${styles.toggleButton} ${layerVisibility.showAirportZones ? styles.activeAirport : ''}`}
               onClick={toggleAirportOverlay}
-              data-tooltip={`空港制限表面 [A]`}
+              data-tooltip="空港周辺の高度制限区域 [A]"
               data-tooltip-pos="left"
             >
               <Plane size={18} />
+              <span className={styles.buttonLabel}>空港</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showHeliports ? styles.activeHeliport : ''}`}
               onClick={() => toggleLayer('showHeliports')}
-              data-tooltip={`ヘリポート [H]`}
+              data-tooltip="ヘリポート施設の位置 [H]"
               data-tooltip-pos="left"
             >
               <Landmark size={18} />
+              <span className={styles.buttonLabel}>ヘリポート</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showEmergencyAirspace ? styles.activeEmergency : ''}`}
               onClick={() => toggleLayer('showEmergencyAirspace')}
-              data-tooltip={`緊急用務空域 [E]`}
+              data-tooltip="救急・消防ヘリの飛行区域 [E]"
               data-tooltip-pos="left"
             >
               <AlertTriangle size={18} />
+              <span className={styles.buttonLabel}>緊急</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showRemoteIdZones ? styles.activeRemoteId : ''}`}
               onClick={() => toggleLayer('showRemoteIdZones')}
-              data-tooltip={`リモートID特定区域 [I]`}
+              data-tooltip="リモートID義務化予定区域 [I]"
               data-tooltip-pos="left"
             >
               <Radio size={18} />
+              <span className={styles.buttonLabel}>RemoteID</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showMannedAircraftZones ? styles.activeMannedAircraft : ''}`}
               onClick={() => toggleLayer('showMannedAircraftZones')}
-              data-tooltip={`有人機発着エリア [U]`}
+              data-tooltip="有人航空機の離着陸区域 [U]"
               data-tooltip-pos="left"
             >
               <MapPinned size={18} />
+              <span className={styles.buttonLabel}>有人機</span>
             </button>
           </ControlGroup>
 
           {/* グループ3: 環境 */}
           <ControlGroup
             id="environment"
-            icon={<Users size={18} />}
+            icon={<CloudRain size={18} />}
             label="環境"
+            tooltip="気象・地理情報データレイヤー"
             defaultExpanded={false}
             groupToggle={true}
             groupEnabled={
-              layerVisibility.showDID ||
               layerVisibility.showGeoFeatures ||
               layerVisibility.showRainCloud
             }
             onGroupToggle={(enabled) => {
               toggleGroupLayers([
-                'showDID',
                 'showGeoFeatures',
                 'showRainCloud'
               ], enabled)
@@ -2245,37 +2249,32 @@ const Map = ({
             onFavoriteToggle={() => toggleFavoriteGroup('environment')}
           >
             <button
-              className={`${styles.toggleButton} ${layerVisibility.showDID ? styles.activeDID : ''}`}
-              onClick={() => toggleLayer('showDID')}
-              data-tooltip={`DID 人口集中地区 [D]`}
-              data-tooltip-pos="left"
-            >
-              <Users size={18} />
-            </button>
-            <button
               className={`${styles.toggleButton} ${layerVisibility.showGeoFeatures ? styles.activeGeoFeatures : ''}`}
               onClick={() => toggleLayer('showGeoFeatures')}
-              data-tooltip={`地物 [G]`}
+              data-tooltip="建物・道路などの地理情報 [G]"
               data-tooltip-pos="left"
             >
               <MapIcon size={18} />
+              <span className={styles.buttonLabel}>地物</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showRainCloud ? styles.activeRainCloud : ''}`}
               onClick={() => toggleLayer('showRainCloud')}
-              data-tooltip={`雨雲 [N]`}
+              data-tooltip="リアルタイム降雨情報 [N]"
               data-tooltip-pos="left"
             >
               <CloudRain size={18} />
+              <span className={styles.buttonLabel}>雨雲</span>
             </button>
             <button
               className={`${styles.toggleButton} ${styles.disabled}`}
               onClick={() => {}}
               disabled
-              data-tooltip={`風向・風量 [O] (準備中)`}
+              data-tooltip="リアルタイム風況情報 [O] (準備中)"
               data-tooltip-pos="left"
             >
               <Wind size={18} />
+              <span className={styles.buttonLabel}>風向・風量</span>
             </button>
           </ControlGroup>
 
@@ -2284,6 +2283,7 @@ const Map = ({
             id="network"
             icon={<Signal size={18} />}
             label="通信"
+            tooltip="電波・通信ネットワーク環境"
             defaultExpanded={false}
             groupToggle={true}
             groupEnabled={
@@ -2303,70 +2303,85 @@ const Map = ({
             <button
               className={`${styles.toggleButton} ${layerVisibility.showRadioZones ? styles.activeRadioZones : ''}`}
               onClick={() => toggleLayer('showRadioZones')}
-              data-tooltip={`電波干渉区域 [T]`}
+              data-tooltip="電波利用に注意が必要な区域 [T]"
               data-tooltip-pos="left"
             >
               <Wifi size={18} />
+              <span className={styles.buttonLabel}>電波干渉</span>
             </button>
             <button
               className={`${styles.toggleButton} ${layerVisibility.showNetworkCoverage ? styles.activeNetworkCoverage : ''}`}
               onClick={() => toggleLayer('showNetworkCoverage')}
-              data-tooltip={`通信カバレッジ [L]`}
+              data-tooltip="LTE/5G通信可能エリア [L]"
               data-tooltip-pos="left"
             >
               <Signal size={18} />
+              <span className={styles.buttonLabel}>通信</span>
             </button>
           </ControlGroup>
 
-          {/* その他（グループ化しない単独ボタン） */}
-
-          <button
-            className={`${styles.toggleButton} ${layerVisibility.is3D ? styles.active : ''}`}
-            onClick={toggle3D}
-            data-tooltip={layerVisibility.is3D ? '2D表示 [3]' : '3D表示 [3]'}
-            data-tooltip-pos="left"
+          {/* グループ5: Map設定 */}
+          <ControlGroup
+            id="map-settings"
+            icon={<Settings2 size={18} />}
+            label="Map設定"
+            tooltip="地図表示の各種設定"
+            defaultExpanded={false}
+            favoritable={true}
+            isFavorite={favoriteGroups.has('map-settings')}
+            onFavoriteToggle={() => toggleFavoriteGroup('map-settings')}
           >
-            {layerVisibility.is3D ? <Box size={18} /> : <Rotate3D size={18} />}
-          </button>
-          <button
-            className={`${styles.toggleButton} ${showCrosshair ? styles.activeCrosshair : ''}`}
-            onClick={() => setShowCrosshair(prev => !prev)}
-            data-tooltip={`クロスヘア [X]`}
-            data-tooltip-pos="left"
-          >
-            <Crosshair size={18} />
-          </button>
-
-          {/* 地図スタイル切り替え */}
-          <div className={styles.stylePickerContainer}>
             <button
-              className={`${styles.toggleButton} ${showStylePicker ? styles.active : ''}`}
-              onClick={() => setShowStylePicker(!showStylePicker)}
-              data-tooltip="地図スタイル [M: 次へ / Shift+M: 前へ]"
+              className={`${styles.toggleButton} ${layerVisibility.is3D ? styles.active : ''}`}
+              onClick={toggle3D}
+              data-tooltip={layerVisibility.is3D ? '地形を平面で表示 [3]' : '地形を立体で表示 [3]'}
               data-tooltip-pos="left"
             >
-              <Layers size={18} />
+              {layerVisibility.is3D ? <Box size={18} /> : <Rotate3D size={18} />}
+              <span className={styles.buttonLabel}>{layerVisibility.is3D ? '2D' : '3D'}</span>
             </button>
-            {showStylePicker && (
-              <div className={styles.stylePicker}>
-                {Object.values(MAP_STYLES).map(styleOption => (
-                  <button
-                    key={styleOption.id}
-                    className={`${styles.styleOption} ${mapStyleId === styleOption.id ? styles.activeStyle : ''}`}
-                    onClick={() => {
-                      setMapStyleId(styleOption.id)
-                      setShowStylePicker(false)
-                    }}
-                  >
-                    <span className={styles.styleIcon}>
-                      {styleOption.id === 'gsi_photo' ? <Satellite size={16} /> : <MapIcon size={16} />}
-                    </span>
-                    <span className={styles.styleName}>{styleOption.shortName}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            <button
+              className={`${styles.toggleButton} ${showCrosshair ? styles.activeCrosshair : ''}`}
+              onClick={() => setShowCrosshair(prev => !prev)}
+              data-tooltip="地図中心の十字線を表示 [X]"
+              data-tooltip-pos="left"
+            >
+              <Crosshair size={18} />
+              <span className={styles.buttonLabel}>クロスヘア</span>
+            </button>
+
+            {/* 地図スタイル切り替え */}
+            <div className={styles.stylePickerContainer}>
+              <button
+                className={`${styles.toggleButton} ${showStylePicker ? styles.active : ''}`}
+                onClick={() => setShowStylePicker(!showStylePicker)}
+                data-tooltip="地図の表示スタイルを切り替え [M: 次へ / Shift+M: 前へ]"
+                data-tooltip-pos="left"
+              >
+                <Layers size={18} />
+                <span className={styles.buttonLabel}>スタイル</span>
+              </button>
+              {showStylePicker && (
+                <div className={styles.stylePicker}>
+                  {Object.values(MAP_STYLES).map(styleOption => (
+                    <button
+                      key={styleOption.id}
+                      className={`${styles.styleOption} ${mapStyleId === styleOption.id ? styles.activeStyle : ''}`}
+                      onClick={() => {
+                        setMapStyleId(styleOption.id)
+                        setShowStylePicker(false)
+                      }}
+                    >
+                      <span className={styles.styleIcon}>
+                        {styleOption.id === 'gsi_photo' ? <Satellite size={16} /> : <MapIcon size={16} />}
+                      </span>
+                      <span className={styles.styleName}>{styleOption.shortName}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </ControlGroup>
         </div>
       </div>
 

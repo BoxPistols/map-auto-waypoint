@@ -312,24 +312,27 @@
 .toggleButton {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 36px;
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 36px;
+  width: auto;
   height: 36px;
-  padding: 0;
+  padding: 0 10px 0 8px;
   font-size: 12px;
-  font-weight: bold;
+  font-weight: 500;
   color: var(--color-text);
   background: rgba(var(--color-bg-elevated-rgb), 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   box-shadow: var(--shadow-md);
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  transition: all 0.2s;
 
   &:hover {
     background: var(--color-bg-tertiary);
+    transform: translateX(-2px);
   }
 
   &.active {
@@ -342,7 +345,7 @@
   margin-bottom: 8px;
   background: var(--color-bg-secondary);
   color: var(--color-text-secondary);
-  
+
   &:hover {
     background: var(--color-bg-tertiary);
     color: var(--color-text);
@@ -350,11 +353,11 @@
 }
 
 .buttonLabel {
-  display: none;
-  margin-left: 8px;
-  font-size: 13px;
+  display: inline-block;
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .controlsExpanded {
@@ -1035,16 +1038,5 @@
       }
     }
   }
-}
-
-// Master toggle hint
-.masterToggleHint {
-  padding: 6px 10px;
-  font-size: 11px;
-  color: var(--color-text-secondary);
-  text-align: center;
-  background: rgba(var(--color-bg-elevated-rgb), 0.5);
-  border-radius: 4px;
-  font-weight: 500;
 }
 

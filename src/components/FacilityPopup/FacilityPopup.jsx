@@ -1,6 +1,50 @@
 import { X } from 'lucide-react'
 import styles from './FacilityPopup.module.scss'
 
+// 稼働状況マップ（コンポーネント外で定義して再利用）
+const OPERATIONAL_STATUS_MAP = {
+  operational: { label: '運転中', color: '#dc2626', bgColor: '#fee2e2' },
+  stopped: { label: '停止中', color: '#f97316', bgColor: '#ffedd5' },
+  decommissioning: { label: '廃炉作業中', color: '#eab308', bgColor: '#fef3c7' },
+  decommissioned: { label: '廃炉完了', color: '#6b7280', bgColor: '#f3f4f6' },
+}
+
+// 施設タイプラベルマップ
+const FACILITY_TYPE_LABELS = {
+  government: '政府機関',
+  imperial: '皇室関連',
+  nuclear: '原子力施設',
+  defense: '防衛施設',
+  foreign_mission: '外国公館',
+  prefecture: '都道府県庁',
+  police: '警察施設',
+  prison: '刑務所・拘置所',
+  military_jsdf: '自衛隊施設',
+  energy: 'エネルギー施設',
+  water: '水道施設',
+  infrastructure: '重要インフラ',
+  airport: '空港'
+}
+
+// ゾーンタイプマップ
+const ZONE_INFO_MAP = {
+  red: { label: 'レッドゾーン', color: '#dc2626', bgColor: '#fee2e2' },
+  yellow: { label: 'イエローゾーン', color: '#eab308', bgColor: '#fef3c7' }
+}
+
+// ヘルパー関数（コンポーネント外で定義）
+const getOperationalStatusInfo = (status) => {
+  return OPERATIONAL_STATUS_MAP[status] || { label: status || '-', color: '#6b7280', bgColor: '#f3f4f6' }
+}
+
+const getFacilityTypeLabel = (type) => {
+  return FACILITY_TYPE_LABELS[type] || type
+}
+
+const getZoneInfo = (zone) => {
+  return ZONE_INFO_MAP[zone] || { label: zone, color: '#6b7280', bgColor: '#f3f4f6' }
+}
+
 /**
  * FacilityPopup - 施設詳細情報のポップアップ
  * @param {Object} facility - 施設情報
@@ -10,52 +54,6 @@ import styles from './FacilityPopup.module.scss'
  */
 const FacilityPopup = ({ facility, screenX, screenY, onClose }) => {
   if (!facility) return null
-
-  // 稼働状況のラベルと色を取得
-  const getOperationalStatusInfo = (status) => {
-    switch (status) {
-      case 'operational':
-        return { label: '運転中', color: '#dc2626', bgColor: '#fee2e2' }
-      case 'stopped':
-        return { label: '停止中', color: '#f97316', bgColor: '#ffedd5' }
-      case 'decommissioning':
-        return { label: '廃炉作業中', color: '#eab308', bgColor: '#fef3c7' }
-      case 'decommissioned':
-        return { label: '廃炉完了', color: '#6b7280', bgColor: '#f3f4f6' }
-      default:
-        return { label: status || '-', color: '#6b7280', bgColor: '#f3f4f6' }
-    }
-  }
-
-  // 施設タイプのラベルを取得
-  const getFacilityTypeLabel = (type) => {
-    const labels = {
-      government: '政府機関',
-      imperial: '皇室関連',
-      nuclear: '原子力施設',
-      defense: '防衛施設',
-      foreign_mission: '外国公館',
-      prefecture: '都道府県庁',
-      police: '警察施設',
-      prison: '刑務所・拘置所',
-      military_jsdf: '自衛隊施設',
-      energy: 'エネルギー施設',
-      water: '水道施設',
-      infrastructure: '重要インフラ',
-      airport: '空港'
-    }
-    return labels[type] || type
-  }
-
-  // ゾーンタイプのラベルと色を取得
-  const getZoneInfo = (zone) => {
-    if (zone === 'red') {
-      return { label: 'レッドゾーン', color: '#dc2626', bgColor: '#fee2e2' }
-    } else if (zone === 'yellow') {
-      return { label: 'イエローゾーン', color: '#eab308', bgColor: '#fef3c7' }
-    }
-    return { label: zone, color: '#6b7280', bgColor: '#f3f4f6' }
-  }
 
   const statusInfo = facility.operationalStatus ? getOperationalStatusInfo(facility.operationalStatus) : null
   const zoneInfo = getZoneInfo(facility.zone)

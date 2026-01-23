@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Children } from 'react'
 import { ChevronDown, ChevronRight, Star } from 'lucide-react'
 import styles from './ControlGroup.module.scss'
 
@@ -7,6 +7,7 @@ import styles from './ControlGroup.module.scss'
  * @param {string} id - グループID（localStorage用）
  * @param {React.ReactNode} icon - グループアイコン
  * @param {string} label - グループラベル
+ * @param {string} tooltip - ツールチップテキスト（未指定時はlabelを使用）
  * @param {React.ReactNode} children - 子要素（個別トグルボタン）
  * @param {boolean} defaultExpanded - 初期展開状態
  * @param {boolean} groupToggle - グループ全体のON/OFF機能を有効化
@@ -20,6 +21,7 @@ const ControlGroup = ({
   id,
   icon,
   label,
+  tooltip,
   children,
   defaultExpanded = false,
   groupToggle = false,
@@ -58,30 +60,35 @@ const ControlGroup = ({
     onFavoriteToggle?.(!isFavorite)
   }, [isFavorite, onFavoriteToggle])
 
+  const hasChildren = Children.count(children) > 0
+
   return (
     <div className={`${styles.controlGroup} ${isFavorite ? styles.favorite : ''}`}>
       <div className={styles.headerContainer}>
         <button
           className={`${styles.groupHeader} ${groupEnabled ? styles.groupActive : ''}`}
-          onClick={toggleExpanded}
-          data-tooltip={label}
+          onClick={hasChildren ? toggleExpanded : undefined}
+          data-tooltip={tooltip || label}
           data-tooltip-pos="left"
         >
           <span className={styles.groupIcon}>{icon}</span>
           {label && <span className={styles.groupLabel}>{label}</span>}
           {groupToggle && (
-            <input
-              type="checkbox"
-              className={styles.groupCheckbox}
-              checked={groupEnabled}
-              onChange={handleGroupToggle}
-              onClick={(e) => e.stopPropagation()}
-              title="グループ全体のON/OFF"
-            />
+            <label className={styles.checkboxWrapper} onClick={(e) => e.stopPropagation()}>
+              <input
+                type="checkbox"
+                className={styles.groupCheckbox}
+                checked={groupEnabled}
+                onChange={handleGroupToggle}
+                title="グループ全体のON/OFF"
+              />
+            </label>
           )}
-          <span className={styles.chevron}>
-            {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-          </span>
+          {hasChildren && (
+            <span className={styles.chevron}>
+              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            </span>
+          )}
         </button>
         {favoritable && (
           <button
@@ -95,7 +102,7 @@ const ControlGroup = ({
         )}
       </div>
 
-      {isExpanded && (
+      {hasChildren && isExpanded && (
         <div className={styles.groupContent}>
           {children}
         </div>
