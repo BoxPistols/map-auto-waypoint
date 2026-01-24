@@ -54,7 +54,7 @@ map-auto-waypoint/
 │   │   ├── FlightAssistant/ # AI chat assistant sidebar
 │   │   ├── GridSettingsDialog/ # Grid waypoint generation settings
 │   │   ├── HelpModal/       # Keyboard shortcuts help
-│   │   ├── Map/             # MapLibre map + DrawControl
+│   │   ├── Map/             # MapLibre map + DrawControl + ControlGroup
 │   │   ├── PolygonList/     # Polygon management sidebar
 │   │   ├── SearchForm/      # Address search (Nominatim)
 │   │   └── WaypointList/    # Waypoint management sidebar
@@ -145,6 +145,60 @@ User Action → App.jsx handler → Update state → Auto-save to localStorage
                               ↓
                         Map updates (polygons/waypoints)
 ```
+
+## Key Components
+
+### `ControlGroup` (Map Layer Control)
+
+レイヤーコントロールのグループ化コンポーネント（Issue #29で実装）。
+
+**主な機能:**
+- グループ全体のON/OFF機能（`groupToggle`）
+- 部分選択状態の表示（`indeterminate`）
+- お気に入り機能（`favoritable`）
+- 開閉状態のlocalStorage永続化
+- アイコン + ラベル表示
+
+**使用例:**
+```jsx
+<ControlGroup
+  id="aviation"
+  icon={<Plane size={18} />}
+  label="航空制限"
+  groupToggle={true}
+  groupEnabled={isAnyLayerEnabled}
+  indeterminate={isSomeButNotAllEnabled}
+  onGroupToggle={(enabled) => toggleAllLayers(enabled)}
+  favoritable={true}
+  isFavorite={isFavorite}
+  onFavoriteToggle={toggleFavorite}
+>
+  {/* 子レイヤーボタン */}
+</ControlGroup>
+```
+
+**Indeterminate状態（部分選択）:**
+- チェックボックスが3つの状態を持つ：
+  - ☐ 全てOFF: `groupEnabled={false}, indeterminate={false}`
+  - ☑ 全てON: `groupEnabled={true}, indeterminate={false}`
+  - ⊟ 一部のみON: `groupEnabled={true}, indeterminate={true}`
+
+**ALLグループ:**
+Map.jsxに実装されている特殊なグループで、飛行制限関連の全レイヤーを一括制御：
+- DID（人口密集地）
+- 禁止区域グループ（レッドゾーン、イエローゾーン、原発、県庁、警察、刑務所、自衛隊）
+- 航空制限グループ（空港、制限表面、ヘリポート、緊急空域、RemoteID、有人機）
+
+**スタイリング:**
+- ライトモード: 明瞭なボーダー、影、不透明度0.85の背景
+- ダークモード: 暗い半透明背景、強調されたActive状態
+- Active状態: プライマリカラー塗りつぶし + 白文字（最高コントラスト）
+- グラスモーフィズム効果（`backdrop-filter: blur()`）
+
+**ファイル構成:**
+- `src/components/Map/ControlGroup.jsx` - メインコンポーネント
+- `src/components/Map/ControlGroup.module.scss` - スタイル
+- `src/components/Map/ControlGroup.stories.tsx` - Storybook
 
 ## Key Services
 

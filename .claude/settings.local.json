@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api:*)",
+      "mcp__plugin_serena_serena__find_file",
+      "mcp__plugin_serena_serena__list_dir",
+      "mcp__plugin_serena_serena__activate_project",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nci: GitHub ActionsワークフローにStorybookデプロイを追加\n\n- Storybookビルドステップを追加 \\(dist/storybookに出力\\)\n- ビルド確認ステップにStorybook出力の検証を追加\n- デプロイ後、https://boxpistols.github.io/map-auto-waypoint/storybook/でアクセス可能\n\nFixes #51\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)",
+      "mcp__plugin_serena_serena__replace_content",
+      "Bash(gh pr view:*)",
+      "mcp__plugin_serena_serena__read_file",
+      "mcp__plugin_serena_serena__search_for_pattern",
+      "mcp__plugin_serena_serena__find_symbol",
+      "mcp__plugin_serena_serena__replace_symbol_body",
+      "mcp__plugin_serena_serena__insert_after_symbol",
+      "mcp__plugin_serena_serena__get_symbols_overview",
+      "Bash(pkill:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
