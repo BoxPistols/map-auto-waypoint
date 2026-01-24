@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Children } from 'react'
+import { useState, useEffect, useCallback, useRef, Children } from 'react'
 import { ChevronDown, ChevronRight, Star } from 'lucide-react'
 import styles from './ControlGroup.module.scss'
 
@@ -12,6 +12,7 @@ import styles from './ControlGroup.module.scss'
  * @param {boolean} defaultExpanded - 初期展開状態
  * @param {boolean} groupToggle - グループ全体のON/OFF機能を有効化
  * @param {boolean} groupEnabled - グループ全体の有効/無効状態
+ * @param {boolean} indeterminate - 部分的に有効な状態（一部のみON）
  * @param {Function} onGroupToggle - グループ全体のトグル時のコールバック
  * @param {boolean} favoritable - お気に入り機能を有効化
  * @param {boolean} isFavorite - お気に入り状態
@@ -26,12 +27,14 @@ const ControlGroup = ({
   defaultExpanded = false,
   groupToggle = false,
   groupEnabled = false,
+  indeterminate = false,
   onGroupToggle,
   favoritable = false,
   isFavorite = false,
   onFavoriteToggle
 }) => {
   const storageKey = `controlGroup_${id}_expanded`
+  const checkboxRef = useRef(null)
 
   // localStorageから初期状態を取得
   const getInitialExpanded = () => {
@@ -45,6 +48,13 @@ const ControlGroup = ({
   useEffect(() => {
     localStorage.setItem(storageKey, isExpanded.toString())
   }, [isExpanded, storageKey])
+
+  // チェックボックスのindeterminate状態を設定
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = indeterminate
+    }
+  }, [indeterminate])
 
   const toggleExpanded = () => {
     setIsExpanded(prev => !prev)
@@ -76,6 +86,7 @@ const ControlGroup = ({
           {groupToggle && (
             <label className={styles.checkboxWrapper} onClick={(e) => e.stopPropagation()}>
               <input
+                ref={checkboxRef}
                 type="checkbox"
                 className={styles.groupCheckbox}
                 checked={groupEnabled}

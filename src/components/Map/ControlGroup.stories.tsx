@@ -36,10 +36,14 @@ const meta: Meta<typeof ControlGroup> = {
       control: 'boolean',
       description: '初期展開状態',
     },
+    indeterminate: {
+      control: 'boolean',
+      description: '部分的選択状態（一部のレイヤーのみON）',
+    },
   },
   decorators: [
     (Story) => (
-      <div style={{ width: '280px', padding: '20px', background: '#1a1a1a' }}>
+      <div style={{ width: '280px', padding: '20px', background: 'var(--color-bg-elevated)' }}>
         <Story />
       </div>
     ),
@@ -184,6 +188,51 @@ export const Collapsed: Story = {
   args: {
     id: 'collapsed-group',
     icon: <Signal size={18} />,
+
+/**
+ * 部分的選択状態（Indeterminate）
+ * 一部のレイヤーのみがONの状態を表現
+ */
+export const Indeterminate: Story = {
+  render: (args) => {
+    const [enabled, setEnabled] = useState(true)
+    return (
+      <ControlGroup
+        {...args}
+        groupEnabled={enabled}
+        indeterminate={true}
+        onGroupToggle={setEnabled}
+      />
+    )
+  },
+  args: {
+    id: 'indeterminate-group',
+    icon: <Plane size={18} />,
+    label: '航空制限',
+    defaultExpanded: true,
+    groupToggle: true,
+    children: (
+      <>
+        <button style={{ padding: '8px', margin: '4px 0', width: '100%', background: '#f97316', border: 'none', color: 'white', borderRadius: '4px' }}>
+          ✓ 空港エリア（ON）
+        </button>
+        <button style={{ padding: '8px', margin: '4px 0', width: '100%' }}>
+          ✗ ヘリポート（OFF）
+        </button>
+        <button style={{ padding: '8px', margin: '4px 0', width: '100%', background: '#f97316', border: 'none', color: 'white', borderRadius: '4px' }}>
+          ✓ 緊急用（ON）
+        </button>
+      </>
+    ),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'グループ内の一部のレイヤーのみがONの場合、チェックボックスが部分選択状態（ハイフンマーク）になります。',
+      },
+    },
+  },
+}
     label: '通信カバレッジ',
     defaultExpanded: false,
     children: (

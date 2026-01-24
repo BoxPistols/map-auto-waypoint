@@ -2027,28 +2027,96 @@ const Map = ({
 
         {/* Controls - always visible on desktop, togglable on mobile */}
         <div className={`${styles.controlsGroup} ${isMobile && !mobileControlsExpanded ? styles.hidden : ''}`}>
-          {/* DID（単体ボタン） */}
-          <div className={`${controlGroupStyles.controlGroup} ${favoriteGroups.has('did') ? controlGroupStyles.favorite : ''}`}>
-            <div className={controlGroupStyles.headerContainer}>
-              <button
-                className={`${controlGroupStyles.groupHeader} ${layerVisibility.showDID ? controlGroupStyles.groupActive : ''}`}
-                onClick={() => toggleLayer('showDID')}
-                data-tooltip="国勢調査に基づく人口密集地 [D]"
-                data-tooltip-pos="left"
-              >
-                <span className={controlGroupStyles.groupIcon}><Users size={18} /></span>
-                <span className={controlGroupStyles.groupLabel}>DID</span>
-              </button>
-              <button
-                className={`${controlGroupStyles.favoriteButton} ${favoriteGroups.has('did') ? controlGroupStyles.active : ''}`}
-                onClick={() => toggleFavoriteGroup('did')}
-                data-tooltip={favoriteGroups.has('did') ? 'お気に入り解除' : 'お気に入り'}
-                data-tooltip-pos="left"
-              >
-                <Star size={14} fill={favoriteGroups.has('did') ? 'currentColor' : 'none'} />
-              </button>
-            </div>
-          </div>
+          {/* ALL - 飛行制限レイヤー一括制御 */}
+          <ControlGroup
+            id="all-layers"
+            icon={<Layers size={18} />}
+            label="ALL"
+            tooltip="飛行制限レイヤーを一括ON/OFF"
+            defaultExpanded={false}
+            groupToggle={true}
+            groupEnabled={
+              layerVisibility.showDID ||
+              layerVisibility.showRedZones ||
+              layerVisibility.showYellowZones ||
+              layerVisibility.showNuclearPlants ||
+              layerVisibility.showPrefectures ||
+              layerVisibility.showPolice ||
+              layerVisibility.showPrisons ||
+              layerVisibility.showJSDF ||
+              layerVisibility.showAirportZones ||
+              layerVisibility.showRestrictionSurfaces ||
+              layerVisibility.showHeliports ||
+              layerVisibility.showEmergencyAirspace ||
+              layerVisibility.showRemoteIdZones ||
+              layerVisibility.showMannedAircraftZones
+            }
+            indeterminate={
+              (() => {
+                const allLayers = [
+                  layerVisibility.showDID,
+                  layerVisibility.showRedZones,
+                  layerVisibility.showYellowZones,
+                  layerVisibility.showNuclearPlants,
+                  layerVisibility.showPrefectures,
+                  layerVisibility.showPolice,
+                  layerVisibility.showPrisons,
+                  layerVisibility.showJSDF,
+                  layerVisibility.showAirportZones,
+                  layerVisibility.showRestrictionSurfaces,
+                  layerVisibility.showHeliports,
+                  layerVisibility.showEmergencyAirspace,
+                  layerVisibility.showRemoteIdZones,
+                  layerVisibility.showMannedAircraftZones
+                ]
+                const anyEnabled = allLayers.some(v => v)
+                const allEnabled = allLayers.every(v => v)
+                return anyEnabled && !allEnabled
+              })()
+            }
+            onGroupToggle={(enabled) => {
+              const updates = {
+                showDID: enabled,
+                showRedZones: enabled,
+                showYellowZones: enabled,
+                showNuclearPlants: enabled,
+                showPrefectures: enabled,
+                showPolice: enabled,
+                showPrisons: enabled,
+                showJSDF: enabled,
+                showHeliports: enabled,
+                showEmergencyAirspace: enabled,
+                showRemoteIdZones: enabled,
+                showMannedAircraftZones: enabled
+              }
+              if (enabled) {
+                updates.showAirportZones = true
+                updates.showRestrictionSurfaces = true
+              } else {
+                updates.showAirportZones = false
+                updates.showRestrictionSurfaces = false
+              }
+              setLayerVisibility(prev => ({ ...prev, ...updates }))
+            }}
+            favoritable={true}
+            isFavorite={favoriteGroups.has('all')}
+            onFavoriteToggle={() => toggleFavoriteGroup('all')}
+          />
+
+          {/* DID（人口密集地 - 禁止区域） */}
+          <ControlGroup
+            id="did"
+            icon={<Users size={18} />}
+            label="DID"
+            tooltip="国勢調査に基づく人口密集地 - 許可なし飛行禁止 [D]"
+            defaultExpanded={false}
+            groupToggle={true}
+            groupEnabled={layerVisibility.showDID}
+            onGroupToggle={(enabled) => toggleLayer('showDID')}
+            favoritable={true}
+            isFavorite={favoriteGroups.has('did')}
+            onFavoriteToggle={() => toggleFavoriteGroup('did')}
+          />
 
           {/* グループ1: 禁止区域 */}
           <ControlGroup
@@ -2066,6 +2134,22 @@ const Map = ({
               layerVisibility.showPolice ||
               layerVisibility.showPrisons ||
               layerVisibility.showJSDF
+            }
+            indeterminate={
+              (() => {
+                const layers = [
+                  layerVisibility.showRedZones,
+                  layerVisibility.showYellowZones,
+                  layerVisibility.showNuclearPlants,
+                  layerVisibility.showPrefectures,
+                  layerVisibility.showPolice,
+                  layerVisibility.showPrisons,
+                  layerVisibility.showJSDF
+                ]
+                const anyEnabled = layers.some(v => v)
+                const allEnabled = layers.every(v => v)
+                return anyEnabled && !allEnabled
+              })()
             }
             onGroupToggle={(enabled) => {
               toggleGroupLayers([
@@ -2161,6 +2245,21 @@ const Map = ({
               layerVisibility.showEmergencyAirspace ||
               layerVisibility.showRemoteIdZones ||
               layerVisibility.showMannedAircraftZones
+            }
+            indeterminate={
+              (() => {
+                const layers = [
+                  layerVisibility.showAirportZones,
+                  layerVisibility.showRestrictionSurfaces,
+                  layerVisibility.showHeliports,
+                  layerVisibility.showEmergencyAirspace,
+                  layerVisibility.showRemoteIdZones,
+                  layerVisibility.showMannedAircraftZones
+                ]
+                const anyEnabled = layers.some(v => v)
+                const allEnabled = layers.every(v => v)
+                return anyEnabled && !allEnabled
+              })()
             }
             onGroupToggle={(enabled) => {
               const updates = {
