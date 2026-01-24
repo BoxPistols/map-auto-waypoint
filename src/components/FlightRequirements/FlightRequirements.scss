@@ -675,7 +675,8 @@
 
 // ダークモード対応
 [data-theme='dark'] {
-  .flight-requirements {
+  .flight-requirements-panel,
+  .flight-requirements-content {
     --bg-primary: #1e1e1e;
     --bg-secondary: #252525;
     --bg-hover: #2d2d2d;
@@ -699,6 +700,10 @@
     &.error {
       background: rgba(220, 53, 69, 0.2);
       color: #f5a5ad;
+    }
+
+    .procedure-count {
+      background: rgba(255, 255, 255, 0.15);
     }
   }
 
@@ -742,8 +747,36 @@
     }
   }
 
+  .item-action {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
   .procedure-notes {
     background: rgba(255, 193, 7, 0.15);
     color: #ffe066;
+  }
+
+  .procedures-header {
+    .count {
+      background: rgba(0, 123, 255, 0.5);
+      color: #64b5f6;
+    }
+  }
+
+  .item-link,
+  .procedure-link {
+    color: #64b5f6;
+  }
+
+  .external-link {
+    .link-name {
+      color: #64b5f6;
+    }
+  }
+
+  .requirements-footer {
+    .disclaimer a {
+      color: #64b5f6;
+    }
   }
 }

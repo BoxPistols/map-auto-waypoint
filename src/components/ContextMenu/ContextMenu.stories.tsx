@@ -57,7 +57,11 @@ const basicMenuItems = [
   },
 ]
 
-export const Default: Story = {
+/**
+ * 基本的な使用例
+ * コントロールパネルでmenuItemsを変更できます。
+ */
+export const Basic: Story = {
   args: {
     isOpen: true,
     position: { x: 200, y: 150 },
@@ -75,147 +79,10 @@ export const Default: Story = {
   ],
 }
 
-const waypointMenuItems = [
-  {
-    id: 'header',
-    type: 'header',
-    label: 'ウェイポイント #3',
-  },
-  {
-    id: 'edit',
-    label: '座標を編集',
-    icon: <Edit size={14} />,
-    action: 'editWaypoint',
-  },
-  {
-    id: 'copy',
-    label: '複製',
-    icon: <Copy size={14} />,
-    action: 'duplicateWaypoint',
-  },
-  { divider: true },
-  {
-    id: 'delete',
-    label: '削除',
-    icon: <Trash2 size={14} />,
-    action: 'deleteWaypoint',
-    danger: true,
-    shortcut: 'Del',
-  },
-]
-
-export const WaypointMenu: Story = {
-  args: {
-    isOpen: true,
-    position: { x: 200, y: 150 },
-    menuItems: waypointMenuItems,
-    onClose: () => console.log('Menu closed'),
-    onAction: (action) => console.log('Action:', action),
-  },
-  decorators: [
-    (Story) => (
-      <div style={{ minWidth: '400px', minHeight: '300px', position: 'relative', background: '#f5f5f5' }}>
-        <p style={{ padding: '16px', color: '#666' }}>ウェイポイント右クリックメニュー</p>
-        <Story />
-      </div>
-    ),
-  ],
-}
-
-const polygonMenuItems = [
-  {
-    id: 'header',
-    type: 'header',
-    label: 'ポリゴン: 調査エリアA',
-  },
-  {
-    id: 'generate',
-    label: 'グリッドWPを生成',
-    icon: <Plus size={14} />,
-    action: 'generateGrid',
-  },
-  {
-    id: 'export',
-    label: 'エクスポート',
-    icon: <Download size={14} />,
-    action: 'export',
-  },
-  { divider: true },
-  {
-    id: 'edit',
-    label: '編集',
-    icon: <Edit size={14} />,
-    action: 'editPolygon',
-  },
-  {
-    id: 'delete',
-    label: '削除',
-    icon: <Trash2 size={14} />,
-    action: 'deletePolygon',
-    danger: true,
-  },
-]
-
-export const PolygonMenu: Story = {
-  args: {
-    isOpen: true,
-    position: { x: 200, y: 150 },
-    menuItems: polygonMenuItems,
-    onClose: () => console.log('Menu closed'),
-    onAction: (action) => console.log('Action:', action),
-  },
-  decorators: [
-    (Story) => (
-      <div style={{ minWidth: '400px', minHeight: '350px', position: 'relative', background: '#f5f5f5' }}>
-        <p style={{ padding: '16px', color: '#666' }}>ポリゴン右クリックメニュー</p>
-        <Story />
-      </div>
-    ),
-  ],
-}
-
-const disabledMenuItems = [
-  {
-    id: 'add',
-    label: 'ウェイポイントを追加',
-    icon: <MapPin size={14} />,
-    action: 'addWaypoint',
-  },
-  {
-    id: 'navigate-disabled',
-    label: 'ナビゲート (選択なし)',
-    icon: <Navigation size={14} />,
-    action: 'navigate',
-    disabled: true,
-  },
-  { divider: true },
-  {
-    id: 'export-disabled',
-    label: 'エクスポート (データなし)',
-    icon: <Download size={14} />,
-    action: 'export',
-    disabled: true,
-  },
-]
-
-export const WithDisabledItems: Story = {
-  args: {
-    isOpen: true,
-    position: { x: 200, y: 150 },
-    menuItems: disabledMenuItems,
-    onClose: () => console.log('Menu closed'),
-    onAction: (action) => console.log('Action:', action),
-  },
-  decorators: [
-    (Story) => (
-      <div style={{ minWidth: '400px', minHeight: '300px', position: 'relative', background: '#f5f5f5' }}>
-        <p style={{ padding: '16px', color: '#666' }}>無効化されたアイテムを含むメニュー</p>
-        <Story />
-      </div>
-    ),
-  ],
-}
-
+/**
+ * インタラクティブなデモ
+ * 実際に右クリックでメニューを表示できます。
+ */
 const InteractiveDemo = () => {
   const [menuState, setMenuState] = useState({ isOpen: false, x: 0, y: 0 })
   const [lastAction, setLastAction] = useState<string | null>(null)

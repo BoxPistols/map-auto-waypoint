@@ -1,0 +1,4933 @@
+[
+  {
+    "id": "diet",
+    "name": "国会議事堂",
+    "nameEn": "National Diet Building",
+    "type": "government",
+    "coordinates": [
+      139.745,
+      35.6759
+    ],
+    "radiusKm": 0.2,
+    "zone": "red"
+  },
+  {
+    "id": "kantei",
+    "name": "首相官邸",
+    "nameEn": "Prime Minister's Official Residence",
+    "type": "government",
+    "coordinates": [
+      139.7412,
+      35.6731
+    ],
+    "radiusKm": 0.2,
+    "zone": "red"
+  },
+  {
+    "id": "supreme-court",
+    "name": "最高裁判所",
+    "nameEn": "Supreme Court of Japan",
+    "type": "government",
+    "coordinates": [
+      139.7424,
+      35.6795
+    ],
+    "radiusKm": 0.2,
+    "zone": "red"
+  },
+  {
+    "id": "imperial-palace",
+    "name": "皇居",
+    "nameEn": "Imperial Palace",
+    "type": "imperial",
+    "coordinates": [
+      139.7528,
+      35.6852
+    ],
+    "radiusKm": 0.2,
+    "zone": "red"
+  },
+  {
+    "id": "akasaka-palace",
+    "name": "赤坂御所",
+    "nameEn": "Akasaka Palace",
+    "type": "imperial",
+    "coordinates": [
+      139.731,
+      35.6753
+    ],
+    "radiusKm": 0.2,
+    "zone": "red"
+  },
+  {
+    "id": "togu-palace",
+    "name": "東宮御所",
+    "nameEn": "Togu Palace",
+    "type": "imperial",
+    "coordinates": [
+      139.727,
+      35.6763
+    ],
+    "radiusKm": 0.2,
+    "zone": "red"
+  },
+  {
+    "id": "geihinkan",
+    "name": "迎賓館赤坂離宮",
+    "nameEn": "State Guest House Akasaka Palace",
+    "type": "imperial",
+    "coordinates": [
+      139.7267,
+      35.6803
+    ],
+    "radiusKm": 0.2,
+    "zone": "red"
+  },
+  {
+    "id": "mlit",
+    "name": "国土交通省",
+    "nameEn": "Ministry of Land, Infrastructure, Transport and Tourism",
+    "type": "government",
+    "coordinates": [
+      139.7501,
+      35.6746
+    ],
+    "radiusKm": 0.2,
+    "zone": "red"
+  },
+  {
+    "id": "npa",
+    "name": "警察庁",
+    "nameEn": "National Police Agency",
+    "type": "government",
+    "coordinates": [
+      139.75,
+      35.6773
+    ],
+    "radiusKm": 0.2,
+    "zone": "red"
+  },
+  {
+    "id": "mod",
+    "name": "防衛省",
+    "nameEn": "Ministry of Defense",
+    "type": "defense",
+    "coordinates": [
+      139.7285,
+      35.6933
+    ],
+    "radiusKm": 0.2,
+    "zone": "red"
+  },
+  {
+    "id": "tomari",
+    "name": "泊発電所",
+    "nameEn": "Tomari Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      140.5136,
+      43.0339
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "北海道電力",
+    "operator": "北海道電力",
+    "operationalStatus": "stopped",
+    "reactorCount": 3,
+    "capacity": "207.9万kW"
+  },
+  {
+    "id": "higashidori",
+    "name": "東通原子力発電所",
+    "nameEn": "Higashidori Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      141.3861,
+      41.1861
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "東北電力",
+    "operator": "東北電力",
+    "operationalStatus": "stopped",
+    "reactorCount": 1,
+    "capacity": "110万kW"
+  },
+  {
+    "id": "onagawa",
+    "name": "女川原子力発電所",
+    "nameEn": "Onagawa Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      141.5003,
+      38.4019
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "東北電力",
+    "operator": "東北電力",
+    "operationalStatus": "operational",
+    "reactorCount": 3,
+    "capacity": "217.4万kW"
+  },
+  {
+    "id": "fukushima-daiichi",
+    "name": "福島第一原子力発電所",
+    "nameEn": "Fukushima Daiichi Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      141.0328,
+      37.4211
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "東京電力",
+    "operator": "東京電力",
+    "operationalStatus": "decommissioning",
+    "reactorCount": 6,
+    "capacity": "469.6万kW"
+  },
+  {
+    "id": "fukushima-daini",
+    "name": "福島第二原子力発電所",
+    "nameEn": "Fukushima Daini Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      141.025,
+      37.3167
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "東京電力",
+    "operator": "東京電力",
+    "operationalStatus": "decommissioning",
+    "reactorCount": 4,
+    "capacity": "440万kW"
+  },
+  {
+    "id": "kashiwazaki-kariwa",
+    "name": "柏崎刈羽原子力発電所",
+    "nameEn": "Kashiwazaki-Kariwa Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      138.5978,
+      37.4286
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "東京電力",
+    "operator": "東京電力",
+    "operationalStatus": "stopped",
+    "reactorCount": 7,
+    "capacity": "821.2万kW"
+  },
+  {
+    "id": "tokai-daini",
+    "name": "東海第二発電所",
+    "nameEn": "Tokai Daini Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      140.6072,
+      36.4664
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "日本原子力発電",
+    "operator": "日本原子力発電",
+    "operationalStatus": "stopped",
+    "reactorCount": 1,
+    "capacity": "110万kW"
+  },
+  {
+    "id": "tsuruga",
+    "name": "敦賀発電所",
+    "nameEn": "Tsuruga Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      136.0186,
+      35.7514
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "日本原子力発電",
+    "operator": "日本原子力発電",
+    "operationalStatus": "stopped",
+    "reactorCount": 2,
+    "capacity": "151.8万kW"
+  },
+  {
+    "id": "hamaoka",
+    "name": "浜岡原子力発電所",
+    "nameEn": "Hamaoka Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      138.1428,
+      34.6219
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "中部電力",
+    "operator": "中部電力",
+    "operationalStatus": "stopped",
+    "reactorCount": 5,
+    "capacity": "361.7万kW"
+  },
+  {
+    "id": "shika",
+    "name": "志賀原子力発電所",
+    "nameEn": "Shika Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      136.7289,
+      37.06
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "北陸電力",
+    "operator": "北陸電力",
+    "operationalStatus": "stopped",
+    "reactorCount": 2,
+    "capacity": "174.6万kW"
+  },
+  {
+    "id": "mihama",
+    "name": "美浜発電所",
+    "nameEn": "Mihama Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      135.9581,
+      35.7017
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "関西電力",
+    "operator": "関西電力",
+    "operationalStatus": "operational",
+    "reactorCount": 3,
+    "capacity": "166.6万kW"
+  },
+  {
+    "id": "ohi",
+    "name": "大飯発電所",
+    "nameEn": "Ohi Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      135.6561,
+      35.5422
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "関西電力",
+    "operator": "関西電力",
+    "operationalStatus": "operational",
+    "reactorCount": 4,
+    "capacity": "471万kW"
+  },
+  {
+    "id": "takahama",
+    "name": "高浜発電所",
+    "nameEn": "Takahama Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      135.505,
+      35.5203
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "関西電力",
+    "operator": "関西電力",
+    "operationalStatus": "operational",
+    "reactorCount": 4,
+    "capacity": "339.2万kW"
+  },
+  {
+    "id": "shimane",
+    "name": "島根原子力発電所",
+    "nameEn": "Shimane Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      132.9992,
+      35.5386
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "中国電力",
+    "operator": "中国電力",
+    "operationalStatus": "stopped",
+    "reactorCount": 3,
+    "capacity": "282万kW"
+  },
+  {
+    "id": "ikata",
+    "name": "伊方発電所",
+    "nameEn": "Ikata Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      132.3094,
+      33.4903
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "四国電力",
+    "operator": "四国電力",
+    "operationalStatus": "operational",
+    "reactorCount": 3,
+    "capacity": "202万kW"
+  },
+  {
+    "id": "genkai",
+    "name": "玄海原子力発電所",
+    "nameEn": "Genkai Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      129.8369,
+      33.5153
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "九州電力",
+    "operator": "九州電力",
+    "operationalStatus": "operational",
+    "reactorCount": 4,
+    "capacity": "349万kW"
+  },
+  {
+    "id": "sendai-npp",
+    "name": "川内原子力発電所",
+    "nameEn": "Sendai Nuclear Power Plant",
+    "type": "nuclear",
+    "coordinates": [
+      130.1894,
+      31.8339
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "原子力発電所",
+    "source": "九州電力",
+    "operator": "九州電力",
+    "operationalStatus": "operational",
+    "reactorCount": 2,
+    "capacity": "178万kW"
+  },
+  {
+    "id": "yokota-ab",
+    "name": "横田基地",
+    "nameEn": "Yokota Air Base",
+    "type": "defense",
+    "coordinates": [
+      139.3486,
+      35.7483
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "在日米軍",
+    "source": "警察庁"
+  },
+  {
+    "id": "atsugi-naf",
+    "name": "厚木基地",
+    "nameEn": "Naval Air Facility Atsugi",
+    "type": "defense",
+    "coordinates": [
+      139.45,
+      35.4547
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "在日米軍",
+    "source": "警察庁"
+  },
+  {
+    "id": "yokosuka-nb",
+    "name": "横須賀基地",
+    "nameEn": "U.S. Fleet Activities Yokosuka",
+    "type": "defense",
+    "coordinates": [
+      139.6667,
+      35.2833
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "在日米軍",
+    "source": "警察庁"
+  },
+  {
+    "id": "zama-camp",
+    "name": "座間キャンプ",
+    "nameEn": "Camp Zama",
+    "type": "defense",
+    "coordinates": [
+      139.4,
+      35.4833
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "在日米軍",
+    "source": "警察庁"
+  },
+  {
+    "id": "kadena-ab",
+    "name": "嘉手納基地",
+    "nameEn": "Kadena Air Base",
+    "type": "defense",
+    "coordinates": [
+      127.7683,
+      26.3517
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "在日米軍",
+    "source": "警察庁"
+  },
+  {
+    "id": "futenma-mcas",
+    "name": "普天間基地",
+    "nameEn": "MCAS Futenma",
+    "type": "defense",
+    "coordinates": [
+      127.7558,
+      26.2744
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "在日米軍",
+    "source": "警察庁"
+  },
+  {
+    "id": "misawa-ab-us",
+    "name": "三沢基地（米軍）",
+    "nameEn": "Misawa Air Base (USAF)",
+    "type": "defense",
+    "coordinates": [
+      141.3686,
+      40.7033
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "在日米軍",
+    "source": "警察庁"
+  },
+  {
+    "id": "iwakuni-mcas",
+    "name": "岩国基地",
+    "nameEn": "MCAS Iwakuni",
+    "type": "defense",
+    "coordinates": [
+      132.2361,
+      34.1456
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "在日米軍",
+    "source": "警察庁"
+  },
+  {
+    "id": "sasebo-nfj",
+    "name": "佐世保基地",
+    "nameEn": "U.S. Fleet Activities Sasebo",
+    "type": "defense",
+    "coordinates": [
+      129.7167,
+      33.15
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "在日米軍",
+    "source": "警察庁"
+  },
+  {
+    "id": "us-embassy",
+    "name": "アメリカ大使館",
+    "nameEn": "Embassy of the United States",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7425,
+      35.6678
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow"
+  },
+  {
+    "id": "china-embassy",
+    "name": "中国大使館",
+    "nameEn": "Embassy of China",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7353,
+      35.6558
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow"
+  },
+  {
+    "id": "russia-embassy",
+    "name": "ロシア大使館",
+    "nameEn": "Embassy of Russia",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7439,
+      35.663
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow"
+  },
+  {
+    "id": "korea-embassy",
+    "name": "韓国大使館",
+    "nameEn": "Embassy of the Republic of Korea",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7297,
+      35.6611
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow"
+  },
+  {
+    "id": "uk-embassy",
+    "name": "イギリス大使館",
+    "nameEn": "Embassy of the United Kingdom",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7467,
+      35.6758
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow"
+  },
+  {
+    "id": "france-embassy",
+    "name": "フランス大使館",
+    "nameEn": "Embassy of France",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7403,
+      35.6636
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow"
+  },
+  {
+    "id": "germany-embassy",
+    "name": "ドイツ大使館",
+    "nameEn": "Embassy of Germany",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7481,
+      35.6756
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow"
+  },
+  {
+    "id": "italy-embassy",
+    "name": "イタリア大使館",
+    "nameEn": "Embassy of Italy",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7478,
+      35.6781
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow"
+  },
+  {
+    "id": "australia-embassy",
+    "name": "オーストラリア大使館",
+    "nameEn": "Embassy of Australia",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7406,
+      35.6706
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow"
+  },
+  {
+    "id": "ldp-hq",
+    "name": "自民党本部",
+    "nameEn": "Liberal Democratic Party Headquarters",
+    "type": "government",
+    "coordinates": [
+      139.7394,
+      35.6781
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "政党本部"
+  },
+  {
+    "id": "hokkaido-gov",
+    "name": "北海道庁",
+    "nameEn": "Hokkaido Government",
+    "type": "prefecture",
+    "coordinates": [
+      141.3469,
+      43.0642
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "tokyo-gov",
+    "name": "東京都庁",
+    "nameEn": "Tokyo Metropolitan Government",
+    "type": "prefecture",
+    "coordinates": [
+      139.6917,
+      35.6895
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "osaka-gov",
+    "name": "大阪府庁",
+    "nameEn": "Osaka Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      135.5201,
+      34.6862
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "aichi-gov",
+    "name": "愛知県庁",
+    "nameEn": "Aichi Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      136.9066,
+      35.1803
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "fukuoka-gov",
+    "name": "福岡県庁",
+    "nameEn": "Fukuoka Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      130.4183,
+      33.6064
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "kanagawa-gov",
+    "name": "神奈川県庁",
+    "nameEn": "Kanagawa Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      139.6424,
+      35.4478
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "kyoto-gov",
+    "name": "京都府庁",
+    "nameEn": "Kyoto Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      135.7681,
+      35.0214
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "hyogo-gov",
+    "name": "兵庫県庁",
+    "nameEn": "Hyogo Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      135.1831,
+      34.6913
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "aomori-gov",
+    "name": "青森県庁",
+    "nameEn": "Aomori Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      140.74,
+      40.8244
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "iwate-gov",
+    "name": "岩手県庁",
+    "nameEn": "Iwate Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      141.1525,
+      39.7036
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "miyagi-gov",
+    "name": "宮城県庁",
+    "nameEn": "Miyagi Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      140.8719,
+      38.2682
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "akita-gov",
+    "name": "秋田県庁",
+    "nameEn": "Akita Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      140.1025,
+      39.7186
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "yamagata-gov",
+    "name": "山形県庁",
+    "nameEn": "Yamagata Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      140.3633,
+      38.2404
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "fukushima-gov",
+    "name": "福島県庁",
+    "nameEn": "Fukushima Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      140.4676,
+      37.7503
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "ibaraki-gov",
+    "name": "茨城県庁",
+    "nameEn": "Ibaraki Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      140.4467,
+      36.3418
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "tochigi-gov",
+    "name": "栃木県庁",
+    "nameEn": "Tochigi Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      139.8836,
+      36.5658
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "gunma-gov",
+    "name": "群馬県庁",
+    "nameEn": "Gunma Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      139.0608,
+      36.3911
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "saitama-gov",
+    "name": "埼玉県庁",
+    "nameEn": "Saitama Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      139.6489,
+      35.8569
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "chiba-gov",
+    "name": "千葉県庁",
+    "nameEn": "Chiba Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      140.1233,
+      35.605
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "niigata-gov",
+    "name": "新潟県庁",
+    "nameEn": "Niigata Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      139.0236,
+      37.9022
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "toyama-gov",
+    "name": "富山県庁",
+    "nameEn": "Toyama Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      137.2114,
+      36.6959
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "ishikawa-gov",
+    "name": "石川県庁",
+    "nameEn": "Ishikawa Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      136.6256,
+      36.5946
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "fukui-gov",
+    "name": "福井県庁",
+    "nameEn": "Fukui Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      136.2018,
+      36.0652
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "yamanashi-gov",
+    "name": "山梨県庁",
+    "nameEn": "Yamanashi Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      138.5684,
+      35.6642
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "nagano-gov",
+    "name": "長野県庁",
+    "nameEn": "Nagano Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      138.1811,
+      36.6513
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "gifu-gov",
+    "name": "岐阜県庁",
+    "nameEn": "Gifu Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      136.7222,
+      35.3911
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "shizuoka-gov",
+    "name": "静岡県庁",
+    "nameEn": "Shizuoka Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      138.3831,
+      34.9769
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "mie-gov",
+    "name": "三重県庁",
+    "nameEn": "Mie Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      136.5086,
+      34.7303
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "shiga-gov",
+    "name": "滋賀県庁",
+    "nameEn": "Shiga Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      135.8681,
+      35.0045
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "nara-gov",
+    "name": "奈良県庁",
+    "nameEn": "Nara Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      135.8329,
+      34.6851
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "wakayama-gov",
+    "name": "和歌山県庁",
+    "nameEn": "Wakayama Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      135.1675,
+      34.2261
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "tottori-gov",
+    "name": "鳥取県庁",
+    "nameEn": "Tottori Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      134.2378,
+      35.5014
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "shimane-gov",
+    "name": "島根県庁",
+    "nameEn": "Shimane Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      133.0505,
+      35.4722
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "okayama-gov",
+    "name": "岡山県庁",
+    "nameEn": "Okayama Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      133.9342,
+      34.6617
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "hiroshima-gov",
+    "name": "広島県庁",
+    "nameEn": "Hiroshima Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      132.4597,
+      34.3965
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "yamaguchi-gov",
+    "name": "山口県庁",
+    "nameEn": "Yamaguchi Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      131.4706,
+      34.1861
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "tokushima-gov",
+    "name": "徳島県庁",
+    "nameEn": "Tokushima Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      134.5594,
+      34.0658
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "kagawa-gov",
+    "name": "香川県庁",
+    "nameEn": "Kagawa Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      134.0434,
+      34.3401
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "ehime-gov",
+    "name": "愛媛県庁",
+    "nameEn": "Ehime Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      132.7657,
+      33.8416
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "kochi-gov",
+    "name": "高知県庁",
+    "nameEn": "Kochi Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      133.5311,
+      33.5597
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "saga-gov",
+    "name": "佐賀県庁",
+    "nameEn": "Saga Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      130.3,
+      33.2494
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "nagasaki-gov",
+    "name": "長崎県庁",
+    "nameEn": "Nagasaki Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      129.8737,
+      32.7447
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "kumamoto-gov",
+    "name": "熊本県庁",
+    "nameEn": "Kumamoto Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      130.7417,
+      32.7898
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "oita-gov",
+    "name": "大分県庁",
+    "nameEn": "Oita Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      131.6126,
+      33.2382
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "miyazaki-gov",
+    "name": "宮崎県庁",
+    "nameEn": "Miyazaki Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      131.4202,
+      31.9111
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "kagoshima-gov",
+    "name": "鹿児島県庁",
+    "nameEn": "Kagoshima Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      130.5578,
+      31.5602
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "okinawa-gov",
+    "name": "沖縄県庁",
+    "nameEn": "Okinawa Prefectural Government",
+    "type": "prefecture",
+    "coordinates": [
+      127.6809,
+      26.2124
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "都道府県庁舎",
+    "source": "警察庁"
+  },
+  {
+    "id": "tokyo-mpd",
+    "name": "警視庁本部",
+    "nameEn": "Tokyo Metropolitan Police Department",
+    "type": "police",
+    "coordinates": [
+      139.7507,
+      35.6761
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "hokkaido-police",
+    "name": "北海道警察本部",
+    "nameEn": "Hokkaido Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      141.345,
+      43.0649
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "osaka-police",
+    "name": "大阪府警察本部",
+    "nameEn": "Osaka Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      135.5089,
+      34.6822
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "aichi-police",
+    "name": "愛知県警察本部",
+    "nameEn": "Aichi Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      136.9095,
+      35.1709
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "fukuoka-police",
+    "name": "福岡県警察本部",
+    "nameEn": "Fukuoka Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      130.4167,
+      33.609
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "aomori-police",
+    "name": "青森県警察本部",
+    "nameEn": "Aomori Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      140.7394,
+      40.8242
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "iwate-police",
+    "name": "岩手県警察本部",
+    "nameEn": "Iwate Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      141.1522,
+      39.7031
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "miyagi-police",
+    "name": "宮城県警察本部",
+    "nameEn": "Miyagi Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      140.8711,
+      38.2686
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "akita-police",
+    "name": "秋田県警察本部",
+    "nameEn": "Akita Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      140.1022,
+      39.7183
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "yamagata-police",
+    "name": "山形県警察本部",
+    "nameEn": "Yamagata Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      140.3628,
+      38.2406
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "fukushima-police",
+    "name": "福島県警察本部",
+    "nameEn": "Fukushima Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      140.4672,
+      37.75
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "ibaraki-police",
+    "name": "茨城県警察本部",
+    "nameEn": "Ibaraki Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      140.4464,
+      36.3414
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "tochigi-police",
+    "name": "栃木県警察本部",
+    "nameEn": "Tochigi Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      139.8833,
+      36.5656
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "gunma-police",
+    "name": "群馬県警察本部",
+    "nameEn": "Gunma Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      139.0603,
+      36.3908
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "saitama-police",
+    "name": "埼玉県警察本部",
+    "nameEn": "Saitama Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      139.6492,
+      35.8572
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "chiba-police",
+    "name": "千葉県警察本部",
+    "nameEn": "Chiba Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      140.1236,
+      35.6047
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "kanagawa-police",
+    "name": "神奈川県警察本部",
+    "nameEn": "Kanagawa Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      139.6422,
+      35.4481
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "niigata-police",
+    "name": "新潟県警察本部",
+    "nameEn": "Niigata Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      139.0233,
+      37.9019
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "toyama-police",
+    "name": "富山県警察本部",
+    "nameEn": "Toyama Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      137.2111,
+      36.6956
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "ishikawa-police",
+    "name": "石川県警察本部",
+    "nameEn": "Ishikawa Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      136.6253,
+      36.5944
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "fukui-police",
+    "name": "福井県警察本部",
+    "nameEn": "Fukui Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      136.2014,
+      36.065
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "yamanashi-police",
+    "name": "山梨県警察本部",
+    "nameEn": "Yamanashi Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      138.5681,
+      35.6639
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "nagano-police",
+    "name": "長野県警察本部",
+    "nameEn": "Nagano Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      138.1808,
+      36.6511
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "gifu-police",
+    "name": "岐阜県警察本部",
+    "nameEn": "Gifu Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      136.7219,
+      35.3908
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "shizuoka-police",
+    "name": "静岡県警察本部",
+    "nameEn": "Shizuoka Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      138.3828,
+      34.9767
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "mie-police",
+    "name": "三重県警察本部",
+    "nameEn": "Mie Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      136.5083,
+      34.73
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "shiga-police",
+    "name": "滋賀県警察本部",
+    "nameEn": "Shiga Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      135.8678,
+      35.0042
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "kyoto-police",
+    "name": "京都府警察本部",
+    "nameEn": "Kyoto Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      135.7678,
+      35.0211
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "hyogo-police",
+    "name": "兵庫県警察本部",
+    "nameEn": "Hyogo Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      135.1828,
+      34.6911
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "nara-police",
+    "name": "奈良県警察本部",
+    "nameEn": "Nara Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      135.8328,
+      34.6853
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "wakayama-police",
+    "name": "和歌山県警察本部",
+    "nameEn": "Wakayama Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      135.1672,
+      34.2258
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "tottori-police",
+    "name": "鳥取県警察本部",
+    "nameEn": "Tottori Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      134.2375,
+      35.5011
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "shimane-police",
+    "name": "島根県警察本部",
+    "nameEn": "Shimane Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      133.0503,
+      35.4719
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "okayama-police",
+    "name": "岡山県警察本部",
+    "nameEn": "Okayama Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      133.9339,
+      34.6614
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "hiroshima-police",
+    "name": "広島県警察本部",
+    "nameEn": "Hiroshima Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      132.4594,
+      34.3963
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "yamaguchi-police",
+    "name": "山口県警察本部",
+    "nameEn": "Yamaguchi Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      131.4703,
+      34.1858
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "tokushima-police",
+    "name": "徳島県警察本部",
+    "nameEn": "Tokushima Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      134.5592,
+      34.0656
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "kagawa-police",
+    "name": "香川県警察本部",
+    "nameEn": "Kagawa Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      134.0431,
+      34.3398
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "ehime-police",
+    "name": "愛媛県警察本部",
+    "nameEn": "Ehime Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      132.7653,
+      33.8414
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "kochi-police",
+    "name": "高知県警察本部",
+    "nameEn": "Kochi Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      133.5308,
+      33.5594
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "saga-police",
+    "name": "佐賀県警察本部",
+    "nameEn": "Saga Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      130.2997,
+      33.2492
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "nagasaki-police",
+    "name": "長崎県警察本部",
+    "nameEn": "Nagasaki Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      129.8733,
+      32.7444
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "kumamoto-police",
+    "name": "熊本県警察本部",
+    "nameEn": "Kumamoto Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      130.7414,
+      32.7894
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "oita-police",
+    "name": "大分県警察本部",
+    "nameEn": "Oita Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      131.6122,
+      33.2378
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "miyazaki-police",
+    "name": "宮崎県警察本部",
+    "nameEn": "Miyazaki Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      131.4197,
+      31.9108
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "kagoshima-police",
+    "name": "鹿児島県警察本部",
+    "nameEn": "Kagoshima Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      130.5575,
+      31.56
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "okinawa-police",
+    "name": "沖縄県警察本部",
+    "nameEn": "Okinawa Prefectural Police Headquarters",
+    "type": "police",
+    "coordinates": [
+      127.6806,
+      26.2122
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "警察本部",
+    "source": "警察庁"
+  },
+  {
+    "id": "tokyo-detention",
+    "name": "東京拘置所",
+    "nameEn": "Tokyo Detention House",
+    "type": "prison",
+    "coordinates": [
+      139.8286,
+      35.7431
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "拘置所",
+    "source": "警察庁"
+  },
+  {
+    "id": "osaka-detention",
+    "name": "大阪拘置所",
+    "nameEn": "Osaka Detention House",
+    "type": "prison",
+    "coordinates": [
+      135.5375,
+      34.6847
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "拘置所",
+    "source": "警察庁"
+  },
+  {
+    "id": "nagoya-detention",
+    "name": "名古屋拘置所",
+    "nameEn": "Nagoya Detention House",
+    "type": "prison",
+    "coordinates": [
+      136.9262,
+      35.1406
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "拘置所",
+    "source": "警察庁"
+  },
+  {
+    "id": "fuchu-prison",
+    "name": "府中刑務所",
+    "nameEn": "Fuchu Prison",
+    "type": "prison",
+    "coordinates": [
+      139.4894,
+      35.6683
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "osaka-prison",
+    "name": "大阪刑務所",
+    "nameEn": "Osaka Prison",
+    "type": "prison",
+    "coordinates": [
+      135.5547,
+      34.6481
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "sapporo-detention",
+    "name": "札幌拘置支所",
+    "nameEn": "Sapporo Detention Branch",
+    "type": "prison",
+    "coordinates": [
+      141.3544,
+      43.0689
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "拘置所",
+    "source": "警察庁"
+  },
+  {
+    "id": "sendai-detention",
+    "name": "仙台拘置支所",
+    "nameEn": "Sendai Detention Branch",
+    "type": "prison",
+    "coordinates": [
+      140.8764,
+      38.2689
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "拘置所",
+    "source": "警察庁"
+  },
+  {
+    "id": "hiroshima-detention",
+    "name": "広島拘置所",
+    "nameEn": "Hiroshima Detention House",
+    "type": "prison",
+    "coordinates": [
+      132.4494,
+      34.3931
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "拘置所",
+    "source": "警察庁"
+  },
+  {
+    "id": "fukuoka-detention",
+    "name": "福岡拘置所",
+    "nameEn": "Fukuoka Detention House",
+    "type": "prison",
+    "coordinates": [
+      130.4214,
+      33.5961
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "拘置所",
+    "source": "警察庁"
+  },
+  {
+    "id": "sapporo-prison",
+    "name": "札幌刑務所",
+    "nameEn": "Sapporo Prison",
+    "type": "prison",
+    "coordinates": [
+      141.3378,
+      43.0553
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "asahikawa-prison",
+    "name": "旭川刑務所",
+    "nameEn": "Asahikawa Prison",
+    "type": "prison",
+    "coordinates": [
+      142.3656,
+      43.7708
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "abashiri-prison",
+    "name": "網走刑務所",
+    "nameEn": "Abashiri Prison",
+    "type": "prison",
+    "coordinates": [
+      144.2733,
+      44.0197
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "kushiro-prison",
+    "name": "釧路刑務所",
+    "nameEn": "Kushiro Prison",
+    "type": "prison",
+    "coordinates": [
+      144.3831,
+      42.985
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "hakodate-prison",
+    "name": "函館少年刑務所",
+    "nameEn": "Hakodate Juvenile Prison",
+    "type": "prison",
+    "coordinates": [
+      140.7294,
+      41.7689
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "少年刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "miyagi-prison",
+    "name": "宮城刑務所",
+    "nameEn": "Miyagi Prison",
+    "type": "prison",
+    "coordinates": [
+      140.8878,
+      38.2781
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "fukushima-prison",
+    "name": "福島刑務所",
+    "nameEn": "Fukushima Prison",
+    "type": "prison",
+    "coordinates": [
+      140.4719,
+      37.7583
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "yamagata-prison",
+    "name": "山形刑務所",
+    "nameEn": "Yamagata Prison",
+    "type": "prison",
+    "coordinates": [
+      140.3364,
+      38.2531
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "akita-prison",
+    "name": "秋田刑務所",
+    "nameEn": "Akita Prison",
+    "type": "prison",
+    "coordinates": [
+      140.1139,
+      39.7283
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "morioka-prison",
+    "name": "盛岡少年刑務所",
+    "nameEn": "Morioka Juvenile Prison",
+    "type": "prison",
+    "coordinates": [
+      141.1403,
+      39.7025
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "少年刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "yokohama-prison",
+    "name": "横浜刑務所",
+    "nameEn": "Yokohama Prison",
+    "type": "prison",
+    "coordinates": [
+      139.6181,
+      35.4481
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "chiba-prison",
+    "name": "千葉刑務所",
+    "nameEn": "Chiba Prison",
+    "type": "prison",
+    "coordinates": [
+      140.1147,
+      35.5958
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "kawagoe-juvenile",
+    "name": "川越少年刑務所",
+    "nameEn": "Kawagoe Juvenile Prison",
+    "type": "prison",
+    "coordinates": [
+      139.4883,
+      35.925
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "少年刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "tochigi-prison",
+    "name": "栃木刑務所",
+    "nameEn": "Tochigi Prison",
+    "type": "prison",
+    "coordinates": [
+      139.8644,
+      36.5619
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "maebashi-prison",
+    "name": "前橋刑務所",
+    "nameEn": "Maebashi Prison",
+    "type": "prison",
+    "coordinates": [
+      139.0658,
+      36.3933
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "mito-prison",
+    "name": "水戸刑務所",
+    "nameEn": "Mito Prison",
+    "type": "prison",
+    "coordinates": [
+      140.4761,
+      36.3714
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "niigata-prison",
+    "name": "新潟刑務所",
+    "nameEn": "Niigata Prison",
+    "type": "prison",
+    "coordinates": [
+      139.0181,
+      37.9181
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "nagano-prison",
+    "name": "長野刑務所",
+    "nameEn": "Nagano Prison",
+    "type": "prison",
+    "coordinates": [
+      138.1953,
+      36.645
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "matsumoto-juvenile",
+    "name": "松本少年刑務所",
+    "nameEn": "Matsumoto Juvenile Prison",
+    "type": "prison",
+    "coordinates": [
+      137.9706,
+      36.2381
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "少年刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "kanazawa-prison",
+    "name": "金沢刑務所",
+    "nameEn": "Kanazawa Prison",
+    "type": "prison",
+    "coordinates": [
+      136.6419,
+      36.5772
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "toyama-prison",
+    "name": "富山刑務所",
+    "nameEn": "Toyama Prison",
+    "type": "prison",
+    "coordinates": [
+      137.2186,
+      36.6842
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "fukui-prison",
+    "name": "福井刑務所",
+    "nameEn": "Fukui Prison",
+    "type": "prison",
+    "coordinates": [
+      136.2161,
+      36.0747
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "gifu-prison",
+    "name": "岐阜刑務所",
+    "nameEn": "Gifu Prison",
+    "type": "prison",
+    "coordinates": [
+      136.7631,
+      35.4228
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "shizuoka-prison",
+    "name": "静岡刑務所",
+    "nameEn": "Shizuoka Prison",
+    "type": "prison",
+    "coordinates": [
+      138.4019,
+      34.9792
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "yokkaichi-prison",
+    "name": "四日市刑務所",
+    "nameEn": "Yokkaichi Prison",
+    "type": "prison",
+    "coordinates": [
+      136.6239,
+      34.9656
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "kyoto-prison",
+    "name": "京都刑務所",
+    "nameEn": "Kyoto Prison",
+    "type": "prison",
+    "coordinates": [
+      135.7506,
+      34.9939
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "kobe-detention",
+    "name": "神戸拘置所",
+    "nameEn": "Kobe Detention House",
+    "type": "prison",
+    "coordinates": [
+      135.185,
+      34.6856
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "拘置所",
+    "source": "警察庁"
+  },
+  {
+    "id": "nara-prison",
+    "name": "奈良少年刑務所",
+    "nameEn": "Nara Juvenile Prison",
+    "type": "prison",
+    "coordinates": [
+      135.8106,
+      34.6806
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "少年刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "wakayama-prison",
+    "name": "和歌山刑務所",
+    "nameEn": "Wakayama Prison",
+    "type": "prison",
+    "coordinates": [
+      135.1608,
+      34.2256
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "kobe-prison",
+    "name": "神戸刑務所",
+    "nameEn": "Kobe Prison",
+    "type": "prison",
+    "coordinates": [
+      135.1328,
+      34.7108
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "kakogawa-prison",
+    "name": "加古川刑務所",
+    "nameEn": "Kakogawa Prison",
+    "type": "prison",
+    "coordinates": [
+      134.8403,
+      34.7569
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "okayama-prison",
+    "name": "岡山刑務所",
+    "nameEn": "Okayama Prison",
+    "type": "prison",
+    "coordinates": [
+      133.9203,
+      34.6428
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "hiroshima-prison",
+    "name": "広島刑務所",
+    "nameEn": "Hiroshima Prison",
+    "type": "prison",
+    "coordinates": [
+      132.4669,
+      34.4117
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "yamaguchi-prison",
+    "name": "山口刑務所",
+    "nameEn": "Yamaguchi Prison",
+    "type": "prison",
+    "coordinates": [
+      131.4847,
+      34.1753
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "matsuyama-prison",
+    "name": "松山刑務所",
+    "nameEn": "Matsuyama Prison",
+    "type": "prison",
+    "coordinates": [
+      132.7383,
+      33.8372
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "takamatsu-prison",
+    "name": "高松刑務所",
+    "nameEn": "Takamatsu Prison",
+    "type": "prison",
+    "coordinates": [
+      134.0311,
+      34.3225
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "tokushima-prison",
+    "name": "徳島刑務所",
+    "nameEn": "Tokushima Prison",
+    "type": "prison",
+    "coordinates": [
+      134.5433,
+      34.0539
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "kochi-prison",
+    "name": "高知刑務所",
+    "nameEn": "Kochi Prison",
+    "type": "prison",
+    "coordinates": [
+      133.5411,
+      33.5506
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "fukuoka-prison",
+    "name": "福岡刑務所",
+    "nameEn": "Fukuoka Prison",
+    "type": "prison",
+    "coordinates": [
+      130.4003,
+      33.6183
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "saga-prison",
+    "name": "佐賀少年刑務所",
+    "nameEn": "Saga Juvenile Prison",
+    "type": "prison",
+    "coordinates": [
+      130.2856,
+      33.2806
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "少年刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "nagasaki-prison",
+    "name": "長崎刑務所",
+    "nameEn": "Nagasaki Prison",
+    "type": "prison",
+    "coordinates": [
+      129.8639,
+      32.7628
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "kumamoto-prison",
+    "name": "熊本刑務所",
+    "nameEn": "Kumamoto Prison",
+    "type": "prison",
+    "coordinates": [
+      130.7264,
+      32.7983
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "oita-prison",
+    "name": "大分刑務所",
+    "nameEn": "Oita Prison",
+    "type": "prison",
+    "coordinates": [
+      131.6228,
+      33.2508
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "miyazaki-prison",
+    "name": "宮崎刑務所",
+    "nameEn": "Miyazaki Prison",
+    "type": "prison",
+    "coordinates": [
+      131.4153,
+      31.9039
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "kagoshima-prison",
+    "name": "鹿児島刑務所",
+    "nameEn": "Kagoshima Prison",
+    "type": "prison",
+    "coordinates": [
+      130.5444,
+      31.5492
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "okinawa-prison",
+    "name": "沖縄刑務所",
+    "nameEn": "Okinawa Prison",
+    "type": "prison",
+    "coordinates": [
+      127.7228,
+      26.205
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "刑務所",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-ichigaya",
+    "name": "防衛省市ヶ谷地区",
+    "nameEn": "MOD Ichigaya Area",
+    "type": "military_jsdf",
+    "coordinates": [
+      139.7285,
+      35.6933
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-asaka",
+    "name": "陸上自衛隊朝霞駐屯地",
+    "nameEn": "JGSDF Asaka Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      139.595,
+      35.7983
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-yokosuka",
+    "name": "海上自衛隊横須賀地方総監部",
+    "nameEn": "JMSDF Yokosuka District",
+    "type": "military_jsdf",
+    "coordinates": [
+      139.6608,
+      35.2789
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-hyakuri",
+    "name": "航空自衛隊百里基地",
+    "nameEn": "JASDF Hyakuri Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      140.4147,
+      36.1811
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-misawa",
+    "name": "航空自衛隊三沢基地",
+    "nameEn": "JASDF Misawa Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      141.3686,
+      40.7033
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-komatsu",
+    "name": "航空自衛隊小松基地",
+    "nameEn": "JASDF Komatsu Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      136.4069,
+      36.3947
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-tsuiki",
+    "name": "航空自衛隊築城基地",
+    "nameEn": "JASDF Tsuiki Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      131.0394,
+      33.6856
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-naha",
+    "name": "航空自衛隊那覇基地",
+    "nameEn": "JASDF Naha Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      127.6542,
+      26.1958
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-chitose",
+    "name": "航空自衛隊千歳基地",
+    "nameEn": "JASDF Chitose Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      141.6661,
+      42.7939
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-matsushima",
+    "name": "航空自衛隊松島基地",
+    "nameEn": "JASDF Matsushima Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      141.2194,
+      38.405
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-iruma",
+    "name": "航空自衛隊入間基地",
+    "nameEn": "JASDF Iruma Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      139.4106,
+      35.8417
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-gifu",
+    "name": "航空自衛隊岐阜基地",
+    "nameEn": "JASDF Gifu Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      136.8706,
+      35.3939
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-hamamatsu",
+    "name": "航空自衛隊浜松基地",
+    "nameEn": "JASDF Hamamatsu Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      137.7047,
+      34.7503
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-komaki",
+    "name": "航空自衛隊小牧基地",
+    "nameEn": "JASDF Komaki Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      136.9231,
+      35.2553
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-miho",
+    "name": "航空自衛隊美保基地",
+    "nameEn": "JASDF Miho Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      133.2364,
+      35.4922
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-iwakuni",
+    "name": "海上自衛隊岩国航空基地",
+    "nameEn": "JMSDF Iwakuni Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      132.2356,
+      34.1439
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-ashiya",
+    "name": "航空自衛隊芦屋基地",
+    "nameEn": "JASDF Ashiya Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      130.6531,
+      33.8831
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-kasuga",
+    "name": "航空自衛隊春日基地",
+    "nameEn": "JASDF Kasuga Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      130.4719,
+      33.5356
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-nyutabaru",
+    "name": "航空自衛隊新田原基地",
+    "nameEn": "JASDF Nyutabaru Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      131.4511,
+      32.0836
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-kanoya",
+    "name": "海上自衛隊鹿屋航空基地",
+    "nameEn": "JMSDF Kanoya Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      130.8497,
+      31.3633
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-sapporo",
+    "name": "陸上自衛隊札幌駐屯地",
+    "nameEn": "JGSDF Sapporo Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      141.3297,
+      43.0856
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-sendai",
+    "name": "陸上自衛隊仙台駐屯地",
+    "nameEn": "JGSDF Sendai Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      140.9181,
+      38.2708
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-nerima",
+    "name": "陸上自衛隊練馬駐屯地",
+    "nameEn": "JGSDF Nerima Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      139.6081,
+      35.7469
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-tachikawa",
+    "name": "陸上自衛隊立川駐屯地",
+    "nameEn": "JGSDF Tachikawa Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      139.4039,
+      35.7119
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-yokohama",
+    "name": "陸上自衛隊横浜駐屯地",
+    "nameEn": "JGSDF Yokohama Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      139.6003,
+      35.4692
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-kanazawa",
+    "name": "陸上自衛隊金沢駐屯地",
+    "nameEn": "JGSDF Kanazawa Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      136.635,
+      36.5764
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-toyokawa",
+    "name": "陸上自衛隊豊川駐屯地",
+    "nameEn": "JGSDF Toyokawa Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      137.3708,
+      34.8292
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-moriyama",
+    "name": "陸上自衛隊守山駐屯地",
+    "nameEn": "JGSDF Moriyama Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      136.9561,
+      35.1917
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-uji",
+    "name": "陸上自衛隊宇治駐屯地",
+    "nameEn": "JGSDF Uji Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      135.8019,
+      34.8908
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-itami",
+    "name": "陸上自衛隊伊丹駐屯地",
+    "nameEn": "JGSDF Itami Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      135.4403,
+      34.7847
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-kure",
+    "name": "海上自衛隊呉地方総監部",
+    "nameEn": "JMSDF Kure District",
+    "type": "military_jsdf",
+    "coordinates": [
+      132.5647,
+      34.2389
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-sasebo",
+    "name": "海上自衛隊佐世保地方総監部",
+    "nameEn": "JMSDF Sasebo District",
+    "type": "military_jsdf",
+    "coordinates": [
+      129.7189,
+      33.1781
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-maizuru",
+    "name": "海上自衛隊舞鶴地方総監部",
+    "nameEn": "JMSDF Maizuru District",
+    "type": "military_jsdf",
+    "coordinates": [
+      135.3878,
+      35.4742
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-ominato",
+    "name": "海上自衛隊大湊地方総監部",
+    "nameEn": "JMSDF Ominato District",
+    "type": "military_jsdf",
+    "coordinates": [
+      141.1361,
+      41.2536
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-atsugi",
+    "name": "海上自衛隊厚木航空基地",
+    "nameEn": "JMSDF Atsugi Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      139.45,
+      35.4553
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-oi",
+    "name": "海上自衛隊大井航空基地",
+    "nameEn": "JMSDF Oi Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      138.3247,
+      34.7428
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-shimofusa",
+    "name": "海上自衛隊下総航空基地",
+    "nameEn": "JMSDF Shimofusa Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      140.0119,
+      35.7986
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-omura",
+    "name": "海上自衛隊大村航空基地",
+    "nameEn": "JMSDF Omura Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      129.9186,
+      32.9169
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-hachinohe",
+    "name": "海上自衛隊八戸航空基地",
+    "nameEn": "JMSDF Hachinohe Air Base",
+    "type": "military_jsdf",
+    "coordinates": [
+      141.4642,
+      40.5561
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-tokushima",
+    "name": "陸上自衛隊徳島駐屯地",
+    "nameEn": "JGSDF Tokushima Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      134.5822,
+      34.0467
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-zentsuji",
+    "name": "陸上自衛隊善通寺駐屯地",
+    "nameEn": "JGSDF Zentsuji Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      133.7753,
+      34.2281
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-kumamoto",
+    "name": "陸上自衛隊熊本駐屯地",
+    "nameEn": "JGSDF Kumamoto Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      130.7697,
+      32.8325
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-kengun",
+    "name": "陸上自衛隊健軍駐屯地",
+    "nameEn": "JGSDF Kengun Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      130.76,
+      32.7861
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "jsdf-naha-camp",
+    "name": "陸上自衛隊那覇駐屯地",
+    "nameEn": "JGSDF Naha Camp",
+    "type": "military_jsdf",
+    "coordinates": [
+      127.6711,
+      26.2119
+    ],
+    "radiusKm": 0.2,
+    "zone": "red",
+    "category": "自衛隊施設",
+    "source": "警察庁"
+  },
+  {
+    "id": "canada-embassy",
+    "name": "カナダ大使館",
+    "nameEn": "Embassy of Canada",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7417,
+      35.6778
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "india-embassy",
+    "name": "インド大使館",
+    "nameEn": "Embassy of India",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7336,
+      35.6603
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "brazil-embassy",
+    "name": "ブラジル大使館",
+    "nameEn": "Embassy of Brazil",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7394,
+      35.6681
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "spain-embassy",
+    "name": "スペイン大使館",
+    "nameEn": "Embassy of Spain",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7383,
+      35.6658
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "netherlands-embassy",
+    "name": "オランダ大使館",
+    "nameEn": "Embassy of the Netherlands",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7381,
+      35.6725
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "switzerland-embassy",
+    "name": "スイス大使館",
+    "nameEn": "Embassy of Switzerland",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7447,
+      35.6797
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "belgium-embassy",
+    "name": "ベルギー大使館",
+    "nameEn": "Embassy of Belgium",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7394,
+      35.6719
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "sweden-embassy",
+    "name": "スウェーデン大使館",
+    "nameEn": "Embassy of Sweden",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7411,
+      35.6636
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "norway-embassy",
+    "name": "ノルウェー大使館",
+    "nameEn": "Embassy of Norway",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7422,
+      35.6653
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "denmark-embassy",
+    "name": "デンマーク大使館",
+    "nameEn": "Embassy of Denmark",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7353,
+      35.6606
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "finland-embassy",
+    "name": "フィンランド大使館",
+    "nameEn": "Embassy of Finland",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7453,
+      35.6761
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "austria-embassy",
+    "name": "オーストリア大使館",
+    "nameEn": "Embassy of Austria",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7389,
+      35.6644
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "poland-embassy",
+    "name": "ポーランド大使館",
+    "nameEn": "Embassy of Poland",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7294,
+      35.6553
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "turkey-embassy",
+    "name": "トルコ大使館",
+    "nameEn": "Embassy of Turkey",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7353,
+      35.6572
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "israel-embassy",
+    "name": "イスラエル大使館",
+    "nameEn": "Embassy of Israel",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7414,
+      35.6642
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "singapore-embassy",
+    "name": "シンガポール大使館",
+    "nameEn": "Embassy of Singapore",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7422,
+      35.6725
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "thailand-embassy",
+    "name": "タイ大使館",
+    "nameEn": "Embassy of Thailand",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7325,
+      35.6575
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "malaysia-embassy",
+    "name": "マレーシア大使館",
+    "nameEn": "Embassy of Malaysia",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7361,
+      35.6594
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "philippines-embassy",
+    "name": "フィリピン大使館",
+    "nameEn": "Embassy of the Philippines",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7392,
+      35.6669
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "indonesia-embassy",
+    "name": "インドネシア大使館",
+    "nameEn": "Embassy of Indonesia",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.7339,
+      35.6619
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
+  },
+  {
+    "id": "us-consulate-osaka",
+    "name": "在大阪米国総領事館",
+    "nameEn": "U.S. Consulate General Osaka",
+    "type": "foreign_mission",
+    "coordinates": [
+      135.4953,
+      34.6951
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "china-consulate-osaka",
+    "name": "中華人民共和国駐大阪総領事館",
+    "nameEn": "Consulate General of the PRC in Osaka",
+    "type": "foreign_mission",
+    "coordinates": [
+      135.5139,
+      34.6981
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "korea-consulate-osaka",
+    "name": "駐大阪大韓民国総領事館",
+    "nameEn": "Consulate General of ROK in Osaka",
+    "type": "foreign_mission",
+    "coordinates": [
+      135.51,
+      34.6878
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "russia-consulate-osaka",
+    "name": "在大阪ロシア連邦総領事館",
+    "nameEn": "Consulate General of Russia in Osaka",
+    "type": "foreign_mission",
+    "coordinates": [
+      135.4944,
+      34.6969
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "us-consulate-sapporo",
+    "name": "在札幌米国総領事館",
+    "nameEn": "U.S. Consulate General Sapporo",
+    "type": "foreign_mission",
+    "coordinates": [
+      141.3536,
+      43.0625
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "russia-consulate-sapporo",
+    "name": "在札幌ロシア連邦総領事館",
+    "nameEn": "Consulate General of Russia in Sapporo",
+    "type": "foreign_mission",
+    "coordinates": [
+      141.3397,
+      43.0514
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "us-consulate-nagoya",
+    "name": "在名古屋米国領事館",
+    "nameEn": "U.S. Consulate Nagoya",
+    "type": "foreign_mission",
+    "coordinates": [
+      136.9181,
+      35.1711
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "china-consulate-nagoya",
+    "name": "中華人民共和国駐名古屋総領事館",
+    "nameEn": "Consulate General of the PRC in Nagoya",
+    "type": "foreign_mission",
+    "coordinates": [
+      136.9403,
+      35.1633
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "korea-consulate-nagoya",
+    "name": "駐名古屋大韓民国総領事館",
+    "nameEn": "Consulate General of ROK in Nagoya",
+    "type": "foreign_mission",
+    "coordinates": [
+      136.9397,
+      35.1569
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "us-consulate-fukuoka",
+    "name": "在福岡米国領事館",
+    "nameEn": "U.S. Consulate Fukuoka",
+    "type": "foreign_mission",
+    "coordinates": [
+      130.4,
+      33.5906
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "korea-consulate-fukuoka",
+    "name": "駐福岡大韓民国総領事館",
+    "nameEn": "Consulate General of ROK in Fukuoka",
+    "type": "foreign_mission",
+    "coordinates": [
+      130.3919,
+      33.5864
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "china-consulate-fukuoka",
+    "name": "中華人民共和国駐福岡総領事館",
+    "nameEn": "Consulate General of the PRC in Fukuoka",
+    "type": "foreign_mission",
+    "coordinates": [
+      130.3861,
+      33.5911
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "korea-consulate-yokohama",
+    "name": "駐横浜大韓民国総領事館",
+    "nameEn": "Consulate General of ROK in Yokohama",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.6381,
+      35.4436
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "china-consulate-yokohama",
+    "name": "中華人民共和国駐横浜総領事館",
+    "nameEn": "Consulate General of the PRC in Yokohama",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.6353,
+      35.44
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "korea-consulate-sendai",
+    "name": "駐仙台大韓民国総領事館",
+    "nameEn": "Consulate General of ROK in Sendai",
+    "type": "foreign_mission",
+    "coordinates": [
+      140.8711,
+      38.2608
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "china-consulate-sapporo",
+    "name": "中華人民共和国駐札幌総領事館",
+    "nameEn": "Consulate General of the PRC in Sapporo",
+    "type": "foreign_mission",
+    "coordinates": [
+      141.3369,
+      43.0503
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "korea-consulate-sapporo",
+    "name": "駐札幌大韓民国総領事館",
+    "nameEn": "Consulate General of ROK in Sapporo",
+    "type": "foreign_mission",
+    "coordinates": [
+      141.3417,
+      43.0556
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "china-consulate-nagasaki",
+    "name": "中華人民共和国駐長崎総領事館",
+    "nameEn": "Consulate General of the PRC in Nagasaki",
+    "type": "foreign_mission",
+    "coordinates": [
+      129.8736,
+      32.7503
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "korea-consulate-niigata",
+    "name": "駐新潟大韓民国総領事館",
+    "nameEn": "Consulate General of ROK in Niigata",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.0428,
+      37.9156
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "russia-consulate-niigata",
+    "name": "在新潟ロシア連邦総領事館",
+    "nameEn": "Consulate General of Russia in Niigata",
+    "type": "foreign_mission",
+    "coordinates": [
+      139.0569,
+      37.9269
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "us-consulate-naha",
+    "name": "在那覇米国総領事館",
+    "nameEn": "U.S. Consulate General Naha",
+    "type": "foreign_mission",
+    "coordinates": [
+      127.6633,
+      26.2139
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "総領事館",
+    "source": "警察庁"
+  },
+  {
+    "id": "komeito-hq",
+    "name": "公明党本部",
+    "nameEn": "Komeito Party Headquarters",
+    "type": "government",
+    "coordinates": [
+      139.7456,
+      35.6703
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "政党本部"
+  },
+  {
+    "id": "cdp-hq",
+    "name": "立憲民主党本部",
+    "nameEn": "Constitutional Democratic Party Headquarters",
+    "type": "government",
+    "coordinates": [
+      139.7397,
+      35.6728
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "政党本部"
+  },
+  {
+    "id": "jcp-hq",
+    "name": "日本共産党本部",
+    "nameEn": "Japanese Communist Party Headquarters",
+    "type": "government",
+    "coordinates": [
+      139.7483,
+      35.685
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "政党本部"
+  },
+  {
+    "id": "dpfp-hq",
+    "name": "日本維新の会本部",
+    "nameEn": "Japan Innovation Party Headquarters",
+    "type": "government",
+    "coordinates": [
+      139.7378,
+      35.6733
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "政党本部"
+  },
+  {
+    "id": "sdp-hq",
+    "name": "社会民主党本部",
+    "nameEn": "Social Democratic Party Headquarters",
+    "type": "government",
+    "coordinates": [
+      139.7419,
+      35.6806
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "政党本部"
+  },
+  {
+    "id": "dpfp-osaka",
+    "name": "日本維新の会大阪本部",
+    "nameEn": "Japan Innovation Party Osaka Headquarters",
+    "type": "government",
+    "coordinates": [
+      135.5203,
+      34.6937
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "政党本部"
+  },
+  {
+    "id": "kurobe-dam",
+    "name": "黒部ダム",
+    "nameEn": "Kurobe Dam",
+    "type": "water",
+    "coordinates": [
+      137.6633,
+      36.565
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "ダム",
+    "source": "国土交通省"
+  },
+  {
+    "id": "tagokura-dam",
+    "name": "田子倉ダム",
+    "nameEn": "Tagokura Dam",
+    "type": "water",
+    "coordinates": [
+      139.2833,
+      37.3333
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "ダム",
+    "source": "国土交通省"
+  },
+  {
+    "id": "okutadami-dam",
+    "name": "奥只見ダム",
+    "nameEn": "Okutadami Dam",
+    "type": "water",
+    "coordinates": [
+      139.25,
+      37.3
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "ダム",
+    "source": "国土交通省"
+  },
+  {
+    "id": "sakuma-dam",
+    "name": "佐久間ダム",
+    "nameEn": "Sakuma Dam",
+    "type": "water",
+    "coordinates": [
+      137.8333,
+      35.0667
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "ダム",
+    "source": "国土交通省"
+  },
+  {
+    "id": "ikawa-dam",
+    "name": "井川ダム",
+    "nameEn": "Ikawa Dam",
+    "type": "water",
+    "coordinates": [
+      138.15,
+      35.2333
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "ダム",
+    "source": "国土交通省"
+  },
+  {
+    "id": "miyagase-dam",
+    "name": "宮ヶ瀬ダム",
+    "nameEn": "Miyagase Dam",
+    "type": "water",
+    "coordinates": [
+      139.2167,
+      35.5
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "ダム",
+    "source": "国土交通省"
+  },
+  {
+    "id": "tokuyama-dam",
+    "name": "徳山ダム",
+    "nameEn": "Tokuyama Dam",
+    "type": "water",
+    "coordinates": [
+      136.5667,
+      35.6333
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "ダム",
+    "source": "国土交通省"
+  },
+  {
+    "id": "ikehara-dam",
+    "name": "池原ダム",
+    "nameEn": "Ikehara Dam",
+    "type": "water",
+    "coordinates": [
+      135.9833,
+      33.9167
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "ダム",
+    "source": "国土交通省"
+  },
+  {
+    "id": "yanase-dam",
+    "name": "矢作ダム",
+    "nameEn": "Yahagi Dam",
+    "type": "water",
+    "coordinates": [
+      137.4333,
+      35.2333
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "ダム",
+    "source": "国土交通省"
+  },
+  {
+    "id": "aimata-dam",
+    "name": "愛本ダム",
+    "nameEn": "Aimata Dam",
+    "type": "water",
+    "coordinates": [
+      137.6,
+      36.8
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "ダム",
+    "source": "国土交通省"
+  },
+  {
+    "id": "kanamachi-purification",
+    "name": "金町浄水場",
+    "nameEn": "Kanamachi Purification Plant",
+    "type": "water",
+    "coordinates": [
+      139.8647,
+      35.7508
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "浄水場",
+    "source": "東京都水道局"
+  },
+  {
+    "id": "asaka-purification",
+    "name": "朝霞浄水場",
+    "nameEn": "Asaka Purification Plant",
+    "type": "water",
+    "coordinates": [
+      139.5986,
+      35.8025
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "浄水場",
+    "source": "東京都水道局"
+  },
+  {
+    "id": "misono-purification",
+    "name": "三園浄水場",
+    "nameEn": "Misono Purification Plant",
+    "type": "water",
+    "coordinates": [
+      139.6561,
+      35.7519
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "浄水場",
+    "source": "東京都水道局"
+  },
+  {
+    "id": "kitagawa-purification",
+    "name": "北川浄水場",
+    "nameEn": "Kitagawa Purification Plant",
+    "type": "water",
+    "coordinates": [
+      136.9528,
+      35.1878
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "浄水場",
+    "source": "名古屋市上下水道局"
+  },
+  {
+    "id": "kunijima-purification",
+    "name": "国島浄水場",
+    "nameEn": "Kunijima Purification Plant",
+    "type": "water",
+    "coordinates": [
+      135.5558,
+      34.7214
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "浄水場",
+    "source": "大阪市水道局"
+  },
+  {
+    "id": "hokusetsu-purification",
+    "name": "北摂浄水場",
+    "nameEn": "Hokusetsu Purification Plant",
+    "type": "water",
+    "coordinates": [
+      135.4969,
+      34.8092
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "浄水場",
+    "source": "大阪府水道部"
+  },
+  {
+    "id": "futtsu-thermal",
+    "name": "富津火力発電所",
+    "nameEn": "Futtsu Thermal Power Station",
+    "type": "energy",
+    "coordinates": [
+      139.8542,
+      35.2931
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "火力発電所",
+    "source": "JERA",
+    "capacity": "5,040MW",
+    "operator": "JERA"
+  },
+  {
+    "id": "kawasaki-thermal",
+    "name": "川崎火力発電所",
+    "nameEn": "Kawasaki Thermal Power Station",
+    "type": "energy",
+    "coordinates": [
+      139.7469,
+      35.5322
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "火力発電所",
+    "source": "JERA",
+    "capacity": "1,500MW",
+    "operator": "JERA"
+  },
+  {
+    "id": "anegasaki-thermal",
+    "name": "姉崎火力発電所",
+    "nameEn": "Anegasaki Thermal Power Station",
+    "type": "energy",
+    "coordinates": [
+      140.0642,
+      35.4656
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "火力発電所",
+    "source": "JERA",
+    "capacity": "3,600MW",
+    "operator": "JERA"
+  },
+  {
+    "id": "hekinan-thermal",
+    "name": "碧南火力発電所",
+    "nameEn": "Hekinan Thermal Power Station",
+    "type": "energy",
+    "coordinates": [
+      136.9772,
+      34.865
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "火力発電所",
+    "source": "JERA",
+    "capacity": "4,100MW",
+    "operator": "JERA"
+  },
+  {
+    "id": "yokkaichi-thermal",
+    "name": "四日市火力発電所",
+    "nameEn": "Yokkaichi Thermal Power Station",
+    "type": "energy",
+    "coordinates": [
+      136.6094,
+      34.9894
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "火力発電所",
+    "source": "JERA",
+    "capacity": "1,495MW",
+    "operator": "JERA"
+  },
+  {
+    "id": "nanko-thermal",
+    "name": "南港火力発電所",
+    "nameEn": "Nanko Thermal Power Station",
+    "type": "energy",
+    "coordinates": [
+      135.4328,
+      34.6344
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "火力発電所",
+    "source": "関西電力",
+    "capacity": "1,800MW",
+    "operator": "関西電力"
+  },
+  {
+    "id": "himeji-thermal",
+    "name": "姫路第一発電所",
+    "nameEn": "Himeji No.1 Power Station",
+    "type": "energy",
+    "coordinates": [
+      134.6328,
+      34.8247
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "火力発電所",
+    "source": "関西電力",
+    "capacity": "1,400MW",
+    "operator": "関西電力"
+  },
+  {
+    "id": "tachibana-thermal",
+    "name": "橘湾火力発電所",
+    "nameEn": "Tachibana Bay Power Station",
+    "type": "energy",
+    "coordinates": [
+      131.5625,
+      33.9533
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "火力発電所",
+    "source": "電源開発",
+    "capacity": "2,100MW",
+    "operator": "電源開発"
+  },
+  {
+    "id": "isogo-thermal",
+    "name": "磯子火力発電所",
+    "nameEn": "Isogo Thermal Power Station",
+    "type": "energy",
+    "coordinates": [
+      139.6319,
+      35.3986
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "火力発電所",
+    "source": "JERA",
+    "capacity": "1,200MW",
+    "operator": "JERA"
+  },
+  {
+    "id": "tomato-thermal",
+    "name": "苫東厚真発電所",
+    "nameEn": "Tomakomai-Atsuma Power Station",
+    "type": "energy",
+    "coordinates": [
+      141.9142,
+      42.7419
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "火力発電所",
+    "source": "北海道電力",
+    "capacity": "1,650MW",
+    "operator": "北海道電力"
+  },
+  {
+    "id": "tokyo-university",
+    "name": "東京大学本郷キャンパス",
+    "nameEn": "University of Tokyo Hongo Campus",
+    "type": "infrastructure",
+    "coordinates": [
+      139.7625,
+      35.7128
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "大学"
+  },
+  {
+    "id": "kyoto-university",
+    "name": "京都大学",
+    "nameEn": "Kyoto University",
+    "type": "infrastructure",
+    "coordinates": [
+      135.7803,
+      35.0261
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "大学"
+  },
+  {
+    "id": "tohoku-university",
+    "name": "東北大学",
+    "nameEn": "Tohoku University",
+    "type": "infrastructure",
+    "coordinates": [
+      140.8733,
+      38.2553
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "大学"
+  },
+  {
+    "id": "osaka-university",
+    "name": "大阪大学",
+    "nameEn": "Osaka University",
+    "type": "infrastructure",
+    "coordinates": [
+      135.5239,
+      34.8211
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "大学"
+  },
+  {
+    "id": "nagoya-university",
+    "name": "名古屋大学",
+    "nameEn": "Nagoya University",
+    "type": "infrastructure",
+    "coordinates": [
+      136.9656,
+      35.1547
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "大学"
+  },
+  {
+    "id": "hokkaido-university",
+    "name": "北海道大学",
+    "nameEn": "Hokkaido University",
+    "type": "infrastructure",
+    "coordinates": [
+      141.3406,
+      43.0747
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "大学"
+  },
+  {
+    "id": "kyushu-university",
+    "name": "九州大学",
+    "nameEn": "Kyushu University",
+    "type": "infrastructure",
+    "coordinates": [
+      130.4786,
+      33.5953
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "大学"
+  },
+  {
+    "id": "tokyo-tech",
+    "name": "東京工業大学",
+    "nameEn": "Tokyo Institute of Technology",
+    "type": "infrastructure",
+    "coordinates": [
+      139.6844,
+      35.605
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "大学"
+  },
+  {
+    "id": "tsukuba-university",
+    "name": "筑波大学",
+    "nameEn": "University of Tsukuba",
+    "type": "infrastructure",
+    "coordinates": [
+      140.1056,
+      36.1092
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "大学"
+  },
+  {
+    "id": "waseda-university",
+    "name": "早稲田大学",
+    "nameEn": "Waseda University",
+    "type": "infrastructure",
+    "coordinates": [
+      139.7192,
+      35.7094
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "大学"
+  },
+  {
+    "id": "tokyo-university-hospital",
+    "name": "東京大学医学部附属病院",
+    "nameEn": "University of Tokyo Hospital",
+    "type": "infrastructure",
+    "coordinates": [
+      139.7644,
+      35.7119
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "病院"
+  },
+  {
+    "id": "keio-university-hospital",
+    "name": "慶應義塾大学病院",
+    "nameEn": "Keio University Hospital",
+    "type": "infrastructure",
+    "coordinates": [
+      139.7381,
+      35.6525
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "病院"
+  },
+  {
+    "id": "osaka-university-hospital",
+    "name": "大阪大学医学部附属病院",
+    "nameEn": "Osaka University Hospital",
+    "type": "infrastructure",
+    "coordinates": [
+      135.5264,
+      34.6956
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "病院"
+  },
+  {
+    "id": "kyoto-university-hospital",
+    "name": "京都大学医学部附属病院",
+    "nameEn": "Kyoto University Hospital",
+    "type": "infrastructure",
+    "coordinates": [
+      135.7683,
+      35.0236
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "病院"
+  },
+  {
+    "id": "ncgm-hospital",
+    "name": "国立国際医療研究センター",
+    "nameEn": "National Center for Global Health and Medicine",
+    "type": "infrastructure",
+    "coordinates": [
+      139.7228,
+      35.7017
+    ],
+    "radiusKm": 0.3,
+    "zone": "yellow",
+    "category": "病院"
+  },
+  {
+    "id": "ministry-finance",
+    "name": "財務省",
+    "nameEn": "Ministry of Finance",
+    "type": "government",
+    "coordinates": [
+      139.7528,
+      35.6758
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "中央官庁"
+  },
+  {
+    "id": "ministry-education",
+    "name": "文部科学省",
+    "nameEn": "Ministry of Education, Culture, Sports, Science and Technology",
+    "type": "government",
+    "coordinates": [
+      139.7503,
+      35.6744
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "中央官庁"
+  },
+  {
+    "id": "ministry-health",
+    "name": "厚生労働省",
+    "nameEn": "Ministry of Health, Labour and Welfare",
+    "type": "government",
+    "coordinates": [
+      139.7531,
+      35.6739
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "中央官庁"
+  },
+  {
+    "id": "ministry-economy",
+    "name": "経済産業省",
+    "nameEn": "Ministry of Economy, Trade and Industry",
+    "type": "government",
+    "coordinates": [
+      139.75,
+      35.6728
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "中央官庁"
+  },
+  {
+    "id": "ministry-foreign",
+    "name": "外務省",
+    "nameEn": "Ministry of Foreign Affairs",
+    "type": "government",
+    "coordinates": [
+      139.7503,
+      35.675
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "中央官庁"
+  },
+  {
+    "id": "ministry-justice",
+    "name": "法務省",
+    "nameEn": "Ministry of Justice",
+    "type": "government",
+    "coordinates": [
+      139.7522,
+      35.6753
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "中央官庁"
+  },
+  {
+    "id": "ministry-agriculture",
+    "name": "農林水産省",
+    "nameEn": "Ministry of Agriculture, Forestry and Fisheries",
+    "type": "government",
+    "coordinates": [
+      139.7519,
+      35.6731
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "中央官庁"
+  },
+  {
+    "id": "ministry-environment",
+    "name": "環境省",
+    "nameEn": "Ministry of the Environment",
+    "type": "government",
+    "coordinates": [
+      139.7514,
+      35.6742
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "中央官庁"
+  },
+  {
+    "id": "cabinet-office",
+    "name": "内閣府",
+    "nameEn": "Cabinet Office",
+    "type": "government",
+    "coordinates": [
+      139.7433,
+      35.6742
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "中央官庁"
+  },
+  {
+    "id": "npa-headquarters",
+    "name": "警察庁",
+    "nameEn": "National Police Agency",
+    "type": "government",
+    "coordinates": [
+      139.7519,
+      35.6747
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "中央官庁"
+  },
+  {
+    "id": "tokyo-port",
+    "name": "東京港",
+    "nameEn": "Port of Tokyo",
+    "type": "infrastructure",
+    "coordinates": [
+      139.7686,
+      35.6331
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "港湾"
+  },
+  {
+    "id": "yokohama-port",
+    "name": "横浜港",
+    "nameEn": "Port of Yokohama",
+    "type": "infrastructure",
+    "coordinates": [
+      139.6414,
+      35.4436
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "港湾"
+  },
+  {
+    "id": "nagoya-port",
+    "name": "名古屋港",
+    "nameEn": "Port of Nagoya",
+    "type": "infrastructure",
+    "coordinates": [
+      136.8819,
+      35.0731
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "港湾"
+  },
+  {
+    "id": "osaka-port",
+    "name": "大阪港",
+    "nameEn": "Port of Osaka",
+    "type": "infrastructure",
+    "coordinates": [
+      135.4275,
+      34.6456
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "港湾"
+  },
+  {
+    "id": "kobe-port",
+    "name": "神戸港",
+    "nameEn": "Port of Kobe",
+    "type": "infrastructure",
+    "coordinates": [
+      135.1894,
+      34.6739
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "港湾"
+  },
+  {
+    "id": "hakata-port",
+    "name": "博多港",
+    "nameEn": "Port of Hakata",
+    "type": "infrastructure",
+    "coordinates": [
+      130.405,
+      33.5944
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "港湾"
+  },
+  {
+    "id": "chiba-port",
+    "name": "千葉港",
+    "nameEn": "Port of Chiba",
+    "type": "infrastructure",
+    "coordinates": [
+      140.08,
+      35.58
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "港湾"
+  },
+  {
+    "id": "kawasaki-port",
+    "name": "川崎港",
+    "nameEn": "Port of Kawasaki",
+    "type": "infrastructure",
+    "coordinates": [
+      139.7467,
+      35.5206
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "港湾"
+  },
+  {
+    "id": "shimonoseki-port",
+    "name": "下関港",
+    "nameEn": "Port of Shimonoseki",
+    "type": "infrastructure",
+    "coordinates": [
+      130.9344,
+      33.9564
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "港湾"
+  },
+  {
+    "id": "naha-port",
+    "name": "那覇港",
+    "nameEn": "Port of Naha",
+    "type": "infrastructure",
+    "coordinates": [
+      127.6622,
+      26.2111
+    ],
+    "radiusKm": 0.5,
+    "zone": "yellow",
+    "category": "港湾"
+  },
+  {
+    "id": "nic-headquarters",
+    "name": "日本銀行本店",
+    "nameEn": "Bank of Japan Headquarters",
+    "type": "government",
+    "coordinates": [
+      139.7736,
+      35.6883
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "金融機関"
+  },
+  {
+    "id": "tokyo-stock-exchange",
+    "name": "東京証券取引所",
+    "nameEn": "Tokyo Stock Exchange",
+    "type": "infrastructure",
+    "coordinates": [
+      139.7778,
+      35.6761
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "金融機関"
+  },
+  {
+    "id": "japan-post-hq",
+    "name": "日本郵政本社",
+    "nameEn": "Japan Post Holdings Headquarters",
+    "type": "infrastructure",
+    "coordinates": [
+      139.7633,
+      35.6789
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "企業本社"
+  },
+  {
+    "id": "jreast-headquarters",
+    "name": "JR東日本本社",
+    "nameEn": "JR East Headquarters",
+    "type": "infrastructure",
+    "coordinates": [
+      139.7664,
+      35.6803
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "企業本社"
+  },
+  {
+    "id": "tepco-headquarters",
+    "name": "東京電力ホールディングス本社",
+    "nameEn": "TEPCO Holdings Headquarters",
+    "type": "infrastructure",
+    "coordinates": [
+      139.7631,
+      35.6742
+    ],
+    "radiusKm": 0.2,
+    "zone": "yellow",
+    "category": "企業本社"
+  }
+]

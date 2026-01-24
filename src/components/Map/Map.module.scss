@@ -27,16 +27,16 @@
     bottom: -5px;
     left: 50%;
     transform: translateX(-50%);
-    text-align: center; 
+    text-align: center;
     width: 100%;
     max-width: 100px;
     margin: 0 auto;
     z-index: 1000;
-    position: absolute; 
+    position: absolute;
     display: flex;
     justify-content: center;
     align-items: flex-end;
-    gap: 4px; 
+    gap: 4px;
   }
 
   :global(.maplibregl-ctrl-attrib) {
@@ -88,7 +88,7 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: #3B82F6; // デフォルト: 青（セーフティゾーン - Tailwind blue-500）
+  background: #3b82f6; // デフォルト: 青（セーフティゾーン - Tailwind blue-500）
   color: white;
   font-size: 12px;
   font-weight: bold;
@@ -96,7 +96,10 @@
   border: 2px solid white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 
   &:hover {
     transform: scale(1.2);
@@ -104,23 +107,27 @@
   }
 
   &.gridMarker {
-    background: #4ECDC4;
+    background: #4ecdc4;
     width: 22px;
     height: 22px;
     font-size: 12px;
   }
 
   &.selected {
-    border-color: #FFD700;
+    border-color: #ffd700;
     border-width: 3px;
-    box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.4);
+    box-shadow:
+      0 0 0 4px rgba(255, 215, 0, 0.5),
+      0 4px 12px rgba(0, 0, 0, 0.4);
     transform: scale(1.1);
   }
 
   &.highlighted {
-    border-color: #00BFFF;
+    border-color: #00bfff;
     border-width: 3px;
-    box-shadow: 0 0 0 6px rgba(0, 191, 255, 0.6), 0 0 20px rgba(0, 191, 255, 0.8);
+    box-shadow:
+      0 0 0 6px rgba(0, 191, 255, 0.6),
+      0 0 20px rgba(0, 191, 255, 0.8);
     transform: scale(1.3);
     animation: highlightPulse 0.8s ease-in-out infinite;
     z-index: 1000 !important;
@@ -128,88 +135,121 @@
 
   // DID（人口集中地区）内のWP - 赤色で警告表示
   &.inDID {
-    background: #FF4444;
-    border-color: #CC0000;
-    box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.4), 0 4px 12px rgba(255, 0, 0, 0.3);
+    background: #ff4444;
+    border-color: #cc0000;
+    box-shadow:
+      0 0 0 3px rgba(255, 68, 68, 0.4),
+      0 4px 12px rgba(255, 0, 0, 0.3);
     animation: didPulse 2s ease-in-out infinite;
   }
 
   // 空港/禁止など他の警告が優先表示されていても、DIDであることが分かるようにリングを追加
   &.didRing::after {
-    content: '';
+    content: "";
     position: absolute;
     inset: -4px;
     border-radius: 50%;
     border: 2px solid rgba(255, 68, 68, 0.95);
-    box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.18), 0 0 14px rgba(255, 68, 68, 0.35);
+    box-shadow:
+      0 0 0 2px rgba(255, 68, 68, 0.18),
+      0 0 14px rgba(255, 68, 68, 0.35);
     pointer-events: none;
     animation: didRingPulse 2s ease-in-out infinite;
   }
 
   // 空港制限区域内のWP - 紫色 (Tailwind purple-500)
   &.inAirport {
-    background: #A855F7;
-    border-color: #9333EA;
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.4), 0 4px 12px rgba(168, 85, 247, 0.3);
+    background: #a855f7;
+    border-color: #9333ea;
+    box-shadow:
+      0 0 0 3px rgba(168, 85, 247, 0.4),
+      0 4px 12px rgba(168, 85, 247, 0.3);
     animation: airportPulse 2s ease-in-out infinite;
   }
 
   // 飛行禁止区域内のWP - 紫色
   &.inProhibited {
-    background: #9932CC;
-    border-color: #7B28A0;
-    box-shadow: 0 0 0 3px rgba(153, 50, 204, 0.4), 0 4px 12px rgba(153, 50, 204, 0.3);
+    background: #9932cc;
+    border-color: #7b28a0;
+    box-shadow:
+      0 0 0 3px rgba(153, 50, 204, 0.4),
+      0 4px 12px rgba(153, 50, 204, 0.3);
     animation: prohibitedPulse 1.5s ease-in-out infinite;
   }
 }
 
 @keyframes didPulse {
-  0%, 100% {
-    box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.4), 0 4px 12px rgba(255, 0, 0, 0.3);
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(255, 68, 68, 0.4),
+      0 4px 12px rgba(255, 0, 0, 0.3);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(255, 68, 68, 0.6), 0 4px 20px rgba(255, 0, 0, 0.5);
+    box-shadow:
+      0 0 0 6px rgba(255, 68, 68, 0.6),
+      0 4px 20px rgba(255, 0, 0, 0.5);
   }
 }
 
 @keyframes didRingPulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.85;
-    box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.18), 0 0 14px rgba(255, 68, 68, 0.35);
+    box-shadow:
+      0 0 0 2px rgba(255, 68, 68, 0.18),
+      0 0 14px rgba(255, 68, 68, 0.35);
   }
   50% {
     transform: scale(1.08);
     opacity: 1;
-    box-shadow: 0 0 0 5px rgba(255, 68, 68, 0.25), 0 0 22px rgba(255, 68, 68, 0.55);
+    box-shadow:
+      0 0 0 5px rgba(255, 68, 68, 0.25),
+      0 0 22px rgba(255, 68, 68, 0.55);
   }
 }
 
 @keyframes airportPulse {
-  0%, 100% {
-    box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.4), 0 4px 12px rgba(255, 140, 0, 0.3);
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(255, 140, 0, 0.4),
+      0 4px 12px rgba(255, 140, 0, 0.3);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(255, 140, 0, 0.6), 0 4px 20px rgba(255, 140, 0, 0.5);
+    box-shadow:
+      0 0 0 6px rgba(255, 140, 0, 0.6),
+      0 4px 20px rgba(255, 140, 0, 0.5);
   }
 }
 
 @keyframes prohibitedPulse {
-  0%, 100% {
-    box-shadow: 0 0 0 3px rgba(153, 50, 204, 0.4), 0 4px 12px rgba(153, 50, 204, 0.3);
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(153, 50, 204, 0.4),
+      0 4px 12px rgba(153, 50, 204, 0.3);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(153, 50, 204, 0.7), 0 4px 24px rgba(153, 50, 204, 0.6);
+    box-shadow:
+      0 0 0 8px rgba(153, 50, 204, 0.7),
+      0 4px 24px rgba(153, 50, 204, 0.6);
   }
 }
 
 @keyframes highlightPulse {
-  0%, 100% {
-    box-shadow: 0 0 0 6px rgba(0, 191, 255, 0.6), 0 0 20px rgba(0, 191, 255, 0.8);
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 6px rgba(0, 191, 255, 0.6),
+      0 0 20px rgba(0, 191, 255, 0.8);
     transform: scale(1.3);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(0, 191, 255, 0.3), 0 0 30px rgba(0, 191, 255, 0.5);
+    box-shadow:
+      0 0 0 10px rgba(0, 191, 255, 0.3),
+      0 0 30px rgba(0, 191, 255, 0.5);
     transform: scale(1.5);
   }
 }
@@ -228,7 +268,9 @@
   border: 3px solid white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 
   &:hover {
     transform: scale(1.15);
@@ -243,7 +285,9 @@
     }
 
     &:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 4px rgba(245, 158, 11, 0.3);
+      box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.3),
+        0 0 0 4px rgba(245, 158, 11, 0.3);
     }
   }
 }
@@ -251,7 +295,7 @@
 .selectionBox {
   position: absolute;
   background: rgba(69, 183, 209, 0.2);
-  border: 2px dashed #45B7D1;
+  border: 2px dashed #45b7d1;
   pointer-events: none;
   z-index: 100;
 }
@@ -295,38 +339,48 @@
 
 .mapControls {
   position: absolute;
-  top: 100px;
+  top: 10px;
   right: 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  max-width: 220px; // 幅をさらに20%削減
+
+  // グループ間のスペースを少し広く
+  > * {
+    &:not(:last-child) {
+      margin-bottom: 2px;
+    }
+  }
 }
 
 .toggleButton {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 36px;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
   height: 36px;
-  padding: 0;
+  padding: 0 10px 0 8px;
   font-size: 12px;
-  font-weight: bold;
+  font-weight: 500;
   color: var(--color-text);
-  background: rgba(var(--color-bg-elevated-rgb), 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: none;
-  border-radius: 4px;
+  background: rgba(var(--color-bg-elevated-rgb), 0.75);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
   box-shadow: var(--shadow-md);
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  transition: all 0.2s;
 
   &:hover {
     background: var(--color-bg-tertiary);
+    transform: translateX(-2px);
   }
 
   &.active {
-    background: #45B7D1;
+    background: #45b7d1;
     color: white;
   }
 }
@@ -335,7 +389,7 @@
   margin-bottom: 8px;
   background: var(--color-bg-secondary);
   color: var(--color-text-secondary);
-  
+
   &:hover {
     background: var(--color-bg-tertiary);
     color: var(--color-text);
@@ -343,11 +397,11 @@
 }
 
 .buttonLabel {
-  display: none;
-  margin-left: 8px;
-  font-size: 13px;
+  display: inline-block;
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .controlsExpanded {
@@ -365,7 +419,7 @@
     font-size: 13px;
     opacity: 0.9;
   }
-  
+
   .expanderButton {
     justify-content: space-between;
     background: var(--color-primary-bg);
@@ -442,13 +496,39 @@
   color: white;
 }
 
+// 新しい禁止区域カテゴリーのスタイル
+.toggleButton.activeNuclear {
+  background: #ff00ff;
+  color: white;
+}
+
+.toggleButton.activePrefecture {
+  background: #ff6600;
+  color: white;
+}
+
+.toggleButton.activePolice {
+  background: #0066ff;
+  color: white;
+}
+
+.toggleButton.activePrison {
+  background: #666666;
+  color: white;
+}
+
+.toggleButton.activeJSDF {
+  background: #00cc00;
+  color: white;
+}
+
 .toggleButton.activeCrosshair {
   background: #e53935;
   color: white;
 }
 
 .toggleButton.disabled {
-  opacity: 0.4;
+  opacity: 0.65;
   cursor: not-allowed;
   pointer-events: none;
 }
@@ -458,13 +538,19 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 // 地図スタイルピッカー
 .stylePickerContainer {
   position: relative;
+  width: 100%;
 }
 
 .stylePicker {
@@ -698,12 +784,17 @@
   }
 
   @keyframes highlightPulse {
-    0%, 100% {
-      box-shadow: 0 0 0 4px rgba(0, 191, 255, 0.6), 0 0 15px rgba(0, 191, 255, 0.8);
+    0%,
+    100% {
+      box-shadow:
+        0 0 0 4px rgba(0, 191, 255, 0.6),
+        0 0 15px rgba(0, 191, 255, 0.8);
       transform: scale(1.2);
     }
     50% {
-      box-shadow: 0 0 0 8px rgba(0, 191, 255, 0.3), 0 0 25px rgba(0, 191, 255, 0.5);
+      box-shadow:
+        0 0 0 8px rgba(0, 191, 255, 0.3),
+        0 0 25px rgba(0, 191, 255, 0.5);
       transform: scale(1.3);
     }
   }
@@ -861,18 +952,23 @@
 // =============================================================================
 
 .controlsGroup {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 6px;
   position: relative; // Ensure stacking context
+  width: 100%;
 
   // Mobile hidden state - use specific selector instead of !important
   &.hidden {
     display: none;
   }
+
+  // すべての直下の子要素を統一幅に
+  > * {
+    width: 100%;
+    min-width: 0; // Grid overflow対策
+  }
 }
-
-
 
 .mobileToggle {
   background: var(--color-primary);

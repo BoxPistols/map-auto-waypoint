@@ -1,3 +1,7 @@
+:root {
+  --tooltip-delay: 2s;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -577,7 +581,7 @@ body {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
+    transition: opacity 0.2s ease var(--tooltip-delay), visibility 0.2s ease var(--tooltip-delay);
     z-index: 9999;
   }
 
@@ -590,11 +594,14 @@ body {
     font-size: 12px;
     font-weight: 500;
     color: white;
-    background: rgba(30, 30, 30, 0.95);
+    background: rgba(30, 30, 30, 0.75);
+    backdrop-filter: blur(8px);
     border-radius: 6px;
-    white-space: nowrap;
-    max-width: 250px;
-    text-overflow: ellipsis;
+    white-space: normal;
+    min-width: 120px;
+    max-width: 280px;
+    word-wrap: break-word;
+    text-align: left;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
@@ -620,6 +627,10 @@ body {
       left: calc(100% + 8px);
       top: 50%;
       transform: translateY(-50%);
+      min-width: 120px;
+      max-width: 280px;
+      white-space: normal;
+      word-wrap: break-word;
     }
     &::after {
       bottom: auto;
@@ -638,6 +649,10 @@ body {
       right: calc(100% + 8px);
       top: 50%;
       transform: translateY(-50%);
+      min-width: 120px;
+      max-width: 280px;
+      white-space: normal;
+      word-wrap: break-word;
     }
     &::after {
       bottom: auto;
