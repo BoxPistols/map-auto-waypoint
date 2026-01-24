@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import styles from './FacilityPopup.module.scss'
 
@@ -53,6 +54,44 @@ const getZoneInfo = (zone) => {
  * @param {Function} onClose - 閉じるボタンのコールバック
  */
 const FacilityPopup = ({ facility, screenX, screenY, onClose }) => {
+  const popupRef = useRef(null)
+  const [position, setPosition] = useState({ left: screenX, top: screenY })
+
+  // propsの更新に合わせて初期位置をリセット
+  useEffect(() => {
+    setPosition({ left: screenX, top: screenY })
+  }, [screenX, screenY])
+
+  // 画面端の検出と位置調整
+  useEffect(() => {
+    if (popupRef.current && facility) {
+      const rect = popupRef.current.getBoundingClientRect()
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+
+      let left = screenX
+      let top = screenY
+
+      // 右端からはみ出る場合
+      if (left + rect.width > viewportWidth) {
+        left = viewportWidth - rect.width - 20
+      }
+      
+      // 左端からはみ出る場合
+      if (left < 10) left = 10
+
+      // 下端からはみ出る場合
+      if (top + rect.height > viewportHeight) {
+        top = viewportHeight - rect.height - 20
+      }
+
+      // 上端からはみ出る場合
+      if (top < 10) top = 10
+
+      setPosition({ left, top })
+    }
+  }, [screenX, screenY, facility])
+
   if (!facility) return null
 
   const statusInfo = facility.operationalStatus ? getOperationalStatusInfo(facility.operationalStatus) : null
@@ -60,10 +99,11 @@ const FacilityPopup = ({ facility, screenX, screenY, onClose }) => {
 
   return (
     <div
+      ref={popupRef}
       className={styles.facilityPopup}
       style={{
-        left: `${screenX}px`,
-        top: `${screenY}px`
+        left: `${position.left}px`,
+        top: `${position.top}px`
       }}
     >
       <div className={styles.header}>
