@@ -54,95 +54,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * 基本的なグループ（展開/折りたたみのみ）
- */
-export const Basic: Story = {
-  args: {
-    id: 'basic-group',
-    icon: <ShieldAlert size={18} />,
-    label: '基本グループ',
-    defaultExpanded: true,
-    children: (
-      <>
-        <button style={{ padding: '8px', margin: '4px 0', width: '100%' }}>
-          オプション1
-        </button>
-        <button style={{ padding: '8px', margin: '4px 0', width: '100%' }}>
-          オプション2
-        </button>
-      </>
-    ),
-  },
-}
-
-/**
- * グループトグル機能付き
- */
-export const WithGroupToggle: Story = {
-  render: (args) => {
-    const [enabled, setEnabled] = useState(false)
-    return (
-      <ControlGroup
-        {...args}
-        groupEnabled={enabled}
-        onGroupToggle={setEnabled}
-      />
-    )
-  },
-  args: {
-    id: 'toggle-group',
-    icon: <Plane size={18} />,
-    label: '航空制限',
-    defaultExpanded: true,
-    groupToggle: true,
-    children: (
-      <>
-        <button style={{ padding: '8px', margin: '4px 0', width: '100%' }}>
-          空港エリア
-        </button>
-        <button style={{ padding: '8px', margin: '4px 0', width: '100%' }}>
-          ヘリポート
-        </button>
-      </>
-    ),
-  },
-}
-
-/**
- * お気に入り機能付き
- */
-export const WithFavorite: Story = {
-  render: (args) => {
-    const [favorite, setFavorite] = useState(false)
-    return (
-      <ControlGroup
-        {...args}
-        isFavorite={favorite}
-        onFavoriteToggle={setFavorite}
-      />
-    )
-  },
-  args: {
-    id: 'favorite-group',
-    icon: <Users size={18} />,
-    label: '環境',
-    defaultExpanded: true,
-    favoritable: true,
-    children: (
-      <>
-        <button style={{ padding: '8px', margin: '4px 0', width: '100%' }}>
-          DID
-        </button>
-        <button style={{ padding: '8px', margin: '4px 0', width: '100%' }}>
-          地形
-        </button>
-      </>
-    ),
-  },
-}
-
-/**
- * 全機能有効（グループトグル + お気に入り）
+ * 全機能有効（グループトグル + お気に入り + 開閉）
  */
 export const FullFeatured: Story = {
   render: (args) => {
@@ -180,14 +92,6 @@ export const FullFeatured: Story = {
     ),
   },
 }
-
-/**
- * 折りたたみ状態
- */
-export const Collapsed: Story = {
-  args: {
-    id: 'collapsed-group',
-    icon: <Signal size={18} />,
 
 /**
  * 部分的選択状態（Indeterminate）
@@ -231,20 +135,6 @@ export const Indeterminate: Story = {
         story: 'グループ内の一部のレイヤーのみがONの場合、チェックボックスが部分選択状態（ハイフンマーク）になります。',
       },
     },
-  },
-}
-    label: '通信カバレッジ',
-    defaultExpanded: false,
-    children: (
-      <>
-        <button style={{ padding: '8px', margin: '4px 0', width: '100%' }}>
-          LTE
-        </button>
-        <button style={{ padding: '8px', margin: '4px 0', width: '100%' }}>
-          5G
-        </button>
-      </>
-    ),
   },
 }
 
