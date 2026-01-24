@@ -78,3 +78,62 @@ export const Basic: Story = {
     ),
   ],
 }
+
+/**
+ * インタラクティブなデモ
+ * 実際に右クリックでメニューを表示できます。
+ */
+const InteractiveDemo = () => {
+  const [menuState, setMenuState] = useState({ isOpen: false, x: 0, y: 0 })
+  const [lastAction, setLastAction] = useState<string | null>(null)
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setMenuState({ isOpen: true, x: e.clientX, y: e.clientY })
+  }
+
+  return (
+    <div
+      style={{
+        minWidth: '500px',
+        minHeight: '300px',
+        background: '#e5e7eb',
+        borderRadius: '8px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '16px',
+      }}
+      onContextMenu={handleContextMenu}
+    >
+      <p style={{ color: '#666' }}>この領域で右クリックしてメニューを表示</p>
+      {lastAction && (
+        <p style={{ color: '#10b981', fontWeight: 'bold' }}>
+          実行されたアクション: {lastAction}
+        </p>
+      )}
+      <ContextMenu
+        isOpen={menuState.isOpen}
+        position={{ x: menuState.x, y: menuState.y }}
+        menuItems={basicMenuItems}
+        onClose={() => setMenuState(prev => ({ ...prev, isOpen: false }))}
+        onAction={(action) => {
+          setLastAction(action)
+          setMenuState(prev => ({ ...prev, isOpen: false }))
+        }}
+      />
+    </div>
+  )
+}
+
+export const Interactive: Story = {
+  render: () => <InteractiveDemo />,
+  parameters: {
+    docs: {
+      description: {
+        story: '実際に右クリックでメニューを表示できるインタラクティブなデモです。',
+      },
+    },
+  },
+}
