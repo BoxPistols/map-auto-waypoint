@@ -1,0 +1,531 @@
+# レンダリングパフォーマンス最適化ガイド
+
+このドキュメントでは、ドローン飛行禁止区域マップアプリケーションで実装されているレンダリングパフォーマンス最適化について解説します。
+
+## 目次
+
+1. [概要](#概要)
+2. [React レベルの最適化](#react-レベルの最適化)
+3. [MapLibre GL JS の最適化](#maplibre-gl-js-の最適化)
+4. [データサービスの最適化](#データサービスの最適化)
+5. [キャッシング戦略](#キャッシング戦略)
+6. [処理フロー](#処理フロー)
+7. [パフォーマンスメトリクス](#パフォーマンスメトリクス)
+
+---
+
+## 概要
+
+本アプリケーションは486以上の施設データ、150以上の空港データ、動的な制限表面タイルを同時に描画する必要があります。これを高速に処理するため、以下の3層で最適化を実施しています。
+
+| レイヤー | 最適化手法 |
+|----------|------------|
+| React | useMemo, useCallback, 条件付きレンダリング |
+| MapLibre GL | Data-driven styling, フィルター式, GPU処理 |
+| データサービス | 遅延読み込み, タイルキャッシュ, リクエスト統合 |
+
+---
+
+## React レベルの最適化
+
+### 1. GeoJSON データのメモ化
+
+**ファイル**: `src/components/Map/Map.jsx` (行 494-512)
+
+大量のGeoJSONデータ生成は計算コストが高いため、`useMemo` で初回レンダリング時のみ実行します。
+
+```javascript
+// 空港ゾーンなど複数のGeoJSONデータをmemoize
+const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
+const redZonesGeoJSON = useMemo(() => getRedZonesGeoJSON(), [])
+const yellowZonesGeoJSON = useMemo(() => getYellowZonesGeoJSON(), [])
+const heliportsGeoJSON = useMemo(() => getHeliportsGeoJSON(), [])
+
+// UTMレイヤー
+const emergencyAirspaceGeoJSON = useMemo(() => getEmergencyAirspaceGeoJSON(), [])
+const remoteIdZonesGeoJSON = useMemo(() => getRemoteIdZonesGeoJSON(), [])
+
+// 禁止区域カテゴリー別
+const nuclearPlantsGeoJSON = useMemo(() => generateNuclearPlantsGeoJSON(), [])
+const prefecturesGeoJSON = useMemo(() => generatePrefecturesGeoJSON(), [])
+const policeFacilitiesGeoJSON = useMemo(() => generatePoliceFacilitiesGeoJSON(), [])
+```
+
+**ポイント**:
+- 依存配列 `[]` → 初回レンダリング時のみ実行
+- マップ再レンダリング時の無駄な再計算を回避
+
+### 2. レイヤー設定配列のメモ化（データ駆動型）
+
+**ファイル**: `src/components/Map/Map.jsx` (行 515-700)
+
+複数レイヤーの設定を1つの配列にまとめ、表示フラグ変更時のみ再計算します。
+
+```javascript
+const geoJsonLayerConfigs = useMemo(() => [
+  {
+    id: 'nuclear-plants',
+    show: layerVisibility.showNuclearPlants,
+    data: nuclearPlantsGeoJSON,
+    fillColor: [
+      'match',
+      ['get', 'operationalStatus'],
+      'operational', '#dc2626',      // 稼働中: 赤
+      'stopped', '#f97316',          // 停止中: オレンジ
+      'decommissioning', '#eab308',  // 廃炉中: 黄色
+      'decommissioned', '#6b7280',   // 廃炉済: グレー
+      '#9333ea'                      // デフォルト
+    ],
+    fillOpacity: 0.35,
+  },
+  // ... 他のレイヤー設定
+], [
+  layerVisibility.showNuclearPlants,
+  nuclearPlantsGeoJSON,
+  // ... 依存配列
+])
+```
+
+### 3. イベントハンドラーのメモ化
+
+**ファイル**: `src/components/Map/Map.jsx` (行 290-320)
+
+子コンポーネントへの関数参照を安定化し、不要な再レンダリングを防止します。
+
+```javascript
+const toggleLayer = useCallback((layerKey) => {
+  setLayerVisibility(prev => ({
+    ...prev,
+    [layerKey]: !prev[layerKey]
+  }))
+}, [])
+
+const toggleGroupLayers = useCallback((layerKeys, enabled) => {
+  setLayerVisibility(prev => {
+    const updates = {}
+    layerKeys.forEach(key => {
+      updates[key] = enabled
+    })
+    return { ...prev, ...updates }
+  })
+}, [])
+```
+
+### 4. 条件付きレンダリング
+
+**ファイル**: `src/components/Map/Map.jsx` (行 1394-1643)
+
+表示フラグに応じてSource/LayerをDOMから完全に削除し、MapLibre GLに渡すデータ量を削減します。
+
+```javascript
+{/* 空港制限区域 - 表示時のみマウント */}
+{isAirportOverlayEnabled && !restrictionSurfacesData && (
+  <Source id="airport-zones" type="geojson" data={airportZonesGeoJSON}>
+    <Layer id="airport-zones-fill" type="fill" paint={{...}} />
+    <Layer id="airport-zones-outline" type="line" paint={{...}} />
+    <Layer id="airport-zones-label" type="symbol" layout={{...}} />
+  </Source>
+)}
+
+{/* 複数レイヤーのデータ駆動型レンダリング */}
+{geoJsonLayerConfigs.map(config => config.show && (
+  <Source key={config.id} id={config.id} type="geojson" data={config.data}>
+    <Layer id={`${config.id}-fill`} type="fill" paint={{...}} />
+    <Layer id={`${config.id}-outline`} type="line" paint={{...}} />
+    <Layer id={`${config.id}-label`} type="symbol" layout={{...}} />
+  </Source>
+))}
+```
+
+---
+
+## MapLibre GL JS の最適化
+
+### 1. Data-Driven Styling（GPU処理）
+
+**ファイル**: `src/components/Map/Map.jsx` (行 520-560)
+
+CPU側で条件判定を行わず、MapLibre GLのスタイル式でGPU側での高速処理を実現します。
+
+```javascript
+fillColor: [
+  'match',
+  ['get', 'operationalStatus'],
+  'operational', '#dc2626',
+  'stopped', '#f97316',
+  'decommissioning', '#eab308',
+  'decommissioned', '#6b7280',
+  '#9333ea'
+]
+```
+
+**メリット**:
+- CPU での条件判定が不要
+- スタイル定義を一度だけGPUに送信
+- 複数フィーチャーに自動適用
+
+### 2. フィルター式によるレイヤーフィルタリング
+
+**ファイル**: `src/components/Map/Map.jsx` (行 1688-1744)
+
+```javascript
+<Layer
+  id="optimization-lines"
+  type="line"
+  filter={['==', ['get', 'type'], 'optimization-line']}
+  paint={{
+    'line-color': '#10b981',
+    'line-width': 3,
+    'line-dasharray': [3, 2]
+  }}
+/>
+
+<Layer
+  id="zone-warning-points"
+  type="circle"
+  filter={['==', ['get', 'type'], 'zone-warning-point']}
+  paint={{
+    'circle-radius': 18,
+    'circle-stroke-color': [
+      'case',
+      ['==', ['get', 'warningType'], 'prohibited'], '#9932CC',
+      ['==', ['get', 'warningType'], 'airport'], '#FF8C00',
+      '#FF4444' // DID
+    ],
+    'circle-stroke-width': 3
+  }}
+/>
+```
+
+### 3. インタラクティブレイヤーの限定
+
+**ファイル**: `src/components/Map/Map.jsx` (行 1344-1377)
+
+クリック可能なレイヤーを明示的に限定し、イベント処理を高速化します。
+
+```javascript
+const interactiveLayerIds = [
+  'polygon-fill',
+  'nuclear-plants-fill',
+  'prefectures-fill',
+  'police-fill',
+  'prisons-fill',
+  'jsdf-fill',
+  'red-zones-fill',
+  'yellow-zones-fill'
+]
+
+<MapGL
+  ref={mapRef}
+  {...viewState}
+  interactiveLayerIds={interactiveLayerIds}
+  maxZoom={20}
+  dragPan={!isSelecting}
+  attributionControl={false}
+>
+```
+
+---
+
+## データサービスの最適化
+
+### 1. 施設データの段階的フィルタリング
+
+**ファイル**: `src/lib/services/noFlyZones.ts`
+
+486以上の施設データを効率的に処理するため、段階的にフィルタリングします。
+
+```typescript
+// 1. すべての施設を読み込み（初回のみ）
+export const NO_FLY_FACILITIES: NoFlyFacility[] = noFlyFacilitiesData
+
+// 2. ゾーン別フィルタリング
+export function getFacilitiesByZone(zone: 'red' | 'yellow'): NoFlyFacility[] {
+  return NO_FLY_FACILITIES.filter((f) => f.zone === zone)
+}
+
+// 3. 型別フィルタリング
+export function getFacilitiesByType(type: FacilityType): NoFlyFacility[] {
+  return NO_FLY_FACILITIES.filter((f) => f.type === type)
+}
+
+// 4. GeoJSON生成時に円形ポリゴン化
+export function generateRedZoneGeoJSON(): GeoJSON.FeatureCollection {
+  const facilities = getFacilitiesByZone('red')
+  const features = facilities.map((facility) => ({
+    type: 'Feature',
+    properties: { /* 必要なプロパティのみ */ },
+    geometry: createCirclePolygon(facility.coordinates, facility.radiusKm)
+  }))
+  return { type: 'FeatureCollection', features }
+}
+```
+
+### 2. 制限表面の遅延読み込み
+
+**ファイル**: `src/components/Map/Map.jsx` (行 395-450)
+
+表示範囲が変更された時のみデータを取得し、複数の制御で過負荷を防止します。
+
+```javascript
+useEffect(() => {
+  if (!isAirportOverlayEnabled || !isMapReady || !mapRef.current) {
+    setRestrictionSurfacesData(null)
+    return
+  }
+
+  const fetchSurfaces = async () => {
+    const map = mapRef.current?.getMap()
+    const bounds = map.getBounds()
+    const zoom = map.getZoom()
+
+    // 制御1: ズームレベルが低すぎる場合はスキップ
+    if (zoom < 8) {
+      setRestrictionSurfacesData(null)
+      return
+    }
+
+    const range = getVisibleTileRange(bounds, KOKUAREA_TILE_ZOOM)
+
+    // 制御2: タイル数が多すぎる場合はスキップ
+    if (range.count > KOKUAREA_MAX_TILES) {  // 64タイルまで
+      setRestrictionSurfacesData(null)
+      return
+    }
+
+    // 制御3: 同じ範囲なら再取得しない
+    const rangeKey = `${range.z}:${range.xMin}-${range.xMax}:${range.yMin}-${range.yMax}`
+    if (lastRestrictionSurfaceKey.current === rangeKey) {
+      return
+    }
+    lastRestrictionSurfaceKey.current = rangeKey
+
+    const data = await fetchRestrictionSurfaceTiles(bounds, zoom)
+    setRestrictionSurfacesData(data)
+  }
+
+  fetchSurfaces()
+
+  // 制御4: デバウンス（500ms）
+  const handleMoveEnd = () => {
+    if (timeoutId) clearTimeout(timeoutId)
+    timeoutId = setTimeout(fetchSurfaces, 500)
+  }
+
+  map.on('moveend', handleMoveEnd)
+  return () => map.off('moveend', handleMoveEnd)
+}, [isAirportOverlayEnabled, isMapReady])
+```
+
+**4つの制御ポイント**:
+
+| 制御 | 条件 | 効果 |
+|------|------|------|
+| ズームレベル | < 8 | 広域表示時のデータ取得を回避 |
+| タイル数 | > 64 | 大量タイルリクエストを回避 |
+| 範囲キャッシュ | 同一範囲 | 重複リクエストを回避 |
+| デバウンス | 500ms | 連続移動時のリクエスト抑制 |
+
+---
+
+## キャッシング戦略
+
+### 1. GeoJSON生成キャッシュ（useMemo）
+
+| キャッシュ対象 | 依存配列 | 再計算トリガー |
+|---|---|---|
+| airportZonesGeoJSON | `[]` | なし（初回のみ） |
+| redZonesGeoJSON | `[]` | なし |
+| yellowZonesGeoJSON | `[]` | なし |
+| geoJsonLayerConfigs | `[layerVisibility.show*, ...GeoJSONs]` | レイヤー表示フラグ変更時 |
+| optimizedRouteGeoJSON | `[optimizedRoute]` | 最適化ルート変更時 |
+
+### 2. 制限表面タイルのLRUキャッシュ
+
+**ファイル**: `src/lib/services/restrictionSurfaces.ts` (行 127-202)
+
+```typescript
+const MAX_TILE_CACHE = 200
+const tileFeatureCache = new Map<string, RestrictionSurfaceFeature[]>()
+const inflightTileRequests = new Map<string, Promise<RestrictionSurfaceFeature[]>>()
+
+const fetchRestrictionSurfaceTile = async (tile) => {
+  const key = `${tile.z}/${tile.x}/${tile.y}`
+
+  // 1. キャッシュ確認
+  const cached = tileFeatureCache.get(key)
+  if (cached) return cached
+
+  // 2. 同時リクエスト中なら待機（重複回避）
+  const inflight = inflightTileRequests.get(key)
+  if (inflight) return inflight
+
+  // 3. 新規リクエスト
+  const request = (async () => {
+    const response = await fetch(buildKokuareaTileUrl(tile.z, tile.x, tile.y))
+    const geojson = await response.json()
+    return geojson.features.map(enrichRestrictionSurfaceFeature)
+  })()
+
+  inflightTileRequests.set(key, request)
+  const features = await request
+  inflightTileRequests.delete(key)
+
+  // 4. LRUキャッシュに保存（古いエントリを削除）
+  if (tileFeatureCache.size >= MAX_TILE_CACHE) {
+    const oldestKey = tileFeatureCache.keys().next().value
+    tileFeatureCache.delete(oldestKey)
+  }
+  tileFeatureCache.set(key, features)
+
+  return features
+}
+```
+
+**キャッシュ戦略のポイント**:
+- **LRUキャッシュ**: 最大200タイルを保持
+- **インフライトリクエスト統合**: 同じタイルへの重複リクエストを1つのPromiseで統合
+- **エラー時のグレースフル処理**: 空配列を返してレンダリング継続
+
+### 3. localStorage による設定永続化
+
+**ファイル**: `src/utils/storage.js`
+
+```javascript
+const DEFAULT_MAP_SETTINGS = {
+  is3D: false,
+  showDID: false,
+  showAirportZones: false,
+  showRestrictionSurfaces: false,
+  showRedZones: false,
+  showYellowZones: false,
+  showHeliports: false,
+  // ... 15以上のフラグ
+}
+
+export const saveMapSettings = (settings) => {
+  localStorage.setItem('drone_waypoint_map_settings', JSON.stringify(settings))
+}
+
+export const loadMapSettings = () => {
+  const data = localStorage.getItem('drone_waypoint_map_settings')
+  return data ? JSON.parse(data) : DEFAULT_MAP_SETTINGS
+}
+```
+
+**効果**:
+- ページリロード後のレイヤー状態復元
+- 不要な初期レイヤー読み込みを回避
+
+---
+
+## 処理フロー
+
+### レイヤー表示時の処理フロー
+
+```
+ユーザーが「空港制限区域」トグルをON
+         ↓
+toggleLayer('showAirportZones') → setLayerVisibility
+         ↓
+layerVisibility 更新 → useEffect トリガー
+         ↓
+fetchRestrictionSurfaceTiles() 呼び出し
+         ↓
+┌─────────────────────────────────────┐
+│ getVisibleTileRange() で表示範囲判定  │
+│ - ズームレベル < 8 ならスキップ       │
+│ - タイル数 > 64 ならスキップ          │
+└─────────────────────────────────────┘
+         ↓
+キャッシュ確認
+├─ tileFeatureCache に存在 → 即座に返す
+├─ inflightRequests に存在 → await
+└─ キャッシュなし → fetch + キャッシュ保存
+         ↓
+setRestrictionSurfacesData(data)
+         ↓
+JSX で条件付きレンダリング
+{isAirportOverlayEnabled && restrictionSurfacesData && (
+  <Source> + <Layer> × 3 (fill/outline/label)
+)}
+         ↓
+MapLibre GL が GPU で描画
+```
+
+---
+
+## パフォーマンスメトリクス
+
+| 項目 | 値 | 最適化方法 |
+|---|---|---|
+| 施設データ総数 | 486+ | JSON マスター + 段階的フィルタリング |
+| GeoJSONポリゴン数（レッド） | ~80-100 | createCirclePolygon() で効率化 |
+| 制限表面タイルキャッシュ | 最大 200 | LRU キャッシュ |
+| レイヤー表示フラグ | 15+ | 条件付きレンダリング |
+| インタラクティブレイヤー | 8個 | 明示的登録で高速化 |
+| Source/Layer数（同時最大） | 20+ | 表示フラグに応じた動的マウント |
+| デバウンス遅延 | 500ms | マップ移動時の再フェッチ制御 |
+| useMemoキャッシュ | 13+ | 初回レンダリング以外は計算不要 |
+
+---
+
+## ベストプラクティス
+
+### 新しいレイヤーを追加する場合
+
+1. **GeoJSON生成をメモ化する**
+   ```javascript
+   const newLayerGeoJSON = useMemo(() => generateNewLayerGeoJSON(), [])
+   ```
+
+2. **条件付きレンダリングを使用する**
+   ```javascript
+   {layerVisibility.showNewLayer && (
+     <Source id="new-layer" type="geojson" data={newLayerGeoJSON}>
+       <Layer ... />
+     </Source>
+   )}
+   ```
+
+3. **Data-driven stylingを活用する**
+   ```javascript
+   paint={{
+     'fill-color': [
+       'match',
+       ['get', 'type'],
+       'typeA', '#ff0000',
+       'typeB', '#00ff00',
+       '#0000ff'
+     ]
+   }}
+   ```
+
+4. **必要なら `interactiveLayerIds` に追加する**
+
+### パフォーマンス計測
+
+開発時にパフォーマンスを計測するには、React DevTools の Profiler を使用してください。
+
+```javascript
+// コンポーネントの再レンダリング原因を特定
+import { Profiler } from 'react'
+
+<Profiler id="Map" onRender={(id, phase, actualDuration) => {
+  console.log({ id, phase, actualDuration })
+}}>
+  <Map ... />
+</Profiler>
+```
+
+---
+
+## 関連ファイル
+
+| ファイル | 役割 |
+|----------|------|
+| `src/components/Map/Map.jsx` | メインマップコンポーネント |
+| `src/lib/services/noFlyZones.ts` | 禁止区域データサービス |
+| `src/lib/services/airports.ts` | 空港データサービス |
+| `src/lib/services/restrictionSurfaces.ts` | 制限表面タイルサービス |
+| `src/utils/storage.js` | localStorage ラッパー |
