@@ -1,14 +1,23 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer, AttributionControl } from 'react-map-gl/maplibre'
 import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair, Signal, Zap, Building, Shield, Lock, Target, Star } from 'lucide-react'
+import * as turf from '@turf/turf'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import DrawControl from './DrawControl'
 import ContextMenu from '../ContextMenu'
+import MapTooltip from '../MapTooltip'
+import VertexListModal from '../VertexListModal'
 import FocusCrosshair from '../FocusCrosshair'
 import CoordinateDisplay from '../CoordinateDisplay'
 import ControlGroup from './ControlGroup'
-import controlGroupStyles from './ControlGroup.module.scss'
 import FacilityPopup from '../FacilityPopup/FacilityPopup'
+import {
+  formatDateToJST,
+  formatDMSCoordinate,
+  formatDecimalCoordinate,
+  formatWaypointList,
+  copyToClipboard
+} from '../../utils/formatters'
 import {
   getAirportZonesGeoJSON,
   getRedZonesGeoJSON,
@@ -210,6 +219,11 @@ const Map = ({
   // Context menu state for right-click
   const [contextMenu, setContextMenu] = useState(null) // { isOpen, position, waypoint }
   const [polygonContextMenu, setPolygonContextMenu] = useState(null) // { isOpen, position, polygon }
+  const [vertexListModal, setVertexListModal] = useState(null) // { polygon }
+
+  // Tooltip state for hover
+  const [tooltip, setTooltip] = useState(null) // { isVisible, position, data, type }
+  const hoverTimeoutRef = useRef(null)
 
   // 施設ポップアップ状態
   const [facilityPopup, setFacilityPopup] = useState(null) // { facility, screenX, screenY }
@@ -1152,11 +1166,103 @@ const Map = ({
   const handleWaypointRightClick = useCallback((e, wp) => {
     e.preventDefault()
     e.stopPropagation()
+    // Clear tooltip when context menu opens
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+    setTooltip(null)
     setContextMenu({
       isOpen: true,
       position: { x: e.clientX, y: e.clientY },
       waypoint: wp
     })
+  }, [])
+
+  // Handle waypoint hover - show tooltip
+  const handleWaypointHover = useCallback((e, wp) => {
+    e.stopPropagation()
+    
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+    }
+
+    // Set tooltip with a slight delay
+    hoverTimeoutRef.current = setTimeout(() => {
+      setTooltip({
+        isVisible: true,
+        position: { x: e.clientX, y: e.clientY },
+        data: wp,
+        type: 'waypoint'
+      })
+    }, 300)
+  }, [])
+
+  // Handle waypoint hover end - hide tooltip
+  const handleWaypointHoverEnd = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+    setTooltip(null)
+  }, [])
+
+  // Handle polygon hover - show tooltip
+  const handlePolygonHover = useCallback((e) => {
+    const features = e.features || []
+    const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
+
+    if (polygonFeature) {
+      e.stopPropagation()
+      
+      const polygonId = polygonFeature.properties.id
+      const polygon = polygons.find(p => p.id === polygonId)
+      
+      if (polygon) {
+        // Clear any existing timeout
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current)
+        }
+
+        // Calculate area using turf
+        const area = turf.area(polygon.geometry)
+        
+        // Count waypoints for this polygon
+        const waypointCount = waypoints.filter(wp => wp.polygonId === polygon.id).length
+
+        hoverTimeoutRef.current = setTimeout(() => {
+          setTooltip({
+            isVisible: true,
+            position: { x: e.point.x, y: e.point.y },
+            data: {
+              ...polygon,
+              area,
+              waypointCount
+            },
+            type: 'polygon'
+          })
+        }, 300)
+      }
+    }
+  }, [polygons, waypoints])
+
+  // Handle polygon hover end - hide tooltip
+  const handlePolygonHoverEnd = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current)
+      hoverTimeoutRef.current = null
+    }
+    setTooltip(null)
+  }, [])
+
+  // Cleanup hover timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
   }, [])
 
   // Handle context menu actions
@@ -1172,24 +1278,12 @@ const Map = ({
           }
         }
         break
-      case 'copy-coords': {
-        const coordStr = `${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}`
-        navigator.clipboard.writeText(coordStr)
+      case 'copy-coords':
+        copyToClipboard(formatDecimalCoordinate(wp.lat, wp.lng))
         break
-      }
-      case 'copy-coords-dms': {
-        const latDeg = Math.floor(Math.abs(wp.lat))
-        const latMin = Math.floor((Math.abs(wp.lat) - latDeg) * 60)
-        const latSec = ((Math.abs(wp.lat) - latDeg - latMin / 60) * 3600).toFixed(2)
-        const latDir = wp.lat >= 0 ? 'N' : 'S'
-        const lngDeg = Math.floor(Math.abs(wp.lng))
-        const lngMin = Math.floor((Math.abs(wp.lng) - lngDeg) * 60)
-        const lngSec = ((Math.abs(wp.lng) - lngDeg - lngMin / 60) * 3600).toFixed(2)
-        const lngDir = wp.lng >= 0 ? 'E' : 'W'
-        const dmsStr = `${latDeg}°${latMin}'${latSec}"${latDir} ${lngDeg}°${lngMin}'${lngSec}"${lngDir}`
-        navigator.clipboard.writeText(dmsStr)
+      case 'copy-coords-dms':
+        copyToClipboard(formatDMSCoordinate(wp.lat, wp.lng))
         break
-      }
       case 'focus':
         if (onWaypointClick) {
           onWaypointClick(wp)
@@ -1204,17 +1298,64 @@ const Map = ({
   const waypointContextMenuItems = useMemo(() => {
     if (!contextMenu?.waypoint) return []
     const wp = contextMenu.waypoint
-    return [
-      { id: 'header', type: 'header', label: `WP #${wp.index}` },
+    
+    // Find polygon name if available
+    const polygon = polygons.find(p => p.id === wp.polygonId)
+    
+    const items = [
+      { id: 'header', type: 'header', label: `WP #${wp.index}` }
+    ]
+    
+    // Add polygon name if available
+    if (polygon) {
+      items.push({
+        id: 'info-polygon',
+        type: 'info',
+        label: 'ポリゴン',
+        content: (
+          <div style={{ fontSize: '12px' }}>
+            <div style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{polygon.name}</div>
+          </div>
+        )
+      })
+    }
+    
+    // Add coordinate info
+    items.push({
+      id: 'info-coords',
+      type: 'info',
+      label: '座標',
+      content: (
+        <div style={{ fontSize: '12px', lineHeight: '1.6' }}>
+          <div>Decimal: {formatDecimalCoordinate(wp.lat, wp.lng)}</div>
+          <div style={{ marginTop: '4px' }}>DMS: {formatDMSCoordinate(wp.lat, wp.lng)}</div>
+        </div>
+      )
+    })
+    
+    // Add creation date if available
+    if (wp.createdAt) {
+      items.push({
+        id: 'info-created',
+        type: 'info',
+        label: '作成日時',
+        content: formatDateToJST(wp.createdAt)
+      })
+    }
+    
+    items.push(
+      { id: 'divider1', divider: true },
       { id: 'copy-coords', icon: '📋', label: '座標をコピー (decimal)', action: 'copy-coords' },
       { id: 'copy-coords-dms', icon: '🌐', label: '座標をコピー (DMS)', action: 'copy-coords-dms' },
-      { id: 'divider1', divider: true },
+      { id: 'divider2', divider: true },
       { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
-    ]
-  }, [contextMenu])
+    )
+    
+    return items
+  }, [contextMenu, polygons])
 
   // Handle polygon context menu actions
-  const handlePolygonContextMenuAction = useCallback((action) => {
+  const handlePolygonContextMenuAction = useCallback(async (action) => {
     if (!polygonContextMenu?.polygon) return
     const polygon = polygonContextMenu.polygon
 
@@ -1236,23 +1377,94 @@ const Map = ({
           onPolygonEditStart(polygon)
         }
         break
+      case 'copy-waypoints-decimal': {
+        const polygonWaypoints = waypoints.filter(wp => wp.polygonId === polygon.id)
+        const text = formatWaypointList(polygonWaypoints, 'decimal')
+        await copyToClipboard(text)
+        break
+      }
+      case 'copy-waypoints-dms': {
+        const polygonWaypoints = waypoints.filter(wp => wp.polygonId === polygon.id)
+        const text = formatWaypointList(polygonWaypoints, 'dms')
+        await copyToClipboard(text)
+        break
+      }
+      case 'show-vertices':
+        setVertexListModal({ polygon })
+        break
       default:
         break
     }
-  }, [polygonContextMenu, onPolygonDelete, onPolygonSelect, onPolygonEditStart])
+  }, [polygonContextMenu, onPolygonDelete, onPolygonSelect, onPolygonEditStart, waypoints])
 
   // Build context menu items for polygon
   const polygonContextMenuItems = useMemo(() => {
     if (!polygonContextMenu?.polygon) return []
     const polygon = polygonContextMenu.polygon
-    return [
-      { id: 'header', type: 'header', label: polygon.name },
+    
+    // Get waypoints for this polygon
+    const polygonWaypoints = waypoints.filter(wp => wp.polygonId === polygon.id)
+    
+    const items = [
+      { id: 'header', type: 'header', label: polygon.name }
+    ]
+    
+    // Add waypoint list if available
+    if (polygonWaypoints.length > 0) {
+      const waypointListDecimal = polygonWaypoints
+        .map(wp => `WP${wp.index}: ${formatDecimalCoordinate(wp.lat, wp.lng)}`)
+        .join('\n')
+      
+      items.push({
+        id: 'info-waypoints',
+        type: 'info',
+        label: `Waypoint一覧 (${polygonWaypoints.length}個)`,
+        content: <pre style={{ fontSize: '12px', lineHeight: '1.5' }}>{waypointListDecimal}</pre>
+      })
+    }
+    
+    // Add area if available
+    const area = turf.area(polygon.geometry)
+    if (area) {
+      items.push({
+        id: 'info-area',
+        type: 'info',
+        label: '面積',
+        content: `${area.toFixed(2)} m²`
+      })
+    }
+    
+    // Add creation date if available
+    if (polygon.createdAt) {
+      items.push({
+        id: 'info-created',
+        type: 'info',
+        label: '作成日時',
+        content: formatDateToJST(polygon.createdAt)
+      })
+    }
+    
+    items.push({ id: 'divider1', divider: true })
+    
+    // Add copy actions if waypoints exist
+    if (polygonWaypoints.length > 0) {
+      items.push(
+        { id: 'show-vertices', icon: '📍', label: 'Waypoint頂点一覧を表示', action: 'show-vertices' },
+        { id: 'copy-waypoints-decimal', icon: '📋', label: 'WP一覧をコピー (decimal)', action: 'copy-waypoints-decimal' },
+        { id: 'copy-waypoints-dms', icon: '🌐', label: 'WP一覧をコピー (DMS)', action: 'copy-waypoints-dms' },
+        { id: 'divider2', divider: true }
+      )
+    }
+    
+    items.push(
       { id: 'select', icon: '👆', label: '選択', action: 'select' },
       { id: 'edit', icon: '✏️', label: '形状を編集', action: 'edit' },
-      { id: 'divider1', divider: true },
+      { id: 'divider3', divider: true },
       { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
-    ]
-  }, [polygonContextMenu])
+    )
+    
+    return items
+  }, [polygonContextMenu, waypoints])
 
   // Handle selection box for bulk waypoint operations
   const handleSelectionStart = useCallback((e) => {
@@ -1363,8 +1575,15 @@ const Map = ({
         onContextMenu={handlePolygonRightClick}
         onLoad={() => setIsMapReady(true)}
         onMouseDown={handleSelectionStart}
-        onMouseMove={handleSelectionMove}
+        onMouseMove={(e) => {
+          handleSelectionMove(e)
+          // Handle polygon hover when not selecting
+          if (!isSelecting) {
+            handlePolygonHover(e)
+          }
+        }}
         onMouseUp={handleSelectionEnd}
+        onMouseLeave={handlePolygonHoverEnd}
         interactiveLayerIds={interactiveLayerIds}
         mapStyle={currentMapStyle}
         style={{ width: '100%', height: '100%' }}
@@ -1983,6 +2202,8 @@ const Map = ({
                             wp.polygonName || 'Waypoint'
                         }${multiLabel} (右クリックでメニュー)`}
                         onContextMenu={(e) => handleWaypointRightClick(e, wp)}
+                        onMouseEnter={(e) => handleWaypointHover(e, wp)}
+                        onMouseLeave={handleWaypointHoverEnd}
                     >
                         {wp.index}
                     </div>
@@ -2112,7 +2333,7 @@ const Map = ({
             defaultExpanded={false}
             groupToggle={true}
             groupEnabled={layerVisibility.showDID}
-            onGroupToggle={(enabled) => toggleLayer('showDID')}
+            onGroupToggle={(_enabled) => toggleLayer('showDID')}
             favoritable={true}
             isFavorite={favoriteGroups.has('did')}
             onFavoriteToggle={() => toggleFavoriteGroup('did')}
@@ -2523,6 +2744,16 @@ const Map = ({
         />
       )}
 
+      {/* Map Tooltip */}
+      {tooltip && (
+        <MapTooltip
+          isVisible={tooltip.isVisible}
+          position={tooltip.position}
+          data={tooltip.data}
+          type={tooltip.type}
+        />
+      )}
+
       {/* Focus Crosshair */}
       <FocusCrosshair
         visible={showCrosshair}
@@ -2552,6 +2783,13 @@ const Map = ({
           screenX={facilityPopup.screenX}
           screenY={facilityPopup.screenY}
           onClose={() => setFacilityPopup(null)}
+        />
+      )}
+
+      {vertexListModal && (
+        <VertexListModal
+          polygon={vertexListModal.polygon}
+          onClose={() => setVertexListModal(null)}
         />
       )}
     </div>
