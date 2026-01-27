@@ -46,6 +46,19 @@ const MenuItem = ({ item, onAction }) => {
     return <div className={styles.header}>{item.label}</div>
   }
 
+  if (item.type === 'info') {
+    return (
+      <div className={styles.infoSection}>
+        {item.label && <div className={styles.infoLabel}>{item.label}</div>}
+        {item.content && (
+          typeof item.content === 'string' 
+            ? <pre>{item.content}</pre>
+            : item.content
+        )}
+      </div>
+    )
+  }
+
   return (
     <div
       className={`${styles.item} ${item.disabled ? styles.disabled : ''} ${item.danger ? styles.danger : ''}`}
