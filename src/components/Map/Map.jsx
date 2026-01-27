@@ -224,7 +224,7 @@ const Map = ({
   // Tooltip state for hover
   const [tooltip, setTooltip] = useState(null) // { isVisible, position, data, type }
   const hoverTimeoutRef = useRef(null)
-  const [isWaypointHovering, setIsWaypointHovering] = useState(false)
+  const isWaypointHoveringRef = useRef(false)
 
   // 施設ポップアップ状態
   const [facilityPopup, setFacilityPopup] = useState(null) // { facility, screenX, screenY }
@@ -1233,7 +1233,7 @@ const Map = ({
     }
 
     // Mark waypoint as hovering (to prevent polygon hover from triggering)
-    setIsWaypointHovering(true)
+    isWaypointHoveringRef.current = true
 
     // Clear any existing timeout
     if (hoverTimeoutRef.current) {
@@ -1257,7 +1257,7 @@ const Map = ({
 
   // Handle waypoint hover end - hide tooltip
   const handleWaypointHoverEnd = useCallback(() => {
-    setIsWaypointHovering(false)
+    isWaypointHoveringRef.current = false
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
       hoverTimeoutRef.current = null
@@ -1270,7 +1270,7 @@ const Map = ({
     if (!mapRef.current) return
 
     // Don't show tooltip if context menu is open or waypoint is hovering
-    if (contextMenu?.isOpen || polygonContextMenu?.isOpen || isWaypointHovering) {
+    if (contextMenu?.isOpen || polygonContextMenu?.isOpen || isWaypointHoveringRef.current) {
       return
     }
 
@@ -1336,7 +1336,7 @@ const Map = ({
       }
       setTooltip(null)
     }
-  }, [polygons, waypoints, contextMenu, polygonContextMenu, isWaypointHovering])
+  }, [polygons, waypoints, contextMenu, polygonContextMenu])
 
   // Handle polygon hover end - hide tooltip
   const handlePolygonHoverEnd = useCallback(() => {
@@ -2230,7 +2230,6 @@ const Map = ({
         )}
 
         {/* Display waypoints as draggable markers (non-interactive during polygon edit) */}
-        {import.meta.env.DEV && console.log('[Map] Rendering waypoints:', waypoints.map(w => ({ index: w.index, id: w.id, lat: w.lat.toFixed(6), lng: w.lng.toFixed(6) })))}
         {waypoints.map((wp) => {
             const isHighlighted = highlightedWaypointIndex === wp.index
             // Check zone violations for this waypoint
@@ -2251,8 +2250,8 @@ const Map = ({
             const isInAirport = (flags?.hasAirport || false) || (recommendedWp?.hasAirport || false)
             const isInProhibited = (flags?.hasProhibited || false) || (recommendedWp?.hasProhibited || false)
 
-            // Debug: 全ウェイポイントの判定結果を確認（開発時のみ）
-            if (import.meta.env.DEV) {
+            // Debug: 制限区域があるウェイポイントの判定結果を確認（開発時のみ）
+            if (import.meta.env.DEV && (isInDID || isInAirport || isInProhibited)) {
                 console.log(
                     `[Map] WP${wp.index} (${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}):`,
                     {
