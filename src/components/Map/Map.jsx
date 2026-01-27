@@ -1103,11 +1103,17 @@ const Map = ({
 
   // Handle double-click on polygon to enter edit mode
   const handleDoubleClick = useCallback((e) => {
+    // Prevent default zoom behavior
+    e.preventDefault()
+    if (e.originalEvent) {
+      e.originalEvent.preventDefault()
+      e.originalEvent.stopPropagation()
+    }
+
     const features = e.features || []
     const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
 
     if (polygonFeature && onPolygonEditStart) {
-      e.preventDefault()
       const polygonId = polygonFeature.properties.id
       const polygon = polygons.find(p => p.id === polygonId)
       if (polygon) {
@@ -1210,15 +1216,33 @@ const Map = ({
 
   // Handle polygon hover - show tooltip
   const handlePolygonHover = useCallback((e) => {
-    const features = e.features || []
-    const polygonFeature = features.find(f => f.layer?.id === 'polygon-fill')
+    if (!mapRef.current) return
 
-    if (polygonFeature) {
-      e.stopPropagation()
-      
+    const map = mapRef.current.getMap()
+
+    // Get mouse position - try e.point first, fallback to calculating from event
+    let point = e.point
+    if (!point && e.originalEvent) {
+      const canvas = map.getCanvas()
+      const rect = canvas.getBoundingClientRect()
+      point = {
+        x: e.originalEvent.clientX - rect.left,
+        y: e.originalEvent.clientY - rect.top
+      }
+    }
+
+    if (!point) return
+
+    // Query features at the mouse position
+    const features = map.queryRenderedFeatures(point, {
+      layers: ['polygon-fill']
+    })
+
+    if (features && features.length > 0) {
+      const polygonFeature = features[0]
       const polygonId = polygonFeature.properties.id
       const polygon = polygons.find(p => p.id === polygonId)
-      
+
       if (polygon) {
         // Clear any existing timeout
         if (hoverTimeoutRef.current) {
@@ -1227,14 +1251,18 @@ const Map = ({
 
         // Calculate area using turf
         const area = turf.area(polygon.geometry)
-        
+
         // Count waypoints for this polygon
         const waypointCount = waypoints.filter(wp => wp.polygonId === polygon.id).length
+
+        // Calculate screen position for tooltip
+        const screenX = e.originalEvent?.clientX || point.x
+        const screenY = e.originalEvent?.clientY || point.y
 
         hoverTimeoutRef.current = setTimeout(() => {
           setTooltip({
             isVisible: true,
-            position: { x: e.point.x, y: e.point.y },
+            position: { x: screenX, y: screenY },
             data: {
               ...polygon,
               area,
@@ -1244,6 +1272,13 @@ const Map = ({
           })
         }, 300)
       }
+    } else {
+      // No polygon under cursor, clear tooltip
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+        hoverTimeoutRef.current = null
+      }
+      setTooltip(null)
     }
   }, [polygons, waypoints])
 
