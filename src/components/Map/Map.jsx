@@ -9,6 +9,9 @@ import CoordinateDisplay from '../CoordinateDisplay'
 import ControlGroup from './ControlGroup'
 import controlGroupStyles from './ControlGroup.module.scss'
 import FacilityPopup from '../FacilityPopup/FacilityPopup'
+import VertexListModal from '../VertexListModal/VertexListModal'
+import { formatTokyoTime } from '../../utils/dateFormat'
+import { area, length } from '@turf/turf'
 import {
   getAirportZonesGeoJSON,
   getRedZonesGeoJSON,
@@ -210,6 +213,12 @@ const Map = ({
   // Context menu state for right-click
   const [contextMenu, setContextMenu] = useState(null) // { isOpen, position, waypoint }
   const [polygonContextMenu, setPolygonContextMenu] = useState(null) // { isOpen, position, polygon }
+
+  // Hover tooltip state
+  const [hoveredItem, setHoveredItem] = useState(null) // { type: 'waypoint'|'polygon', data: {...} }
+
+  // Vertex list modal state
+  const [vertexListModal, setVertexListModal] = useState(null) // { polygon }
 
   // 施設ポップアップ状態
   const [facilityPopup, setFacilityPopup] = useState(null) // { facility, screenX, screenY }
@@ -1148,6 +1157,24 @@ const Map = ({
     }
   }, [onPolygonDelete])
 
+  // Handle waypoint hover - show tooltip
+  const handleWaypointMouseEnter = useCallback((wp) => {
+    setHoveredItem({
+      type: 'waypoint',
+      data: {
+        index: wp.index,
+        polygonName: wp.polygonName,
+        coordinates: `${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}`,
+        altitude: wp.elevation ? `${wp.elevation}m` : null,
+        createdAt: wp.createdAt ? formatTokyoTime(wp.createdAt) : null
+      }
+    })
+  }, [])
+
+  const handleWaypointMouseLeave = useCallback(() => {
+    setHoveredItem(null)
+  }, [])
+
   // Handle waypoint right-click - open context menu
   const handleWaypointRightClick = useCallback((e, wp) => {
     e.preventDefault()
@@ -1190,6 +1217,17 @@ const Map = ({
         navigator.clipboard.writeText(dmsStr)
         break
       }
+      case 'copy-all-info': {
+        const allInfo = [
+          `WP #${wp.index}`,
+          `エリア: ${wp.polygonName || '未設定'}`,
+          `座標: ${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}`,
+          `標高: ${wp.elevation ? `${wp.elevation}m` : '未取得'}`,
+          `作成日時: ${wp.createdAt ? formatTokyoTime(wp.createdAt) : '不明'}`
+        ].join('\n')
+        navigator.clipboard.writeText(allInfo)
+        break
+      }
       case 'focus':
         if (onWaypointClick) {
           onWaypointClick(wp)
@@ -1208,7 +1246,17 @@ const Map = ({
       { id: 'header', type: 'header', label: `WP #${wp.index}` },
       { id: 'copy-coords', icon: '📋', label: '座標をコピー (decimal)', action: 'copy-coords' },
       { id: 'copy-coords-dms', icon: '🌐', label: '座標をコピー (DMS)', action: 'copy-coords-dms' },
+      
+      // 情報セクション
+      { id: 'info-section', type: 'section', label: '情報' },
+      { id: 'polygon-info', type: 'info', label: `エリア: ${wp.polygonName || '未設定'}` },
+      { id: 'coord-display', type: 'info', label: `${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}` },
+      { id: 'elevation', type: 'info', label: wp.elevation ? `標高: ${wp.elevation}m` : '標高: 未取得' },
+      { id: 'created-time', type: 'info', label: wp.createdAt ? formatTokyoTime(wp.createdAt) : '作成日時: 不明' },
+      
       { id: 'divider1', divider: true },
+      { id: 'copy-all-info', icon: '📋', label: '全情報をコピー', action: 'copy-all-info' },
+      { id: 'divider2', divider: true },
       { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
     ]
   }, [contextMenu])
@@ -1236,6 +1284,16 @@ const Map = ({
           onPolygonEditStart(polygon)
         }
         break
+      case 'show-vertices':
+        setVertexListModal({ polygon })
+        break
+      case 'copy-vertices': {
+        const coordsText = (polygon.coordinates || [])
+          .map((coord, idx) => `WP #${idx + 1}: ${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)}`)
+          .join('\n')
+        navigator.clipboard.writeText(coordsText)
+        break
+      }
       default:
         break
     }
@@ -1245,14 +1303,51 @@ const Map = ({
   const polygonContextMenuItems = useMemo(() => {
     if (!polygonContextMenu?.polygon) return []
     const polygon = polygonContextMenu.polygon
+    
+    // Calculate area and perimeter using turf
+    let areaText = '-'
+    let perimeterText = '-'
+    let waypointCount = 0
+    
+    if (polygon.geometry) {
+      try {
+        const polygonArea = area(polygon.geometry)
+        areaText = polygonArea > 1000000 
+          ? `${(polygonArea / 1000000).toFixed(2)} km²`
+          : `${polygonArea.toFixed(0)} m²`
+        
+        const polygonLength = length(polygon.geometry, { units: 'kilometers' })
+        perimeterText = polygonLength > 1
+          ? `${polygonLength.toFixed(2)} km`
+          : `${(polygonLength * 1000).toFixed(0)} m`
+      } catch (err) {
+        console.warn('Error calculating area/perimeter:', err)
+      }
+    }
+    
+    // Count waypoints belonging to this polygon
+    waypointCount = waypoints.filter(wp => wp.polygonName === polygon.name).length
+    
     return [
       { id: 'header', type: 'header', label: polygon.name },
       { id: 'select', icon: '👆', label: '選択', action: 'select' },
       { id: 'edit', icon: '✏️', label: '形状を編集', action: 'edit' },
+      
+      // 属性情報セクション
+      { id: 'info-section', type: 'section', label: '属性情報' },
+      { id: 'area-info', type: 'info', label: `面積: ${areaText}` },
+      { id: 'perimeter-info', type: 'info', label: `周囲長: ${perimeterText}` },
+      { id: 'waypoint-info', type: 'info', label: `Waypoint: ${waypointCount}個` },
+      { id: 'created-info', type: 'info', label: polygon.createdAt ? formatTokyoTime(polygon.createdAt) : '作成日時: 不明' },
+      
       { id: 'divider1', divider: true },
+      { id: 'show-vertices', icon: '📍', label: 'Waypoint頂点一覧', action: 'show-vertices' },
+      { id: 'copy-vertices', icon: '📋', label: '頂点座標をコピー', action: 'copy-vertices' },
+      
+      { id: 'divider2', divider: true },
       { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
     ]
-  }, [polygonContextMenu])
+  }, [polygonContextMenu, waypoints])
 
   // Handle selection box for bulk waypoint operations
   const handleSelectionStart = useCallback((e) => {
@@ -1982,6 +2077,8 @@ const Map = ({
                         title={`#${wp.index} - ${
                             wp.polygonName || 'Waypoint'
                         }${multiLabel} (右クリックでメニュー)`}
+                        onMouseEnter={() => handleWaypointMouseEnter(wp)}
+                        onMouseLeave={handleWaypointMouseLeave}
                         onContextMenu={(e) => handleWaypointRightClick(e, wp)}
                     >
                         {wp.index}
@@ -2520,6 +2617,47 @@ const Map = ({
           onClose={() => setPolygonContextMenu(null)}
           onAction={handlePolygonContextMenuAction}
           title={polygonContextMenu.polygon?.name}
+        />
+      )}
+
+      {/* Hover Tooltip */}
+      {hoveredItem && (
+        <div className={styles.tooltip}>
+          {hoveredItem.type === 'waypoint' && (
+            <>
+              <div className={styles.tooltipHeader}>WP #{hoveredItem.data.index}</div>
+              {hoveredItem.data.polygonName && (
+                <div className={styles.tooltipRow}>
+                  <span className={styles.tooltipLabel}>エリア:</span>
+                  <span className={styles.tooltipValue}>{hoveredItem.data.polygonName}</span>
+                </div>
+              )}
+              <div className={styles.tooltipRow}>
+                <span className={styles.tooltipLabel}>座標:</span>
+                <span className={styles.tooltipValue}>{hoveredItem.data.coordinates}</span>
+              </div>
+              {hoveredItem.data.altitude && (
+                <div className={styles.tooltipRow}>
+                  <span className={styles.tooltipLabel}>標高:</span>
+                  <span className={styles.tooltipValue}>{hoveredItem.data.altitude}</span>
+                </div>
+              )}
+              {hoveredItem.data.createdAt && (
+                <div className={styles.tooltipRow}>
+                  <span className={styles.tooltipLabel}>作成:</span>
+                  <span className={styles.tooltipValue}>{hoveredItem.data.createdAt}</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Vertex List Modal */}
+      {vertexListModal && (
+        <VertexListModal
+          polygon={vertexListModal.polygon}
+          onClose={() => setVertexListModal(null)}
         />
       )}
 

@@ -1099,3 +1099,119 @@
     }
   }
 }
+
+// Hover Tooltip Styles
+.tooltip {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(26, 31, 46, 0.95);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-radius: 10px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 12px 16px;
+  min-width: 280px;
+  max-width: 400px;
+  z-index: 9999;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+:global([data-theme="light"]) .tooltip {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.15),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.tooltipHeader {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+:global([data-theme="light"]) .tooltipHeader {
+  color: rgba(0, 0, 0, 0.87);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.tooltipRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.tooltipLabel {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  min-width: 50px;
+  flex-shrink: 0;
+}
+
+:global([data-theme="light"]) .tooltipLabel {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.tooltipValue {
+  color: rgba(255, 255, 255, 0.9);
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  flex: 1;
+  word-break: break-all;
+}
+
+:global([data-theme="light"]) .tooltipValue {
+  color: rgba(0, 0, 0, 0.87);
+}
+
+@media (max-width: 768px) {
+  .tooltip {
+    bottom: 60px;
+    min-width: 240px;
+    max-width: calc(100vw - 32px);
+    padding: 10px 14px;
+  }
+
+  .tooltipHeader {
+    font-size: 13px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+  }
+
+  .tooltipRow {
+    font-size: 11px;
+    margin-bottom: 3px;
+  }
+
+  .tooltipLabel {
+    min-width: 45px;
+  }
+}

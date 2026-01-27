@@ -46,6 +46,21 @@ const MenuItem = ({ item, onAction }) => {
     return <div className={styles.header}>{item.label}</div>
   }
 
+  if (item.type === 'section') {
+    return <div className={styles.section}>{item.label}</div>
+  }
+
+  if (item.type === 'info') {
+    return (
+      <div className={styles.infoItem}>
+        <div className={styles.itemContent}>
+          {item.icon && <span className={styles.icon}>{item.icon}</span>}
+          <span className={styles.label}>{item.label}</span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       className={`${styles.item} ${item.disabled ? styles.disabled : ''} ${item.danger ? styles.danger : ''}`}

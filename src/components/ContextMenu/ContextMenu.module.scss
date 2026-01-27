@@ -200,6 +200,46 @@
   color: rgba(0, 0, 0, 0.5);
 }
 
+// Section item (separator with label)
+.section {
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  user-select: none;
+  margin-top: 4px;
+}
+
+:global([data-theme="light"]) .section {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+// Info item (non-clickable, display only)
+.infoItem {
+  padding: 6px 12px;
+  margin: 0 4px;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: text;
+  font-size: 12px;
+  line-height: 1.4;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: default;
+}
+
+:global([data-theme="light"]) .infoItem {
+  color: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.04);
+}
+
 // Responsive
 @media (max-width: 768px) {
   .menu {
