@@ -1288,7 +1288,14 @@ const Map = ({
         setVertexListModal({ polygon })
         break
       case 'copy-vertices': {
-        const coordsText = (polygon.coordinates || [])
+        // Extract coordinates from GeoJSON geometry
+        let coordinates = []
+        if (polygon.geometry && polygon.geometry.type === 'Polygon' && polygon.geometry.coordinates) {
+          const ring = polygon.geometry.coordinates[0]
+          // Convert [lng, lat] to { lat, lng } and exclude the last point
+          coordinates = ring.slice(0, -1).map(([lng, lat]) => ({ lat, lng }))
+        }
+        const coordsText = coordinates
           .map((coord, idx) => `WP #${idx + 1}: ${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)}`)
           .join('\n')
         navigator.clipboard.writeText(coordsText)

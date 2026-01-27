@@ -14,7 +14,14 @@ const VertexListModal = ({ polygon, onClose }) => {
 
   if (!polygon) return null
 
-  const coordinates = polygon.coordinates || []
+  // Extract coordinates from GeoJSON geometry
+  // For Polygon geometry: coordinates[0] is the outer ring
+  let coordinates = []
+  if (polygon.geometry && polygon.geometry.type === 'Polygon' && polygon.geometry.coordinates) {
+    const ring = polygon.geometry.coordinates[0]
+    // Convert [lng, lat] to { lat, lng } and exclude the last point (which duplicates the first)
+    coordinates = ring.slice(0, -1).map(([lng, lat]) => ({ lat, lng }))
+  }
 
   // Copy single coordinate
   const handleCopyCoordinate = useCallback((coord, index) => {
