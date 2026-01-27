@@ -1176,6 +1176,28 @@ const Map = ({
     }
   }, [onPolygonDelete])
 
+  // Get waypoint airspace restrictions (DID, Airport, Prohibited, etc.)
+  const getWaypointAirspaceRestrictions = useCallback((wp) => {
+    const flags = waypointIssueFlagsById?.[wp.id] || {}
+    const restrictions = []
+
+    if (flags.hasDID) {
+      restrictions.push({ type: 'DID', label: 'DID（人口集中地区）', color: '#dc2626', icon: '🏙️' })
+    }
+    if (flags.hasAirport) {
+      restrictions.push({ type: 'AIRPORT', label: '空港等周辺', color: '#9333ea', icon: '✈️' })
+    }
+    if (flags.hasProhibited) {
+      restrictions.push({ type: 'PROHIBITED', label: '飛行禁止区域', color: '#dc2626', icon: '🚫' })
+    }
+
+    if (restrictions.length === 0) {
+      restrictions.push({ type: 'NORMAL', label: '通常空域', color: '#10b981', icon: '✓' })
+    }
+
+    return restrictions
+  }, [waypointIssueFlagsById])
+
   // Handle waypoint right-click - open context menu
   const handleWaypointRightClick = useCallback((e, wp) => {
     e.preventDefault()
@@ -1189,9 +1211,9 @@ const Map = ({
     setContextMenu({
       isOpen: true,
       position: { x: e.clientX, y: e.clientY },
-      waypoint: wp
+      waypoint: { ...wp, airspaceRestrictions: getWaypointAirspaceRestrictions(wp) }
     })
-  }, [])
+  }, [getWaypointAirspaceRestrictions])
 
   // Handle waypoint hover - show tooltip
   const handleWaypointHover = useCallback((e, wp) => {
@@ -1212,11 +1234,11 @@ const Map = ({
       setTooltip({
         isVisible: true,
         position: { x: e.clientX, y: e.clientY },
-        data: wp,
+        data: { ...wp, airspaceRestrictions: getWaypointAirspaceRestrictions(wp) },
         type: 'waypoint'
       })
     }, 300)
-  }, [contextMenu, polygonContextMenu])
+  }, [contextMenu, polygonContextMenu, getWaypointAirspaceRestrictions])
 
   // Handle waypoint hover end - hide tooltip
   const handleWaypointHoverEnd = useCallback(() => {
@@ -1395,7 +1417,32 @@ const Map = ({
         content: formatDateToJST(wp.createdAt)
       })
     }
-    
+
+    // Add airspace restrictions info
+    if (wp.airspaceRestrictions && wp.airspaceRestrictions.length > 0) {
+      items.push({
+        id: 'info-airspace',
+        type: 'info',
+        label: '飛行制限',
+        content: (
+          <div style={{ fontSize: '12px', lineHeight: '1.6' }}>
+            {wp.airspaceRestrictions.map((r, idx) => (
+              <div
+                key={idx}
+                style={{
+                  color: r.color,
+                  fontWeight: r.type !== 'NORMAL' ? '600' : '400',
+                  marginTop: idx > 0 ? '4px' : '0'
+                }}
+              >
+                {r.icon} {r.label}
+              </div>
+            ))}
+          </div>
+        )
+      })
+    }
+
     items.push(
       { id: 'divider1', divider: true },
       { id: 'copy-coords', icon: '📋', label: '座標をコピー (decimal)', action: 'copy-coords' },
