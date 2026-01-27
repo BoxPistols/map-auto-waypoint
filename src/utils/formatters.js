@@ -110,22 +110,59 @@ export const copyToClipboard = async (text) => {
 }
 
 /**
- * Format waypoint list for polygon (used in context menu)
- * @param {Array} waypoints - Array of waypoint objects
+ * Format waypoint list for display
+ * @param {Array} waypoints - Waypoint array
  * @param {string} format - 'decimal' or 'dms'
+ * @param {string} polygonName - Optional polygon name to include at the top
  * @returns {string} - Formatted waypoint list
  */
-export const formatWaypointList = (waypoints, format = 'decimal') => {
+export const formatWaypointList = (waypoints, format = 'decimal', polygonName = null) => {
+  if (!waypoints || waypoints.length === 0) {
+    return 'Waypointなし'
+  }
+  
+  const waypointList = waypoints
+    .map(wp => {
+      const coord = format === 'dms'
+        ? formatDMSCoordinate(wp.lat, wp.lng)
+        : formatDecimalCoordinate(wp.lat, wp.lng)
+      return `WP${wp.index}: ${coord}`
+    })
+    .join('\n')
+  
+  // Include polygon name at the top if provided
+  if (polygonName) {
+    return `【${polygonName}】\n${waypointList}`
+  }
+  
+  return waypointList
+}
+
+/**
+ * Format waypoint list as CSV for Excel
+ * @param {Array} waypoints - Waypoint array
+ * @param {string} format - 'decimal' or 'dms'
+ * @param {string} polygonName - Polygon name to include in each row
+ * @returns {string} - CSV formatted waypoint list
+ */
+export const formatWaypointListCSV = (waypoints, format = 'decimal', polygonName = '') => {
   if (!waypoints || waypoints.length === 0) {
     return 'Waypointなし'
   }
   
   return waypoints
     .map(wp => {
-      const coord = format === 'dms'
-        ? formatDMSCoordinate(wp.lat, wp.lng)
-        : formatDecimalCoordinate(wp.lat, wp.lng)
-      return `WP${wp.index}: ${coord}`
+      if (format === 'dms') {
+        const dms = formatDMSCoordinate(wp.lat, wp.lng)
+        // Split "北緯35°52'37.43" 東経139°40'9.55"" into lat and lng
+        const [lat, lng] = dms.split(' ')
+        return `${polygonName},WP${wp.index},${lat},${lng}`
+      } else {
+        const decimal = formatDecimalCoordinate(wp.lat, wp.lng)
+        // Split "35.877064, 139.669321" into lat and lng
+        const [lat, lng] = decimal.split(', ')
+        return `${polygonName},WP${wp.index},${lat},${lng}`
+      }
     })
     .join('\n')
 }

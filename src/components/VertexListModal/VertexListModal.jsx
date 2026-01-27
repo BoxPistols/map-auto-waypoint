@@ -3,14 +3,28 @@
  * Display polygon vertices with WP numbers and coordinates
  */
 
-import { useCallback } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import { X, Copy, CheckCircle } from 'lucide-react'
-import { useState } from 'react'
+import { copyToClipboard, formatDecimalCoordinate } from '../../utils/formatters'
 import styles from './VertexListModal.module.scss'
 
 const VertexListModal = ({ polygon, onClose }) => {
   const [copiedIndex, setCopiedIndex] = useState(null)
   const [allCopied, setAllCopied] = useState(false)
+  const copyTimeoutRef = useRef(null)
+  const allCopyTimeoutRef = useRef(null)
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current)
+      }
+      if (allCopyTimeoutRef.current) {
+        clearTimeout(allCopyTimeoutRef.current)
+      }
+    }
+  }, [])
 
   if (!polygon) return null
 
@@ -25,20 +39,32 @@ const VertexListModal = ({ polygon, onClose }) => {
 
   // Copy single coordinate
   const handleCopyCoordinate = useCallback((coord, index) => {
-    const coordStr = `${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)}`
-    navigator.clipboard.writeText(coordStr)
-    setCopiedIndex(index)
-    setTimeout(() => setCopiedIndex(null), 2000)
+    const coordStr = formatDecimalCoordinate(coord.lat, coord.lng)
+    const success = copyToClipboard(coordStr)
+
+    if (success) {
+      setCopiedIndex(index)
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current)
+      }
+      copyTimeoutRef.current = setTimeout(() => setCopiedIndex(null), 2000)
+    }
   }, [])
 
   // Copy all coordinates
   const handleCopyAll = useCallback(() => {
     const coordsText = coordinates
-      .map((coord, idx) => `WP #${idx + 1}: ${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)}`)
+      .map((coord, idx) => `WP #${idx + 1}: ${formatDecimalCoordinate(coord.lat, coord.lng)}`)
       .join('\n')
-    navigator.clipboard.writeText(coordsText)
-    setAllCopied(true)
-    setTimeout(() => setAllCopied(false), 2000)
+    const success = copyToClipboard(coordsText)
+
+    if (success) {
+      setAllCopied(true)
+      if (allCopyTimeoutRef.current) {
+        clearTimeout(allCopyTimeoutRef.current)
+      }
+      allCopyTimeoutRef.current = setTimeout(() => setAllCopied(false), 2000)
+    }
   }, [coordinates])
 
   return (
@@ -69,7 +95,7 @@ const VertexListModal = ({ polygon, onClose }) => {
               <div key={index} className={styles.vertexItem}>
                 <div className={styles.vertexNumber}>WP #{index + 1}</div>
                 <div className={styles.coordinates}>
-                  {coord.lat.toFixed(6)}, {coord.lng.toFixed(6)}
+                  {formatDecimalCoordinate(coord.lat, coord.lng)}
                 </div>
                 <button
                   className={styles.copyBtn}

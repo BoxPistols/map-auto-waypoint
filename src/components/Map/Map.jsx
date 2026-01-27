@@ -16,6 +16,7 @@ import {
   formatDMSCoordinate,
   formatDecimalCoordinate,
   formatWaypointList,
+  formatWaypointListCSV,
   copyToClipboard
 } from '../../utils/formatters'
 import {
@@ -1311,14 +1312,10 @@ const Map = ({
         // Count waypoints for this polygon
         const waypointCount = waypoints.filter(wp => wp.polygonId === polygon.id).length
 
-        // Calculate screen position for tooltip
-        const screenX = e.originalEvent?.clientX || point.x
-        const screenY = e.originalEvent?.clientY || point.y
-
         hoverTimeoutRef.current = setTimeout(() => {
           setTooltip({
             isVisible: true,
-            position: { x: screenX, y: screenY },
+            position: { x: e.originalEvent.clientX, y: e.originalEvent.clientY },
             data: {
               ...polygon,
               area,
@@ -1495,13 +1492,25 @@ const Map = ({
         break
       case 'copy-waypoints-decimal': {
         const polygonWaypoints = waypoints.filter(wp => wp.polygonId === polygon.id)
-        const text = formatWaypointList(polygonWaypoints, 'decimal')
+        const text = formatWaypointList(polygonWaypoints, 'decimal', polygon.name)
         await copyToClipboard(text)
         break
       }
       case 'copy-waypoints-dms': {
         const polygonWaypoints = waypoints.filter(wp => wp.polygonId === polygon.id)
-        const text = formatWaypointList(polygonWaypoints, 'dms')
+        const text = formatWaypointList(polygonWaypoints, 'dms', polygon.name)
+        await copyToClipboard(text)
+        break
+      }
+      case 'copy-waypoints-decimal-csv': {
+        const polygonWaypoints = waypoints.filter(wp => wp.polygonId === polygon.id)
+        const text = formatWaypointListCSV(polygonWaypoints, 'decimal', polygon.name)
+        await copyToClipboard(text)
+        break
+      }
+      case 'copy-waypoints-dms-csv': {
+        const polygonWaypoints = waypoints.filter(wp => wp.polygonId === polygon.id)
+        const text = formatWaypointListCSV(polygonWaypoints, 'dms', polygon.name)
         await copyToClipboard(text)
         break
       }
@@ -1522,7 +1531,7 @@ const Map = ({
     const polygonWaypoints = waypoints.filter(wp => wp.polygonId === polygon.id)
     
     const items = [
-      { id: 'header', type: 'header', label: polygon.name }
+      { id: 'header', type: 'header', label: `【${polygon.name}】` }
     ]
     
     // Add waypoint list if available
@@ -1568,6 +1577,8 @@ const Map = ({
         { id: 'show-vertices', icon: '📍', label: 'Waypoint頂点一覧を表示', action: 'show-vertices' },
         { id: 'copy-waypoints-decimal', icon: '📋', label: 'WP一覧をコピー (decimal)', action: 'copy-waypoints-decimal' },
         { id: 'copy-waypoints-dms', icon: '🌐', label: 'WP一覧をコピー (DMS)', action: 'copy-waypoints-dms' },
+        { id: 'copy-waypoints-decimal-csv', icon: '📊', label: 'WP一覧をコピー (CSV decimal)', action: 'copy-waypoints-decimal-csv' },
+        { id: 'copy-waypoints-dms-csv', icon: '📊', label: 'WP一覧をコピー (CSV DMS)', action: 'copy-waypoints-dms-csv' },
         { id: 'divider2', divider: true }
       )
     }

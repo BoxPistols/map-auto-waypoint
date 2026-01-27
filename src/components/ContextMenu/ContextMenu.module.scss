@@ -188,13 +188,19 @@
 
 // Header item
 .header {
-  padding: 6px 12px 4px;
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  padding: 10px 12px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.3px;
   user-select: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 4px;
+}
+
+:global([data-theme="light"]) .header {
+  color: rgba(0, 0, 0, 0.87);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
 }
 
 :global([data-theme="light"]) .header {
@@ -224,7 +230,6 @@
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
-  font-family: 'Courier New', monospace;
   font-size: 12px;
 }
 
