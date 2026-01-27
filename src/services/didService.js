@@ -197,7 +197,15 @@ export const checkDIDArea = async (lat, lng) => {
     const geojson = await fetchDIDGeoJSON(prefecture.code, prefecture.name);
     if (geojson) {
       const result = checkPointInDIDGeoJSON(geojson, lat, lng);
-      if (result) return result;
+      if (result) {
+        if (import.meta.env.DEV) {
+          console.log(`[DID] ✓ DID検出: ${result.area}`);
+        }
+        return result;
+      }
+      if (import.meta.env.DEV) {
+        console.log(`[DID] ✗ DID外: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} (GeoJSON features: ${geojson.features?.length || 0})`);
+      }
       return {
         isDID: false,
         area: null,
@@ -206,8 +214,14 @@ export const checkDIDArea = async (lat, lng) => {
         description: 'DID外'
       };
     }
+    if (import.meta.env.DEV) {
+      console.log(`[DID] GeoJSON読み込み失敗、フォールバック使用`);
+    }
     return checkDIDAreaFallback(lat, lng);
-  } catch {
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn(`[DID] エラー:`, error);
+    }
     return checkDIDAreaFallback(lat, lng);
   }
 };
