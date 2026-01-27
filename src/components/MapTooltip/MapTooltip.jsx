@@ -3,7 +3,7 @@
  * Tooltip for displaying information on hover over map features
  */
 
-import { useEffect, useState, useRef, useMemo } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { formatDateToJST } from '../../utils/formatters'
 import styles from './MapTooltip.module.scss'
 
@@ -19,57 +19,46 @@ export const MapTooltip = ({ isVisible, position, data, type }) => {
   const tooltipRef = useRef(null)
   const [adjustedPosition, setAdjustedPosition] = useState(position)
 
-  // Calculate adjusted position to keep tooltip in viewport
-  const calculatedPosition = useMemo(() => {
-    if (!tooltipRef.current || !position) return position
+  // Calculate and update position after DOM mount to ensure tooltip stays in viewport
+  useLayoutEffect(() => {
+    if (tooltipRef.current && position) {
+      const rect = tooltipRef.current.getBoundingClientRect()
+      const MARGIN = 10
+      const OFFSET_X = 15
+      const OFFSET_Y = 15
 
-    const rect = tooltipRef.current.getBoundingClientRect()
-    const MARGIN = 10
-    const OFFSET_X = 15
-    const OFFSET_Y = 15
+      let x = position.x + OFFSET_X
+      let y = position.y + OFFSET_Y
 
-    let x = position.x + OFFSET_X
-    let y = position.y + OFFSET_Y
-
-    // Check right boundary
-    if (x + rect.width > window.innerWidth - MARGIN) {
-      x = position.x - rect.width - OFFSET_X
-    }
-
-    // Check bottom boundary
-    if (y + rect.height > window.innerHeight - MARGIN) {
-      y = position.y - rect.height - OFFSET_Y
-    }
-
-    // Check left boundary after right adjustment
-    if (x < MARGIN) {
-      // Try positioning to the right of cursor
-      x = position.x + OFFSET_X
-      // If still off screen on right, clamp to MARGIN
+      // Check right boundary
       if (x + rect.width > window.innerWidth - MARGIN) {
-        x = MARGIN
+        x = position.x - rect.width - OFFSET_X
       }
-    }
 
-    // Check top boundary after bottom adjustment
-    if (y < MARGIN) {
-      // Try positioning below cursor
-      y = position.y + OFFSET_Y
-      // If still off screen on bottom, clamp to MARGIN
+      // Check bottom boundary
       if (y + rect.height > window.innerHeight - MARGIN) {
-        y = MARGIN
+        y = position.y - rect.height - OFFSET_Y
       }
-    }
 
-    return { x, y }
-  }, [position])
+      // Check left boundary after right adjustment
+      if (x < MARGIN) {
+        x = position.x + OFFSET_X
+        if (x + rect.width > window.innerWidth - MARGIN) {
+          x = Math.max(MARGIN, window.innerWidth - rect.width - MARGIN)
+        }
+      }
 
-  // Update position when calculated position changes
-  useEffect(() => {
-    if (calculatedPosition) {
-      setAdjustedPosition(calculatedPosition)
+      // Check top boundary after bottom adjustment
+      if (y < MARGIN) {
+        y = position.y + OFFSET_Y
+        if (y + rect.height > window.innerHeight - MARGIN) {
+          y = Math.max(MARGIN, window.innerHeight - rect.height - MARGIN)
+        }
+      }
+
+      setAdjustedPosition({ x, y })
     }
-  }, [calculatedPosition])
+  }, [position, isVisible])
 
   if (!isVisible || !data) return null
 
