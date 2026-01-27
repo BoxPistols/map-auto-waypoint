@@ -1129,6 +1129,14 @@ const Map = ({
 
     if (polygonFeature) {
       e.preventDefault()
+
+      // Clear tooltip when context menu opens
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+        hoverTimeoutRef.current = null
+      }
+      setTooltip(null)
+
       const polygonId = polygonFeature.properties.id
       const polygon = polygons.find(p => p.id === polygonId)
       if (polygon) {
@@ -1188,7 +1196,12 @@ const Map = ({
   // Handle waypoint hover - show tooltip
   const handleWaypointHover = useCallback((e, wp) => {
     e.stopPropagation()
-    
+
+    // Don't show tooltip if context menu is open
+    if (contextMenu?.isOpen || polygonContextMenu?.isOpen) {
+      return
+    }
+
     // Clear any existing timeout
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
@@ -1203,7 +1216,7 @@ const Map = ({
         type: 'waypoint'
       })
     }, 300)
-  }, [])
+  }, [contextMenu, polygonContextMenu])
 
   // Handle waypoint hover end - hide tooltip
   const handleWaypointHoverEnd = useCallback(() => {
@@ -1217,6 +1230,11 @@ const Map = ({
   // Handle polygon hover - show tooltip
   const handlePolygonHover = useCallback((e) => {
     if (!mapRef.current) return
+
+    // Don't show tooltip if context menu is open
+    if (contextMenu?.isOpen || polygonContextMenu?.isOpen) {
+      return
+    }
 
     const map = mapRef.current.getMap()
 
@@ -1280,7 +1298,7 @@ const Map = ({
       }
       setTooltip(null)
     }
-  }, [polygons, waypoints])
+  }, [polygons, waypoints, contextMenu, polygonContextMenu])
 
   // Handle polygon hover end - hide tooltip
   const handlePolygonHoverEnd = useCallback(() => {
@@ -2233,9 +2251,6 @@ const Map = ({
                                 ? { pointerEvents: 'none', opacity: 0.5 }
                                 : undefined
                         }
-                        title={`#${wp.index} - ${
-                            wp.polygonName || 'Waypoint'
-                        }${multiLabel} (右クリックでメニュー)`}
                         onContextMenu={(e) => handleWaypointRightClick(e, wp)}
                         onMouseEnter={(e) => handleWaypointHover(e, wp)}
                         onMouseLeave={handleWaypointHoverEnd}
