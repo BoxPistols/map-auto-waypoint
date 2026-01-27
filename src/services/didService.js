@@ -86,11 +86,23 @@ const PREFECTURE_DATA = [
  * 緯度経度から該当する都道府県を特定
  */
 const getPrefectureFromCoords = (lat, lng) => {
-  // 簡易実装: 主要都道府県のみチェック（完全版はflightAnalyzerからコピーすべき）
-  // ここではデモ用として短縮していますが、実運用では全データを移行します
-  return PREFECTURE_DATA.find(pref => {
+  // Find all matching prefectures
+  const matches = PREFECTURE_DATA.filter(pref => {
     const b = pref.bounds;
     return lat >= b.minLat && lat <= b.maxLat && lng >= b.minLng && lng <= b.maxLng;
+  });
+
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return matches[0];
+
+  // If multiple matches, prefer the one with smallest area (more specific)
+  // Calculate area as (latRange * lngRange)
+  return matches.reduce((smallest, pref) => {
+    const b = pref.bounds;
+    const area = (b.maxLat - b.minLat) * (b.maxLng - b.minLng);
+    const smallestB = smallest.bounds;
+    const smallestArea = (smallestB.maxLat - smallestB.minLat) * (smallestB.maxLng - smallestB.minLng);
+    return area < smallestArea ? pref : smallest;
   });
 };
 

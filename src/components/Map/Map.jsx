@@ -2219,6 +2219,7 @@ const Map = ({
         )}
 
         {/* Display waypoints as draggable markers (non-interactive during polygon edit) */}
+        {import.meta.env.DEV && console.log('[Map] Rendering waypoints:', waypoints.map(w => ({ index: w.index, id: w.id, lat: w.lat.toFixed(6), lng: w.lng.toFixed(6) })))}
         {waypoints.map((wp) => {
             const isHighlighted = highlightedWaypointIndex === wp.index
             // Check zone violations for this waypoint
@@ -2240,7 +2241,7 @@ const Map = ({
             const isInProhibited = (flags?.hasProhibited || false) || (recommendedWp?.hasProhibited || false)
 
             // Debug: 全ウェイポイントの判定結果を確認（開発時のみ）
-            if (import.meta.env.DEV && (isInDID || isInAirport || isInProhibited)) {
+            if (import.meta.env.DEV) {
                 console.log(
                     `[Map] WP${wp.index} (${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}):`,
                     {
@@ -2249,7 +2250,10 @@ const Map = ({
                         isInAirport,
                         isInProhibited,
                         didFromIndex,
-                        waypointId: wp.id
+                        waypointId: wp.id,
+                        hasFlags: !!flags,
+                        flagsHasDID: flags?.hasDID,
+                        recommendedWpHasDID: recommendedWp?.hasDID
                     }
                 )
             }
