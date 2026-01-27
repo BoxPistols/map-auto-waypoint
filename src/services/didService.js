@@ -242,6 +242,38 @@ export const isPositionInDIDSync = (lat, lng) => {
 };
 
 /**
+ * デバッグ用: 手動でDID判定をテスト
+ * ブラウザのコンソールで使用: window.testDID(35.76128756, 139.62974076)
+ */
+export const debugCheckDID = async (lat, lng) => {
+  console.log(`[DID Debug] Testing: lat=${lat}, lng=${lng}`);
+  const result = await checkDIDArea(lat, lng);
+  console.log(`[DID Debug] Result:`, result);
+
+  const prefecture = getPrefectureFromCoords(lat, lng);
+  console.log(`[DID Debug] Prefecture:`, prefecture);
+
+  if (prefecture) {
+    const cacheKey = `pref_${prefecture.code}`;
+    const cached = didPrefectureCache.has(cacheKey);
+    console.log(`[DID Debug] Cache status: ${cached ? 'LOADED' : 'NOT LOADED'}`);
+
+    if (cached) {
+      const geojson = didPrefectureCache.get(cacheKey);
+      console.log(`[DID Debug] GeoJSON features: ${geojson?.features?.length || 0}`);
+    }
+  }
+
+  return result;
+};
+
+// 開発環境でグローバルにデバッグ関数を公開
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  window.testDID = debugCheckDID;
+  console.log('[DID] Debug function available: window.testDID(lat, lng)');
+}
+
+/**
  * 指定された座標リストに基づいてDIDデータをプリロード
  * 初回ロード時の遅延判定を回避するために使用
  * @param {Array<{lat: number, lng: number}>} coordinates - 座標リスト

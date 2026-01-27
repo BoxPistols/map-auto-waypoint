@@ -224,6 +224,7 @@ const Map = ({
   // Tooltip state for hover
   const [tooltip, setTooltip] = useState(null) // { isVisible, position, data, type }
   const hoverTimeoutRef = useRef(null)
+  const [isWaypointHovering, setIsWaypointHovering] = useState(false)
 
   // 施設ポップアップ状態
   const [facilityPopup, setFacilityPopup] = useState(null) // { facility, screenX, screenY }
@@ -1224,6 +1225,9 @@ const Map = ({
       return
     }
 
+    // Mark waypoint as hovering (to prevent polygon hover from triggering)
+    setIsWaypointHovering(true)
+
     // Clear any existing timeout
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
@@ -1242,6 +1246,7 @@ const Map = ({
 
   // Handle waypoint hover end - hide tooltip
   const handleWaypointHoverEnd = useCallback(() => {
+    setIsWaypointHovering(false)
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current)
       hoverTimeoutRef.current = null
@@ -1253,8 +1258,8 @@ const Map = ({
   const handlePolygonHover = useCallback((e) => {
     if (!mapRef.current) return
 
-    // Don't show tooltip if context menu is open
-    if (contextMenu?.isOpen || polygonContextMenu?.isOpen) {
+    // Don't show tooltip if context menu is open or waypoint is hovering
+    if (contextMenu?.isOpen || polygonContextMenu?.isOpen || isWaypointHovering) {
       return
     }
 
@@ -1320,7 +1325,7 @@ const Map = ({
       }
       setTooltip(null)
     }
-  }, [polygons, waypoints, contextMenu, polygonContextMenu])
+  }, [polygons, waypoints, contextMenu, polygonContextMenu, isWaypointHovering])
 
   // Handle polygon hover end - hide tooltip
   const handlePolygonHoverEnd = useCallback(() => {
@@ -2234,15 +2239,18 @@ const Map = ({
             const isInAirport = (flags?.hasAirport || false) || (recommendedWp?.hasAirport || false)
             const isInProhibited = (flags?.hasProhibited || false) || (recommendedWp?.hasProhibited || false)
 
-            // Debug: ゾーン違反の確認（開発時のみ）
-            if (
-                import.meta.env.DEV &&
-                recommendedWp &&
-                (isInDID || isInAirport || isInProhibited)
-            ) {
+            // Debug: 全ウェイポイントの判定結果を確認（開発時のみ）
+            if (import.meta.env.DEV && (isInDID || isInAirport || isInProhibited)) {
                 console.log(
-                    `[Map] WP${wp.index}: DID=${isInDID}, Airport=${isInAirport}, Prohibited=${isInProhibited}`,
-                    recommendedWp.issueTypes
+                    `[Map] WP${wp.index} (${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}):`,
+                    {
+                        flags: flags,
+                        isInDID,
+                        isInAirport,
+                        isInProhibited,
+                        didFromIndex,
+                        waypointId: wp.id
+                    }
                 )
             }
 

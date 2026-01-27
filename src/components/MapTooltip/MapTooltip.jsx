@@ -99,22 +99,24 @@ export const MapTooltip = ({ isVisible, position, data, type }) => {
                 <span className={styles.value}>{data.elevation}m</span>
               </div>
             )}
-            {data.airspaceRestrictions && data.airspaceRestrictions.length > 0 && (
+            {Array.isArray(data.airspaceRestrictions) && data.airspaceRestrictions.length > 0 && (
               <div className={styles.row}>
                 <span className={styles.label}>飛行制限:</span>
                 <span className={styles.value}>
                   {data.airspaceRestrictions.map((r, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        color: r.color,
-                        fontWeight: r.type !== 'NORMAL' ? '600' : '400',
-                        marginRight: idx < data.airspaceRestrictions.length - 1 ? '4px' : '0'
-                      }}
-                    >
-                      {r.icon} {r.label}
-                      {idx < data.airspaceRestrictions.length - 1 && ', '}
-                    </span>
+                    r && (
+                      <span
+                        key={idx}
+                        style={{
+                          color: r.color || '#10b981',
+                          fontWeight: r.type !== 'NORMAL' ? '600' : '400',
+                          marginRight: idx < data.airspaceRestrictions.length - 1 ? '4px' : '0'
+                        }}
+                      >
+                        {r.icon || ''} {r.label || '不明'}
+                        {idx < data.airspaceRestrictions.length - 1 && ', '}
+                      </span>
+                    )
                   ))}
                 </span>
               </div>
