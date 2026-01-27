@@ -231,7 +231,24 @@ function MainLayout() {
 
         // 2. DID GeoJSONによるDID検出（非同期・エラーでも継続）
         try {
+          if (import.meta.env.DEV) {
+            console.log(`[CollisionCheck] DIDチェック開始: ${waypoints.length}個のウェイポイント`)
+          }
+
           const didResult = await checkAllWaypointsDID(waypoints)
+
+          if (import.meta.env.DEV) {
+            console.log(`[CollisionCheck] DIDチェック完了:`, {
+              hasDIDWaypoints: didResult?.hasDIDWaypoints,
+              didCount: didResult?.didWaypoints?.length || 0,
+              didWaypoints: didResult?.didWaypoints?.map(dw => ({
+                index: waypoints.find(w => w.id === dw.waypointId)?.index,
+                lat: dw.lat.toFixed(6),
+                lng: dw.lng.toFixed(6),
+                area: dw.area
+              }))
+            })
+          }
 
           if (!cancelled && didResult?.hasDIDWaypoints) {
             for (const didWp of didResult.didWaypoints) {
