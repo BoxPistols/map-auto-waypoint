@@ -2250,24 +2250,6 @@ const Map = ({
             const isInAirport = (flags?.hasAirport || false) || (recommendedWp?.hasAirport || false)
             const isInProhibited = (flags?.hasProhibited || false) || (recommendedWp?.hasProhibited || false)
 
-            // Debug: 制限区域があるウェイポイントの判定結果を確認（開発時のみ）
-            if (import.meta.env.DEV && (isInDID || isInAirport || isInProhibited)) {
-                console.log(
-                    `[Map] WP${wp.index} (${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}):`,
-                    {
-                        flags: flags,
-                        isInDID,
-                        isInAirport,
-                        isInProhibited,
-                        didFromIndex,
-                        waypointId: wp.id,
-                        hasFlags: !!flags,
-                        flagsHasDID: flags?.hasDID,
-                        recommendedWpHasDID: recommendedWp?.hasDID
-                    }
-                )
-            }
-
             // Build zone class (priority: prohibited > airport > DID)
             let zoneClass = ''
             let zoneLabel = ''
