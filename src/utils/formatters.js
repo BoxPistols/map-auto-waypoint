@@ -80,7 +80,8 @@ export const copyToClipboard = async (text) => {
   } catch (error) {
     console.error('Clipboard copy failed:', error)
     
-    // Fallback method
+    // Fallback method for older browsers
+    // Note: execCommand is deprecated but may still work in some browsers
     try {
       const textArea = document.createElement('textarea')
       textArea.value = text
@@ -90,9 +91,17 @@ export const copyToClipboard = async (text) => {
       document.body.appendChild(textArea)
       textArea.focus()
       textArea.select()
-      document.execCommand('copy')
+      
+      // Try to copy using the deprecated method
+      const successful = document.execCommand('copy')
       textArea.remove()
-      return true
+      
+      if (successful) {
+        return true
+      }
+      
+      console.warn('Clipboard fallback failed')
+      return false
     } catch (fallbackError) {
       console.error('Fallback copy failed:', fallbackError)
       return false
