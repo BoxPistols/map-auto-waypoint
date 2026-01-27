@@ -3,7 +3,7 @@
  * Tooltip for displaying information on hover over map features
  */
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { formatDateToJST } from '../../utils/formatters'
 import styles from './MapTooltip.module.scss'
 
@@ -19,10 +19,10 @@ export const MapTooltip = ({ isVisible, position, data, type }) => {
   const tooltipRef = useRef(null)
   const [adjustedPosition, setAdjustedPosition] = useState(position)
 
-  useEffect(() => {
-    if (!isVisible || !tooltipRef.current || !position) return
+  // Calculate adjusted position to keep tooltip in viewport
+  const calculatedPosition = useMemo(() => {
+    if (!tooltipRef.current || !position) return position
 
-    // Adjust position to keep tooltip in viewport
     const rect = tooltipRef.current.getBoundingClientRect()
     const MARGIN = 10
     const OFFSET_X = 15
@@ -51,8 +51,15 @@ export const MapTooltip = ({ isVisible, position, data, type }) => {
       y = MARGIN
     }
 
-    setAdjustedPosition({ x, y })
-  }, [isVisible, position])
+    return { x, y }
+  }, [position])
+
+  // Update position when calculated position changes
+  useEffect(() => {
+    if (calculatedPosition) {
+      setAdjustedPosition(calculatedPosition)
+    }
+  }, [calculatedPosition])
 
   if (!isVisible || !data) return null
 

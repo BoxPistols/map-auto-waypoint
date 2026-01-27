@@ -9,7 +9,6 @@ import MapTooltip from '../MapTooltip'
 import FocusCrosshair from '../FocusCrosshair'
 import CoordinateDisplay from '../CoordinateDisplay'
 import ControlGroup from './ControlGroup'
-import controlGroupStyles from './ControlGroup.module.scss'
 import FacilityPopup from '../FacilityPopup/FacilityPopup'
 import {
   formatDateToJST,
@@ -2328,7 +2327,7 @@ const Map = ({
             defaultExpanded={false}
             groupToggle={true}
             groupEnabled={layerVisibility.showDID}
-            onGroupToggle={(enabled) => toggleLayer('showDID')}
+            onGroupToggle={(_enabled) => toggleLayer('showDID')}
             favoritable={true}
             isFavorite={favoriteGroups.has('did')}
             onFavoriteToggle={() => toggleFavoriteGroup('did')}
