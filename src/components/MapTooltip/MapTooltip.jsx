@@ -41,14 +41,24 @@ export const MapTooltip = ({ isVisible, position, data, type }) => {
       y = position.y - rect.height - OFFSET_Y
     }
 
-    // Check left boundary
+    // Check left boundary after right adjustment
     if (x < MARGIN) {
-      x = MARGIN
+      // Try positioning to the right of cursor
+      x = position.x + OFFSET_X
+      // If still off screen on right, clamp to MARGIN
+      if (x + rect.width > window.innerWidth - MARGIN) {
+        x = MARGIN
+      }
     }
 
-    // Check top boundary
+    // Check top boundary after bottom adjustment
     if (y < MARGIN) {
-      y = MARGIN
+      // Try positioning below cursor
+      y = position.y + OFFSET_Y
+      // If still off screen on bottom, clamp to MARGIN
+      if (y + rect.height > window.innerHeight - MARGIN) {
+        y = MARGIN
+      }
     }
 
     return { x, y }
