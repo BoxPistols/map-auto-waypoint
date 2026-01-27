@@ -191,11 +191,17 @@ const checkPointInDIDGeoJSON = (geojson, lat, lng) => {
 
 /**
  * メイン: DID判定
+ * 複数の都道府県にまたがるDIDに対応するため、候補となる複数の都道府県を検証
  */
 export const checkDIDArea = async (lat, lng) => {
   try {
-    const prefecture = getPrefectureFromCoords(lat, lng);
-    if (!prefecture) {
+    // Get all matching prefectures (may overlap at borders)
+    const prefectures = PREFECTURE_DATA.filter(pref => {
+      const b = pref.bounds;
+      return lat >= b.minLat && lat <= b.maxLat && lng >= b.minLng && lng <= b.maxLng;
+    });
+
+    if (prefectures.length === 0) {
       if (import.meta.env.DEV) {
         console.log(`[DID] No prefecture for: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)}`);
       }
@@ -203,33 +209,36 @@ export const checkDIDArea = async (lat, lng) => {
     }
 
     if (import.meta.env.DEV) {
-      console.log(`[DID] Checking: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} in ${prefecture.nameJa}`);
+      const prefNames = prefectures.map(p => p.nameJa).join(', ');
+      console.log(`[DID] Checking: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} in [${prefNames}]`);
     }
 
-    const geojson = await fetchDIDGeoJSON(prefecture.code, prefecture.name);
-    if (geojson) {
-      const result = checkPointInDIDGeoJSON(geojson, lat, lng);
-      if (result) {
-        if (import.meta.env.DEV) {
-          console.log(`[DID] ✓ DID検出: ${result.area}`);
+    // Check all matching prefectures' GeoJSON data
+    for (const prefecture of prefectures) {
+      const geojson = await fetchDIDGeoJSON(prefecture.code, prefecture.name);
+      if (geojson) {
+        const result = checkPointInDIDGeoJSON(geojson, lat, lng);
+        if (result) {
+          // Found in DID - return immediately
+          if (import.meta.env.DEV) {
+            console.log(`[DID] ✓ DID検出: ${result.area} (${prefecture.nameJa})`);
+          }
+          return result;
         }
-        return result;
       }
-      if (import.meta.env.DEV) {
-        console.log(`[DID] ✗ DID外: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} (GeoJSON features: ${geojson.features?.length || 0})`);
-      }
-      return {
-        isDID: false,
-        area: null,
-        certainty: 'confirmed',
-        source: 'local/R02',
-        description: 'DID外'
-      };
     }
+
+    // Not found in any prefecture's DID data
     if (import.meta.env.DEV) {
-      console.log(`[DID] GeoJSON読み込み失敗、フォールバック使用`);
+      console.log(`[DID] ✗ DID外: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} (checked ${prefectures.length} prefecture(s))`);
     }
-    return checkDIDAreaFallback(lat, lng);
+    return {
+      isDID: false,
+      area: null,
+      certainty: 'confirmed',
+      source: 'local/R02',
+      description: 'DID外'
+    };
   } catch (error) {
     if (import.meta.env.DEV) {
       console.warn(`[DID] エラー:`, error);
