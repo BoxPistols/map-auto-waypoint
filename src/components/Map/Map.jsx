@@ -1220,8 +1220,15 @@ const Map = ({
   const handleWaypointHover = useCallback((e, wp) => {
     e.stopPropagation()
 
+    if (import.meta.env.DEV) {
+      console.log(`[Map] Waypoint hover: WP${wp.index}`, { x: e.clientX, y: e.clientY })
+    }
+
     // Don't show tooltip if context menu is open
     if (contextMenu?.isOpen || polygonContextMenu?.isOpen) {
+      if (import.meta.env.DEV) {
+        console.log('[Map] Waypoint hover blocked: context menu open')
+      }
       return
     }
 
@@ -1235,10 +1242,14 @@ const Map = ({
 
     // Set tooltip with a slight delay
     hoverTimeoutRef.current = setTimeout(() => {
+      const restrictions = getWaypointAirspaceRestrictions(wp)
+      if (import.meta.env.DEV) {
+        console.log(`[Map] Showing waypoint tooltip: WP${wp.index}`, { restrictions })
+      }
       setTooltip({
         isVisible: true,
         position: { x: e.clientX, y: e.clientY },
-        data: { ...wp, airspaceRestrictions: getWaypointAirspaceRestrictions(wp) },
+        data: { ...wp, airspaceRestrictions: restrictions },
         type: 'waypoint'
       })
     }, 300)
@@ -2837,7 +2848,6 @@ const Map = ({
           menuItems={waypointContextMenuItems}
           onClose={() => setContextMenu(null)}
           onAction={handleContextMenuAction}
-          title={contextMenu.waypoint ? `WP #${contextMenu.waypoint.index}` : null}
         />
       )}
 
@@ -2849,7 +2859,6 @@ const Map = ({
           menuItems={polygonContextMenuItems}
           onClose={() => setPolygonContextMenu(null)}
           onAction={handlePolygonContextMenuAction}
-          title={polygonContextMenu.polygon?.name}
         />
       )}
 
