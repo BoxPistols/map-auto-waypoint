@@ -1311,14 +1311,10 @@ const Map = ({
         // Count waypoints for this polygon
         const waypointCount = waypoints.filter(wp => wp.polygonId === polygon.id).length
 
-        // Calculate screen position for tooltip
-        const screenX = e.originalEvent?.clientX || point.x
-        const screenY = e.originalEvent?.clientY || point.y
-
         hoverTimeoutRef.current = setTimeout(() => {
           setTooltip({
             isVisible: true,
-            position: { x: screenX, y: screenY },
+            position: { x: e.originalEvent.clientX, y: e.originalEvent.clientY },
             data: {
               ...polygon,
               area,
