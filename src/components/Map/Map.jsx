@@ -11,6 +11,7 @@ import controlGroupStyles from './ControlGroup.module.scss'
 import FacilityPopup from '../FacilityPopup/FacilityPopup'
 import VertexListModal from '../VertexListModal/VertexListModal'
 import { formatTokyoTime } from '../../utils/dateFormat'
+import { extractPolygonCoordinates } from '../../utils/geometry'
 import { area, length } from '@turf/turf'
 import {
   getAirportZonesGeoJSON,
@@ -1201,7 +1202,9 @@ const Map = ({
         break
       case 'copy-coords': {
         const coordStr = `${wp.lat.toFixed(6)}, ${wp.lng.toFixed(6)}`
-        navigator.clipboard.writeText(coordStr)
+        navigator.clipboard.writeText(coordStr).catch((err) => {
+          console.error('Failed to copy coordinates:', err)
+        })
         break
       }
       case 'copy-coords-dms': {
@@ -1214,7 +1217,9 @@ const Map = ({
         const lngSec = ((Math.abs(wp.lng) - lngDeg - lngMin / 60) * 3600).toFixed(2)
         const lngDir = wp.lng >= 0 ? 'E' : 'W'
         const dmsStr = `${latDeg}°${latMin}'${latSec}"${latDir} ${lngDeg}°${lngMin}'${lngSec}"${lngDir}`
-        navigator.clipboard.writeText(dmsStr)
+        navigator.clipboard.writeText(dmsStr).catch((err) => {
+          console.error('Failed to copy DMS coordinates:', err)
+        })
         break
       }
       case 'copy-all-info': {
@@ -1225,7 +1230,9 @@ const Map = ({
           `標高: ${wp.elevation ? `${wp.elevation}m` : '未取得'}`,
           `作成日時: ${wp.createdAt ? formatTokyoTime(wp.createdAt) : '不明'}`
         ].join('\n')
-        navigator.clipboard.writeText(allInfo)
+        navigator.clipboard.writeText(allInfo).catch((err) => {
+          console.error('Failed to copy all info:', err)
+        })
         break
       }
       case 'focus':
@@ -1288,17 +1295,14 @@ const Map = ({
         setVertexListModal({ polygon })
         break
       case 'copy-vertices': {
-        // Extract coordinates from GeoJSON geometry
-        let coordinates = []
-        if (polygon.geometry && polygon.geometry.type === 'Polygon' && polygon.geometry.coordinates) {
-          const ring = polygon.geometry.coordinates[0]
-          // Convert [lng, lat] to { lat, lng } and exclude the last point
-          coordinates = ring.slice(0, -1).map(([lng, lat]) => ({ lat, lng }))
-        }
+        // Extract coordinates from GeoJSON geometry using shared utility
+        const coordinates = extractPolygonCoordinates(polygon.geometry)
         const coordsText = coordinates
           .map((coord, idx) => `WP #${idx + 1}: ${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)}`)
           .join('\n')
-        navigator.clipboard.writeText(coordsText)
+        navigator.clipboard.writeText(coordsText).catch((err) => {
+          console.error('Failed to copy vertex coordinates:', err)
+        })
         break
       }
       default:

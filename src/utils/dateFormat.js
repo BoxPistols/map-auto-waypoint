@@ -30,12 +30,12 @@ export const formatTokyoTime = (date) => {
   const formatter = new Intl.DateTimeFormat('ja-JP', options)
   const parts = formatter.formatToParts(d)
   
-  const year = parts.find(p => p.type === 'year').value
-  const month = parts.find(p => p.type === 'month').value
-  const day = parts.find(p => p.type === 'day').value
-  const hour = parts.find(p => p.type === 'hour').value
-  const minute = parts.find(p => p.type === 'minute').value
-  const second = parts.find(p => p.type === 'second').value
+  const year = parts.find(p => p.type === 'year')?.value || '0000'
+  const month = parts.find(p => p.type === 'month')?.value || '00'
+  const day = parts.find(p => p.type === 'day')?.value || '00'
+  const hour = parts.find(p => p.type === 'hour')?.value || '00'
+  const minute = parts.find(p => p.type === 'minute')?.value || '00'
+  const second = parts.find(p => p.type === 'second')?.value || '00'
   
   return `${year}-${month}-${day} ${hour}:${minute}:${second} (JST)`
 }

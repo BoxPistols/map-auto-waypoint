@@ -3,32 +3,48 @@
  * Display polygon vertices with WP numbers and coordinates
  */
 
-import { useCallback } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import { X, Copy, CheckCircle } from 'lucide-react'
-import { useState } from 'react'
+import { extractPolygonCoordinates } from '../../utils/geometry'
 import styles from './VertexListModal.module.scss'
 
 const VertexListModal = ({ polygon, onClose }) => {
   const [copiedIndex, setCopiedIndex] = useState(null)
   const [allCopied, setAllCopied] = useState(false)
+  const timeoutIdRef = useRef(null)
 
   if (!polygon) return null
 
   // Extract coordinates from GeoJSON geometry
-  // For Polygon geometry: coordinates[0] is the outer ring
-  let coordinates = []
-  if (polygon.geometry && polygon.geometry.type === 'Polygon' && polygon.geometry.coordinates) {
-    const ring = polygon.geometry.coordinates[0]
-    // Convert [lng, lat] to { lat, lng } and exclude the last point (which duplicates the first)
-    coordinates = ring.slice(0, -1).map(([lng, lat]) => ({ lat, lng }))
-  }
+  const coordinates = extractPolygonCoordinates(polygon.geometry)
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current)
+      }
+    }
+  }, [])
 
   // Copy single coordinate
   const handleCopyCoordinate = useCallback((coord, index) => {
     const coordStr = `${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)}`
+    
     navigator.clipboard.writeText(coordStr)
-    setCopiedIndex(index)
-    setTimeout(() => setCopiedIndex(null), 2000)
+      .then(() => {
+        setCopiedIndex(index)
+        if (timeoutIdRef.current) {
+          clearTimeout(timeoutIdRef.current)
+        }
+        timeoutIdRef.current = setTimeout(() => {
+          setCopiedIndex(null)
+          timeoutIdRef.current = null
+        }, 2000)
+      })
+      .catch((err) => {
+        console.error('Failed to copy coordinate:', err)
+      })
   }, [])
 
   // Copy all coordinates
@@ -36,9 +52,21 @@ const VertexListModal = ({ polygon, onClose }) => {
     const coordsText = coordinates
       .map((coord, idx) => `WP #${idx + 1}: ${coord.lat.toFixed(6)}, ${coord.lng.toFixed(6)}`)
       .join('\n')
+    
     navigator.clipboard.writeText(coordsText)
-    setAllCopied(true)
-    setTimeout(() => setAllCopied(false), 2000)
+      .then(() => {
+        setAllCopied(true)
+        if (timeoutIdRef.current) {
+          clearTimeout(timeoutIdRef.current)
+        }
+        timeoutIdRef.current = setTimeout(() => {
+          setAllCopied(false)
+          timeoutIdRef.current = null
+        }, 2000)
+      })
+      .catch((err) => {
+        console.error('Failed to copy all coordinates:', err)
+      })
   }, [coordinates])
 
   return (
