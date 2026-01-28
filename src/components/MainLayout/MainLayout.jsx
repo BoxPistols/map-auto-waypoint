@@ -34,6 +34,13 @@ import '../../App.scss'
 // Default center: Tokyo Tower
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
 
+// Japan overview (Issue #52)
+const JAPAN_OVERVIEW_CENTER = { lat: 36.5, lng: 138.0 }
+const JAPAN_OVERVIEW_ZOOM = 5
+
+// ズーム計算時のマップ表示領域の割合（コントロールパネル等を除外）
+const MAP_AREA_RATIO = 0.8
+
 // ポリゴンの境界からズームレベルを計算
 // Web Mercator投影に基づく正確な計算 + パディング考慮
 const calculateZoomForBounds = (geometry, options = {}) => {
@@ -73,9 +80,9 @@ const calculateZoomForBounds = (geometry, options = {}) => {
   // 地球の赤道周長（度）= 360度
   // 各ズームレベルでのタイルあたりの度数 = 360 / (2^zoom)
 
-  // ビューポートのアスペクト比を考慮
-  const effectiveWidth = viewportWidth * 0.8  // コントロール領域を除外
-  const effectiveHeight = viewportHeight * 0.8
+  // ビューポートのアスペクト比を考慮（コントロール領域を除外）
+  const effectiveWidth = viewportWidth * MAP_AREA_RATIO
+  const effectiveHeight = viewportHeight * MAP_AREA_RATIO
 
   // 経度方向のズーム計算（単純な線形関係）
   const lngZoom = lngSpan > 0
@@ -691,8 +698,8 @@ function MainLayout() {
           } else {
             // 1st press: Save current position and show Japan overview
             setSavedViewState({ center, zoom })
-            setCenter({ lat: 36.5, lng: 138.0 })
-            setZoom(5)
+            setCenter(JAPAN_OVERVIEW_CENTER)
+            setZoom(JAPAN_OVERVIEW_ZOOM)
             showNotification('日本全国俯瞰表示（もう一度 [0] で戻る）')
           }
           return
