@@ -1063,17 +1063,12 @@ function MainLayout() {
   }, [setWaypoints, showNotification])
 
   // Handle polygon select from map
+  // マップ上でクリックした場合はZoom/Centerを変更しない（選択のみ）
   const handlePolygonSelectFromMap = useCallback((polygonId) => {
     setSelectedPolygonId(polygonId)
-    const polygon = polygons.find(p => p.id === polygonId)
-    if (polygon) {
-      const center = getPolygonCenter(polygon)
-      if (center) {
-        setCenter(center)
-        setZoom(calculateZoomForBounds(polygon.geometry))
-      }
-    }
-  }, [polygons, setSelectedPolygonId])
+    // Note: マップ上でクリックしたポリゴンは既に表示されているので
+    // Zoom/Centerの変更は不要。作業の邪魔にならないようにする。
+  }, [setSelectedPolygonId])
 
   // Handle waypoint clear
   const handleWaypointClear = useCallback(() => {
