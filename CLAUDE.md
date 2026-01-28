@@ -325,6 +325,7 @@ When adding new shortcuts, update `HelpModal.jsx`:
 | `?` | Help |
 | `Cmd/Ctrl+Z` | Undo |
 | `Cmd/Ctrl+Shift+Z` | Redo |
+| `0` | Japan overview ⇔ Return to saved position |
 | `D` | Toggle DID overlay |
 | `A` | Toggle airport zones |
 | `R` | Toggle red zones |
