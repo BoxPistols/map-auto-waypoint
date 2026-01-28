@@ -35,8 +35,17 @@ import '../../App.scss'
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
 
 // ポリゴンの境界からズームレベルを計算
-// maxZoom: 14 に制限（近寄りすぎ防止）
-const calculateZoomForBounds = (geometry) => {
+// Web Mercator投影に基づく正確な計算 + パディング考慮
+const calculateZoomForBounds = (geometry, options = {}) => {
+  const {
+    padding = 0.25,      // 25%のパディング（余裕を持たせる）
+    minZoom = 10,        // 最小ズーム（広すぎない）
+    maxZoom = 16,        // 最大ズーム
+    // ウィンドウサイズを自動取得（サーバーサイドレンダリング対応）
+    viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 800,
+    viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 600
+  } = options
+
   if (!geometry?.coordinates?.[0]) return 14
 
   const coords = geometry.type === 'MultiPolygon'
@@ -48,16 +57,48 @@ const calculateZoomForBounds = (geometry) => {
   const lats = coords.map(c => c[1])
   const lngs = coords.map(c => c[0])
 
-  const latSpan = Math.max(...lats) - Math.min(...lats)
-  const lngSpan = Math.max(...lngs) - Math.min(...lngs)
-  const maxSpan = Math.max(latSpan, lngSpan)
+  const minLat = Math.min(...lats)
+  const maxLat = Math.max(...lats)
+  const minLng = Math.min(...lngs)
+  const maxLng = Math.max(...lngs)
 
-  // maxSpanに基づいてズームレベルを計算（最大14に制限）
-  if (maxSpan > 0.5) return 10
-  if (maxSpan > 0.2) return 11
-  if (maxSpan > 0.1) return 12
-  if (maxSpan > 0.05) return 13
-  return 14 // 最大ズームを14に制限
+  // パディングを適用した境界
+  const latSpan = (maxLat - minLat) * (1 + padding)
+  const lngSpan = (maxLng - minLng) * (1 + padding)
+
+  // 空のスパンの場合のフォールバック
+  if (latSpan <= 0 && lngSpan <= 0) return maxZoom
+
+  // Web Mercator投影でのズーム計算
+  // 地球の赤道周長（度）= 360度
+  // 各ズームレベルでのタイルあたりの度数 = 360 / (2^zoom)
+
+  // ビューポートのアスペクト比を考慮
+  const effectiveWidth = viewportWidth * 0.8  // コントロール領域を除外
+  const effectiveHeight = viewportHeight * 0.8
+
+  // 経度方向のズーム計算（単純な線形関係）
+  const lngZoom = lngSpan > 0
+    ? Math.log2(360 / lngSpan * (effectiveWidth / 256))
+    : maxZoom
+
+  // 緯度方向のズーム計算（メルカトル投影の補正）
+  // 緯度による歪みを考慮
+  const centerLat = (minLat + maxLat) / 2
+  const latRadians = centerLat * Math.PI / 180
+  const mercatorFactor = Math.cos(latRadians)
+
+  const latZoom = latSpan > 0
+    ? Math.log2(180 / latSpan * mercatorFactor * (effectiveHeight / 256))
+    : maxZoom
+
+  // 両方向でフィットするより小さいズームを採用
+  const calculatedZoom = Math.min(lngZoom, latZoom)
+
+  // 範囲内にクランプして整数に丸める
+  const finalZoom = Math.round(Math.max(minZoom, Math.min(maxZoom, calculatedZoom)))
+
+  return finalZoom
 }
 
 // WP間の総距離を計算 (km)
