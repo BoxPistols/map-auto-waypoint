@@ -94,6 +94,9 @@ function MainLayout() {
   const [center, setCenter] = useState(DEFAULT_CENTER)
   const [zoom, setZoom] = useState(12)
 
+  // Japan overview toggle state (Issue #52)
+  const [savedViewState, setSavedViewState] = useState(null)
+
   // UI state
   const [drawMode, setDrawMode] = useState(false)
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
@@ -635,6 +638,25 @@ function MainLayout() {
 
       // Single key shortcuts
       if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        // [0] key: Japan overview ⇔ Return to saved position (Issue #52)
+        if (e.key === '0') {
+          e.preventDefault()
+          if (savedViewState) {
+            // 2nd press: Return to saved position
+            setCenter(savedViewState.center)
+            setZoom(savedViewState.zoom)
+            setSavedViewState(null)
+            showNotification('元の位置に戻りました')
+          } else {
+            // 1st press: Save current position and show Japan overview
+            setSavedViewState({ center, zoom })
+            setCenter({ lat: 36.5, lng: 138.0 })
+            setZoom(5)
+            showNotification('日本全国俯瞰表示（もう一度 [0] で戻る）')
+          }
+          return
+        }
+
         switch (e.key.toLowerCase()) {
           case 's': // Toggle sidebar
             e.preventDefault()
@@ -696,7 +718,7 @@ function MainLayout() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleUndo, handleRedo, sidebarCollapsed, selectedPolygonId, polygons, handleEditPolygonShape, toggleTheme, editingPolygon, showNotification, setIsSearchExpanded])
+  }, [handleUndo, handleRedo, sidebarCollapsed, selectedPolygonId, polygons, handleEditPolygonShape, toggleTheme, editingPolygon, showNotification, setIsSearchExpanded, savedViewState, center, zoom])
 
   // Handle polygon shape edit complete
   const handlePolygonEditComplete = useCallback((updatedFeature) => {
