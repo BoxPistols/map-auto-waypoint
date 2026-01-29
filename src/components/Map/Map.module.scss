@@ -380,8 +380,15 @@
   }
 
   &.active {
-    background: #45b7d1;
-    color: white;
+    // デフォルトのアクティブスタイル（白ベース + 左ボーダー）
+    background: rgba(var(--color-bg-elevated-rgb), 0.95);
+    color: var(--color-text);
+    border-left: 3px solid var(--color-primary);
+    font-weight: 500;
+
+    &:hover {
+      background: rgba(var(--color-bg-elevated-rgb), 1);
+    }
   }
 }
 
@@ -429,102 +436,103 @@
   }
 }
 
-// Airspace zone specific button colors when active
-.toggleButton.activeDID {
-  background: #9c27b0;
-  color: white;
+// レイヤーボタンのアクティブ状態 - 落ち着いた色調
+// 左ボーダーで色を示し、背景は白ベースを維持
+
+// 共通のアクティブスタイル（ミックスイン的に使用）
+@mixin activeLayerButton($color) {
+  // 白ベース背景を維持しつつ、左ボーダーで色を示す
+  background: rgba(var(--color-bg-elevated-rgb), 0.95);
+  color: var(--color-text);
+  border-left: 3px solid $color;
+  font-weight: 500;
+
+  &:hover {
+    background: rgba(var(--color-bg-elevated-rgb), 1);
+    border-color: $color;
+  }
 }
 
-.toggleButton.activeAirport {
-  background: #ff9800;
-  color: white;
+// 飛行制限系（赤系統 - 警告色）
+.toggleButton.activeDID {
+  @include activeLayerButton(#9c27b0);
 }
 
 .toggleButton.activeRed {
-  background: #dc2626;
-  color: white;
+  @include activeLayerButton(#dc2626);
+}
+
+.toggleButton.activeNuclear {
+  @include activeLayerButton(#d946ef);
+}
+
+.toggleButton.activeEmergency {
+  @include activeLayerButton(#ef4444);
+}
+
+// 航空制限系（オレンジ〜青系統）
+.toggleButton.activeAirport {
+  @include activeLayerButton(#ea580c);
 }
 
 .toggleButton.activeYellow {
-  background: #eab308;
-  color: white;
+  @include activeLayerButton(#ca8a04);
 }
 
 .toggleButton.activeHeliport {
-  background: #3b82f6;
-  color: white;
-}
-
-// UTM新規レイヤーボタンのスタイル
-.toggleButton.activeEmergency {
-  background: #ef4444;
-  color: white;
+  @include activeLayerButton(#3b82f6);
 }
 
 .toggleButton.activeRemoteId {
-  background: #2563eb;
-  color: white;
+  @include activeLayerButton(#2563eb);
 }
 
 .toggleButton.activeMannedAircraft {
-  background: #ec4899;
-  color: white;
+  @include activeLayerButton(#db2777);
 }
 
-.toggleButton.activeGeoFeatures {
-  background: #10b981;
-  color: white;
-}
-
-.toggleButton.activeRainCloud {
-  background: #06b6d4;
-  color: white;
-}
-
-.toggleButton.activeWind {
-  background: #0ea5e9;
-  color: white;
-}
-
-.toggleButton.activeRadioZones {
-  background: #a855f7;
-  color: white;
-}
-
-.toggleButton.activeNetworkCoverage {
-  background: #10b981;
-  color: white;
-}
-
-// 新しい禁止区域カテゴリーのスタイル
-.toggleButton.activeNuclear {
-  background: #ff00ff;
-  color: white;
-}
-
+// 施設系（落ち着いた色調）
 .toggleButton.activePrefecture {
-  background: #ff6600;
-  color: white;
+  @include activeLayerButton(#ea580c);
 }
 
 .toggleButton.activePolice {
-  background: #0066ff;
-  color: white;
+  @include activeLayerButton(#2563eb);
 }
 
 .toggleButton.activePrison {
-  background: #666666;
-  color: white;
+  @include activeLayerButton(#6b7280);
 }
 
 .toggleButton.activeJSDF {
-  background: #00cc00;
-  color: white;
+  @include activeLayerButton(#16a34a);
 }
 
+// 環境・気象系（青緑系統）
+.toggleButton.activeGeoFeatures {
+  @include activeLayerButton(#059669);
+}
+
+.toggleButton.activeRainCloud {
+  @include activeLayerButton(#0891b2);
+}
+
+.toggleButton.activeWind {
+  @include activeLayerButton(#0284c7);
+}
+
+// 通信系（紫系統）
+.toggleButton.activeRadioZones {
+  @include activeLayerButton(#7c3aed);
+}
+
+.toggleButton.activeNetworkCoverage {
+  @include activeLayerButton(#059669);
+}
+
+// ユーティリティ
 .toggleButton.activeCrosshair {
-  background: #e53935;
-  color: white;
+  @include activeLayerButton(#dc2626);
 }
 
 .toggleButton.disabled {
