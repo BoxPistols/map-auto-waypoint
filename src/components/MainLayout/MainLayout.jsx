@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getSetting, isDIDAvoidanceModeEnabled, getWaypointNumberingMode } from '../../services/settingsService'
-import { getDetailedCollisionResults, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
+import { getDetailedCollisionResults, getDetailedCollisionResultsWithRestrictionSurfaces, checkWaypointsRestrictionSurfaces, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
 import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
 import MapComponent from '../Map/Map'
 import SearchForm from '../SearchForm/SearchForm'
@@ -256,8 +256,26 @@ function MainLayout() {
     // 衝突検出を非同期で実行
     const checkCollisions = async () => {
       try {
-        // 1. RBush空間インデックスによる空港・禁止区域検出（即座に実行）
-        const { results, byType } = getDetailedCollisionResults(waypoints)
+        // 1. 制限表面（kokuarea）による正確な空港判定を取得
+        let restrictionSurfaceResults = null
+        try {
+          if (import.meta.env.DEV) {
+            console.log(`[CollisionCheck] 制限表面チェック開始: ${waypoints.length}個のウェイポイント`)
+          }
+          restrictionSurfaceResults = await checkWaypointsRestrictionSurfaces(waypoints)
+          if (import.meta.env.DEV) {
+            const inSurfaceCount = Array.from(restrictionSurfaceResults.values()).filter(r => r.isInRestrictionSurface).length
+            console.log(`[CollisionCheck] 制限表面チェック完了: ${inSurfaceCount}個が制限表面内`)
+          }
+        } catch (rsError) {
+          // 制限表面チェック失敗時はフォールバック（円形判定）
+          console.warn('[CollisionCheck] 制限表面チェックエラー（円形判定にフォールバック）:', rsError)
+        }
+
+        // 2. RBush空間インデックス + 制限表面による空港・禁止区域検出
+        const { results, byType } = restrictionSurfaceResults
+          ? getDetailedCollisionResultsWithRestrictionSurfaces(waypoints, { restrictionSurfaceResults })
+          : getDetailedCollisionResults(waypoints)
 
         const newFlags = {}
         const didSet = new Set()
@@ -273,9 +291,9 @@ function MainLayout() {
 
             newFlags[waypointId] = { hasDID, hasAirport, hasProhibited }
 
-            // デバッグ: RBushで何が検出されたか
+            // デバッグ: 検出結果
             if (import.meta.env.DEV && wp) {
-              console.log(`[CollisionCheck] RBush: WP${wp.index} -> ${result.collisionType} (${result.areaName})`)
+              console.log(`[CollisionCheck] WP${wp.index} -> ${result.collisionType} (${result.areaName})`)
             }
           }
         }
