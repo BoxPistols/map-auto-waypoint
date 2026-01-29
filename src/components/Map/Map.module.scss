@@ -380,8 +380,15 @@
   }
 
   &.active {
-    background: #45b7d1;
-    color: white;
+    // デフォルトのアクティブスタイル（控えめ）
+    background: rgba(var(--color-primary-rgb), 0.12);
+    color: var(--color-text);
+    border-left: 3px solid var(--color-primary);
+    font-weight: 500;
+
+    &:hover {
+      background: rgba(var(--color-primary-rgb), 0.18);
+    }
   }
 }
 
