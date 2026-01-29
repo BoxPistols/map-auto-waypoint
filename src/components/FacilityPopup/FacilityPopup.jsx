@@ -202,7 +202,11 @@ const FacilityPopup = ({ facility, screenX, screenY, onClose }) => {
           <div className={styles.row}>
             <span className={styles.label}>座標:</span>
             <span className={styles.value}>
-              {facility.coordinates[1].toFixed(6)}, {facility.coordinates[0].toFixed(6)}
+              {typeof facility.coordinates[1] === 'number'
+                ? facility.coordinates[1].toFixed(6)
+                : facility.coordinates[1]}, {typeof facility.coordinates[0] === 'number'
+                ? facility.coordinates[0].toFixed(6)
+                : facility.coordinates[0]}
             </span>
           </div>
         )}
