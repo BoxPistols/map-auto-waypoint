@@ -158,7 +158,9 @@ export {
   enrichRestrictionSurfaceFeature,
   fetchRestrictionSurfaceTiles,
   getRestrictionSurfaceLayerStyles,
-  RestrictionSurfaceService
+  RestrictionSurfaceService,
+  checkPointInRestrictionSurface,
+  checkPointsInRestrictionSurfaces
 } from './services/restrictionSurfaces'
 export type { RestrictionSurfaceKind, RestrictionSurfaceProperties } from './services/restrictionSurfaces'
 
