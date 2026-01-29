@@ -90,31 +90,55 @@ const FacilityPopup = ({ facility, screenX, screenY, onClose }) => {
     setPosition({ left: screenX, top: screenY })
   }, [screenX, screenY])
 
+  // ESCキーで閉じる
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose()
+      }
+    }
+
+    if (facility) {
+      window.addEventListener('keydown', handleKeyDown)
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown)
+      }
+    }
+  }, [facility, onClose])
+
   // 画面端の検出と位置調整
   useEffect(() => {
     if (popupRef.current && facility) {
       const rect = popupRef.current.getBoundingClientRect()
       const viewportWidth = window.innerWidth
       const viewportHeight = window.innerHeight
+      const offset = 20 // 画面端からのマージン兼カーソルからのオフセット
 
-      let left = screenX
-      let top = screenY
+      let top = screenY + offset
+      let left = screenX + offset
 
-      // 右端からはみ出る場合
-      if (left + rect.width > viewportWidth) {
-        left = viewportWidth - rect.width - 20
-      }
-      
-      // 左端からはみ出る場合
-      if (left < 10) left = 10
-
-      // 下端からはみ出る場合
-      if (top + rect.height > viewportHeight) {
-        top = viewportHeight - rect.height - 20
+      // 上下の境界チェック（上部優先）
+      if (top + rect.height > viewportHeight - offset) {
+        // 下にはみ出す場合、カーソルの上に配置
+        top = screenY - rect.height - offset
       }
 
-      // 上端からはみ出る場合
-      if (top < 10) top = 10
+      // それでも上にはみ出す場合は、画面内に収める
+      if (top < offset) {
+        // カーソルより下で、画面内に収まる位置に配置
+        top = Math.min(screenY + offset, viewportHeight - rect.height - offset)
+        // それでも収まらない場合は上端マージンに固定
+        top = Math.max(top, offset)
+      }
+
+      // 左右の境界チェック
+      if (left + rect.width > viewportWidth - offset) {
+        left = viewportWidth - rect.width - offset
+      }
+
+      if (left < offset) {
+        left = offset
+      }
 
       setPosition({ left, top })
     }

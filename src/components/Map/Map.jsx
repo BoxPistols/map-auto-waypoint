@@ -1220,6 +1220,9 @@ const Map = ({
     if (flags.hasProhibited) {
       restrictions.push({ type: 'PROHIBITED', label: '飛行禁止区域', color: '#dc2626', icon: '🚫' })
     }
+    if (flags.hasYellowZone) {
+      restrictions.push({ type: 'YELLOW_ZONE', label: '重要施設周辺（イエロー）', color: '#eab308', icon: '⚠️' })
+    }
 
     if (restrictions.length === 0) {
       restrictions.push({ type: 'NORMAL', label: '通常空域', color: '#10b981', icon: '✓' })
@@ -1854,7 +1857,7 @@ const Map = ({
               type="fill"
               paint={{
                 'fill-color': '#eab308',
-                'fill-opacity': 0.35
+                'fill-opacity': 0.2
               }}
             />
             <Layer
@@ -1868,6 +1871,7 @@ const Map = ({
             <Layer
               id="yellow-zones-label"
               type="symbol"
+              minzoom={13}
               layout={{
                 'text-field': ['get', 'name'],
                 'text-size': 10,
