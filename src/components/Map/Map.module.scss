@@ -167,14 +167,24 @@
     animation: airportPulse 2s ease-in-out infinite;
   }
 
-  // 飛行禁止区域内のWP - 紫色
+  // 飛行禁止区域内のWP - 赤色
   &.inProhibited {
-    background: #9932cc;
-    border-color: #7b28a0;
+    background: #dc2626;
+    border-color: #b91c1c;
     box-shadow:
-      0 0 0 3px rgba(153, 50, 204, 0.4),
-      0 4px 12px rgba(153, 50, 204, 0.3);
+      0 0 0 3px rgba(220, 38, 38, 0.4),
+      0 4px 12px rgba(220, 38, 38, 0.3);
     animation: prohibitedPulse 1.5s ease-in-out infinite;
+  }
+
+  // 注意区域（イエローゾーン）内のWP - 黄色
+  &.inYellowZone {
+    background: #eab308;
+    border-color: #ca8a04;
+    box-shadow:
+      0 0 0 3px rgba(234, 179, 8, 0.4),
+      0 4px 12px rgba(234, 179, 8, 0.3);
+    animation: yellowPulse 2s ease-in-out infinite;
   }
 }
 
@@ -228,13 +238,27 @@
   0%,
   100% {
     box-shadow:
-      0 0 0 3px rgba(153, 50, 204, 0.4),
-      0 4px 12px rgba(153, 50, 204, 0.3);
+      0 0 0 3px rgba(220, 38, 38, 0.4),
+      0 4px 12px rgba(220, 38, 38, 0.3);
   }
   50% {
     box-shadow:
-      0 0 0 8px rgba(153, 50, 204, 0.7),
-      0 4px 24px rgba(153, 50, 204, 0.6);
+      0 0 0 8px rgba(220, 38, 38, 0.7),
+      0 4px 24px rgba(220, 38, 38, 0.6);
+  }
+}
+
+@keyframes yellowPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(234, 179, 8, 0.4),
+      0 4px 12px rgba(234, 179, 8, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(234, 179, 8, 0.6),
+      0 4px 20px rgba(234, 179, 8, 0.5);
   }
 }
 

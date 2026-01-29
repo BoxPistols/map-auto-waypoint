@@ -290,9 +290,10 @@ function MainLayout() {
             // (airports + noFlyZones のみ)
             const hasDID = false // RBushからはDID判定しない
             const hasAirport = result.collisionType === 'AIRPORT' || result.collisionType === 'MILITARY'
-            const hasProhibited = result.collisionType === 'RED_ZONE' || result.collisionType === 'YELLOW_ZONE'
+            const hasProhibited = result.collisionType === 'RED_ZONE'
+            const hasYellowZone = result.collisionType === 'YELLOW_ZONE'
 
-            newFlags[waypointId] = { hasDID, hasAirport, hasProhibited }
+            newFlags[waypointId] = { hasDID, hasAirport, hasProhibited, hasYellowZone }
 
             // デバッグ: 検出結果
             if (import.meta.env.DEV && wp) {
@@ -333,7 +334,7 @@ function MainLayout() {
                 if (newFlags[wp.id]) {
                   newFlags[wp.id].hasDID = true
                 } else {
-                  newFlags[wp.id] = { hasDID: true, hasAirport: false, hasProhibited: false }
+                  newFlags[wp.id] = { hasDID: true, hasAirport: false, hasProhibited: false, hasYellowZone: false }
                 }
                 didSet.add(wp.index)
               }
@@ -383,6 +384,9 @@ function MainLayout() {
             } else if (flagsFrom.hasProhibited && flagsTo.hasProhibited) {
               segmentType = 'PROHIBITED'
               segmentColor = '#dc2626'
+            } else if (flagsFrom.hasYellowZone && flagsTo.hasYellowZone) {
+              segmentType = 'YELLOW_ZONE'
+              segmentColor = '#eab308'
             }
 
             if (segmentType) {
@@ -440,7 +444,7 @@ function MainLayout() {
                 if (updated[didWp.waypointId]) {
                   updated[didWp.waypointId].hasDID = true
                 } else {
-                  updated[didWp.waypointId] = { hasDID: true, hasAirport: false, hasProhibited: false }
+                  updated[didWp.waypointId] = { hasDID: true, hasAirport: false, hasProhibited: false, hasYellowZone: false }
                 }
               }
               return updated
@@ -1645,7 +1649,7 @@ function MainLayout() {
         onOptimizationUpdate={(optimizationPlan) => {
           // DIDハイライトは、推奨オーバーレイとは独立に保持する（警告のみでも点滅させるため）
           const didSet = new Set()
-          /** @type {Record<string, { hasDID: boolean, hasAirport: boolean, hasProhibited: boolean }>} */
+          /** @type {Record<string, { hasDID: boolean, hasAirport: boolean, hasProhibited: boolean, hasYellowZone: boolean }>} */
           const flagsById = {}
           const gaps = optimizationPlan?.waypointAnalysis?.gaps
           if (Array.isArray(gaps)) {
@@ -1655,10 +1659,11 @@ function MainLayout() {
               const hasDID = types.has('did')
               const hasAirport = types.has('airport')
               const hasProhibited = types.has('prohibited')
+              const hasYellowZone = types.has('yellow_zone')
 
               if (hasDID && typeof gap.waypointIndex === 'number') didSet.add(gap.waypointIndex)
               if (typeof gap.waypointId === 'string') {
-                flagsById[gap.waypointId] = { hasDID, hasAirport, hasProhibited }
+                flagsById[gap.waypointId] = { hasDID, hasAirport, hasProhibited, hasYellowZone }
               }
             }
           }
@@ -1676,7 +1681,8 @@ function MainLayout() {
               merged[waypointId] = {
                 hasDID: Boolean(prevFlags.hasDID || nextFlags.hasDID),
                 hasAirport: Boolean(prevFlags.hasAirport || nextFlags.hasAirport),
-                hasProhibited: Boolean(prevFlags.hasProhibited || nextFlags.hasProhibited)
+                hasProhibited: Boolean(prevFlags.hasProhibited || nextFlags.hasProhibited),
+                hasYellowZone: Boolean(prevFlags.hasYellowZone || nextFlags.hasYellowZone)
               }
             }
             return merged

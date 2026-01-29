@@ -1270,6 +1270,11 @@ const Map = ({
   const handlePolygonHover = useCallback((e) => {
     if (!mapRef.current) return
 
+    // Don't show tooltip during draw mode or editing
+    if (drawMode || editingPolygon) {
+      return
+    }
+
     // Don't show tooltip if context menu is open or waypoint is hovering
     if (contextMenu?.isOpen || polygonContextMenu?.isOpen || isWaypointHoveringRef.current) {
       return
@@ -1315,6 +1320,7 @@ const Map = ({
         // Count waypoints for this polygon
         const waypointCount = waypoints.filter(wp => wp.polygonId === polygon.id).length
 
+        // 800ms delay to avoid accidental tooltip during navigation
         hoverTimeoutRef.current = setTimeout(() => {
           setTooltip({
             isVisible: true,
@@ -1326,7 +1332,7 @@ const Map = ({
             },
             type: 'polygon'
           })
-        }, 300)
+        }, 800)
       }
     } else {
       // No polygon under cursor, clear tooltip
@@ -1336,7 +1342,7 @@ const Map = ({
       }
       setTooltip(null)
     }
-  }, [polygons, waypoints, contextMenu, polygonContextMenu])
+  }, [polygons, waypoints, contextMenu, polygonContextMenu, drawMode, editingPolygon])
 
   // Handle polygon hover end - hide tooltip
   const handlePolygonHoverEnd = useCallback(() => {
@@ -2263,8 +2269,9 @@ const Map = ({
                 didFromIndex
             const isInAirport = (flags?.hasAirport || false) || (recommendedWp?.hasAirport || false)
             const isInProhibited = (flags?.hasProhibited || false) || (recommendedWp?.hasProhibited || false)
+            const isInYellowZone = (flags?.hasYellowZone || false) || (recommendedWp?.hasYellowZone || false)
 
-            // Build zone class (priority: prohibited > airport > DID)
+            // Build zone class (priority: prohibited > airport > yellowZone > DID)
             let zoneClass = ''
             let zoneLabel = ''
             if (isInProhibited) {
@@ -2273,6 +2280,9 @@ const Map = ({
             } else if (isInAirport) {
                 zoneClass = styles.inAirport
                 zoneLabel = ' [空港制限]'
+            } else if (isInYellowZone) {
+                zoneClass = styles.inYellowZone
+                zoneLabel = ' [注意区域]'
             } else if (isInDID) {
                 zoneClass = styles.inDID
                 zoneLabel = ' [DID内]'
