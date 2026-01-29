@@ -1290,6 +1290,9 @@ const Map = ({
 
     if (!point) return
 
+    // Check if polygon-fill layer exists before querying
+    if (!map.getLayer('polygon-fill')) return
+
     // Query features at the mouse position
     const features = map.queryRenderedFeatures(point, {
       layers: ['polygon-fill']

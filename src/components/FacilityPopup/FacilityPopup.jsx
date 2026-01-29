@@ -198,12 +198,14 @@ const FacilityPopup = ({ facility, screenX, screenY, onClose }) => {
           </div>
         )}
 
-        <div className={styles.row}>
-          <span className={styles.label}>座標:</span>
-          <span className={styles.value}>
-            {facility.coordinates[1].toFixed(6)}, {facility.coordinates[0].toFixed(6)}
-          </span>
-        </div>
+        {facility.coordinates && facility.coordinates.length >= 2 && (
+          <div className={styles.row}>
+            <span className={styles.label}>座標:</span>
+            <span className={styles.value}>
+              {facility.coordinates[1].toFixed(6)}, {facility.coordinates[0].toFixed(6)}
+            </span>
+          </div>
+        )}
 
         {facility.description && (
           <div className={styles.description}>
