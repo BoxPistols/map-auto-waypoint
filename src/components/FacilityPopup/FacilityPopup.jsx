@@ -47,6 +47,34 @@ const getZoneInfo = (zone) => {
 }
 
 /**
+ * 座標を安全にフォーマット
+ * MapLibreのプロパティはJSON文字列の場合があるため、適切にパース
+ */
+const formatCoordinates = (coordinates) => {
+  if (!coordinates) return null
+
+  // JSON文字列の場合パース
+  let coords = coordinates
+  if (typeof coordinates === 'string') {
+    try {
+      coords = JSON.parse(coordinates)
+    } catch {
+      return null
+    }
+  }
+
+  // 配列で2要素以上あるか確認
+  if (!Array.isArray(coords) || coords.length < 2) return null
+
+  const lng = Number(coords[0])
+  const lat = Number(coords[1])
+
+  if (isNaN(lng) || isNaN(lat)) return null
+
+  return { lat: lat.toFixed(6), lng: lng.toFixed(6) }
+}
+
+/**
  * FacilityPopup - 施設詳細情報のポップアップ
  * @param {Object} facility - 施設情報
  * @param {number} screenX - ポップアップのX座標
@@ -198,18 +226,18 @@ const FacilityPopup = ({ facility, screenX, screenY, onClose }) => {
           </div>
         )}
 
-        {facility.coordinates && facility.coordinates.length >= 2 && (
-          <div className={styles.row}>
-            <span className={styles.label}>座標:</span>
-            <span className={styles.value}>
-              {typeof facility.coordinates[1] === 'number'
-                ? facility.coordinates[1].toFixed(6)
-                : facility.coordinates[1]}, {typeof facility.coordinates[0] === 'number'
-                ? facility.coordinates[0].toFixed(6)
-                : facility.coordinates[0]}
-            </span>
-          </div>
-        )}
+        {(() => {
+          const coords = formatCoordinates(facility.coordinates)
+          if (!coords) return null
+          return (
+            <div className={styles.row}>
+              <span className={styles.label}>座標:</span>
+              <span className={styles.value}>
+                {coords.lat}, {coords.lng}
+              </span>
+            </div>
+          )
+        })()}
 
         {facility.description && (
           <div className={styles.description}>
