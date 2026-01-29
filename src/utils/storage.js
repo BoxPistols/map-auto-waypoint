@@ -29,6 +29,10 @@ const DEFAULT_MAP_SETTINGS = {
   showRadioZones: false,
   // UIコントロール
   showCrosshair: false,
+  crosshairDesign: 'square',
+  crosshairColor: '#e53935',
+  crosshairClickMode: true,
+  coordinateFormat: 'dms',
   mapStyleId: 'osm'
 }
 

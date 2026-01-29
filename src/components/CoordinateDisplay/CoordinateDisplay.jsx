@@ -21,7 +21,8 @@ export const CoordinateDisplay = ({
   onClose,
   screenX,
   screenY,
-  autoFade = true
+  autoFade = true,
+  preferredFormat = 'dms'
 }) => {
   const [showModal, setShowModal] = useState(true)
   const panelRef = useRef(null)
@@ -214,34 +215,44 @@ export const CoordinateDisplay = ({
       </div>
 
       <div className={styles.content}>
-        {/* Decimal format */}
+        {/* Primary format (based on preference) */}
         <div className={styles.formatSection}>
           <div className={styles.formatLabel}>
-            <span className={styles.formatLabelBold}>10進数表記</span>（Decimal）
+            <span className={styles.formatLabelBold}>
+              {preferredFormat === 'dms' ? '度分秒表記 / 60進数' : '10進数表記'}
+            </span>
+            （{preferredFormat === 'dms' ? 'DMS' : 'Decimal'}）
           </div>
           <div className={styles.formatValue}>
-            <code className={styles.code}>{decimalFormat}</code>
+            <code className={styles.code}>
+              {preferredFormat === 'dms' ? dmsFormat : decimalFormat}
+            </code>
             <button
-              onClick={() => handleCopy(decimalFormat)}
+              onClick={() => handleCopy(preferredFormat === 'dms' ? dmsFormat : decimalFormat)}
               className={styles.copyButton}
-              title="10進数座標をコピー"
+              title={preferredFormat === 'dms' ? 'DMS座標をコピー' : '10進数座標をコピー'}
             >
               📋 コピー
             </button>
           </div>
         </div>
 
-        {/* DMS format */}
+        {/* Secondary format */}
         <div className={styles.formatSection}>
           <div className={styles.formatLabel}>
-            <span className={styles.formatLabelBold}>度分秒表記 / 60進数</span>（DMS）
+            <span className={styles.formatLabelBold}>
+              {preferredFormat === 'dms' ? '10進数表記' : '度分秒表記 / 60進数'}
+            </span>
+            （{preferredFormat === 'dms' ? 'Decimal' : 'DMS'}）
           </div>
           <div className={styles.formatValue}>
-            <code className={styles.code}>{dmsFormat}</code>
+            <code className={styles.code}>
+              {preferredFormat === 'dms' ? decimalFormat : dmsFormat}
+            </code>
             <button
-              onClick={() => handleCopy(dmsFormat)}
+              onClick={() => handleCopy(preferredFormat === 'dms' ? decimalFormat : dmsFormat)}
               className={styles.copyButton}
-              title="DMS座標をコピー"
+              title={preferredFormat === 'dms' ? '10進数座標をコピー' : 'DMS座標をコピー'}
             >
               📋 コピー
             </button>
@@ -264,7 +275,8 @@ CoordinateDisplay.propTypes = {
   onClose: PropTypes.func,
   screenX: PropTypes.number,
   screenY: PropTypes.number,
-  autoFade: PropTypes.bool
+  autoFade: PropTypes.bool,
+  preferredFormat: PropTypes.oneOf(['decimal', 'dms'])
 }
 
 export default CoordinateDisplay

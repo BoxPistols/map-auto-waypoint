@@ -559,6 +559,90 @@
   @include activeLayerButton(#dc2626);
 }
 
+// クロスヘア設定パネル
+.crosshairSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(var(--color-bg-secondary-rgb, 30, 30, 30), 0.6);
+  border-radius: 6px;
+}
+
+.crosshairRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.crosshairLabel {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  min-width: 32px;
+}
+
+.crosshairCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text);
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+}
+
+.crosshairSelect {
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--color-text);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 70px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  option {
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+  }
+}
+
+.crosshairColorSelect {
+  @extend .crosshairSelect;
+  min-width: 60px;
+  padding-left: 20px;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--selected-color, #e53935);
+  }
+}
+
 .toggleButton.disabled {
   opacity: 0.65;
   cursor: not-allowed;

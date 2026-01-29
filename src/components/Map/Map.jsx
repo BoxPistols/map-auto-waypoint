@@ -63,6 +63,26 @@ const LAYER_COLORS = {
   FIVE_G_COVERAGE: '#06b6d4',
 }
 
+// クロスヘア設定定数
+const CROSSHAIR_DESIGNS = [
+  { id: 'square', label: '四角', icon: '□' },
+  { id: 'circle', label: '円形', icon: '○' },
+  { id: 'minimal', label: 'シンプル', icon: '+' }
+]
+
+const CROSSHAIR_COLORS = [
+  { id: '#e53935', label: '赤' },
+  { id: '#1e88e5', label: '青' },
+  { id: '#00bcd4', label: 'シアン' },
+  { id: '#ffffff', label: '白' },
+  { id: '#4caf50', label: '緑' }
+]
+
+const COORDINATE_FORMATS = [
+  { id: 'decimal', label: '10進数' },
+  { id: 'dms', label: '60進数' }
+]
+
 // 地図スタイル定義
 const MAP_STYLES = {
   osm: {
@@ -239,6 +259,10 @@ const Map = ({
 
   // Focus crosshair state
   const [showCrosshair, setShowCrosshair] = useState(initialSettings.showCrosshair ?? false)
+  const [crosshairDesign, setCrosshairDesign] = useState(initialSettings.crosshairDesign ?? 'square')
+  const [crosshairColor, setCrosshairColor] = useState(initialSettings.crosshairColor ?? '#e53935')
+  const [crosshairClickMode, setCrosshairClickMode] = useState(initialSettings.crosshairClickMode ?? true)
+  const [coordinateFormat, setCoordinateFormat] = useState(initialSettings.coordinateFormat ?? 'dms')
 
   // Coordinate display state
   const [coordinateDisplay, setCoordinateDisplay] = useState(null) // { lng, lat, screenX, screenY }
@@ -354,9 +378,13 @@ const Map = ({
     saveMapSettings({
       ...layerVisibility,
       showCrosshair,
+      crosshairDesign,
+      crosshairColor,
+      crosshairClickMode,
+      coordinateFormat,
       mapStyleId
     })
-  }, [layerVisibility, showCrosshair, mapStyleId])
+  }, [layerVisibility, showCrosshair, crosshairDesign, crosshairColor, crosshairClickMode, coordinateFormat, mapStyleId])
 
   // 雨雲レーダーソースを取得
   useEffect(() => {
@@ -2788,15 +2816,62 @@ const Map = ({
               {layerVisibility.is3D ? <Box size={18} /> : <Rotate3D size={18} />}
               <span className={styles.buttonLabel}>{layerVisibility.is3D ? '2D' : '3D'}</span>
             </button>
-            <button
-              className={`${styles.toggleButton} ${showCrosshair ? styles.activeCrosshair : ''}`}
-              onClick={() => setShowCrosshair(prev => !prev)}
-              data-tooltip="地図中心の十字線を表示 [X]"
-              data-tooltip-pos="left"
+            {/* クロスヘア設定 */}
+            <ControlGroup
+              id="crosshair"
+              icon={<Crosshair size={18} />}
+              label="中心十字"
+              tooltip="地図中心の十字線を表示 [X]"
+              groupToggle={true}
+              groupEnabled={showCrosshair}
+              onGroupToggle={setShowCrosshair}
+              defaultExpanded={false}
             >
-              <Crosshair size={18} />
-              <span className={styles.buttonLabel}>クロスヘア</span>
-            </button>
+              <div className={styles.crosshairSettings}>
+                <div className={styles.crosshairRow}>
+                  <span className={styles.crosshairLabel}>表示</span>
+                  <select
+                    className={styles.crosshairSelect}
+                    value={crosshairDesign}
+                    onChange={(e) => setCrosshairDesign(e.target.value)}
+                  >
+                    {CROSSHAIR_DESIGNS.map(d => (
+                      <option key={d.id} value={d.id}>{d.icon} {d.label}</option>
+                    ))}
+                  </select>
+                  <select
+                    className={styles.crosshairColorSelect}
+                    value={crosshairColor}
+                    onChange={(e) => setCrosshairColor(e.target.value)}
+                    style={{ '--selected-color': crosshairColor }}
+                  >
+                    {CROSSHAIR_COLORS.map(c => (
+                      <option key={c.id} value={c.id}>{c.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.crosshairRow}>
+                  <label className={styles.crosshairCheckbox}>
+                    <input
+                      type="checkbox"
+                      checked={crosshairClickMode}
+                      onChange={(e) => setCrosshairClickMode(e.target.checked)}
+                    />
+                    <span>クリックで座標</span>
+                  </label>
+                  <select
+                    className={styles.crosshairSelect}
+                    value={coordinateFormat}
+                    onChange={(e) => setCoordinateFormat(e.target.value)}
+                    disabled={!crosshairClickMode}
+                  >
+                    {COORDINATE_FORMATS.map(f => (
+                      <option key={f.id} value={f.id}>{f.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </ControlGroup>
 
             {/* 地図スタイル切り替え */}
             <div className={styles.stylePickerContainer}>
@@ -2880,10 +2955,10 @@ const Map = ({
       {/* Focus Crosshair */}
       <FocusCrosshair
         visible={showCrosshair}
-        design="square"
-        color="#e53935"
+        design={crosshairDesign}
+        color={crosshairColor}
         size={40}
-        onClick={handleCrosshairClick}
+        onClick={crosshairClickMode ? handleCrosshairClick : undefined}
       />
 
       {/* Coordinate Display */}
@@ -2896,6 +2971,7 @@ const Map = ({
           darkMode={true}
           onClose={() => setCoordinateDisplay(null)}
           autoFade={true}
+          preferredFormat={coordinateFormat}
         />
       )}
 
