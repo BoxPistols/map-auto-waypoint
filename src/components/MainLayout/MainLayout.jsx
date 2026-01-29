@@ -272,6 +272,9 @@ function MainLayout() {
           console.warn('[CollisionCheck] 制限表面チェックエラー（円形判定にフォールバック）:', rsError)
         }
 
+        // キャンセルチェック（非同期処理後）
+        if (cancelled) return
+
         // 2. RBush空間インデックス + 制限表面による空港・禁止区域検出
         const { results, byType } = restrictionSurfaceResults
           ? getDetailedCollisionResultsWithRestrictionSurfaces(waypoints, { restrictionSurfaceResults })

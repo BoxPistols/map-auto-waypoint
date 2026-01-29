@@ -637,7 +637,7 @@ export const getDetailedCollisionResultsWithRestrictionSurfaces = (waypoints, op
     coordinates: [wp.lng, wp.lat]
   }));
 
-  // RBushによる禁止区域チェック（空港の円形判定は除外）
+  // RBushによる禁止区域チェック（空港ゾーンを含む。空港の最終判定は制限表面結果で上書き）
   const batchResults = checkWaypointsCollisionBatch(waypointsForCheck, spatialIndex);
 
   // 結果をマージ：制限表面結果で空港判定を上書き

@@ -430,7 +430,7 @@ export async function checkPointInRestrictionSurface(
       return { isInRestrictionSurface: false }
     }
 
-    // Turf.jsでpoint-in-polygon判定
+    // point-in-polygon判定用のPointフィーチャー作成
     const point: GeoJSON.Feature<GeoJSON.Point> = {
       type: 'Feature',
       properties: {},
@@ -547,6 +547,7 @@ export async function checkPointsInRestrictionSurfaces(
       isInRestrictionSurface: boolean
       surfaceKind?: RestrictionSurfaceKind
       surfaceLabel?: string
+      surfaceLabelEn?: string
     }
   >
 > {
@@ -556,6 +557,7 @@ export async function checkPointsInRestrictionSurfaces(
       isInRestrictionSurface: boolean
       surfaceKind?: RestrictionSurfaceKind
       surfaceLabel?: string
+      surfaceLabelEn?: string
     }
   >()
 
@@ -606,7 +608,8 @@ export async function checkPointsInRestrictionSurfaces(
           results.set(point.id, {
             isInRestrictionSurface: true,
             surfaceKind: kind,
-            surfaceLabel: style.label
+            surfaceLabel: style.label,
+            surfaceLabelEn: style.labelEn
           })
           found = true
           break
