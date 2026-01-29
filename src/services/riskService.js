@@ -20,6 +20,7 @@ import {
   // GeoJSON生成関数
   generateAirportGeoJSON,
   generateAllNoFlyGeoJSON,
+  generateYellowZoneGeoJSON,
   // 制限表面による正確な空港判定
   checkPointsInRestrictionSurfaces
 } from '../lib';
@@ -32,16 +33,19 @@ let globalSpatialIndex = null;
 
 /**
  * 全禁止区域のGeoJSONを結合して生成
+ * イエローゾーン（周辺エリア）も含める
  */
 const generateAllProhibitedAreasGeoJSON = () => {
   const airportGeoJSON = generateAirportGeoJSON();
   const noFlyGeoJSON = generateAllNoFlyGeoJSON();
+  const yellowZoneGeoJSON = generateYellowZoneGeoJSON();
 
   return {
     type: 'FeatureCollection',
     features: [
       ...airportGeoJSON.features,
-      ...noFlyGeoJSON.features
+      ...noFlyGeoJSON.features,
+      ...yellowZoneGeoJSON.features
     ]
   };
 };
