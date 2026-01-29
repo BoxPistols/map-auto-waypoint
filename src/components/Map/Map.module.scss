@@ -380,14 +380,14 @@
   }
 
   &.active {
-    // デフォルトのアクティブスタイル（控えめ）
-    background: rgba(var(--color-primary-rgb), 0.12);
+    // デフォルトのアクティブスタイル（白ベース + 左ボーダー）
+    background: rgba(var(--color-bg-elevated-rgb), 0.95);
     color: var(--color-text);
     border-left: 3px solid var(--color-primary);
     font-weight: 500;
 
     &:hover {
-      background: rgba(var(--color-primary-rgb), 0.18);
+      background: rgba(var(--color-bg-elevated-rgb), 1);
     }
   }
 }
@@ -437,17 +437,19 @@
 }
 
 // レイヤーボタンのアクティブ状態 - 落ち着いた色調
-// 左ボーダーで色を示し、背景は淡く統一
+// 左ボーダーで色を示し、背景は白ベースを維持
 
 // 共通のアクティブスタイル（ミックスイン的に使用）
 @mixin activeLayerButton($color) {
-  background: rgba($color, 0.12);
+  // 白ベース背景を維持しつつ、左ボーダーで色を示す
+  background: rgba(var(--color-bg-elevated-rgb), 0.95);
   color: var(--color-text);
   border-left: 3px solid $color;
   font-weight: 500;
 
   &:hover {
-    background: rgba($color, 0.18);
+    background: rgba(var(--color-bg-elevated-rgb), 1);
+    border-color: $color;
   }
 }
 

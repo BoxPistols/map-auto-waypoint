@@ -60,8 +60,8 @@
   }
 
   &.groupActive {
-    // Active時は淡い背景 + 左ボーダーで控えめに表示
-    background: rgba(var(--color-primary-rgb), 0.12);
+    // Active時は白ベース背景 + 左ボーダーで控えめに表示
+    background: rgba(var(--color-bg-elevated-rgb), 0.95);
     border-color: var(--color-primary);
     border-left: 3px solid var(--color-primary);
     color: var(--color-text);
@@ -73,7 +73,7 @@
     }
 
     &:hover {
-      background: rgba(var(--color-primary-rgb), 0.18);
+      background: rgba(var(--color-bg-elevated-rgb), 1);
       box-shadow: var(--shadow-md);
     }
   }
@@ -245,7 +245,7 @@
     }
 
     &.groupActive {
-      background: rgba(var(--color-primary-rgb), 0.2);
+      background: rgba(var(--color-bg-elevated-rgb), 0.9);
       border-color: var(--color-primary);
       border-left: 3px solid var(--color-primary);
       box-shadow: var(--shadow-md);
