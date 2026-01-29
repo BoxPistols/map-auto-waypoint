@@ -557,11 +557,13 @@
     "nameEn": "Embassy of the United States",
     "type": "foreign_mission",
     "coordinates": [
-      139.7425,
-      35.6678
+      139.7433,
+      35.6688
     ],
     "radiusKm": 0.3,
-    "zone": "yellow"
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
   },
   {
     "id": "china-embassy",
@@ -569,11 +571,13 @@
     "nameEn": "Embassy of China",
     "type": "foreign_mission",
     "coordinates": [
-      139.7353,
-      35.6558
+      139.7273,
+      35.6563
     ],
     "radiusKm": 0.3,
-    "zone": "yellow"
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
   },
   {
     "id": "russia-embassy",
@@ -581,11 +585,13 @@
     "nameEn": "Embassy of Russia",
     "type": "foreign_mission",
     "coordinates": [
-      139.7439,
-      35.663
+      139.7413,
+      35.6594
     ],
     "radiusKm": 0.3,
-    "zone": "yellow"
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
   },
   {
     "id": "korea-embassy",
@@ -593,11 +599,13 @@
     "nameEn": "Embassy of the Republic of Korea",
     "type": "foreign_mission",
     "coordinates": [
-      139.7297,
-      35.6611
+      139.7370,
+      35.6488
     ],
     "radiusKm": 0.3,
-    "zone": "yellow"
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
   },
   {
     "id": "uk-embassy",
@@ -605,11 +613,13 @@
     "nameEn": "Embassy of the United Kingdom",
     "type": "foreign_mission",
     "coordinates": [
-      139.7467,
-      35.6758
+      139.7443,
+      35.6870
     ],
     "radiusKm": 0.3,
-    "zone": "yellow"
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
   },
   {
     "id": "france-embassy",
@@ -617,11 +627,13 @@
     "nameEn": "Embassy of France",
     "type": "foreign_mission",
     "coordinates": [
-      139.7403,
-      35.6636
+      139.7255,
+      35.6472
     ],
     "radiusKm": 0.3,
-    "zone": "yellow"
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
   },
   {
     "id": "germany-embassy",
@@ -629,11 +641,13 @@
     "nameEn": "Embassy of Germany",
     "type": "foreign_mission",
     "coordinates": [
-      139.7481,
-      35.6756
+      139.7251,
+      35.6509
     ],
     "radiusKm": 0.3,
-    "zone": "yellow"
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
   },
   {
     "id": "italy-embassy",
@@ -641,11 +655,13 @@
     "nameEn": "Embassy of Italy",
     "type": "foreign_mission",
     "coordinates": [
-      139.7478,
-      35.6781
+      139.7425,
+      35.6507
     ],
     "radiusKm": 0.3,
-    "zone": "yellow"
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
   },
   {
     "id": "australia-embassy",
@@ -653,11 +669,13 @@
     "nameEn": "Embassy of Australia",
     "type": "foreign_mission",
     "coordinates": [
-      139.7406,
-      35.6706
+      139.7392,
+      35.6516
     ],
     "radiusKm": 0.3,
-    "zone": "yellow"
+    "zone": "yellow",
+    "category": "外国公館",
+    "source": "警察庁"
   },
   {
     "id": "ldp-hq",
@@ -3380,8 +3398,8 @@
     "nameEn": "Embassy of Canada",
     "type": "foreign_mission",
     "coordinates": [
-      139.7417,
-      35.6778
+      139.728305,
+      35.673481
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3394,8 +3412,8 @@
     "nameEn": "Embassy of India",
     "type": "foreign_mission",
     "coordinates": [
-      139.7336,
-      35.6603
+      139.7467,
+      35.6937
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3408,8 +3426,8 @@
     "nameEn": "Embassy of Brazil",
     "type": "foreign_mission",
     "coordinates": [
-      139.7394,
-      35.6681
+      139.714507,
+      35.670845
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3422,8 +3440,8 @@
     "nameEn": "Embassy of Spain",
     "type": "foreign_mission",
     "coordinates": [
-      139.7383,
-      35.6658
+      139.7415,
+      35.6656
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3436,8 +3454,8 @@
     "nameEn": "Embassy of the Netherlands",
     "type": "foreign_mission",
     "coordinates": [
-      139.7381,
-      35.6725
+      139.7459,
+      35.6618
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3450,8 +3468,8 @@
     "nameEn": "Embassy of Switzerland",
     "type": "foreign_mission",
     "coordinates": [
-      139.7447,
-      35.6797
+      139.7238,
+      35.6534
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3464,8 +3482,8 @@
     "nameEn": "Embassy of Belgium",
     "type": "foreign_mission",
     "coordinates": [
-      139.7394,
-      35.6719
+      139.7359,
+      35.6851
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3478,8 +3496,8 @@
     "nameEn": "Embassy of Sweden",
     "type": "foreign_mission",
     "coordinates": [
-      139.7411,
-      35.6636
+      139.7418,
+      35.6646
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3492,8 +3510,8 @@
     "nameEn": "Embassy of Norway",
     "type": "foreign_mission",
     "coordinates": [
-      139.7422,
-      35.6653
+      139.7352,
+      35.6489
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3506,8 +3524,8 @@
     "nameEn": "Embassy of Denmark",
     "type": "foreign_mission",
     "coordinates": [
-      139.7353,
-      35.6606
+      139.6999,
+      35.6483
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3520,8 +3538,8 @@
     "nameEn": "Embassy of Finland",
     "type": "foreign_mission",
     "coordinates": [
-      139.7453,
-      35.6761
+      139.7287,
+      35.6502
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3534,8 +3552,8 @@
     "nameEn": "Embassy of Austria",
     "type": "foreign_mission",
     "coordinates": [
-      139.7389,
-      35.6644
+      139.7328,
+      35.6559
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3548,8 +3566,8 @@
     "nameEn": "Embassy of Poland",
     "type": "foreign_mission",
     "coordinates": [
-      139.7294,
-      35.6553
+      139.7087,
+      35.6394
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3562,8 +3580,8 @@
     "nameEn": "Embassy of Turkey",
     "type": "foreign_mission",
     "coordinates": [
-      139.7353,
-      35.6572
+      139.7086,
+      35.6733
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3576,8 +3594,8 @@
     "nameEn": "Embassy of Israel",
     "type": "foreign_mission",
     "coordinates": [
-      139.7414,
-      35.6642
+      139.7376,
+      35.6860
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3590,8 +3608,8 @@
     "nameEn": "Embassy of Singapore",
     "type": "foreign_mission",
     "coordinates": [
-      139.7422,
-      35.6725
+      139.7342,
+      35.6575
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3604,8 +3622,8 @@
     "nameEn": "Embassy of Thailand",
     "type": "foreign_mission",
     "coordinates": [
-      139.7325,
-      35.6575
+      139.7196,
+      35.6319
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3618,8 +3636,8 @@
     "nameEn": "Embassy of Malaysia",
     "type": "foreign_mission",
     "coordinates": [
-      139.7361,
-      35.6594
+      139.6955,
+      35.6523
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3632,8 +3650,8 @@
     "nameEn": "Embassy of the Philippines",
     "type": "foreign_mission",
     "coordinates": [
-      139.7392,
-      35.6669
+      139.7355,
+      35.6601
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
@@ -3646,8 +3664,8 @@
     "nameEn": "Embassy of Indonesia",
     "type": "foreign_mission",
     "coordinates": [
-      139.7339,
-      35.6619
+      139.7214,
+      35.6314
     ],
     "radiusKm": 0.3,
     "zone": "yellow",
