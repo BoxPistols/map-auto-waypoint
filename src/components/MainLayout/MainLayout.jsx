@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getSetting, isDIDAvoidanceModeEnabled, getWaypointNumberingMode } from '../../services/settingsService'
-import { getDetailedCollisionResults, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
+import { getDetailedCollisionResults, getDetailedCollisionResultsWithRestrictionSurfaces, checkWaypointsRestrictionSurfaces, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
 import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
 import MapComponent from '../Map/Map'
 import SearchForm from '../SearchForm/SearchForm'
@@ -34,9 +34,25 @@ import '../../App.scss'
 // Default center: Tokyo Tower
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }
 
+// Japan overview (Issue #52)
+const JAPAN_OVERVIEW_CENTER = { lat: 36.5, lng: 138.0 }
+const JAPAN_OVERVIEW_ZOOM = 5
+
+// ズーム計算時のマップ表示領域の割合（コントロールパネル等を除外）
+const MAP_AREA_RATIO = 0.8
+
 // ポリゴンの境界からズームレベルを計算
-// maxZoom: 14 に制限（近寄りすぎ防止）
-const calculateZoomForBounds = (geometry) => {
+// Web Mercator投影に基づく正確な計算 + パディング考慮
+const calculateZoomForBounds = (geometry, options = {}) => {
+  const {
+    padding = 0.25,      // 25%のパディング（余裕を持たせる）
+    minZoom = 10,        // 最小ズーム（広すぎない）
+    maxZoom = 16,        // 最大ズーム
+    // ウィンドウサイズを自動取得（サーバーサイドレンダリング対応）
+    viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 800,
+    viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 600
+  } = options
+
   if (!geometry?.coordinates?.[0]) return 14
 
   const coords = geometry.type === 'MultiPolygon'
@@ -48,16 +64,48 @@ const calculateZoomForBounds = (geometry) => {
   const lats = coords.map(c => c[1])
   const lngs = coords.map(c => c[0])
 
-  const latSpan = Math.max(...lats) - Math.min(...lats)
-  const lngSpan = Math.max(...lngs) - Math.min(...lngs)
-  const maxSpan = Math.max(latSpan, lngSpan)
+  const minLat = Math.min(...lats)
+  const maxLat = Math.max(...lats)
+  const minLng = Math.min(...lngs)
+  const maxLng = Math.max(...lngs)
 
-  // maxSpanに基づいてズームレベルを計算（最大14に制限）
-  if (maxSpan > 0.5) return 10
-  if (maxSpan > 0.2) return 11
-  if (maxSpan > 0.1) return 12
-  if (maxSpan > 0.05) return 13
-  return 14 // 最大ズームを14に制限
+  // パディングを適用した境界
+  const latSpan = (maxLat - minLat) * (1 + padding)
+  const lngSpan = (maxLng - minLng) * (1 + padding)
+
+  // 空のスパンの場合のフォールバック
+  if (latSpan <= 0 && lngSpan <= 0) return maxZoom
+
+  // Web Mercator投影でのズーム計算
+  // 地球の赤道周長（度）= 360度
+  // 各ズームレベルでのタイルあたりの度数 = 360 / (2^zoom)
+
+  // ビューポートのアスペクト比を考慮（コントロール領域を除外）
+  const effectiveWidth = viewportWidth * MAP_AREA_RATIO
+  const effectiveHeight = viewportHeight * MAP_AREA_RATIO
+
+  // 経度方向のズーム計算（単純な線形関係）
+  const lngZoom = lngSpan > 0
+    ? Math.log2(360 / lngSpan * (effectiveWidth / 256))
+    : maxZoom
+
+  // 緯度方向のズーム計算（メルカトル投影の補正）
+  // 緯度による歪みを考慮
+  const centerLat = (minLat + maxLat) / 2
+  const latRadians = centerLat * Math.PI / 180
+  const mercatorFactor = Math.cos(latRadians)
+
+  const latZoom = latSpan > 0
+    ? Math.log2(180 / latSpan * mercatorFactor * (effectiveHeight / 256))
+    : maxZoom
+
+  // 両方向でフィットするより小さいズームを採用
+  const calculatedZoom = Math.min(lngZoom, latZoom)
+
+  // 範囲内にクランプして整数に丸める
+  const finalZoom = Math.round(Math.max(minZoom, Math.min(maxZoom, calculatedZoom)))
+
+  return finalZoom
 }
 
 // WP間の総距離を計算 (km)
@@ -93,6 +141,9 @@ function MainLayout() {
   // Map state
   const [center, setCenter] = useState(DEFAULT_CENTER)
   const [zoom, setZoom] = useState(12)
+
+  // Japan overview toggle state (Issue #52)
+  const [savedViewState, setSavedViewState] = useState(null)
 
   // UI state
   const [drawMode, setDrawMode] = useState(false)
@@ -205,8 +256,29 @@ function MainLayout() {
     // 衝突検出を非同期で実行
     const checkCollisions = async () => {
       try {
-        // 1. RBush空間インデックスによる空港・禁止区域検出（即座に実行）
-        const { results, byType } = getDetailedCollisionResults(waypoints)
+        // 1. 制限表面（kokuarea）による正確な空港判定を取得
+        let restrictionSurfaceResults = null
+        try {
+          if (import.meta.env.DEV) {
+            console.log(`[CollisionCheck] 制限表面チェック開始: ${waypoints.length}個のウェイポイント`)
+          }
+          restrictionSurfaceResults = await checkWaypointsRestrictionSurfaces(waypoints)
+          if (import.meta.env.DEV) {
+            const inSurfaceCount = Array.from(restrictionSurfaceResults.values()).filter(r => r.isInRestrictionSurface).length
+            console.log(`[CollisionCheck] 制限表面チェック完了: ${inSurfaceCount}個が制限表面内`)
+          }
+        } catch (rsError) {
+          // 制限表面チェック失敗時はフォールバック（円形判定）
+          console.warn('[CollisionCheck] 制限表面チェックエラー（円形判定にフォールバック）:', rsError)
+        }
+
+        // キャンセルチェック（非同期処理後）
+        if (cancelled) return
+
+        // 2. RBush空間インデックス + 制限表面による空港・禁止区域検出
+        const { results, byType } = restrictionSurfaceResults
+          ? getDetailedCollisionResultsWithRestrictionSurfaces(waypoints, { restrictionSurfaceResults })
+          : getDetailedCollisionResults(waypoints)
 
         const newFlags = {}
         const didSet = new Set()
@@ -218,20 +290,38 @@ function MainLayout() {
             // (airports + noFlyZones のみ)
             const hasDID = false // RBushからはDID判定しない
             const hasAirport = result.collisionType === 'AIRPORT' || result.collisionType === 'MILITARY'
-            const hasProhibited = result.collisionType === 'RED_ZONE' || result.collisionType === 'YELLOW_ZONE'
+            const hasProhibited = result.collisionType === 'RED_ZONE'
+            const hasYellowZone = result.collisionType === 'YELLOW_ZONE'
 
-            newFlags[waypointId] = { hasDID, hasAirport, hasProhibited }
+            newFlags[waypointId] = { hasDID, hasAirport, hasProhibited, hasYellowZone }
 
-            // デバッグ: RBushで何が検出されたか
+            // デバッグ: 検出結果
             if (import.meta.env.DEV && wp) {
-              console.log(`[CollisionCheck] RBush: WP${wp.index} -> ${result.collisionType} (${result.areaName})`)
+              console.log(`[CollisionCheck] WP${wp.index} -> ${result.collisionType} (${result.areaName})`)
             }
           }
         }
 
         // 2. DID GeoJSONによるDID検出（非同期・エラーでも継続）
         try {
+          if (import.meta.env.DEV) {
+            console.log(`[CollisionCheck] DIDチェック開始: ${waypoints.length}個のウェイポイント`)
+          }
+
           const didResult = await checkAllWaypointsDID(waypoints)
+
+          if (import.meta.env.DEV) {
+            console.log(`[CollisionCheck] DIDチェック完了:`, {
+              hasDIDWaypoints: didResult?.hasDIDWaypoints,
+              didCount: didResult?.didWaypoints?.length || 0,
+              didWaypoints: didResult?.didWaypoints?.map(dw => ({
+                index: waypoints.find(w => w.id === dw.waypointId)?.index,
+                lat: dw.lat.toFixed(6),
+                lng: dw.lng.toFixed(6),
+                area: dw.area
+              }))
+            })
+          }
 
           if (!cancelled && didResult?.hasDIDWaypoints) {
             for (const didWp of didResult.didWaypoints) {
@@ -244,7 +334,7 @@ function MainLayout() {
                 if (newFlags[wp.id]) {
                   newFlags[wp.id].hasDID = true
                 } else {
-                  newFlags[wp.id] = { hasDID: true, hasAirport: false, hasProhibited: false }
+                  newFlags[wp.id] = { hasDID: true, hasAirport: false, hasProhibited: false, hasYellowZone: false }
                 }
                 didSet.add(wp.index)
               }
@@ -294,6 +384,9 @@ function MainLayout() {
             } else if (flagsFrom.hasProhibited && flagsTo.hasProhibited) {
               segmentType = 'PROHIBITED'
               segmentColor = '#dc2626'
+            } else if (flagsFrom.hasYellowZone && flagsTo.hasYellowZone) {
+              segmentType = 'YELLOW_ZONE'
+              segmentColor = '#eab308'
             }
 
             if (segmentType) {
@@ -351,7 +444,7 @@ function MainLayout() {
                 if (updated[didWp.waypointId]) {
                   updated[didWp.waypointId].hasDID = true
                 } else {
-                  updated[didWp.waypointId] = { hasDID: true, hasAirport: false, hasProhibited: false }
+                  updated[didWp.waypointId] = { hasDID: true, hasAirport: false, hasProhibited: false, hasYellowZone: false }
                 }
               }
               return updated
@@ -618,6 +711,25 @@ function MainLayout() {
 
       // Single key shortcuts
       if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        // [0] key: Japan overview ⇔ Return to saved position (Issue #52)
+        if (e.key === '0') {
+          e.preventDefault()
+          if (savedViewState) {
+            // 2nd press: Return to saved position
+            setCenter(savedViewState.center)
+            setZoom(savedViewState.zoom)
+            setSavedViewState(null)
+            showNotification('元の位置に戻りました')
+          } else {
+            // 1st press: Save current position and show Japan overview
+            setSavedViewState({ center, zoom })
+            setCenter(JAPAN_OVERVIEW_CENTER)
+            setZoom(JAPAN_OVERVIEW_ZOOM)
+            showNotification('日本全国俯瞰表示（もう一度 [0] で戻る）')
+          }
+          return
+        }
+
         switch (e.key.toLowerCase()) {
           case 's': // Toggle sidebar
             e.preventDefault()
@@ -679,7 +791,7 @@ function MainLayout() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleUndo, handleRedo, sidebarCollapsed, selectedPolygonId, polygons, handleEditPolygonShape, toggleTheme, editingPolygon, showNotification, setIsSearchExpanded])
+  }, [handleUndo, handleRedo, sidebarCollapsed, selectedPolygonId, polygons, handleEditPolygonShape, toggleTheme, editingPolygon, showNotification, setIsSearchExpanded, savedViewState, center, zoom])
 
   // Handle polygon shape edit complete
   const handlePolygonEditComplete = useCallback((updatedFeature) => {
@@ -983,17 +1095,12 @@ function MainLayout() {
   }, [setWaypoints, showNotification])
 
   // Handle polygon select from map
+  // マップ上でクリックした場合はZoom/Centerを変更しない（選択のみ）
   const handlePolygonSelectFromMap = useCallback((polygonId) => {
     setSelectedPolygonId(polygonId)
-    const polygon = polygons.find(p => p.id === polygonId)
-    if (polygon) {
-      const center = getPolygonCenter(polygon)
-      if (center) {
-        setCenter(center)
-        setZoom(calculateZoomForBounds(polygon.geometry))
-      }
-    }
-  }, [polygons, setSelectedPolygonId])
+    // Note: マップ上でクリックしたポリゴンは既に表示されているので
+    // Zoom/Centerの変更は不要。作業の邪魔にならないようにする。
+  }, [setSelectedPolygonId])
 
   // Handle waypoint clear
   const handleWaypointClear = useCallback(() => {
@@ -1542,7 +1649,7 @@ function MainLayout() {
         onOptimizationUpdate={(optimizationPlan) => {
           // DIDハイライトは、推奨オーバーレイとは独立に保持する（警告のみでも点滅させるため）
           const didSet = new Set()
-          /** @type {Record<string, { hasDID: boolean, hasAirport: boolean, hasProhibited: boolean }>} */
+          /** @type {Record<string, { hasDID: boolean, hasAirport: boolean, hasProhibited: boolean, hasYellowZone: boolean }>} */
           const flagsById = {}
           const gaps = optimizationPlan?.waypointAnalysis?.gaps
           if (Array.isArray(gaps)) {
@@ -1552,10 +1659,11 @@ function MainLayout() {
               const hasDID = types.has('did')
               const hasAirport = types.has('airport')
               const hasProhibited = types.has('prohibited')
+              const hasYellowZone = types.has('yellow_zone')
 
               if (hasDID && typeof gap.waypointIndex === 'number') didSet.add(gap.waypointIndex)
               if (typeof gap.waypointId === 'string') {
-                flagsById[gap.waypointId] = { hasDID, hasAirport, hasProhibited }
+                flagsById[gap.waypointId] = { hasDID, hasAirport, hasProhibited, hasYellowZone }
               }
             }
           }
@@ -1573,7 +1681,8 @@ function MainLayout() {
               merged[waypointId] = {
                 hasDID: Boolean(prevFlags.hasDID || nextFlags.hasDID),
                 hasAirport: Boolean(prevFlags.hasAirport || nextFlags.hasAirport),
-                hasProhibited: Boolean(prevFlags.hasProhibited || nextFlags.hasProhibited)
+                hasProhibited: Boolean(prevFlags.hasProhibited || nextFlags.hasProhibited),
+                hasYellowZone: Boolean(prevFlags.hasYellowZone || nextFlags.hasYellowZone)
               }
             }
             return merged

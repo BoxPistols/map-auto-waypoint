@@ -137,10 +137,11 @@ const YELLOW_ZONE_BUFFER_KM = 0.3
 
 /**
  * Generate GeoJSON for yellow zones
+ * イエローゾーン施設 + レッドゾーン施設の周辺エリア
  */
 export function generateYellowZoneGeoJSON(): GeoJSON.FeatureCollection {
-  // 在外公館のイエローゾーン
-  const foreignMissions = getFacilitiesByZone('yellow').map((facility) => ({
+  // 在外公館など zone='yellow' の施設
+  const yellowFacilities = getFacilitiesByZone('yellow').map((facility) => ({
     type: 'Feature' as const,
     properties: {
       id: facility.id,
@@ -177,7 +178,7 @@ export function generateYellowZoneGeoJSON(): GeoJSON.FeatureCollection {
 
   return {
     type: 'FeatureCollection',
-    features: [...foreignMissions, ...peripheryZones]
+    features: [...yellowFacilities, ...peripheryZones]
   }
 }
 

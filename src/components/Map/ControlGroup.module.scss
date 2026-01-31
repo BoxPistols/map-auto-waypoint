@@ -60,32 +60,21 @@
   }
 
   &.groupActive {
-    // Active時はプライマリカラーで塗りつぶし、白文字で最強のコントラスト
-    background: var(--color-primary);
-    border-color: var(--color-primary-dark);
-    color: #ffffff;
+    // Active時は白ベース背景 + 左ボーダーで控えめに表示
+    background: rgba(var(--color-bg-elevated-rgb), 0.95);
+    border-color: var(--color-primary);
+    border-left: 3px solid var(--color-primary);
+    color: var(--color-text);
     font-weight: 600;
-    box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.4);
-
-    &::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      background: rgba(255, 255, 255, 0.5);
-      border-radius: 8px 0 0 8px;
-    }
+    box-shadow: var(--shadow-sm);
 
     .groupIcon svg {
-      color: #ffffff;
-      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+      color: var(--color-primary);
     }
 
     &:hover {
-      background: var(--color-primary-dark);
-      box-shadow: 0 4px 15px rgba(var(--color-primary-rgb), 0.5);
+      background: rgba(var(--color-bg-elevated-rgb), 1);
+      box-shadow: var(--shadow-md);
     }
   }
 }
@@ -137,10 +126,9 @@
   accent-color: var(--color-primary);
   flex-shrink: 0;
 
-  // Active状態のグループ内では白いチェックボックス
+  // Active状態のグループ内ではプライマリカラーのチェックボックス
   .groupActive & {
-    accent-color: #ffffff;
-    filter: brightness(1.2);
+    accent-color: var(--color-primary);
   }
 }
 
@@ -167,9 +155,9 @@
   }
 
   .groupHeader.groupActive & {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: #ffffff;
+    background: rgba(var(--color-primary-rgb), 0.15);
+    border-color: rgba(var(--color-primary-rgb), 0.3);
+    color: var(--color-primary);
   }
 
   svg {
@@ -257,9 +245,10 @@
     }
 
     &.groupActive {
-      background: var(--color-primary);
-      border-color: var(--color-primary-light);
-      box-shadow: 0 4px 15px rgba(var(--color-primary-rgb), 0.5);
+      background: rgba(var(--color-bg-elevated-rgb), 0.9);
+      border-color: var(--color-primary);
+      border-left: 3px solid var(--color-primary);
+      box-shadow: var(--shadow-md);
     }
   }
 

@@ -24,6 +24,7 @@
   display: flex;
   flex-direction: column;
   padding: 4px 0;
+  font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 @keyframes fadeIn {
@@ -50,7 +51,7 @@
 // Menu title
 .menuTitle {
   padding: 8px 12px 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
@@ -147,10 +148,10 @@
 }
 
 .shortcut {
-  font-size: 10px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.4);
   margin-left: 12px;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
   padding: 2px 6px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
@@ -187,17 +188,86 @@
 
 // Header item
 .header {
-  padding: 6px 12px 4px;
-  font-size: 10px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  padding: 10px 12px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.3px;
   user-select: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 4px;
+}
+
+:global([data-theme="light"]) .header {
+  color: rgba(0, 0, 0, 0.87);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
 }
 
 :global([data-theme="light"]) .header {
   color: rgba(0, 0, 0, 0.5);
+}
+
+// Info section for displaying data
+.infoSection {
+  padding: 8px 12px;
+  margin: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+  max-height: 300px;
+  overflow-y: auto;
+  user-select: text;
+}
+
+:global([data-theme="light"]) .infoSection {
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.infoSection pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+}
+
+.infoLabel {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+:global([data-theme="light"]) .infoLabel {
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.infoRowLabel {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+}
+
+.infoRowValue {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  text-align: right;
+}
+
+:global([data-theme="light"]) .infoRowLabel {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+:global([data-theme="light"]) .infoRowValue {
+  color: rgba(0, 0, 0, 0.87);
 }
 
 // Responsive
@@ -210,5 +280,9 @@
   .item {
     padding: 10px 12px;
     font-size: 14px;
+  }
+
+  .infoSection {
+    max-height: 200px;
   }
 }

@@ -167,14 +167,24 @@
     animation: airportPulse 2s ease-in-out infinite;
   }
 
-  // 飛行禁止区域内のWP - 紫色
+  // 飛行禁止区域内のWP - 赤色
   &.inProhibited {
-    background: #9932cc;
-    border-color: #7b28a0;
+    background: #dc2626;
+    border-color: #b91c1c;
     box-shadow:
-      0 0 0 3px rgba(153, 50, 204, 0.4),
-      0 4px 12px rgba(153, 50, 204, 0.3);
+      0 0 0 3px rgba(220, 38, 38, 0.4),
+      0 4px 12px rgba(220, 38, 38, 0.3);
     animation: prohibitedPulse 1.5s ease-in-out infinite;
+  }
+
+  // 注意区域（イエローゾーン）内のWP - 黄色
+  &.inYellowZone {
+    background: #eab308;
+    border-color: #ca8a04;
+    box-shadow:
+      0 0 0 3px rgba(234, 179, 8, 0.4),
+      0 4px 12px rgba(234, 179, 8, 0.3);
+    animation: yellowPulse 2s ease-in-out infinite;
   }
 }
 
@@ -228,13 +238,27 @@
   0%,
   100% {
     box-shadow:
-      0 0 0 3px rgba(153, 50, 204, 0.4),
-      0 4px 12px rgba(153, 50, 204, 0.3);
+      0 0 0 3px rgba(220, 38, 38, 0.4),
+      0 4px 12px rgba(220, 38, 38, 0.3);
   }
   50% {
     box-shadow:
-      0 0 0 8px rgba(153, 50, 204, 0.7),
-      0 4px 24px rgba(153, 50, 204, 0.6);
+      0 0 0 8px rgba(220, 38, 38, 0.7),
+      0 4px 24px rgba(220, 38, 38, 0.6);
+  }
+}
+
+@keyframes yellowPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 3px rgba(234, 179, 8, 0.4),
+      0 4px 12px rgba(234, 179, 8, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 0 6px rgba(234, 179, 8, 0.6),
+      0 4px 20px rgba(234, 179, 8, 0.5);
   }
 }
 
@@ -380,8 +404,15 @@
   }
 
   &.active {
-    background: #45b7d1;
-    color: white;
+    // デフォルトのアクティブスタイル（白ベース + 左ボーダー）
+    background: rgba(var(--color-bg-elevated-rgb), 0.95);
+    color: var(--color-text);
+    border-left: 3px solid var(--color-primary);
+    font-weight: 500;
+
+    &:hover {
+      background: rgba(var(--color-bg-elevated-rgb), 1);
+    }
   }
 }
 
@@ -429,102 +460,187 @@
   }
 }
 
-// Airspace zone specific button colors when active
-.toggleButton.activeDID {
-  background: #9c27b0;
-  color: white;
+// レイヤーボタンのアクティブ状態 - 落ち着いた色調
+// 左ボーダーで色を示し、背景は白ベースを維持
+
+// 共通のアクティブスタイル（ミックスイン的に使用）
+@mixin activeLayerButton($color) {
+  // 白ベース背景を維持しつつ、左ボーダーで色を示す
+  background: rgba(var(--color-bg-elevated-rgb), 0.95);
+  color: var(--color-text);
+  border-left: 3px solid $color;
+  font-weight: 500;
+
+  &:hover {
+    background: rgba(var(--color-bg-elevated-rgb), 1);
+    border-color: $color;
+  }
 }
 
-.toggleButton.activeAirport {
-  background: #ff9800;
-  color: white;
+// 飛行制限系（赤系統 - 警告色）
+.toggleButton.activeDID {
+  @include activeLayerButton(#9c27b0);
 }
 
 .toggleButton.activeRed {
-  background: #dc2626;
-  color: white;
+  @include activeLayerButton(#dc2626);
+}
+
+.toggleButton.activeNuclear {
+  @include activeLayerButton(#d946ef);
+}
+
+.toggleButton.activeEmergency {
+  @include activeLayerButton(#ef4444);
+}
+
+// 航空制限系（オレンジ〜青系統）
+.toggleButton.activeAirport {
+  @include activeLayerButton(#ea580c);
 }
 
 .toggleButton.activeYellow {
-  background: #eab308;
-  color: white;
+  @include activeLayerButton(#ca8a04);
 }
 
 .toggleButton.activeHeliport {
-  background: #3b82f6;
-  color: white;
-}
-
-// UTM新規レイヤーボタンのスタイル
-.toggleButton.activeEmergency {
-  background: #ef4444;
-  color: white;
+  @include activeLayerButton(#3b82f6);
 }
 
 .toggleButton.activeRemoteId {
-  background: #2563eb;
-  color: white;
+  @include activeLayerButton(#2563eb);
 }
 
 .toggleButton.activeMannedAircraft {
-  background: #ec4899;
-  color: white;
+  @include activeLayerButton(#db2777);
 }
 
-.toggleButton.activeGeoFeatures {
-  background: #10b981;
-  color: white;
-}
-
-.toggleButton.activeRainCloud {
-  background: #06b6d4;
-  color: white;
-}
-
-.toggleButton.activeWind {
-  background: #0ea5e9;
-  color: white;
-}
-
-.toggleButton.activeRadioZones {
-  background: #a855f7;
-  color: white;
-}
-
-.toggleButton.activeNetworkCoverage {
-  background: #10b981;
-  color: white;
-}
-
-// 新しい禁止区域カテゴリーのスタイル
-.toggleButton.activeNuclear {
-  background: #ff00ff;
-  color: white;
-}
-
+// 施設系（落ち着いた色調）
 .toggleButton.activePrefecture {
-  background: #ff6600;
-  color: white;
+  @include activeLayerButton(#ea580c);
 }
 
 .toggleButton.activePolice {
-  background: #0066ff;
-  color: white;
+  @include activeLayerButton(#2563eb);
 }
 
 .toggleButton.activePrison {
-  background: #666666;
-  color: white;
+  @include activeLayerButton(#6b7280);
 }
 
 .toggleButton.activeJSDF {
-  background: #00cc00;
-  color: white;
+  @include activeLayerButton(#16a34a);
 }
 
+// 環境・気象系（青緑系統）
+.toggleButton.activeGeoFeatures {
+  @include activeLayerButton(#059669);
+}
+
+.toggleButton.activeRainCloud {
+  @include activeLayerButton(#0891b2);
+}
+
+.toggleButton.activeWind {
+  @include activeLayerButton(#0284c7);
+}
+
+// 通信系（紫系統）
+.toggleButton.activeRadioZones {
+  @include activeLayerButton(#7c3aed);
+}
+
+.toggleButton.activeNetworkCoverage {
+  @include activeLayerButton(#059669);
+}
+
+// ユーティリティ
 .toggleButton.activeCrosshair {
-  background: #e53935;
-  color: white;
+  @include activeLayerButton(#dc2626);
+}
+
+// クロスヘア設定パネル
+.crosshairSettings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(var(--color-bg-secondary-rgb, 30, 30, 30), 0.6);
+  border-radius: 6px;
+}
+
+.crosshairRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.crosshairLabel {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  min-width: 32px;
+}
+
+.crosshairCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text);
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+}
+
+.crosshairSelect {
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--color-text);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 70px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  option {
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+  }
+}
+
+.crosshairColorSelect {
+  @extend .crosshairSelect;
+  min-width: 60px;
+  padding-left: 20px;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--selected-color, #e53935);
+  }
 }
 
 .toggleButton.disabled {

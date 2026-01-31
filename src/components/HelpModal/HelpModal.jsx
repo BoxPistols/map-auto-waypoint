@@ -443,6 +443,10 @@ const HelpModal = ({ onClose }) => {
             <table className={styles.shortcutTable}>
               <tbody>
                 <tr>
+                  <td><kbd>0</kbd></td>
+                  <td>日本全国俯瞰 ⇔ 元の位置に戻る</td>
+                </tr>
+                <tr>
                   <td><kbd>D</kbd></td>
                   <td>DIDオーバーレイ ON/OFF</td>
                 </tr>

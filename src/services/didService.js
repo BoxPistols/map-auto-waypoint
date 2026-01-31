@@ -86,11 +86,23 @@ const PREFECTURE_DATA = [
  * 緯度経度から該当する都道府県を特定
  */
 const getPrefectureFromCoords = (lat, lng) => {
-  // 簡易実装: 主要都道府県のみチェック（完全版はflightAnalyzerからコピーすべき）
-  // ここではデモ用として短縮していますが、実運用では全データを移行します
-  return PREFECTURE_DATA.find(pref => {
+  // Find all matching prefectures
+  const matches = PREFECTURE_DATA.filter(pref => {
     const b = pref.bounds;
     return lat >= b.minLat && lat <= b.maxLat && lng >= b.minLng && lng <= b.maxLng;
+  });
+
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return matches[0];
+
+  // If multiple matches, prefer the one with smallest area (more specific)
+  // Calculate area as (latRange * lngRange)
+  return matches.reduce((smallest, pref) => {
+    const b = pref.bounds;
+    const area = (b.maxLat - b.minLat) * (b.maxLng - b.minLng);
+    const smallestB = smallest.bounds;
+    const smallestArea = (smallestB.maxLat - smallestB.minLat) * (smallestB.maxLng - smallestB.minLng);
+    return area < smallestArea ? pref : smallest;
   });
 };
 
@@ -179,11 +191,17 @@ const checkPointInDIDGeoJSON = (geojson, lat, lng) => {
 
 /**
  * メイン: DID判定
+ * 複数の都道府県にまたがるDIDに対応するため、候補となる複数の都道府県を検証
  */
 export const checkDIDArea = async (lat, lng) => {
   try {
-    const prefecture = getPrefectureFromCoords(lat, lng);
-    if (!prefecture) {
+    // Get all matching prefectures (may overlap at borders)
+    const prefectures = PREFECTURE_DATA.filter(pref => {
+      const b = pref.bounds;
+      return lat >= b.minLat && lat <= b.maxLat && lng >= b.minLng && lng <= b.maxLng;
+    });
+
+    if (prefectures.length === 0) {
       if (import.meta.env.DEV) {
         console.log(`[DID] No prefecture for: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)}`);
       }
@@ -191,23 +209,40 @@ export const checkDIDArea = async (lat, lng) => {
     }
 
     if (import.meta.env.DEV) {
-      console.log(`[DID] Checking: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} in ${prefecture.nameJa}`);
+      const prefNames = prefectures.map(p => p.nameJa).join(', ');
+      console.log(`[DID] Checking: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} in [${prefNames}]`);
     }
 
-    const geojson = await fetchDIDGeoJSON(prefecture.code, prefecture.name);
-    if (geojson) {
-      const result = checkPointInDIDGeoJSON(geojson, lat, lng);
-      if (result) return result;
-      return {
-        isDID: false,
-        area: null,
-        certainty: 'confirmed',
-        source: 'local/R02',
-        description: 'DID外'
-      };
+    // Check all matching prefectures' GeoJSON data
+    for (const prefecture of prefectures) {
+      const geojson = await fetchDIDGeoJSON(prefecture.code, prefecture.name);
+      if (geojson) {
+        const result = checkPointInDIDGeoJSON(geojson, lat, lng);
+        if (result) {
+          // Found in DID - return immediately
+          if (import.meta.env.DEV) {
+            console.log(`[DID] ✓ DID検出: ${result.area} (${prefecture.nameJa})`);
+          }
+          return result;
+        }
+      }
     }
-    return checkDIDAreaFallback(lat, lng);
-  } catch {
+
+    // Not found in any prefecture's DID data
+    if (import.meta.env.DEV) {
+      console.log(`[DID] ✗ DID外: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} (checked ${prefectures.length} prefecture(s))`);
+    }
+    return {
+      isDID: false,
+      area: null,
+      certainty: 'confirmed',
+      source: 'local/R02',
+      description: 'DID外'
+    };
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn(`[DID] エラー:`, error);
+    }
     return checkDIDAreaFallback(lat, lng);
   }
 };
@@ -226,6 +261,38 @@ export const isPositionInDIDSync = (lat, lng) => {
   }
   return checkDIDAreaFallback(lat, lng).isDID;
 };
+
+/**
+ * デバッグ用: 手動でDID判定をテスト
+ * ブラウザのコンソールで使用: window.testDID(35.76128756, 139.62974076)
+ */
+export const debugCheckDID = async (lat, lng) => {
+  console.log(`[DID Debug] Testing: lat=${lat}, lng=${lng}`);
+  const result = await checkDIDArea(lat, lng);
+  console.log(`[DID Debug] Result:`, result);
+
+  const prefecture = getPrefectureFromCoords(lat, lng);
+  console.log(`[DID Debug] Prefecture:`, prefecture);
+
+  if (prefecture) {
+    const cacheKey = `pref_${prefecture.code}`;
+    const cached = didPrefectureCache.has(cacheKey);
+    console.log(`[DID Debug] Cache status: ${cached ? 'LOADED' : 'NOT LOADED'}`);
+
+    if (cached) {
+      const geojson = didPrefectureCache.get(cacheKey);
+      console.log(`[DID Debug] GeoJSON features: ${geojson?.features?.length || 0}`);
+    }
+  }
+
+  return result;
+};
+
+// 開発環境でグローバルにデバッグ関数を公開
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  window.testDID = debugCheckDID;
+  console.log('[DID] Debug function available: window.testDID(lat, lng)');
+}
 
 /**
  * 指定された座標リストに基づいてDIDデータをプリロード

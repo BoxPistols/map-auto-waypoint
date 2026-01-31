@@ -395,6 +395,236 @@ export function getRestrictionSurfaceLayerStyles(): {
   }
 }
 
+/**
+ * 座標を含むタイルを取得
+ */
+function getTileForPoint(lat: number, lng: number, z: number): { z: number; x: number; y: number } {
+  return {
+    z,
+    x: toTileX(lng, z),
+    y: toTileY(lat, z)
+  }
+}
+
+/**
+ * 点が制限表面ポリゴン内にあるかチェック
+ * @param lat 緯度
+ * @param lng 経度
+ * @returns 制限表面内の場合はその情報、そうでなければnull
+ */
+export async function checkPointInRestrictionSurface(
+  lat: number,
+  lng: number
+): Promise<{
+  isInRestrictionSurface: boolean
+  surfaceKind?: RestrictionSurfaceKind
+  surfaceLabel?: string
+  surfaceLabelEn?: string
+} | null> {
+  try {
+    // 対象タイルを取得（kokuareaはz=8固定）
+    const tile = getTileForPoint(lat, lng, KOKUAREA_TILE_ZOOM)
+    const features = await fetchRestrictionSurfaceTile(tile)
+
+    if (features.length === 0) {
+      return { isInRestrictionSurface: false }
+    }
+
+    // point-in-polygon判定用のPointフィーチャー作成
+    const point: GeoJSON.Feature<GeoJSON.Point> = {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'Point',
+        coordinates: [lng, lat]
+      }
+    }
+
+    for (const feature of features) {
+      if (!feature.geometry) continue
+
+      // Polygon または MultiPolygon の場合のみチェック
+      if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+        // 動的インポートを避けるため、シンプルなpoint-in-polygon実装
+        const isInside = isPointInFeature(point.geometry.coordinates, feature.geometry)
+
+        if (isInside) {
+          const kind = feature.properties?.__surface_kind || 'other'
+          const style = RESTRICTION_SURFACE_STYLES[kind]
+          return {
+            isInRestrictionSurface: true,
+            surfaceKind: kind,
+            surfaceLabel: style.label,
+            surfaceLabelEn: style.labelEn
+          }
+        }
+      }
+    }
+
+    return { isInRestrictionSurface: false }
+  } catch (error) {
+    console.warn('[RestrictionSurface] checkPointInRestrictionSurface error:', error)
+    return null // エラー時はnull（フォールバック処理を促す）
+  }
+}
+
+/**
+ * シンプルなpoint-in-polygon判定（ray casting algorithm）
+ */
+function isPointInFeature(
+  point: [number, number],
+  geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon
+): boolean {
+  if (geometry.type === 'Polygon') {
+    return isPointInPolygon(point, geometry.coordinates)
+  } else if (geometry.type === 'MultiPolygon') {
+    for (const polygon of geometry.coordinates) {
+      if (isPointInPolygon(point, polygon)) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
+ * Ray casting algorithm for point in polygon
+ */
+function isPointInPolygon(
+  point: [number, number],
+  coordinates: GeoJSON.Position[][]
+): boolean {
+  const [x, y] = point
+
+  // 外周リングをチェック
+  const outerRing = coordinates[0]
+  if (!isPointInRing(x, y, outerRing)) {
+    return false
+  }
+
+  // 内周リング（穴）をチェック - 穴の中にあれば外
+  for (let i = 1; i < coordinates.length; i++) {
+    if (isPointInRing(x, y, coordinates[i])) {
+      return false
+    }
+  }
+
+  return true
+}
+
+/**
+ * Ray casting for a single ring
+ */
+function isPointInRing(x: number, y: number, ring: GeoJSON.Position[]): boolean {
+  let inside = false
+  const n = ring.length
+
+  for (let i = 0, j = n - 1; i < n; j = i++) {
+    const xi = ring[i][0]
+    const yi = ring[i][1]
+    const xj = ring[j][0]
+    const yj = ring[j][1]
+
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside
+    }
+  }
+
+  return inside
+}
+
+/**
+ * 複数の座標点を一括で制限表面判定
+ * @param points 座標点の配列 [{lat, lng, id}]
+ * @returns 各点の判定結果のMap
+ */
+export async function checkPointsInRestrictionSurfaces(
+  points: Array<{ lat: number; lng: number; id: string }>
+): Promise<
+  Map<
+    string,
+    {
+      isInRestrictionSurface: boolean
+      surfaceKind?: RestrictionSurfaceKind
+      surfaceLabel?: string
+      surfaceLabelEn?: string
+    }
+  >
+> {
+  const results = new Map<
+    string,
+    {
+      isInRestrictionSurface: boolean
+      surfaceKind?: RestrictionSurfaceKind
+      surfaceLabel?: string
+      surfaceLabelEn?: string
+    }
+  >()
+
+  if (points.length === 0) {
+    return results
+  }
+
+  // 必要なタイルを特定
+  const tilesNeeded = new Set<string>()
+  const pointTileMap = new Map<string, { z: number; x: number; y: number }>()
+
+  for (const point of points) {
+    const tile = getTileForPoint(point.lat, point.lng, KOKUAREA_TILE_ZOOM)
+    const tileKey = `${tile.z}/${tile.x}/${tile.y}`
+    tilesNeeded.add(tileKey)
+    pointTileMap.set(point.id, tile)
+  }
+
+  // タイルを一括フェッチ
+  const tilePromises = Array.from(tilesNeeded).map(async (tileKey) => {
+    const [z, x, y] = tileKey.split('/').map(Number)
+    const features = await fetchRestrictionSurfaceTile({ z, x, y })
+    return { tileKey, features }
+  })
+
+  const tileResults = await Promise.all(tilePromises)
+  const tileFeatureMap = new Map<string, RestrictionSurfaceFeature[]>()
+  for (const { tileKey, features } of tileResults) {
+    tileFeatureMap.set(tileKey, features)
+  }
+
+  // 各点を判定
+  for (const point of points) {
+    const tile = pointTileMap.get(point.id)!
+    const tileKey = `${tile.z}/${tile.x}/${tile.y}`
+    const features = tileFeatureMap.get(tileKey) || []
+
+    let found = false
+    for (const feature of features) {
+      if (!feature.geometry) continue
+
+      if (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon') {
+        const isInside = isPointInFeature([point.lng, point.lat], feature.geometry)
+
+        if (isInside) {
+          const kind = feature.properties?.__surface_kind || 'other'
+          const style = RESTRICTION_SURFACE_STYLES[kind]
+          results.set(point.id, {
+            isInRestrictionSurface: true,
+            surfaceKind: kind,
+            surfaceLabel: style.label,
+            surfaceLabelEn: style.labelEn
+          })
+          found = true
+          break
+        }
+      }
+    }
+
+    if (!found) {
+      results.set(point.id, { isInRestrictionSurface: false })
+    }
+  }
+
+  return results
+}
+
 export const RestrictionSurfaceService = {
   TILE_URL: KOKUAREA_TILE_URL,
   PROXY_ENDPOINT: KOKUAREA_PROXY_ENDPOINT,
@@ -407,5 +637,7 @@ export const RestrictionSurfaceService = {
   classify: classifyRestrictionSurface,
   enrichFeature: enrichRestrictionSurfaceFeature,
   fetchTiles: fetchRestrictionSurfaceTiles,
-  getLayerStyles: getRestrictionSurfaceLayerStyles
+  getLayerStyles: getRestrictionSurfaceLayerStyles,
+  checkPoint: checkPointInRestrictionSurface,
+  checkPoints: checkPointsInRestrictionSurfaces
 }

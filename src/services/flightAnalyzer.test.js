@@ -383,12 +383,12 @@ describe('flightAnalyzer', () => {
 
     it('GeoJSONが利用できない場合はDID外と判定（フォールバック）', async () => {
       // テスト環境ではfetchがモックされているためGeoJSONが取得できない
-      // この場合、フォールバックが発動してisDID=falseを返す
+      // 新実装では複数都道府県をチェックし、全てでGeoJSONがない場合はlocal/R02を返す
       const result = await checkDIDArea(35.6812, 139.7671);
 
       expect(result.isDID).toBe(false);
-      expect(result.source).toBe('fallback');
-      expect(result.certainty).toBe('unknown');
+      expect(result.source).toBe('local/R02');
+      expect(result.certainty).toBe('confirmed');
     });
 
     it('郊外でDID外と判定', async () => {
@@ -400,11 +400,11 @@ describe('flightAnalyzer', () => {
 
     it('大阪座標でもフォールバック時はDID外と判定', async () => {
       // 以前は円形エリア推定でisDID=trueを返していたが、
-      // 誤検出防止のためフォールバックはisDID=falseを返すように変更
+      // 新実装では複数都道府県をチェックし、全てでGeoJSONがない場合はlocal/R02を返す
       const result = await checkDIDArea(34.6937, 135.5023);
 
       expect(result.isDID).toBe(false);
-      expect(result.source).toBe('fallback');
+      expect(result.source).toBe('local/R02');
     });
   });
 
