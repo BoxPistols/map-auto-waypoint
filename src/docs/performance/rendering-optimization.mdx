@@ -22,11 +22,28 @@ import { Meta } from '@storybook/addon-docs/blocks'
 
 本アプリケーションは486以上の施設データ、150以上の空港データ、動的な制限表面タイルを同時に描画する必要があります。これを高速に処理するため、以下の3層で最適化を実施しています。
 
-| レイヤー | 最適化手法 |
-|----------|------------|
-| React | useMemo, useCallback, 条件付きレンダリング |
-| MapLibre GL | Data-driven styling, フィルター式, GPU処理 |
-| データサービス | 遅延読み込み, タイルキャッシュ, リクエスト統合 |
+<table>
+  <thead>
+    <tr>
+      <th>レイヤー</th>
+      <th>最適化手法</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>React</td>
+      <td>useMemo, useCallback, 条件付きレンダリング</td>
+    </tr>
+    <tr>
+      <td>MapLibre GL</td>
+      <td>Data-driven styling, フィルター式, GPU処理</td>
+    </tr>
+    <tr>
+      <td>データサービス</td>
+      <td>遅延読み込み, タイルキャッシュ, リクエスト統合</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
@@ -323,12 +340,37 @@ useEffect(() => {
 
 **4つの制御ポイント**:
 
-| 制御 | 条件 | 効果 |
-|------|------|------|
-| ズームレベル | < 8 | 広域表示時のデータ取得を回避 |
-| タイル数 | > 64 | 大量タイルリクエストを回避 |
-| 範囲キャッシュ | 同一範囲 | 重複リクエストを回避 |
-| デバウンス | 500ms | 連続移動時のリクエスト抑制 |
+<table>
+  <thead>
+    <tr>
+      <th>制御</th>
+      <th>条件</th>
+      <th>効果</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>ズームレベル</td>
+      <td>&lt; 8</td>
+      <td>広域表示時のデータ取得を回避</td>
+    </tr>
+    <tr>
+      <td>タイル数</td>
+      <td>&gt; 64</td>
+      <td>大量タイルリクエストを回避</td>
+    </tr>
+    <tr>
+      <td>範囲キャッシュ</td>
+      <td>同一範囲</td>
+      <td>重複リクエストを回避</td>
+    </tr>
+    <tr>
+      <td>デバウンス</td>
+      <td>500ms</td>
+      <td>連続移動時のリクエスト抑制</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
@@ -336,13 +378,42 @@ useEffect(() => {
 
 ### 1. GeoJSON生成キャッシュ（useMemo）
 
-| キャッシュ対象 | 依存配列 | 再計算トリガー |
-|---|---|---|
-| airportZonesGeoJSON | `[]` | なし（初回のみ） |
-| redZonesGeoJSON | `[]` | なし |
-| yellowZonesGeoJSON | `[]` | なし |
-| geoJsonLayerConfigs | `[layerVisibility.show*, ...GeoJSONs]` | レイヤー表示フラグ変更時 |
-| optimizedRouteGeoJSON | `[optimizedRoute]` | 最適化ルート変更時 |
+<table>
+  <thead>
+    <tr>
+      <th>キャッシュ対象</th>
+      <th>依存配列</th>
+      <th>再計算トリガー</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>airportZonesGeoJSON</td>
+      <td><code>[]</code></td>
+      <td>なし（初回のみ）</td>
+    </tr>
+    <tr>
+      <td>redZonesGeoJSON</td>
+      <td><code>[]</code></td>
+      <td>なし</td>
+    </tr>
+    <tr>
+      <td>yellowZonesGeoJSON</td>
+      <td><code>[]</code></td>
+      <td>なし</td>
+    </tr>
+    <tr>
+      <td>geoJsonLayerConfigs</td>
+      <td><code>[layerVisibility.show*, ...GeoJSONs]</code></td>
+      <td>レイヤー表示フラグ変更時</td>
+    </tr>
+    <tr>
+      <td>optimizedRouteGeoJSON</td>
+      <td><code>[optimizedRoute]</code></td>
+      <td>最適化ルート変更時</td>
+    </tr>
+  </tbody>
+</table>
 
 ### 2. 制限表面タイルのLRUキャッシュ
 
@@ -461,16 +532,57 @@ MapLibre GL が GPU で描画
 
 ## パフォーマンスメトリクス
 
-| 項目 | 値 | 最適化方法 |
-|---|---|---|
-| 施設データ総数 | 486+ | JSON マスター + 段階的フィルタリング |
-| GeoJSONポリゴン数（レッド） | ~80-100 | createCirclePolygon() で効率化 |
-| 制限表面タイルキャッシュ | 最大 200 | LRU キャッシュ |
-| レイヤー表示フラグ | 15+ | 条件付きレンダリング |
-| インタラクティブレイヤー | 8個 | 明示的登録で高速化 |
-| Source/Layer数（同時最大） | 20+ | 表示フラグに応じた動的マウント |
-| デバウンス遅延 | 500ms | マップ移動時の再フェッチ制御 |
-| useMemoキャッシュ | 13+ | 初回レンダリング以外は計算不要 |
+<table>
+  <thead>
+    <tr>
+      <th>項目</th>
+      <th>値</th>
+      <th>最適化方法</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>施設データ総数</td>
+      <td>486+</td>
+      <td>JSON マスター + 段階的フィルタリング</td>
+    </tr>
+    <tr>
+      <td>GeoJSONポリゴン数（レッド）</td>
+      <td>~80-100</td>
+      <td>createCirclePolygon() で効率化</td>
+    </tr>
+    <tr>
+      <td>制限表面タイルキャッシュ</td>
+      <td>最大 200</td>
+      <td>LRU キャッシュ</td>
+    </tr>
+    <tr>
+      <td>レイヤー表示フラグ</td>
+      <td>15+</td>
+      <td>条件付きレンダリング</td>
+    </tr>
+    <tr>
+      <td>インタラクティブレイヤー</td>
+      <td>8個</td>
+      <td>明示的登録で高速化</td>
+    </tr>
+    <tr>
+      <td>Source/Layer数（同時最大）</td>
+      <td>20+</td>
+      <td>表示フラグに応じた動的マウント</td>
+    </tr>
+    <tr>
+      <td>デバウンス遅延</td>
+      <td>500ms</td>
+      <td>マップ移動時の再フェッチ制御</td>
+    </tr>
+    <tr>
+      <td>useMemoキャッシュ</td>
+      <td>13+</td>
+      <td>初回レンダリング以外は計算不要</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
@@ -526,10 +638,33 @@ import { Profiler } from 'react'
 
 ## 関連ファイル
 
-| ファイル | 役割 |
-|----------|------|
-| `src/components/Map/Map.jsx` | メインマップコンポーネント |
-| `src/lib/services/noFlyZones.ts` | 禁止区域データサービス |
-| `src/lib/services/airports.ts` | 空港データサービス |
-| `src/lib/services/restrictionSurfaces.ts` | 制限表面タイルサービス |
-| `src/utils/storage.js` | localStorage ラッパー |
+<table>
+  <thead>
+    <tr>
+      <th>ファイル</th>
+      <th>役割</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>src/components/Map/Map.jsx</code></td>
+      <td>メインマップコンポーネント</td>
+    </tr>
+    <tr>
+      <td><code>src/lib/services/noFlyZones.ts</code></td>
+      <td>禁止区域データサービス</td>
+    </tr>
+    <tr>
+      <td><code>src/lib/services/airports.ts</code></td>
+      <td>空港データサービス</td>
+    </tr>
+    <tr>
+      <td><code>src/lib/services/restrictionSurfaces.ts</code></td>
+      <td>制限表面タイルサービス</td>
+    </tr>
+    <tr>
+      <td><code>src/utils/storage.js</code></td>
+      <td>localStorage ラッパー</td>
+    </tr>
+  </tbody>
+</table>
