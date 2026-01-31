@@ -1178,6 +1178,11 @@ const Map = ({
       const polygonId = polygonFeature.properties.id
       const polygon = polygons.find(p => p.id === polygonId)
       if (polygon) {
+        // Auto-select polygon on right-click
+        if (onPolygonSelect) {
+          onPolygonSelect(polygon.id)
+        }
+
         setPolygonContextMenu({
           isOpen: true,
           position: { x: e.point.x, y: e.point.y },
@@ -1185,7 +1190,7 @@ const Map = ({
         })
       }
     }
-  }, [polygons])
+  }, [polygons, onPolygonSelect])
 
   // Handle polygon creation from draw control
   const handleCreate = useCallback((features) => {
@@ -1536,11 +1541,6 @@ const Map = ({
           }
         }
         break
-      case 'select':
-        if (onPolygonSelect) {
-          onPolygonSelect(polygon.id)
-        }
-        break
       case 'edit':
         if (onPolygonEditStart) {
           onPolygonEditStart(polygon)
@@ -1576,7 +1576,7 @@ const Map = ({
       default:
         break
     }
-  }, [polygonContextMenu, onPolygonDelete, onPolygonSelect, onPolygonEditStart, waypoints])
+  }, [polygonContextMenu, onPolygonDelete, onPolygonEditStart, waypoints])
 
   // Build context menu items for polygon
   const polygonContextMenuItems = useMemo(() => {
@@ -1640,7 +1640,6 @@ const Map = ({
     }
     
     items.push(
-      { id: 'select', icon: '👆', label: '選択', action: 'select' },
       { id: 'edit', icon: '✏️', label: '形状を編集', action: 'edit' },
       { id: 'divider3', divider: true },
       { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
