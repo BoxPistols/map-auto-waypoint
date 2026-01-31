@@ -16,7 +16,13 @@ const buildKokuareaProxyPath = (path) => {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      babel: {
+        plugins: [['babel-plugin-react-compiler', {}]]
+      }
+    })
+  ],
   base: '/map-auto-waypoint/',
   server: {
     proxy: {
