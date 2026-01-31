@@ -93,15 +93,19 @@ const FacilityPopup = ({ facility, screenX, screenY, onClose }) => {
   // ESCキーで閉じる
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && onClose) {
-        onClose()
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        if (onClose) {
+          onClose()
+        }
       }
     }
 
     if (facility) {
-      window.addEventListener('keydown', handleKeyDown)
+      window.addEventListener('keydown', handleKeyDown, true) // capture phase
       return () => {
-        window.removeEventListener('keydown', handleKeyDown)
+        window.removeEventListener('keydown', handleKeyDown, true)
       }
     }
   }, [facility, onClose])
@@ -160,13 +164,17 @@ const FacilityPopup = ({ facility, screenX, screenY, onClose }) => {
     >
       <div className={styles.header}>
         <h3 className={styles.title}>{facility.name}</h3>
-        <button
-          className={styles.closeButton}
-          onClick={onClose}
-          aria-label="閉じる"
-        >
-          <X size={16} />
-        </button>
+        <div className={styles.headerActions}>
+          <kbd className={styles.escHint}>ESC</kbd>
+          <button
+            className={styles.closeButton}
+            onClick={onClose}
+            aria-label="閉じる (ESCキー)"
+            title="閉じる (ESCキー)"
+          >
+            <X size={16} />
+          </button>
+        </div>
       </div>
 
       <div className={styles.content}>

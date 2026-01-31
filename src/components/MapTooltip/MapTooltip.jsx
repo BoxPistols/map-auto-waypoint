@@ -3,7 +3,8 @@
  * Tooltip for displaying information on hover over map features
  */
 
-import { useState, useRef, useLayoutEffect } from 'react'
+import { useState, useRef, useLayoutEffect, useEffect } from 'react'
+import { X } from 'lucide-react'
 import { formatDateToJST } from '../../utils/formatters'
 import styles from './MapTooltip.module.scss'
 
@@ -14,10 +15,31 @@ import styles from './MapTooltip.module.scss'
  * @param {Object} props.position - { x, y } position for tooltip
  * @param {Object} props.data - Data to display in tooltip
  * @param {string} props.type - 'waypoint' or 'polygon'
+ * @param {Function} props.onClose - Callback to close tooltip
  */
-export const MapTooltip = ({ isVisible, position, data, type }) => {
+export const MapTooltip = ({ isVisible, position, data, type, onClose }) => {
   const tooltipRef = useRef(null)
   const [adjustedPosition, setAdjustedPosition] = useState(position)
+
+  // ESCキーで閉じる
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        if (onClose) {
+          onClose()
+        }
+      }
+    }
+
+    if (isVisible) {
+      window.addEventListener('keydown', handleKeyDown, true) // capture phase
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown, true)
+      }
+    }
+  }, [isVisible, onClose])
 
   // Calculate and update position after DOM mount to ensure tooltip stays in viewport
   useLayoutEffect(() => {
@@ -77,8 +99,23 @@ export const MapTooltip = ({ isVisible, position, data, type }) => {
         {type === 'waypoint' && (
           <>
             <div className={styles.header}>
-              <span className={styles.icon}>📍</span>
-              <span className={styles.title}>WP #{data.index}</span>
+              <div className={styles.headerLeft}>
+                <span className={styles.icon}>📍</span>
+                <span className={styles.title}>WP #{data.index}</span>
+              </div>
+              {onClose && (
+                <div className={styles.headerActions}>
+                  <kbd className={styles.escHint}>ESC</kbd>
+                  <button
+                    className={styles.closeButton}
+                    onClick={onClose}
+                    aria-label="閉じる (ESCキー)"
+                    title="閉じる (ESCキー)"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              )}
             </div>
             {data.polygonName && (
               <div className={styles.row}>
@@ -132,8 +169,23 @@ export const MapTooltip = ({ isVisible, position, data, type }) => {
         {type === 'polygon' && (
           <>
             <div className={styles.header}>
-              <span className={styles.icon}>🗺️</span>
-              <span className={styles.title}>{data.name}</span>
+              <div className={styles.headerLeft}>
+                <span className={styles.icon}>🗺️</span>
+                <span className={styles.title}>{data.name}</span>
+              </div>
+              {onClose && (
+                <div className={styles.headerActions}>
+                  <kbd className={styles.escHint}>ESC</kbd>
+                  <button
+                    className={styles.closeButton}
+                    onClick={onClose}
+                    aria-label="閉じる (ESCキー)"
+                    title="閉じる (ESCキー)"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              )}
             </div>
             {data.waypointCount !== undefined && (
               <div className={styles.row}>

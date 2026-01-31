@@ -1090,7 +1090,15 @@ const Map = ({
       facilityLayerIds.includes(f.layer?.id)
     )
 
-    if (facilityFeature) {
+    // ポリゴン描画/編集モード中は施設ポップアップを表示しない
+    if (facilityFeature && !drawMode && !editingPolygon) {
+      // ツールチップをクリア（競合を避けるため）
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+        hoverTimeoutRef.current = null
+      }
+      setTooltip(null)
+
       // 施設ポップアップを表示
       setFacilityPopup({
         facility: facilityFeature.properties,
@@ -1256,6 +1264,14 @@ const Map = ({
       console.log(`[Map] Waypoint hover: WP${wp.index}`, { x: e.clientX, y: e.clientY })
     }
 
+    // Don't show tooltip during draw mode or editing
+    if (drawMode || editingPolygon) {
+      if (import.meta.env.DEV) {
+        console.log('[Map] Waypoint hover blocked: draw/edit mode active')
+      }
+      return
+    }
+
     // Don't show tooltip if context menu is open
     if (contextMenu?.isOpen || polygonContextMenu?.isOpen) {
       if (import.meta.env.DEV) {
@@ -1272,7 +1288,7 @@ const Map = ({
       clearTimeout(hoverTimeoutRef.current)
     }
 
-    // Set tooltip with a slight delay
+    // Set tooltip with 3 second delay to avoid interference
     hoverTimeoutRef.current = setTimeout(() => {
       const restrictions = getWaypointAirspaceRestrictions(wp)
       if (import.meta.env.DEV) {
@@ -1284,8 +1300,8 @@ const Map = ({
         data: { ...wp, airspaceRestrictions: restrictions },
         type: 'waypoint'
       })
-    }, 300)
-  }, [contextMenu, polygonContextMenu, getWaypointAirspaceRestrictions])
+    }, 3000)
+  }, [contextMenu, polygonContextMenu, drawMode, editingPolygon, getWaypointAirspaceRestrictions])
 
   // Handle waypoint hover end - hide tooltip
   const handleWaypointHoverEnd = useCallback(() => {
@@ -1351,7 +1367,7 @@ const Map = ({
         // Count waypoints for this polygon
         const waypointCount = waypoints.filter(wp => wp.polygonId === polygon.id).length
 
-        // 800ms delay to avoid accidental tooltip during navigation
+        // 3 second delay to avoid accidental tooltip during editing
         hoverTimeoutRef.current = setTimeout(() => {
           setTooltip({
             isVisible: true,
@@ -1363,7 +1379,7 @@ const Map = ({
             },
             type: 'polygon'
           })
-        }, 800)
+        }, 3000)
       }
     } else {
       // No polygon under cursor, clear tooltip
@@ -2953,6 +2969,7 @@ const Map = ({
           position={tooltip.position}
           data={tooltip.data}
           type={tooltip.type}
+          onClose={() => setTooltip(null)}
         />
       )}
 
