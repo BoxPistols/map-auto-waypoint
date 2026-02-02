@@ -30,6 +30,13 @@ import {
   copyToClipboard
 } from '../../utils/formatters'
 import {
+  generateOptimizedRouteGeoJSON,
+  generateOptimizationOverlayGeoJSON,
+  generatePathCollisionGeoJSON,
+  generatePolygonCollisionGeoJSON,
+  generatePolygonsGeoJSON
+} from '../../utils/mapGeoJsonUtils'
+import {
   getEmergencyAirspaceGeoJSON,
   getRemoteIdZonesGeoJSON,
   getMannedAircraftZonesGeoJSON,
@@ -736,191 +743,28 @@ const Map = ({
   ])
 
   // Memoize optimized route GeoJSON (lines connecting waypoints in optimal order)
-  const optimizedRouteGeoJSON = useMemo(() => {
-    if (!optimizedRoute || !optimizedRoute.flights || optimizedRoute.flights.length === 0) return null
-
-    const features = []
-    const homePoint = optimizedRoute.homePoint
-
-    // Flight colors: Flight 1 = blue, Flight 2 = green, Flight 3+ = red
-    const flightColors = ['#2563eb', '#16a34a', '#dc2626', '#f59e0b', '#8b5cf6']
-
-    optimizedRoute.flights.forEach((flight, flightIdx) => {
-      const color = flightColors[Math.min(flightIdx, flightColors.length - 1)]
-      const wps = flight.waypoints
-
-      if (wps.length === 0) return
-
-      // Line from home to first waypoint
-      features.push({
-        type: 'Feature',
-        properties: { flightNumber: flight.flightNumber, color, isReturn: false },
-        geometry: {
-          type: 'LineString',
-          coordinates: [
-            [homePoint.lng, homePoint.lat],
-            [wps[0].lng, wps[0].lat]
-          ]
-        }
-      })
-
-      // Lines between waypoints
-      for (let i = 0; i < wps.length - 1; i++) {
-        features.push({
-          type: 'Feature',
-          properties: { flightNumber: flight.flightNumber, color, isReturn: false },
-          geometry: {
-            type: 'LineString',
-            coordinates: [
-              [wps[i].lng, wps[i].lat],
-              [wps[i + 1].lng, wps[i + 1].lat]
-            ]
-          }
-        })
-      }
-
-      // Line from last waypoint back to home
-      features.push({
-        type: 'Feature',
-        properties: { flightNumber: flight.flightNumber, color, isReturn: true },
-        geometry: {
-          type: 'LineString',
-          coordinates: [
-            [wps[wps.length - 1].lng, wps[wps.length - 1].lat],
-            [homePoint.lng, homePoint.lat]
-          ]
-        }
-      })
-    })
-
-    return {
-      type: 'FeatureCollection',
-      features
-    }
-  }, [optimizedRoute])
+  const optimizedRouteGeoJSON = useMemo(() =>
+    generateOptimizedRouteGeoJSON(optimizedRoute),
+    [optimizedRoute]
+  )
 
   // Memoize optimization overlay GeoJSON (lines from current to recommended positions + zone warnings)
-  const optimizationOverlayGeoJSON = useMemo(() => {
-    if (!recommendedWaypoints || recommendedWaypoints.length === 0) return null
-
-    const features = []
-
-    recommendedWaypoints.forEach(rw => {
-      // Determine warning type
-      let warningType = 'optimization'
-      if (rw.hasProhibited) warningType = 'prohibited'
-      else if (rw.hasAirport) warningType = 'airport'
-      else if (rw.hasDID) warningType = 'did'
-
-      // Add zone warning at current position if there are issues
-      if (rw.hasProhibited || rw.hasAirport || rw.hasDID) {
-        const original = waypoints.find(w => w.id === rw.id)
-        if (original) {
-          features.push({
-            type: 'Feature',
-            properties: { type: 'zone-warning-point', index: rw.index, warningType },
-            geometry: {
-              type: 'Point',
-              coordinates: [original.lng, original.lat]
-            }
-          })
-        }
-      }
-
-      if (rw.modified) {
-        // Find original waypoint
-        const original = waypoints.find(w => w.id === rw.id)
-        if (original) {
-          // Line from original to recommended position
-          features.push({
-            type: 'Feature',
-            properties: { type: 'optimization-line', warningType },
-            geometry: {
-              type: 'LineString',
-              coordinates: [
-                [original.lng, original.lat],
-                [rw.lng, rw.lat]
-              ]
-            }
-          })
-          // Recommended position point
-          features.push({
-            type: 'Feature',
-            properties: { type: 'recommended-point', index: rw.index, warningType },
-            geometry: {
-              type: 'Point',
-              coordinates: [rw.lng, rw.lat]
-            }
-          })
-        }
-      }
-    })
-
-    if (features.length === 0) return null
-
-    return {
-      type: 'FeatureCollection',
-      features
-    }
-  }, [recommendedWaypoints, waypoints])
+  const optimizationOverlayGeoJSON = useMemo(() =>
+    generateOptimizationOverlayGeoJSON(recommendedWaypoints, waypoints),
+    [recommendedWaypoints, waypoints]
+  )
 
   // Path collision overlay GeoJSON (danger segments where both endpoints are in same zone)
-  const pathCollisionGeoJSON = useMemo(() => {
-    if (!pathCollisionResult || !pathCollisionResult.isColliding) return null
-
-    const features = []
-
-    // 新形式: dangerSegments（両端点が同一制限区域内）
-    pathCollisionResult.dangerSegments?.forEach((segment, idx) => {
-      if (segment.fromWaypoint && segment.toWaypoint) {
-        features.push({
-          type: 'Feature',
-          properties: {
-            type: 'danger-segment',
-            segmentType: segment.segmentType,
-            color: segment.segmentColor,
-            index: idx
-          },
-          geometry: {
-            type: 'LineString',
-            coordinates: [
-              [segment.fromWaypoint.lng, segment.fromWaypoint.lat],
-              [segment.toWaypoint.lng, segment.toWaypoint.lat]
-            ]
-          }
-        })
-      }
-    })
-
-    if (features.length === 0) return null
-
-    return {
-      type: 'FeatureCollection',
-      features
-    }
-  }, [pathCollisionResult])
+  const pathCollisionGeoJSON = useMemo(() =>
+    generatePathCollisionGeoJSON(pathCollisionResult),
+    [pathCollisionResult]
+  )
 
   // Polygon collision overlay GeoJSON (intersection/overlap areas)
-  const polygonCollisionGeoJSON = useMemo(() => {
-    if (!polygonCollisionResult || !polygonCollisionResult.hasCollisions) return null
-
-    const features = polygonCollisionResult.intersectionPolygons.map((ip, idx) => ({
-      type: 'Feature',
-      properties: {
-        ...ip.properties,
-        index: idx,
-        type: 'polygon-overlap'
-      },
-      geometry: ip.geometry
-    }))
-
-    if (features.length === 0) return null
-
-    return {
-      type: 'FeatureCollection',
-      features
-    }
-  }, [polygonCollisionResult])
+  const polygonCollisionGeoJSON = useMemo(() =>
+    generatePolygonCollisionGeoJSON(polygonCollisionResult),
+    [polygonCollisionResult]
+  )
 
   // DID tile source configuration (令和2年国勢調査データ)
   // Note: GSI DID tiles have limited zoom range, maxzoom 14 is safe
@@ -1511,22 +1355,10 @@ const Map = ({
   }, [polygonContextMenu, waypoints])
 
   // Convert polygons to GeoJSON for display (exclude polygon being edited)
-  const polygonsGeoJSON = {
-    type: 'FeatureCollection',
-    features: polygons
-      .filter(p => !editingPolygon || p.id !== editingPolygon.id)
-      .map(p => ({
-        type: 'Feature',
-        id: p.id,
-        properties: {
-          id: p.id,
-          name: p.name,
-          color: p.color,
-          selected: p.id === selectedPolygonId
-        },
-        geometry: p.geometry
-      }))
-  }
+  const polygonsGeoJSON = useMemo(() =>
+    generatePolygonsGeoJSON(polygons, editingPolygon, selectedPolygonId),
+    [polygons, editingPolygon, selectedPolygonId]
+  )
 
   const interactiveLayerIds = [
     'polygon-fill',
