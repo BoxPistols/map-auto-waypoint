@@ -51,10 +51,10 @@ const AvailableTools = {
 };
 
 /**
- * MCPクライアントクラス
- * 現在はモック実装、将来的にMCPプロトコルで実サーバーと接続
+ * MCPクライアント（モック実装）
+ * 開発・テスト用のモック実装
  */
-class MCPClient {
+class MCPClientMock {
   constructor() {
     this.connectionState = ConnectionState.DISCONNECTED;
     this.servers = new Map();
@@ -373,7 +373,211 @@ class MCPClient {
   }
 }
 
-// シングルトンインスタンス
-export const mcpClient = new MCPClient();
-export { ConnectionState, AvailableTools };
-export default MCPClient;
+/**
+ * MCPクライアント（実装版）
+ * MCP Proxy Server経由で実際のMCPサーバーと通信
+ */
+class MCPClientReal {
+  constructor(wsClient) {
+    this.wsClient = wsClient
+    this.connectionState = ConnectionState.DISCONNECTED
+    this.listeners = new Set()
+
+    // WebSocketクライアントの状態変更を監視
+    this.wsClient.onStateChange((state) => {
+      this.connectionState = state
+      this._notifyStateChange()
+    })
+  }
+
+  /**
+   * 接続状態の変更を通知
+   */
+  onStateChange(callback) {
+    this.listeners.add(callback)
+    return () => this.listeners.delete(callback)
+  }
+
+  _notifyStateChange() {
+    this.listeners.forEach((cb) => cb(this.connectionState))
+  }
+
+  /**
+   * MCP Proxy Serverに接続
+   */
+  async connect() {
+    return this.wsClient.connect()
+  }
+
+  /**
+   * 切断
+   */
+  async disconnect() {
+    return this.wsClient.disconnect()
+  }
+
+  /**
+   * フライト経路を自然言語から生成
+   */
+  async generateFlightPath(description, area) {
+    try {
+      const result = await this.wsClient.callTool(
+        'flight-data-server',
+        'generate_flight_path',
+        { description, area }
+      )
+      return {
+        success: true,
+        flightPlan: result,
+        message: `フライト経路を生成しました`
+      }
+    } catch (error) {
+      console.error('[MCP Real] generateFlightPath error:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 地上リスク判定
+   */
+  async assessGroundRisk(flightArea, altitude) {
+    try {
+      const result = await this.wsClient.callTool(
+        'risk-assessment-server',
+        'assess_ground_risk',
+        { flight_area: flightArea, flight_altitude: altitude }
+      )
+      return {
+        success: true,
+        assessment: result
+      }
+    } catch (error) {
+      console.error('[MCP Real] assessGroundRisk error:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * UTM干渉チェック
+   */
+  async checkUTMConflicts(flightPlan, timeRange) {
+    try {
+      const result = await this.wsClient.callTool(
+        'utm-integration-server',
+        'check_utm_conflicts',
+        { flight_plan: flightPlan, datetime_range: timeRange }
+      )
+      return {
+        success: true,
+        result
+      }
+    } catch (error) {
+      console.error('[MCP Real] checkUTMConflicts error:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 最適機体を提案
+   */
+  async recommendAircraft(mission) {
+    try {
+      const result = await this.wsClient.callTool(
+        'aircraft-db-server',
+        'recommend_aircraft',
+        mission
+      )
+      return {
+        success: true,
+        recommendations: result
+      }
+    } catch (error) {
+      console.error('[MCP Real] recommendAircraft error:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 申請要件を分析
+   */
+  async analyzeRequirements(flightPlan) {
+    try {
+      const result = await this.wsClient.callTool(
+        'regulation-server',
+        'analyze_requirements',
+        { flight_plan: flightPlan, operator_certifications: [] }
+      )
+      return {
+        success: true,
+        analysis: result
+      }
+    } catch (error) {
+      console.error('[MCP Real] analyzeRequirements error:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+
+  /**
+   * 統合判定を実行
+   */
+  async runFullAssessment(flightPlan) {
+    try {
+      const results = await Promise.allSettled([
+        this.assessGroundRisk(flightPlan.area, flightPlan.altitude || 50),
+        this.checkUTMConflicts(flightPlan, flightPlan.timeRange),
+        this.recommendAircraft({ type: flightPlan.purpose }),
+        this.analyzeRequirements(flightPlan)
+      ])
+
+      const [riskResult, utmResult, aircraftResult, requirementsResult] = results.map(
+        (r) => (r.status === 'fulfilled' ? r.value : { success: false, error: r.reason.message })
+      )
+
+      return {
+        success: true,
+        timestamp: new Date().toISOString(),
+        summary: {
+          overallRisk: riskResult.assessment?.riskLevel || 'UNKNOWN',
+          utmClear: utmResult.result?.clearForFlight ?? false,
+          recommendedAircraft: aircraftResult.recommendations?.[0]?.model || 'N/A',
+          estimatedApprovalDays: requirementsResult.analysis?.totalDays || 0
+        },
+        details: {
+          groundRisk: riskResult.assessment || {},
+          utmConflicts: utmResult.result || {},
+          aircraftRecommendations: aircraftResult.recommendations || [],
+          requirements: requirementsResult.analysis || {}
+        }
+      }
+    } catch (error) {
+      console.error('[MCP Real] runFullAssessment error:', error)
+      return {
+        success: false,
+        error: error.message
+      }
+    }
+  }
+}
+
+// シングルトンインスタンス（環境変数で切り替え）
+export const mcpClient = USE_REAL_MCP
+  ? new MCPClientReal(mcpWebSocketClient)
+  : new MCPClientMock()
+
+export { ConnectionState, AvailableTools, MCPClientMock, MCPClientReal }
+export default USE_REAL_MCP ? MCPClientReal : MCPClientMock

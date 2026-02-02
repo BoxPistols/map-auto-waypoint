@@ -126,6 +126,41 @@ AI チャット機能による詳細な飛行計画分析に使用します。
 2. 「API キー設定」をクリック
 3. OpenAI API キーを入力
 
+### 2. MCP (Model Context Protocol) 設定（オプション）
+
+MCP機能を使用する場合の環境変数設定です。
+
+| 変数 | 説明 | デフォルト |
+|------|------|-----------|
+| `VITE_USE_REAL_MCP` | 実MCPサーバー使用 (true/false) | `false` (モック) |
+| `VITE_MCP_PROXY_URL` | MCP Proxy Server URL | `ws://localhost:3001` |
+
+設定方法:
+
+1. `.env.example` をコピーして `.env.local` を作成:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. `.env.local` を編集:
+   ```bash
+   # モック使用（デフォルト、MCPサーバー不要）
+   VITE_USE_REAL_MCP=false
+
+   # 実MCPサーバー使用（MCP Proxy Server起動が必要）
+   VITE_USE_REAL_MCP=true
+   VITE_MCP_PROXY_URL=ws://localhost:3001
+   ```
+
+3. MCP Proxy Serverを起動（実MCPサーバー使用時のみ）:
+   ```bash
+   cd server
+   npm install
+   npm run dev
+   ```
+
+詳細は `server/README.md` および `docs/MCP_PHASE1_IMPLEMENTATION.md` を参照。
+
 ## デプロイ
 
 ### GitHub Pages
