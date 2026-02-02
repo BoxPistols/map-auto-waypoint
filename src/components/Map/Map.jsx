@@ -11,12 +11,14 @@ import FocusCrosshair from '../FocusCrosshair'
 import CoordinateDisplay from '../CoordinateDisplay'
 import ControlGroup from './ControlGroup'
 import FacilityPopup from '../FacilityPopup/FacilityPopup'
+import LayerManager from './LayerManager'
 import {
   useMapState,
   useLayerVisibility,
   useCrosshairState,
   useMapInteractions
 } from './hooks'
+import { createAirspaceLayerConfigs } from '../../config/layerConfigs'
 import {
   formatDateToJST,
   formatDMSCoordinate,
@@ -26,10 +28,6 @@ import {
   copyToClipboard
 } from '../../utils/formatters'
 import {
-  getAirportZonesGeoJSON,
-  getRedZonesGeoJSON,
-  getYellowZonesGeoJSON,
-  getHeliportsGeoJSON,
   getEmergencyAirspaceGeoJSON,
   getRemoteIdZonesGeoJSON,
   getMannedAircraftZonesGeoJSON,
@@ -495,11 +493,8 @@ const Map = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [center.lat, center.lng, zoom])
 
-  // Memoize airspace GeoJSON data
-  const airportZonesGeoJSON = useMemo(() => getAirportZonesGeoJSON(), [])
-  const redZonesGeoJSON = useMemo(() => getRedZonesGeoJSON(), [])
-  const yellowZonesGeoJSON = useMemo(() => getYellowZonesGeoJSON(), [])
-  const heliportsGeoJSON = useMemo(() => getHeliportsGeoJSON(), [])
+  // Airspace layer configurations (moved to LayerManager)
+  const airspaceLayerConfigs = useMemo(() => createAirspaceLayerConfigs(), [])
   // UTM新規レイヤーのGeoJSON
   const emergencyAirspaceGeoJSON = useMemo(() => getEmergencyAirspaceGeoJSON(), [])
   const remoteIdZonesGeoJSON = useMemo(() => getRemoteIdZonesGeoJSON(), [])
@@ -1752,152 +1747,15 @@ const Map = ({
           editingPolygon={editingPolygon}
         />
 
-        {/* Airport restriction zones */}
-        {isAirportOverlayEnabled && !restrictionSurfacesData && (
-          <Source id="airport-zones" type="geojson" data={airportZonesGeoJSON}>
-            <Layer
-              id="airport-zones-fill"
-              type="fill"
-              paint={{
-                'fill-color': '#7B1FA2',
-                'fill-opacity': 0.15
-              }}
-            />
-            <Layer
-              id="airport-zones-outline"
-              type="line"
-              paint={{
-                'line-color': '#6A1B9A',
-                'line-width': 2,
-                'line-dasharray': [4, 2]
-              }}
-            />
-            <Layer
-              id="airport-zones-label"
-              type="symbol"
-              layout={{
-                'text-field': ['get', 'name'],
-                'text-size': 11,
-                'text-anchor': 'center'
-              }}
-              paint={{
-                'text-color': '#4A148C',
-                'text-halo-color': '#fff',
-                'text-halo-width': 1
-              }}
-            />
-          </Source>
-        )}
-
-        {/* レッドゾーン（国の重要施設・原発・米軍基地） */}
-        {layerVisibility.showRedZones && (
-          <Source id="red-zones" type="geojson" data={redZonesGeoJSON}>
-            <Layer
-              id="red-zones-fill"
-              type="fill"
-              paint={{
-                'fill-color': '#dc2626',
-                'fill-opacity': 0.35
-              }}
-            />
-            <Layer
-              id="red-zones-outline"
-              type="line"
-              paint={{
-                'line-color': '#dc2626',
-                'line-width': 2
-              }}
-            />
-            <Layer
-              id="red-zones-label"
-              type="symbol"
-              layout={{
-                'text-field': ['get', 'name'],
-                'text-size': 10,
-                'text-anchor': 'center'
-              }}
-              paint={{
-                'text-color': '#991b1b',
-                'text-halo-color': '#fff',
-                'text-halo-width': 1
-              }}
-            />
-          </Source>
-        )}
-
-        {/* イエローゾーン（外国公館・政党本部） */}
-        {layerVisibility.showYellowZones && (
-          <Source id="yellow-zones" type="geojson" data={yellowZonesGeoJSON}>
-            <Layer
-              id="yellow-zones-fill"
-              type="fill"
-              paint={{
-                'fill-color': '#eab308',
-                'fill-opacity': 0.2
-              }}
-            />
-            <Layer
-              id="yellow-zones-outline"
-              type="line"
-              paint={{
-                'line-color': '#ca8a04',
-                'line-width': 2
-              }}
-            />
-            <Layer
-              id="yellow-zones-label"
-              type="symbol"
-              minzoom={13}
-              layout={{
-                'text-field': ['get', 'name'],
-                'text-size': 10,
-                'text-anchor': 'center'
-              }}
-              paint={{
-                'text-color': '#854d0e',
-                'text-halo-color': '#fff',
-                'text-halo-width': 1
-              }}
-            />
-          </Source>
-        )}
-
-        {/* ヘリポート */}
-        {layerVisibility.showHeliports && (
-          <Source id="heliports" type="geojson" data={heliportsGeoJSON}>
-            <Layer
-              id="heliports-fill"
-              type="fill"
-              paint={{
-                'fill-color': '#3b82f6',
-                'fill-opacity': 0.25
-              }}
-            />
-            <Layer
-              id="heliports-outline"
-              type="line"
-              paint={{
-                'line-color': '#2563eb',
-                'line-width': 2,
-                'line-dasharray': [3, 2]
-              }}
-            />
-            <Layer
-              id="heliports-label"
-              type="symbol"
-              layout={{
-                'text-field': ['get', 'name'],
-                'text-size': 10,
-                'text-anchor': 'center'
-              }}
-              paint={{
-                'text-color': '#1d4ed8',
-                'text-halo-color': '#fff',
-                'text-halo-width': 1
-              }}
-            />
-          </Source>
-        )}
+        {/* Airspace Layers (managed by LayerManager) */}
+        <LayerManager
+          layerConfigs={airspaceLayerConfigs}
+          layerVisibility={layerVisibility}
+          state={{
+            isAirportOverlayEnabled,
+            restrictionSurfacesData
+          }}
+        />
 
         {/* 制限表面 (航空法に基づく空港周辺の制限表面) */}
         {isAirportOverlayEnabled && restrictionSurfacesData && (
