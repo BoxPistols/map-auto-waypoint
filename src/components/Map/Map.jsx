@@ -16,7 +16,9 @@ import {
   useMapState,
   useLayerVisibility,
   useCrosshairState,
-  useMapInteractions
+  useMapInteractions,
+  useMapSelection,
+  useMapKeyboardShortcuts
 } from './hooks'
 import { createAirspaceLayerConfigs } from '../../config/layerConfigs'
 import {
@@ -295,12 +297,6 @@ const Map = ({
 
   // UI相互作用状態
   const {
-    selectionBox,
-    setSelectionBox,
-    selectedWaypointIds,
-    setSelectedWaypointIds,
-    isSelecting,
-    setIsSelecting,
     contextMenu,
     setContextMenu,
     polygonContextMenu,
@@ -315,6 +311,21 @@ const Map = ({
     setFacilityPopup,
     lastRestrictionSurfaceKey,
   } = useMapInteractions()
+
+  // 選択ボックス機能
+  const {
+    isSelecting,
+    selectionBox,
+    selectedWaypointIds,
+    setSelectedWaypointIds,
+    handlers: selectionHandlers
+  } = useMapSelection({
+    mapRef,
+    waypoints,
+    drawMode,
+    editingPolygon,
+    onWaypointsBulkDelete
+  })
   const hasDuplicateWaypointIndices = useMemo(() => {
     const seen = new Set()
     for (const wp of waypoints) {
@@ -323,6 +334,16 @@ const Map = ({
     }
     return false
   }, [waypoints])
+
+  // キーボードショートカット
+  useMapKeyboardShortcuts({
+    toggle3D,
+    toggleLayer,
+    toggleAirportOverlay,
+    setShowCrosshair,
+    mapStyleId,
+    setMapStyleId
+  })
 
   // toggleLayer, toggleAirportOverlay, toggleGroupLayers, toggleFavoriteGroup
   // → useLayerVisibility hook から提供されるため削除
@@ -912,121 +933,6 @@ const Map = ({
     })
   }, [])
 
-  // Keyboard shortcuts for map controls
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Ignore if user is typing in an input field
-      const activeElement = document.activeElement
-      const isInputFocused = activeElement && (
-        activeElement.tagName === 'INPUT' ||
-        activeElement.tagName === 'TEXTAREA' ||
-        activeElement.isContentEditable
-      )
-      if (isInputFocused) return
-
-      // Ignore if modifier keys are pressed
-      if (e.ctrlKey || e.metaKey || e.altKey) return
-
-      switch (e.key.toLowerCase()) {
-        case 'd': // DID toggle
-          e.preventDefault()
-          toggleLayer('showDID')
-          break
-        case 'a': // Airport zones + restriction surfaces toggle
-          e.preventDefault()
-          toggleAirportOverlay()
-          break
-        case 'r': // Red zones toggle
-          e.preventDefault()
-          toggleLayer('showRedZones')
-          break
-        case 'y': // Yellow zones toggle
-          e.preventDefault()
-          toggleLayer('showYellowZones')
-          break
-        case 'h': // Heliport toggle
-          e.preventDefault()
-          toggleLayer('showHeliports')
-          break
-        case 'm': // Map style cycle (M: next, Shift+M: previous)
-          {
-            e.preventDefault()
-            const styleKeys = Object.keys(MAP_STYLES)
-            const currentIndex = styleKeys.indexOf(mapStyleId)
-            const nextIndex = (currentIndex + 1) % styleKeys.length
-            const prevIndex = (currentIndex - 1 + styleKeys.length) % styleKeys.length
-            setMapStyleId(styleKeys[e.shiftKey ? prevIndex : nextIndex])
-          }
-          break
-        case '3': // 3D toggle
-          e.preventDefault()
-          toggle3D()
-          break
-        // UTM新規レイヤーのキーボードショートカット
-        case 'e': // Emergency airspace toggle
-          e.preventDefault()
-          toggleLayer('showEmergencyAirspace')
-          break
-        case 'i': // Remote ID zones toggle
-          e.preventDefault()
-          toggleLayer('showRemoteIdZones')
-          break
-        case 'u': // Manned aircraft zones toggle
-          e.preventDefault()
-          toggleLayer('showMannedAircraftZones')
-          break
-        case 'g': // Geographic features toggle
-          e.preventDefault()
-          toggleLayer('showGeoFeatures')
-          break
-        case 'n': // Rain cloud toggle
-          e.preventDefault()
-          toggleLayer('showRainCloud')
-          break
-        // 'o' key is reserved for Weather Forecast panel (MainLayout.jsx)
-        // Wind toggle will be re-enabled when the feature is implemented
-        case 't': // Radio zones (LTE) toggle
-          e.preventDefault()
-          toggleLayer('showRadioZones')
-          break
-        case 'l': // Network coverage (LTE/5G) toggle
-          e.preventDefault()
-          toggleLayer('showNetworkCoverage')
-          break
-        case 'x': // Crosshair toggle
-          e.preventDefault()
-          setShowCrosshair(prev => !prev)
-          break
-        // 新しい禁止区域カテゴリーのショートカット
-        case 'q': // Nuclear plants toggle
-          e.preventDefault()
-          toggleLayer('showNuclearPlants')
-          break
-        case 'p': // Prefectures toggle (Note: conflicts with existing 'P' for Polygon panel)
-          if (!e.shiftKey) { // Only lowercase 'p'
-            e.preventDefault()
-            toggleLayer('showPrefectures')
-          }
-          break
-        case 'k': // Police facilities toggle
-          e.preventDefault()
-          toggleLayer('showPolice')
-          break
-        case 'j': // Prisons toggle
-          e.preventDefault()
-          toggleLayer('showPrisons')
-          break
-        case 'b': // JSDF facilities toggle
-          e.preventDefault()
-          toggleLayer('showJSDF')
-          break
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggle3D, toggleLayer, toggleAirportOverlay, mapStyleId])
-
   // Handle map click
   const handleClick = useCallback((e) => {
     const features = e.features || []
@@ -1604,75 +1510,6 @@ const Map = ({
     return items
   }, [polygonContextMenu, waypoints])
 
-  // Handle selection box for bulk waypoint operations
-  const handleSelectionStart = useCallback((e) => {
-    if (!e.originalEvent.shiftKey || drawMode || editingPolygon) return
-
-    setIsSelecting(true)
-    const rect = e.target.getCanvas().getBoundingClientRect()
-    const x = e.originalEvent.clientX - rect.left
-    const y = e.originalEvent.clientY - rect.top
-    setSelectionBox({ startX: x, startY: y, endX: x, endY: y })
-    setSelectedWaypointIds(new Set())
-  }, [drawMode, editingPolygon])
-
-  const handleSelectionMove = useCallback((e) => {
-    if (!selectionBox) return
-
-    const rect = e.target.getCanvas().getBoundingClientRect()
-    const x = e.originalEvent.clientX - rect.left
-    const y = e.originalEvent.clientY - rect.top
-    setSelectionBox(prev => prev ? { ...prev, endX: x, endY: y } : null)
-  }, [selectionBox])
-
-  const handleSelectionEnd = useCallback(() => {
-    if (!selectionBox || !mapRef.current) {
-      setIsSelecting(false)
-      setSelectionBox(null)
-      return
-    }
-
-    // Calculate selection bounds
-    const map = mapRef.current.getMap()
-    const minX = Math.min(selectionBox.startX, selectionBox.endX)
-    const maxX = Math.max(selectionBox.startX, selectionBox.endX)
-    const minY = Math.min(selectionBox.startY, selectionBox.endY)
-    const maxY = Math.max(selectionBox.startY, selectionBox.endY)
-
-    // Find waypoints within selection
-    const selected = new Set()
-    waypoints.forEach(wp => {
-      const point = map.project([wp.lng, wp.lat])
-      if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
-        selected.add(wp.id)
-      }
-    })
-
-    setSelectedWaypointIds(selected)
-    setIsSelecting(false)
-    setSelectionBox(null)
-  }, [selectionBox, waypoints])
-
-  // Handle keyboard for bulk delete
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedWaypointIds.size > 0) {
-        e.preventDefault()
-        if (confirm(`選択した ${selectedWaypointIds.size} 個のWaypointを削除しますか?`)) {
-          onWaypointsBulkDelete?.(Array.from(selectedWaypointIds))
-          setSelectedWaypointIds(new Set())
-        }
-      }
-      // Escape to clear selection
-      if (e.key === 'Escape') {
-        setSelectedWaypointIds(new Set())
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedWaypointIds, onWaypointsBulkDelete])
-
   // Convert polygons to GeoJSON for display (exclude polygon being edited)
   const polygonsGeoJSON = {
     type: 'FeatureCollection',
@@ -1712,15 +1549,15 @@ const Map = ({
         onDblClick={handleDoubleClick}
         onContextMenu={handlePolygonRightClick}
         onLoad={() => setIsMapReady(true)}
-        onMouseDown={handleSelectionStart}
+        onMouseDown={selectionHandlers.onMouseDown}
         onMouseMove={(e) => {
-          handleSelectionMove(e)
+          selectionHandlers.onMouseMove(e)
           // Handle polygon hover when not selecting
           if (!isSelecting) {
             handlePolygonHover(e)
           }
         }}
-        onMouseUp={handleSelectionEnd}
+        onMouseUp={selectionHandlers.onMouseUp}
         onMouseLeave={handlePolygonHoverEnd}
         interactiveLayerIds={interactiveLayerIds}
         mapStyle={currentMapStyle}
