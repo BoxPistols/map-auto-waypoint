@@ -12,6 +12,12 @@ import CoordinateDisplay from '../CoordinateDisplay'
 import ControlGroup from './ControlGroup'
 import FacilityPopup from '../FacilityPopup/FacilityPopup'
 import {
+  useMapState,
+  useLayerVisibility,
+  useCrosshairState,
+  useMapInteractions
+} from './hooks'
+import {
   formatDateToJST,
   formatDMSCoordinate,
   formatDecimalCoordinate,
@@ -231,92 +237,86 @@ const Map = ({
 }) => {
   const mapRef = useRef(null)
 
-  // Selection state for bulk operations
-  const [selectionBox, setSelectionBox] = useState(null) // {startX, startY, endX, endY}
-  const [selectedWaypointIds, setSelectedWaypointIds] = useState(new Set())
-  const [isSelecting, setIsSelecting] = useState(false)
-  const lastRestrictionSurfaceKey = useRef(null)
-
-  // Context menu state for right-click
-  const [contextMenu, setContextMenu] = useState(null) // { isOpen, position, waypoint }
-  const [polygonContextMenu, setPolygonContextMenu] = useState(null) // { isOpen, position, polygon }
-  const [vertexListModal, setVertexListModal] = useState(null) // { polygon }
-
-  // Tooltip state for hover
-  const [tooltip, setTooltip] = useState(null) // { isVisible, position, data, type }
-  const hoverTimeoutRef = useRef(null)
-  const isWaypointHoveringRef = useRef(false)
-
-  // 施設ポップアップ状態
-  const [facilityPopup, setFacilityPopup] = useState(null) // { facility, screenX, screenY }
-
-  // Load map settings from localStorage (must be before viewState init)
+  // Load map settings from localStorage (must be before hooks init)
   const initialSettings = useMemo(() => loadMapSettings(), [])
   const initialAirportOverlay = Boolean(
     initialSettings.showAirportZones || initialSettings.showRestrictionSurfaces
   )
-  const [isMapReady, setIsMapReady] = useState(false)
 
-  // Focus crosshair state
-  const [showCrosshair, setShowCrosshair] = useState(initialSettings.showCrosshair ?? false)
-  const [crosshairDesign, setCrosshairDesign] = useState(initialSettings.crosshairDesign ?? 'square')
-  const [crosshairColor, setCrosshairColor] = useState(initialSettings.crosshairColor ?? '#e53935')
-  const [crosshairClickMode, setCrosshairClickMode] = useState(initialSettings.crosshairClickMode ?? true)
-  const [coordinateFormat, setCoordinateFormat] = useState(initialSettings.coordinateFormat ?? 'dms')
+  // ========================================
+  // Custom Hooks (状態管理の分離)
+  // ========================================
 
-  // Coordinate display state
-  const [coordinateDisplay, setCoordinateDisplay] = useState(null) // { lng, lat, screenX, screenY }
+  // マップの基本状態
+  const {
+    viewState,
+    setViewState,
+    isMapReady,
+    setIsMapReady,
+    mapStyleId,
+    setMapStyleId,
+    showStylePicker,
+    setShowStylePicker,
+    mobileControlsExpanded,
+    setMobileControlsExpanded,
+    rainCloudSource,
+    setRainCloudSource,
+    windSource,
+    setWindSource,
+    restrictionSurfacesData,
+    setRestrictionSurfacesData,
+  } = useMapState({ center, zoom, initialSettings })
 
-  const [viewState, setViewState] = useState({
-    latitude: center.lat,
-    longitude: center.lng,
-    zoom: zoom,
-    pitch: initialSettings.is3D ? 60 : 0,
-    bearing: 0
-  })
+  // レイヤー表示状態
+  const {
+    layerVisibility,
+    setLayerVisibility,
+    favoriteGroups,
+    setFavoriteGroups,
+    toggleLayer,
+    toggleAirportOverlay,
+    toggleGroupLayers,
+    toggleFavoriteGroup,
+  } = useLayerVisibility(initialSettings, initialAirportOverlay)
 
-  // レイヤー表示状態を単一オブジェクトで管理
-  const [layerVisibility, setLayerVisibility] = useState({
-    is3D: initialSettings.is3D,
-    showAirportZones: initialAirportOverlay,
-    showRestrictionSurfaces: initialAirportOverlay,
-    showRedZones: initialSettings.showRedZones ?? false,
-    showYellowZones: initialSettings.showYellowZones ?? false,
-    showHeliports: initialSettings.showHeliports ?? false,
-    showDID: initialSettings.showDID,
-    showEmergencyAirspace: initialSettings.showEmergencyAirspace ?? false,
-    showRemoteIdZones: initialSettings.showRemoteIdZones ?? false,
-    showMannedAircraftZones: initialSettings.showMannedAircraftZones ?? false,
-    showGeoFeatures: initialSettings.showGeoFeatures ?? false,
-    showRainCloud: initialSettings.showRainCloud ?? false,
-    showWind: initialSettings.showWind ?? false,
-    showRadioZones: initialSettings.showRadioZones ?? false,
-    showNetworkCoverage: initialSettings.showNetworkCoverage ?? false,
-    // 新しい禁止区域カテゴリー
-    showNuclearPlants: initialSettings.showNuclearPlants ?? false,
-    showPrefectures: initialSettings.showPrefectures ?? false,
-    showPolice: initialSettings.showPolice ?? false,
-    showPrisons: initialSettings.showPrisons ?? false,
-    showJSDF: initialSettings.showJSDF ?? false
-  })
+  // クロスヘア状態
+  const {
+    showCrosshair,
+    setShowCrosshair,
+    crosshairDesign,
+    setCrosshairDesign,
+    crosshairColor,
+    setCrosshairColor,
+    crosshairClickMode,
+    setCrosshairClickMode,
+    coordinateFormat,
+    setCoordinateFormat,
+    coordinateDisplay,
+    setCoordinateDisplay,
+  } = useCrosshairState(initialSettings)
 
-  const [rainCloudSource, setRainCloudSource] = useState(null)
-  const [windSource, setWindSource] = useState(null)
-  const [restrictionSurfacesData, setRestrictionSurfacesData] = useState(null)
-  const [mapStyleId, setMapStyleId] = useState(initialSettings.mapStyleId || 'osm')
-  const [showStylePicker, setShowStylePicker] = useState(false)
-  const [mobileControlsExpanded, setMobileControlsExpanded] = useState(false)
-
-  // お気に入りグループの状態管理
-  const [favoriteGroups, setFavoriteGroups] = useState(() => {
-    const stored = localStorage.getItem('favoriteLayerGroups')
-    return stored ? new Set(JSON.parse(stored)) : new Set()
-  })
-
-  // お気に入り状態をlocalStorageに保存
-  useEffect(() => {
-    localStorage.setItem('favoriteLayerGroups', JSON.stringify(Array.from(favoriteGroups)))
-  }, [favoriteGroups])
+  // UI相互作用状態
+  const {
+    selectionBox,
+    setSelectionBox,
+    selectedWaypointIds,
+    setSelectedWaypointIds,
+    isSelecting,
+    setIsSelecting,
+    contextMenu,
+    setContextMenu,
+    polygonContextMenu,
+    setPolygonContextMenu,
+    vertexListModal,
+    setVertexListModal,
+    tooltip,
+    setTooltip,
+    hoverTimeoutRef,
+    isWaypointHoveringRef,
+    facilityPopup,
+    setFacilityPopup,
+    lastRestrictionSurfaceKey,
+  } = useMapInteractions()
   const hasDuplicateWaypointIndices = useMemo(() => {
     const seen = new Set()
     for (const wp of waypoints) {
@@ -326,47 +326,8 @@ const Map = ({
     return false
   }, [waypoints])
 
-  // レイヤー表示状態を更新するヘルパー関数
-  const toggleLayer = useCallback((layerKey) => {
-    setLayerVisibility(prev => ({
-      ...prev,
-      [layerKey]: !prev[layerKey]
-    }))
-  }, [])
-  const toggleAirportOverlay = useCallback(() => {
-    setLayerVisibility(prev => {
-      const nextValue = !(prev.showAirportZones || prev.showRestrictionSurfaces)
-      return {
-        ...prev,
-        showAirportZones: nextValue,
-        showRestrictionSurfaces: nextValue
-      }
-    })
-  }, [])
-
-  // グループ全体のトグル機能
-  const toggleGroupLayers = useCallback((layerKeys, enabled) => {
-    setLayerVisibility(prev => {
-      const updates = {}
-      layerKeys.forEach(key => {
-        updates[key] = enabled
-      })
-      return { ...prev, ...updates }
-    })
-  }, [])
-
-  // お気に入りグループのトグル機能
-  const toggleFavoriteGroup = useCallback((groupId) => {
-    setFavoriteGroups(prev => {
-      const next = new Set(prev)
-      if (next.has(groupId)) {
-        next.delete(groupId)
-      } else {
-        next.add(groupId)
-      }
-      return next
-    })
-  }, [])
+  // toggleLayer, toggleAirportOverlay, toggleGroupLayers, toggleFavoriteGroup
+  // → useLayerVisibility hook から提供されるため削除
 
   // isMobile is now passed as a prop from App.jsx to avoid duplication
 
