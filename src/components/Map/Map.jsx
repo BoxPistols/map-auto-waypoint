@@ -335,6 +335,21 @@ const Map = ({
     return false
   }, [waypoints])
 
+  // Toggle 3D mode
+  const toggle3D = useCallback(() => {
+    setLayerVisibility(prev => {
+      const newIs3D = !prev.is3D
+      setViewState(v => ({
+        ...v,
+        pitch: newIs3D ? 60 : 0
+      }))
+      return {
+        ...prev,
+        is3D: newIs3D
+      }
+    })
+  }, [setLayerVisibility, setViewState])
+
   // キーボードショートカット
   useMapKeyboardShortcuts({
     toggle3D,
@@ -917,21 +932,6 @@ const Map = ({
     maxzoom: 14,
     attribution: '国土地理院・総務省統計局（令和2年）'
   }), [])
-
-  // Toggle 3D mode
-  const toggle3D = useCallback(() => {
-    setLayerVisibility(prev => {
-      const newIs3D = !prev.is3D
-      setViewState(v => ({
-        ...v,
-        pitch: newIs3D ? 60 : 0
-      }))
-      return {
-        ...prev,
-        is3D: newIs3D
-      }
-    })
-  }, [])
 
   // Handle map click
   const handleClick = useCallback((e) => {
