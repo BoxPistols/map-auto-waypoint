@@ -43,21 +43,37 @@ npm run lint
 ```
 map-auto-waypoint/
 ├── src/
-│   ├── App.jsx              # Main application component (1200+ lines)
+│   ├── App.jsx              # Root component (71 lines, refactored)
 │   ├── App.scss             # Global styles
 │   ├── main.jsx             # React entry point
 │   │
 │   ├── components/          # UI components
 │   │   ├── ApiSettings/     # OpenAI API configuration modal
+│   │   ├── CoordinateDisplay/ # Coordinate display component
 │   │   ├── ExportPanel/     # Export functionality (JSON/CSV/NOTAM)
+│   │   ├── FacilityPopup/   # Facility details popup
 │   │   ├── FileImport/      # GeoJSON/KML import
-│   │   ├── FlightAssistant/ # AI chat assistant sidebar
+│   │   ├── FlightAssistant/ # AI chat assistant sidebar (1,367 lines)
+│   │   ├── FlightPlanner/   # Flight planning interface
+│   │   ├── FlightRequirements/ # Flight requirement checker
+│   │   ├── FocusCrosshair/  # Map center crosshair
 │   │   ├── GridSettingsDialog/ # Grid waypoint generation settings
 │   │   ├── HelpModal/       # Keyboard shortcuts help
-│   │   ├── Map/             # MapLibre map + DrawControl + ControlGroup
+│   │   ├── MainLayout/      # Main layout wrapper (1,807 lines) ⚠️
+│   │   ├── Map/             # MapLibre map component (3,018 lines) 🔴
+│   │   │   ├── Map.jsx                  # Main map component
+│   │   │   ├── DrawControl.jsx          # Drawing controls
+│   │   │   ├── ControlGroup.jsx         # Layer control grouping
+│   │   │   └── CustomLayerManager.jsx   # Custom layer management
+│   │   ├── MapTooltip/      # Map hover tooltips
 │   │   ├── PolygonList/     # Polygon management sidebar
+│   │   ├── RouteOptimizer/  # Route optimization panel
 │   │   ├── SearchForm/      # Address search (Nominatim)
-│   │   └── WaypointList/    # Waypoint management sidebar
+│   │   ├── WaypointList/    # Waypoint management sidebar
+│   │   └── WeatherForecast/ # Weather forecast panel
+│   │
+│   ├── contexts/            # React contexts
+│   │   └── DroneDataContext.jsx # Global state management
 │   │
 │   ├── services/            # Business logic
 │   │   ├── airspace.js      # Airport zones, no-fly zones, DID data
@@ -65,8 +81,9 @@ map-auto-waypoint/
 │   │   ├── elevation.js     # GSI elevation API integration
 │   │   ├── flightAnalyzer.js # Flight plan analysis (risk, optimization)
 │   │   ├── geocoding.js     # Nominatim address search
-│   │   ├── mcpClient.js     # MCP integration (future)
-│   │   ├── openaiService.js # OpenAI API wrapper
+│   │   ├── mcpClient.js     # MCP integration (mock implementation ready)
+│   │   ├── openaiService.js # OpenAI API wrapper (GPT-4.1/5 compatible)
+│   │   ├── weatherService.js # Weather data integration
 │   │   ├── polygonGenerator.js # Polygon creation from search results
 │   │   ├── settingsService.js # App settings management
 │   │   ├── themeService.js  # Dark/light theme
@@ -86,8 +103,12 @@ map-auto-waypoint/
 │   └── UTM_U_SPACE_DESIGN_PATTERNS.md
 │
 ├── public/                  # Static assets
+│   └── data/did/            # DID GeoJSON data (47 prefectures)
 ├── .github/workflows/       # GitHub Actions (deploy.yml)
-├── .claude/                 # Claude skills configuration
+├── .claude/                 # Claude Code skills configuration
+├── .serena/                 # Serena MCP configuration
+│   └── project.yml          # Project-specific Serena settings
+├── .storybook/              # Storybook configuration
 ├── index.html               # HTML entry point
 ├── vite.config.js           # Vite configuration
 ├── eslint.config.js         # ESLint configuration
@@ -102,33 +123,44 @@ map-auto-waypoint/
 | Build Tool | Vite 7 |
 | Maps | MapLibre GL JS, react-map-gl |
 | Drawing | @mapbox/mapbox-gl-draw |
-| Geo calculations | @turf/turf |
+| Geo calculations | @turf/turf, rbush (spatial indexing) |
 | Styling | Sass (SCSS), CSS Modules |
 | Testing | Vitest, Testing Library, jsdom |
 | Linting | ESLint 9 (flat config) |
 | Icons | lucide-react |
+| Markdown | react-markdown, remark-gfm |
+| Component Catalog | Storybook 10 |
 | Deployment | GitHub Pages, Vercel |
+| AI/MCP | OpenAI API, Serena MCP |
 
 ## Architecture Patterns
 
 ### State Management
 
-State is managed in `App.jsx` using React hooks:
-- `useState` for all application state (polygons, waypoints, UI state)
-- `useCallback` for memoized handlers
-- `useRef` for undo/redo history
-- `localStorage` for persistence via `utils/storage.js`
+Multi-layered state management approach:
+- **Global Context**: `DroneDataContext` for shared drone data (polygons, waypoints, settings)
+- **Component State**: `useState` for local UI state in individual components
+- **Memoization**: `useCallback` and `useMemo` for performance optimization
+- **History**: `useRef` for undo/redo history management
+- **Persistence**: `localStorage` for data persistence via `utils/storage.js`
+- **Settings**: Centralized settings via `services/settingsService.js`
 
 ### Component Organization
 
 Components follow a consistent pattern:
 ```
 ComponentName/
-├── ComponentName.jsx        # Main component
-├── ComponentName.scss       # Regular SCSS (global styles)
-├── ComponentName.module.scss # CSS Modules (scoped styles)
-└── index.js                 # Re-export (optional)
+├── ComponentName.jsx          # Main component
+├── ComponentName.scss         # Regular SCSS (global styles)
+├── ComponentName.module.scss  # CSS Modules (scoped styles)
+├── ComponentName.stories.tsx  # Storybook stories (optional)
+└── index.js                   # Re-export (optional)
 ```
+
+**Storybook Integration:**
+- Component catalog available at: https://boxpistols.github.io/map-auto-waypoint/storybook/
+- Stories document component props, variants, and usage patterns
+- Isolated component development without running the full app
 
 ### Styling Conventions
 
@@ -389,9 +421,20 @@ Base URL: `/`
 
 ### Performance
 
-- `App.jsx` is large (~1280 lines) - consider splitting if adding major features
+- ✅ `App.jsx` has been refactored (71 lines, lightweight)
+- 🔴 **`Map.jsx` is large (3,018 lines)** - priority refactoring candidate
+  - Consider splitting into: LayerControl, EventHandlers, RestrictionLayers, hooks
+  - Use Serena MCP tools for efficient symbol-level refactoring
+- 🟡 `MainLayout.jsx` is substantial (1,807 lines) - monitor for future splitting
+- 🟡 `FlightAssistant.jsx` is growing (1,367 lines) - consider modularization
 - Map operations can be expensive - use `useCallback` for handlers
 - Avoid unnecessary re-renders with proper memoization
+
+**Refactoring Strategy (Serena-assisted):**
+1. Use `get_symbols_overview()` to analyze large components
+2. Use `find_symbol()` to identify cohesive responsibility groups
+3. Use `find_referencing_symbols()` to understand dependencies
+4. Use `replace_symbol_body()` for safe symbol-level extraction
 
 ### Accessibility
 
@@ -413,7 +456,11 @@ Base URL: `/`
 
 ## Related Documentation
 
-- `README.md` - User documentation
-- `docs/MCP_INTEGRATION_VISION.md` - MCP server integration plans
-- `docs/OPENAI_GPT4_1_GPT5_INTEGRATION.md` - OpenAI API details
-- `docs/UTM_U_SPACE_DESIGN_PATTERNS.md` - UTM integration patterns
+- `README.md` - User documentation (Japanese)
+- `docs/MCP_INTEGRATION_VISION.md` - MCP server integration plans (5 servers)
+- `docs/OPENAI_GPT4_1_GPT5_INTEGRATION.md` - OpenAI API integration (GPT-4.1/5 compatibility)
+- `docs/OPENAI_GPT4_GPT5_GENERAL_INTEGRATION.md` - General OpenAI integration notes
+- `docs/UTM_U_SPACE_DESIGN_PATTERNS.md` - UTM integration patterns (EU U-space)
+- `docs/RENDERING_PERFORMANCE.md` - Performance optimization strategies
+- `.serena/project.yml` - Serena MCP configuration
+- Storybook: https://boxpistols.github.io/map-auto-waypoint/storybook/
