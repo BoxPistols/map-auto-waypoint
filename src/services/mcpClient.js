@@ -1,13 +1,24 @@
 /**
  * MCP (Model Context Protocol) クライアント基盤
  *
- * 将来的にMCPサーバーと連携し、以下の機能を提供予定:
+ * 機能:
  * - 過去フライトデータの検索・活用
  * - 地上リスク判定
  * - 最適機体提案
  * - UTM干渉チェック
  * - 申請コスト可視化
+ *
+ * 環境変数 VITE_USE_REAL_MCP で実装/モックを切り替え:
+ * - VITE_USE_REAL_MCP=true → MCP Proxy Server経由で実MCPサーバーと通信
+ * - VITE_USE_REAL_MCP=false (デフォルト) → モック実装
  */
+
+import { mcpWebSocketClient } from './mcpWebSocketClient'
+
+// 環境変数でモック/実装を切り替え
+const USE_REAL_MCP = import.meta.env.VITE_USE_REAL_MCP === 'true'
+
+console.log(`[MCP] Using ${USE_REAL_MCP ? 'REAL' : 'MOCK'} implementation`)
 
 // MCPサーバーの接続状態
 const ConnectionState = {
