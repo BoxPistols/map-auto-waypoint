@@ -1,0 +1,44 @@
+{
+  "_comment": "MCP Servers Configuration",
+  "_note": "This file defines MCP servers that the proxy will connect to. Each server should have a command and optional args/env.",
+
+  "flight-data-server": {
+    "_disabled": true,
+    "comment": "フライトデータ管理サーバー（未実装）",
+    "command": "node",
+    "args": ["../mcp-servers/flight-data/index.js"],
+    "env": {}
+  },
+
+  "risk-assessment-server": {
+    "_disabled": true,
+    "comment": "リスク判定サーバー（未実装）",
+    "command": "node",
+    "args": ["../mcp-servers/risk-assessment/index.js"],
+    "env": {}
+  },
+
+  "aircraft-db-server": {
+    "_disabled": true,
+    "comment": "機体データベースサーバー（未実装）",
+    "command": "node",
+    "args": ["../mcp-servers/aircraft-db/index.js"],
+    "env": {}
+  },
+
+  "regulation-server": {
+    "_disabled": true,
+    "comment": "規制・申請サーバー（未実装）",
+    "command": "node",
+    "args": ["../mcp-servers/regulation/index.js"],
+    "env": {}
+  },
+
+  "utm-integration-server": {
+    "_disabled": true,
+    "comment": "UTM連携サーバー（未実装）",
+    "command": "node",
+    "args": ["../mcp-servers/utm-integration/index.js"],
+    "env": {}
+  }
+}
