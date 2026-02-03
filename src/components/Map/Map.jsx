@@ -22,7 +22,7 @@ import {
   useMapKeyboardShortcuts
 } from './hooks'
 import { createAirspaceLayerConfigs } from '../../config/layerConfigs'
-import { MAP_STYLES } from './mapConstants'
+import { MAP_STYLES, LAYER_COLORS } from './mapConstants'
 import {
   formatDateToJST,
   formatDMSCoordinate,
@@ -56,20 +56,6 @@ import {
 } from '../../lib/services/restrictionSurfaces'
 import { loadMapSettings, saveMapSettings } from '../../utils/storage'
 import styles from './Map.module.scss'
-
-// レイヤー色定数
-const LAYER_COLORS = {
-  PREFECTURE: '#ff6600',
-  POLICE: '#0066ff',
-  PRISON: '#666666',
-  JSDF: '#00cc00',
-  EMERGENCY_AIRSPACE: '#ef4444',
-  REMOTE_ID: '#3b82f6',
-  MANNED_AIRCRAFT: '#ec4899',
-  RADIO_INTERFERENCE: '#a855f7',
-  LTE_COVERAGE: '#10b981',
-  FIVE_G_COVERAGE: '#06b6d4',
-}
 
 // Default center: Tokyo Tower
 const DEFAULT_CENTER = { lat: 35.6585805, lng: 139.7454329 }

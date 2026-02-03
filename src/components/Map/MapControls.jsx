@@ -251,6 +251,7 @@ const MapControls = ({
             groupToggle={true}
             groupEnabled={
               layerVisibility.showAirportZones ||
+              layerVisibility.showRestrictionSurfaces ||
               layerVisibility.showHeliports ||
               layerVisibility.showEmergencyAirspace ||
               layerVisibility.showRemoteIdZones ||
@@ -349,6 +350,17 @@ const MapControls = ({
             groupEnabled={
               layerVisibility.showGeoFeatures ||
               layerVisibility.showRainCloud
+            }
+            indeterminate={
+              (() => {
+                const layers = [
+                  layerVisibility.showGeoFeatures,
+                  layerVisibility.showRainCloud
+                ]
+                const anyEnabled = layers.some(v => v)
+                const allEnabled = layers.every(v => v)
+                return anyEnabled && !allEnabled
+              })()
             }
             onGroupToggle={(enabled) => {
               toggleGroupLayers([
