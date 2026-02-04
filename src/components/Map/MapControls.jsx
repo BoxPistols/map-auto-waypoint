@@ -392,7 +392,6 @@ const MapControls = ({
             </button>
             <button
               className={`${styles.toggleButton} ${styles.disabled}`}
-              onClick={() => {}}
               disabled
               data-tooltip="リアルタイム風況情報 [O] (準備中)"
               data-tooltip-pos="left"
@@ -413,6 +412,17 @@ const MapControls = ({
             groupEnabled={
               layerVisibility.showRadioZones ||
               layerVisibility.showNetworkCoverage
+            }
+            indeterminate={
+              (() => {
+                const layers = [
+                  layerVisibility.showRadioZones,
+                  layerVisibility.showNetworkCoverage
+                ]
+                const anyEnabled = layers.some(v => v)
+                const allEnabled = layers.every(v => v)
+                return anyEnabled && !allEnabled
+              })()
             }
             onGroupToggle={(enabled) => {
               toggleGroupLayers([
