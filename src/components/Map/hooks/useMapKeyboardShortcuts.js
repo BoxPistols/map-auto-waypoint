@@ -5,15 +5,7 @@
  */
 
 import { useEffect } from 'react'
-
-/**
- * Map keyboard shortcuts configuration
- */
-const MAP_STYLES = {
-  streets: 'https://tile.openstreetmap.jp/styles/osm-bright-ja/style.json',
-  satellite: 'https://gsi-cyberjapan.github.io/gsimaps-vector-experiment/std.json',
-  terrain: 'https://demotiles.maplibre.org/style.json'
-}
+import { MAP_STYLES } from '../mapConstants'
 
 /**
  * @param {Object} params
