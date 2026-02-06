@@ -4,7 +4,8 @@ const STORAGE_KEYS = {
   WAYPOINTS: 'drone_waypoint_waypoints',
   HISTORY: 'drone_waypoint_history',
   SEARCH_HISTORY: 'drone_waypoint_search_history',
-  MAP_SETTINGS: 'drone_waypoint_map_settings'
+  MAP_SETTINGS: 'drone_waypoint_map_settings',
+  FIRST_VISIT: 'drone_waypoint_first_visit'
 }
 
 const MAX_HISTORY_ITEMS = 50
@@ -195,6 +196,27 @@ export const clearAllData = () => {
     return true
   } catch (error) {
     console.error('Failed to clear data:', error)
+    return false
+  }
+}
+
+// First visit check
+export const isFirstVisit = () => {
+  try {
+    const visited = localStorage.getItem(STORAGE_KEYS.FIRST_VISIT)
+    return visited === null
+  } catch (error) {
+    console.error('Failed to check first visit:', error)
+    return false
+  }
+}
+
+export const markVisited = () => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.FIRST_VISIT, 'true')
+    return true
+  } catch (error) {
+    console.error('Failed to mark visited:', error)
     return false
   }
 }

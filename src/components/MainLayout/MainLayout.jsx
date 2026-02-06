@@ -11,7 +11,7 @@ import FileImport from '../FileImport/FileImport'
 import ExportPanel from '../ExportPanel/ExportPanel'
 import GridSettingsDialog from '../GridSettingsDialog/GridSettingsDialog'
 import HelpModal from '../HelpModal/HelpModal'
-import { saveSearchHistory } from '../../utils/storage'
+import { saveSearchHistory, isFirstVisit, markVisited } from '../../utils/storage'
 import { searchAddress } from '../../services/geocoding'
 import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints, reindexWaypoints } from '../../services/waypointGenerator'
 import { createPolygonFromSearchResult } from '../../services/polygonGenerator'
@@ -164,7 +164,7 @@ function MainLayout() {
   const [showImport, setShowImport] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [showGridSettings, setShowGridSettings] = useState(null) // polygon for grid generation
-  const [showHelp, setShowHelp] = useState(false)
+  const [showHelp, setShowHelp] = useState(isFirstVisit())
   const [showApiSettings, setShowApiSettings] = useState(false)
   const [showChat, setShowChat] = useState(false)
   const [showFlightRequirements, setShowFlightRequirements] = useState(false)
@@ -1579,7 +1579,10 @@ function MainLayout() {
       {showHelp && (
         <div className="modal-overlay" onClick={() => setShowHelp(false)}>
           <div onClick={e => e.stopPropagation()}>
-            <HelpModal onClose={() => setShowHelp(false)} />
+            <HelpModal onClose={() => {
+              setShowHelp(false)
+              markVisited()
+            }} />
           </div>
         </div>
       )}
