@@ -1297,6 +1297,47 @@ const Map = ({
     }
   }, [polygonContextMenu, onPolygonDelete, onPolygonEditStart, waypoints])
 
+  // Compute conflict zones: intersection between own and external polygons
+  const conflictGeoJSON = useMemo(() => {
+    const ownPolygons = polygons.filter(p => !p.external && (!editingPolygon || p.id !== editingPolygon.id))
+    const externalPolygons = polygons.filter(p => p.external)
+    if (ownPolygons.length === 0 || externalPolygons.length === 0) return null
+
+    const features = []
+    for (const own of ownPolygons) {
+      for (const ext of externalPolygons) {
+        try {
+          const ownFeature = turf.polygon(own.geometry.coordinates)
+          const extFeature = turf.polygon(ext.geometry.coordinates)
+          if (!turf.booleanIntersects(ownFeature, extFeature)) continue
+          const intersection = turf.intersect(turf.featureCollection([ownFeature, extFeature]))
+          if (intersection) {
+            const overlapArea = turf.area(intersection)
+            const ownArea = turf.area(ownFeature)
+            const overlapRatio = ownArea > 0 ? overlapArea / ownArea : 0
+            features.push({
+              type: 'Feature',
+              properties: {
+                ownId: own.id,
+                ownName: own.name,
+                externalId: ext.id,
+                externalName: ext.name,
+                overlapArea: Math.round(overlapArea),
+                overlapRatio: Math.round(overlapRatio * 100),
+                severity: overlapRatio > 0.2 ? 'DANGER' : 'WARNING'
+              },
+              geometry: intersection.geometry
+            })
+          }
+        } catch {
+          // Invalid geometry - skip
+        }
+      }
+    }
+    if (features.length === 0) return null
+    return { type: 'FeatureCollection', features }
+  }, [polygons, editingPolygon])
+
   // Build context menu items for polygon
   const polygonContextMenuItems = useMemo(() => {
     if (!polygonContextMenu?.polygon) return []
@@ -1522,47 +1563,6 @@ const Map = ({
         geometry: p.geometry
       }))
   }
-
-  // Compute conflict zones: intersection between own and external polygons
-  const conflictGeoJSON = useMemo(() => {
-    const ownPolygons = polygons.filter(p => !p.external && (!editingPolygon || p.id !== editingPolygon.id))
-    const externalPolygons = polygons.filter(p => p.external)
-    if (ownPolygons.length === 0 || externalPolygons.length === 0) return null
-
-    const features = []
-    for (const own of ownPolygons) {
-      for (const ext of externalPolygons) {
-        try {
-          const ownFeature = turf.polygon(own.geometry.coordinates)
-          const extFeature = turf.polygon(ext.geometry.coordinates)
-          if (!turf.booleanIntersects(ownFeature, extFeature)) continue
-          const intersection = turf.intersect(turf.featureCollection([ownFeature, extFeature]))
-          if (intersection) {
-            const overlapArea = turf.area(intersection)
-            const ownArea = turf.area(ownFeature)
-            const overlapRatio = ownArea > 0 ? overlapArea / ownArea : 0
-            features.push({
-              type: 'Feature',
-              properties: {
-                ownId: own.id,
-                ownName: own.name,
-                externalId: ext.id,
-                externalName: ext.name,
-                overlapArea: Math.round(overlapArea),
-                overlapRatio: Math.round(overlapRatio * 100),
-                severity: overlapRatio > 0.2 ? 'DANGER' : 'WARNING'
-              },
-              geometry: intersection.geometry
-            })
-          }
-        } catch {
-          // Invalid geometry - skip
-        }
-      }
-    }
-    if (features.length === 0) return null
-    return { type: 'FeatureCollection', features }
-  }, [polygons, editingPolygon])
 
   const interactiveLayerIds = [
     'polygon-fill',
