@@ -1307,3 +1307,102 @@ body {
     }
   }
 }
+
+// ========================================
+// DIDツールチップPopupスタイル（DIDinJapan準拠）
+// maplibregl.Popup はReactの外なのでグローバルCSSで定義
+// ========================================
+.did-tooltip-popup {
+  .maplibregl-popup-content {
+    background: rgba(20, 20, 30, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    color: #fff;
+    font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 13px;
+  }
+
+  .maplibregl-popup-tip {
+    border-top-color: rgba(20, 20, 30, 0.95);
+  }
+}
+
+.did-popup {
+  padding: 10px 14px;
+}
+
+.did-popup-header {
+  font-size: 15px;
+  font-weight: 700;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.did-popup-pref {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.did-popup-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.did-popup-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  line-height: 1.6;
+
+  span {
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+  }
+
+  strong {
+    color: #fff;
+    font-weight: 600;
+    text-align: right;
+  }
+}
+
+// ライトテーマ対応
+:root[data-theme='light'] {
+  .did-tooltip-popup {
+    .maplibregl-popup-content {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(0, 0, 0, 0.1);
+      color: #1a1a1a;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .maplibregl-popup-tip {
+      border-top-color: rgba(255, 255, 255, 0.95);
+    }
+  }
+
+  .did-popup-header {
+    color: #1a1a1a;
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .did-popup-row {
+    span {
+      color: rgba(0, 0, 0, 0.6);
+    }
+
+    strong {
+      color: #1a1a1a;
+    }
+  }
+}

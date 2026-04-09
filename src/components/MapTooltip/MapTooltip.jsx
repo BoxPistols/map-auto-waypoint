@@ -20,6 +20,8 @@ import styles from './MapTooltip.module.scss'
 export const MapTooltip = ({ isVisible, position, data, type, onClose }) => {
   const tooltipRef = useRef(null)
   const [adjustedPosition, setAdjustedPosition] = useState(position)
+  const [arrowDir, setArrowDir] = useState('none')
+  const [isPositioned, setIsPositioned] = useState(false)
 
   // ESCキーで閉じる
   useEffect(() => {
@@ -41,48 +43,50 @@ export const MapTooltip = ({ isVisible, position, data, type, onClose }) => {
     }
   }, [isVisible, onClose])
 
-  // Calculate and update position after DOM mount to ensure tooltip stays in viewport
+  // 矢印付き配置ロジック（CoordinateDisplay準拠）
+  // ホバー位置から右横→左横→下とフォールバック
   useLayoutEffect(() => {
     if (tooltipRef.current && position) {
       const rect = tooltipRef.current.getBoundingClientRect()
-      const MARGIN = 10
-      const OFFSET_X = 15
-      const OFFSET_Y = 15
+      const MARGIN = 16
+      const ARROW_SIZE = 8
+      const GAP = 12
 
-      let x = position.x + OFFSET_X
-      let y = position.y + OFFSET_Y
+      const panelWidth = rect.width || 280
+      const panelHeight = rect.height || 120
 
-      // Check right boundary
-      if (x + rect.width > window.innerWidth - MARGIN) {
-        x = position.x - rect.width - OFFSET_X
+      // デフォルト: ホバー位置の右横に配置
+      let x = position.x + ARROW_SIZE + GAP
+      let y = position.y - panelHeight / 2
+      let dir = 'left' // 矢印はパネルの左側（ホバー位置を指す）
+
+      // 右に収まらない場合: 左横に配置
+      if (x + panelWidth > window.innerWidth - MARGIN) {
+        x = position.x - panelWidth - ARROW_SIZE - GAP
+        dir = 'right' // 矢印はパネルの右側
       }
 
-      // Check bottom boundary
-      if (y + rect.height > window.innerHeight - MARGIN) {
-        y = position.y - rect.height - OFFSET_Y
-      }
-
-      // Check left boundary after right adjustment
+      // 左にも収まらない場合: 下に配置
       if (x < MARGIN) {
-        x = position.x + OFFSET_X
-        if (x + rect.width > window.innerWidth - MARGIN) {
-          x = Math.max(MARGIN, window.innerWidth - rect.width - MARGIN)
-        }
+        x = Math.max(MARGIN, position.x - panelWidth / 2)
+        y = position.y + ARROW_SIZE + GAP
+        dir = 'top' // 矢印はパネルの上側
       }
 
-      // Check top boundary after bottom adjustment
+      // 上下の画面外補正
       if (y < MARGIN) {
-        y = position.y + OFFSET_Y
-        if (y + rect.height > window.innerHeight - MARGIN) {
-          y = Math.max(MARGIN, window.innerHeight - rect.height - MARGIN)
-        }
+        y = MARGIN
+      } else if (y + panelHeight > window.innerHeight - MARGIN) {
+        y = window.innerHeight - panelHeight - MARGIN
       }
 
+      setArrowDir(dir)
       setAdjustedPosition({ x, y })
+      setIsPositioned(true)
     }
   }, [position, isVisible])
 
-  if (!isVisible || !data) return null
+  if (!isVisible || !data || !position) return null
 
   return (
     <div
@@ -92,9 +96,13 @@ export const MapTooltip = ({ isVisible, position, data, type, onClose }) => {
         position: 'fixed',
         left: `${adjustedPosition.x}px`,
         top: `${adjustedPosition.y}px`,
-        zIndex: 9999
+        zIndex: 9999,
+        opacity: isPositioned ? 1 : 0
       }}
     >
+      {arrowDir !== 'none' && (
+        <div className={`${styles.arrow} ${styles[arrowDir]}`} />
+      )}
       <div className={styles.content}>
         {type === 'waypoint' && (
           <>

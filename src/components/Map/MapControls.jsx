@@ -28,6 +28,10 @@ const MapControls = ({
   setCrosshairClickMode,
   coordinateFormat,
   setCoordinateFormat,
+  showDIDTooltip,
+  setShowDIDTooltip,
+  didTooltipAutoFade,
+  setDidTooltipAutoFade,
   mapStyleId,
   setMapStyleId,
   isMobile,
@@ -437,7 +441,7 @@ const MapControls = ({
             <button
               className={`${styles.toggleButton} ${layerVisibility.showRadioZones ? styles.activeRadioZones : ''}`}
               onClick={() => toggleLayer('showRadioZones')}
-              data-tooltip="電波利用に注意が必要な区域 [T]"
+              data-tooltip="電波利用に注意が必要な区域"
               data-tooltip-pos="left"
             >
               <Wifi size={18} />
@@ -530,6 +534,27 @@ const MapControls = ({
                 </div>
               </div>
             </ControlGroup>
+
+            {/* DIDツールチップ設定 */}
+            <div className={styles.tooltipSettings}>
+              <label className={styles.crosshairCheckbox}>
+                <input
+                  type="checkbox"
+                  checked={showDIDTooltip}
+                  onChange={(e) => setShowDIDTooltip(e.target.checked)}
+                />
+                <span>ツールチップ [T]</span>
+              </label>
+              <label className={styles.crosshairCheckbox} data-tooltip="オフにするとマウスを離すまで表示し続けます" data-tooltip-pos="left">
+                <input
+                  type="checkbox"
+                  checked={didTooltipAutoFade}
+                  onChange={(e) => setDidTooltipAutoFade(e.target.checked)}
+                  disabled={!showDIDTooltip}
+                />
+                <span>自動で消える</span>
+              </label>
+            </div>
 
             {/* 地図スタイル切り替え */}
             <div className={styles.stylePickerContainer}>
