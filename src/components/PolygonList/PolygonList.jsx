@@ -16,7 +16,8 @@ const PolygonList = ({
   onGenerateWaypoints,
   onGenerateAllWaypoints,
   onLoadExampleData,
-  onResetAll
+  onResetAll,
+  polygonConflicts = {}
 }) => {
   const [editingId, setEditingId] = useState(null)
   const [editingName, setEditingName] = useState('')
@@ -253,6 +254,24 @@ const PolygonList = ({
                   <span>周長: {formatDistance(perimeter)}</span>
                   <span>頂点: {polygon.geometry.coordinates[0].length - 1}</span>
                 </div>
+
+                {/* Conflict warning */}
+                {!polygon.external && polygonConflicts[polygon.id] && (
+                  <div className={`${styles.conflictWarning} ${polygonConflicts[polygon.id].some(h => h.severity === 'DANGER') ? styles.conflictDanger : ''}`}>
+                    <AlertTriangle size={13} />
+                    <div className={styles.conflictDetails}>
+                      <span className={styles.conflictTitle}>
+                        飛行エリア競合（{polygonConflicts[polygon.id].length}件）
+                      </span>
+                      {polygonConflicts[polygon.id].map((hit, i) => (
+                        <span key={i} className={styles.conflictItem}>
+                          {hit.severity === 'DANGER' ? '🔴' : '🟡'} {hit.operator || hit.externalName}：重複{hit.overlapRatio}%
+                          {hit.timeOverlap && ' ⏰時間重複'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </li>
           )

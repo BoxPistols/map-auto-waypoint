@@ -1301,20 +1301,153 @@ const Map = ({
   const polygonContextMenuItems = useMemo(() => {
     if (!polygonContextMenu?.polygon) return []
     const polygon = polygonContextMenu.polygon
-    
+
     // Get waypoints for this polygon
     const polygonWaypoints = waypoints.filter(wp => wp.polygonId === polygon.id)
-    
+
     const items = [
       { id: 'header', type: 'header', label: `【${polygon.name}】` }
     ]
-    
+
+    // Flight info section
+    if (polygon.flightInfo) {
+      const fi = polygon.flightInfo
+      const infoLines = [
+        fi.date && `📅 ${fi.date}`,
+        (fi.timeStart && fi.timeEnd) && `🕐 ${fi.timeStart}〜${fi.timeEnd}`,
+        fi.purpose && `📋 ${fi.purpose}`,
+        fi.altitude && `📐 高度 ${fi.altitude}m`,
+        fi.aircraft && `✈️ ${fi.aircraft}`,
+        fi.pilotName && `👤 ${fi.pilotName}`,
+        fi.dipsNumber && `📄 ${fi.dipsNumber}`,
+        fi.notes && `💡 ${fi.notes}`
+      ].filter(Boolean)
+
+      items.push({
+        id: 'flight-info',
+        type: 'info',
+        label: '飛行計画詳細',
+        content: (
+          <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
+            {infoLines.map((line, i) => <div key={i}>{line}</div>)}
+          </div>
+        )
+      })
+    }
+
+    // Conflict info for own polygons
+    if (!polygon.external && conflictGeoJSON) {
+      const conflicts = conflictGeoJSON.features.filter(f => f.properties.ownId === polygon.id)
+      if (conflicts.length > 0) {
+        // Find external polygons for time overlap check
+        const externalPolygonsMap = {}
+        for (const p of polygons) {
+          if (p.external) externalPolygonsMap[p.id] = p
+        }
+
+        items.push({
+          id: 'conflict-header',
+          type: 'info',
+          label: `⚠ 飛行エリア競合検出（${conflicts.length}件）`,
+          content: (
+            <div style={{ fontSize: '12px', lineHeight: '1.6' }}>
+              {conflicts.map((c, i) => {
+                const extPolygon = externalPolygonsMap[c.properties.externalId]
+                const extFlight = extPolygon?.flightInfo
+                const ownFlight = polygon.flightInfo
+
+                // Check time overlap
+                let timeOverlap = false
+                let timeWarning = ''
+                if (ownFlight && extFlight && ownFlight.date === extFlight.date) {
+                  const ownStart = ownFlight.timeStart?.replace(':', '') || '0'
+                  const ownEnd = ownFlight.timeEnd?.replace(':', '') || '0'
+                  const extStart = extFlight.timeStart?.replace(':', '') || '0'
+                  const extEnd = extFlight.timeEnd?.replace(':', '') || '0'
+                  timeOverlap = ownStart < extEnd && extStart < ownEnd
+                  timeWarning = timeOverlap
+                    ? `⏰ 時間帯重複: ${extFlight.timeStart}〜${extFlight.timeEnd}`
+                    : `✅ 時間帯分離: ${extFlight.timeStart}〜${extFlight.timeEnd}`
+                }
+
+                const isDanger = c.properties.overlapRatio > 20 || timeOverlap
+                const recommendations = []
+                if (c.properties.overlapRatio > 20) {
+                  recommendations.push('飛行エリアを縮小するか位置をずらしてください')
+                }
+                if (timeOverlap) {
+                  recommendations.push('飛行時間帯をずらすことで安全に運航できます')
+                }
+                if (extFlight?.purpose) {
+                  recommendations.push(`相手の業務「${extFlight.purpose}」に影響しない計画に調整してください`)
+                }
+                if (!timeOverlap && c.properties.overlapRatio <= 20) {
+                  recommendations.push('エリアの一部が重複していますが、飛行前に相手オペレーターへ連絡・調整すれば問題ありません')
+                }
+
+                return (
+                  <div key={i} style={{ marginBottom: i < conflicts.length - 1 ? '10px' : 0, paddingBottom: i < conflicts.length - 1 ? '10px' : 0, borderBottom: i < conflicts.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                    <div style={{ color: isDanger ? '#FF4466' : '#FF8800', fontWeight: 600 }}>
+                      {isDanger ? '🔴 高リスク' : '🟡 注意'} — {c.properties.externalName}
+                    </div>
+                    <div style={{ marginTop: '2px' }}>重複: {c.properties.overlapArea.toLocaleString()} m²（{c.properties.overlapRatio}%）</div>
+                    {timeWarning && (
+                      <div style={{ color: timeOverlap ? '#FF4466' : '#4ECDC4', marginTop: '2px' }}>{timeWarning}</div>
+                    )}
+                    {extFlight && (
+                      <div style={{ color: 'var(--color-text-secondary)', marginTop: '2px', fontSize: '11px' }}>
+                        {extFlight.purpose && <span>{extFlight.purpose}</span>}
+                        {extFlight.aircraft && <span> / {extFlight.aircraft}</span>}
+                        {extFlight.altitude && <span> / 高度{extFlight.altitude}m</span>}
+                      </div>
+                    )}
+                    <div style={{ color: 'var(--color-text-tertiary)', marginTop: '4px', fontSize: '11px', borderLeft: `2px solid ${isDanger ? '#FF4466' : '#FF8800'}`, paddingLeft: '6px' }}>
+                      💡 {recommendations[0]}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })
+        items.push({ id: 'conflict-divider', divider: true })
+      }
+    }
+
+    // External polygon info
+    if (polygon.external) {
+      const overlappingOwn = conflictGeoJSON?.features.filter(f => f.properties.externalId === polygon.id) || []
+      const fi = polygon.flightInfo
+      items.push({
+        id: 'external-info',
+        type: 'info',
+        label: '他者の飛行計画',
+        content: (
+          <div style={{ fontSize: '12px', lineHeight: '1.6' }}>
+            <div>オペレーター: {polygon.operator || '不明'}</div>
+            {fi?.dipsNumber && <div>DIPS番号: {fi.dipsNumber}</div>}
+            {overlappingOwn.length > 0 && (
+              <div style={{ color: '#FF4466', marginTop: '4px', fontWeight: 600 }}>
+                ⚠ 自分の {overlappingOwn.length} エリアと競合中
+              </div>
+            )}
+            {fi?.notes && (
+              <div style={{ color: 'var(--color-text-tertiary)', marginTop: '4px', borderLeft: '2px solid #FF8800', paddingLeft: '6px' }}>
+                📝 {fi.notes}
+              </div>
+            )}
+          </div>
+        )
+      })
+      items.push({ id: 'external-divider', divider: true })
+    }
+
     // Add waypoint list if available
     if (polygonWaypoints.length > 0) {
       const waypointListDecimal = polygonWaypoints
         .map(wp => `WP${wp.index}: ${formatDecimalCoordinate(wp.lat, wp.lng)}`)
         .join('\n')
-      
+
       items.push({
         id: 'info-waypoints',
         type: 'info',
@@ -1322,7 +1455,7 @@ const Map = ({
         content: <pre style={{ fontSize: '12px', lineHeight: '1.5' }}>{waypointListDecimal}</pre>
       })
     }
-    
+
     // Add area if available
     const area = turf.area(polygon.geometry)
     if (area) {
@@ -1333,7 +1466,7 @@ const Map = ({
         content: `${area.toFixed(2)} m²`
       })
     }
-    
+
     // Add creation date if available
     if (polygon.createdAt) {
       items.push({
@@ -1343,9 +1476,9 @@ const Map = ({
         content: formatDateToJST(polygon.createdAt)
       })
     }
-    
+
     items.push({ id: 'divider1', divider: true })
-    
+
     // Add copy actions if waypoints exist
     if (polygonWaypoints.length > 0) {
       items.push(
@@ -1357,15 +1490,19 @@ const Map = ({
         { id: 'divider2', divider: true }
       )
     }
-    
+
+    if (!polygon.external) {
+      items.push(
+        { id: 'edit', icon: '✏️', label: '形状を編集', action: 'edit' },
+        { id: 'divider3', divider: true }
+      )
+    }
     items.push(
-      { id: 'edit', icon: '✏️', label: '形状を編集', action: 'edit' },
-      { id: 'divider3', divider: true },
       { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
     )
-    
+
     return items
-  }, [polygonContextMenu, waypoints])
+  }, [polygonContextMenu, waypoints, conflictGeoJSON])
 
   // Convert polygons to GeoJSON for display (exclude polygon being edited)
   const polygonsGeoJSON = {

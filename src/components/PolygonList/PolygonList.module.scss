@@ -291,6 +291,46 @@
   color: var(--color-text-secondary);
 }
 
+.conflictWarning {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: rgba(255, 136, 0, 0.1);
+  border: 1px solid rgba(255, 136, 0, 0.3);
+  border-radius: 4px;
+  color: #FF8800;
+  font-size: 11px;
+  line-height: 1.4;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  &.conflictDanger {
+    background: rgba(255, 0, 68, 0.1);
+    border-color: rgba(255, 0, 68, 0.3);
+    color: #FF4466;
+  }
+}
+
+.conflictDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.conflictTitle {
+  font-weight: 600;
+}
+
+.conflictItem {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
 // =============================================================================
 // モバイル対応スタイル
 // =============================================================================

@@ -513,10 +513,24 @@ function MainLayout() {
           if (intersection) {
             const overlapArea = turf.area(intersection)
             const ownArea = turf.area(ownFeature)
+            const overlapRatio = Math.round((overlapArea / ownArea) * 100)
+
+            // Check time overlap
+            let timeOverlap = false
+            if (own.flightInfo && ext.flightInfo && own.flightInfo.date === ext.flightInfo.date) {
+              const oS = own.flightInfo.timeStart?.replace(':', '') || '0'
+              const oE = own.flightInfo.timeEnd?.replace(':', '') || '0'
+              const eS = ext.flightInfo.timeStart?.replace(':', '') || '0'
+              const eE = ext.flightInfo.timeEnd?.replace(':', '') || '0'
+              timeOverlap = oS < eE && eS < oE
+            }
+
             hits.push({
               externalName: ext.name,
               operator: ext.operator,
-              overlapRatio: Math.round((overlapArea / ownArea) * 100)
+              overlapRatio,
+              timeOverlap,
+              severity: (overlapRatio > 20 || timeOverlap) ? 'DANGER' : 'WARNING'
             })
           }
         } catch {
