@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Grid3X3, Pencil, Trash2, PenTool, Link2, Unlink2 } from 'lucide-react'
+import { MapPin, Grid3X3, Pencil, Trash2, PenTool, Link2, Unlink2, Database } from 'lucide-react'
 import { calculatePolygonArea, calculatePolygonPerimeter, formatArea, formatDistance } from '../../services/waypointGenerator'
 import ConfirmDialog from '../ConfirmDialog/ConfirmDialog'
 import { useConfirmDialog } from '../../hooks/useConfirmDialog'
@@ -14,7 +14,8 @@ const PolygonList = ({
   onEditShape,
   onToggleWaypointLink,
   onGenerateWaypoints,
-  onGenerateAllWaypoints
+  onGenerateAllWaypoints,
+  onLoadExampleData
 }) => {
   const [editingId, setEditingId] = useState(null)
   const [editingName, setEditingName] = useState('')
@@ -54,6 +55,15 @@ const PolygonList = ({
           描画モードを有効にして地図上でポリゴンを描画するか、<br />
           GeoJSON/KMLファイルをインポートしてください
         </p>
+        {onLoadExampleData && (
+          <button
+            className={styles.exampleButton}
+            onClick={onLoadExampleData}
+          >
+            <Database size={16} />
+            サンプルデータを読み込む
+          </button>
+        )}
       </div>
     )
   }

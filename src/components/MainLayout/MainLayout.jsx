@@ -15,6 +15,7 @@ import { saveSearchHistory, isFirstVisit, markVisited } from '../../utils/storag
 import { searchAddress } from '../../services/geocoding'
 import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGridWaypoints, generatePerimeterWaypoints, reindexWaypoints } from '../../services/waypointGenerator'
 import { createPolygonFromSearchResult } from '../../services/polygonGenerator'
+import { generateExamplePolygons, generateExampleWaypoints } from '../../services/exampleData'
 import { addElevationToWaypoints } from '../../services/elevation'
 import FlightAssistant from '../FlightAssistant'
 import ApiSettings from '../ApiSettings'
@@ -1114,6 +1115,15 @@ function MainLayout() {
     showNotification(`${importedPolygons.length} ポリゴンをインポートしました`)
   }, [setPolygons, showNotification])
 
+  // Handle loading example data
+  const handleLoadExampleData = useCallback(() => {
+    const examplePolygons = generateExamplePolygons()
+    const exampleWaypoints = generateExampleWaypoints(examplePolygons)
+    setPolygons(prev => [...prev, ...examplePolygons])
+    setWaypoints(prev => [...prev, ...exampleWaypoints])
+    showNotification(`サンプルデータを読み込みました（${examplePolygons.length}ポリゴン、${exampleWaypoints.length}ウェイポイント）`)
+  }, [setPolygons, setWaypoints, showNotification])
+
   // Handle map click - no auto waypoint addition
   // Waypoints should be added explicitly via polygon generation or Shift+click
   const handleMapClick = useCallback((latlng, e) => {
@@ -1395,6 +1405,7 @@ function MainLayout() {
                     onToggleWaypointLink={handleToggleWaypointLink}
                     onGenerateWaypoints={handleGenerateWaypoints}
                     onGenerateAllWaypoints={handleGenerateAllWaypoints}
+                    onLoadExampleData={handleLoadExampleData}
                   />
                 ) : (
                   <WaypointList
