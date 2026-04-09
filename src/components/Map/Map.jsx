@@ -1379,7 +1379,8 @@ const Map = ({
           id: p.id,
           name: p.name,
           color: p.color,
-          selected: p.id === selectedPolygonId
+          selected: p.id === selectedPolygonId,
+          external: !!p.external
         },
         geometry: p.geometry
       }))
@@ -1741,9 +1742,11 @@ const Map = ({
 
         {/* Display saved polygons */}
         <Source id="polygons" type="geojson" data={polygonsGeoJSON}>
+          {/* Own polygons - solid fill */}
           <Layer
             id="polygon-fill"
             type="fill"
+            filter={['!=', ['get', 'external'], true]}
             paint={{
               'fill-color': ['get', 'color'],
               'fill-opacity': [
@@ -1757,6 +1760,7 @@ const Map = ({
           <Layer
             id="polygon-outline"
             type="line"
+            filter={['!=', ['get', 'external'], true]}
             paint={{
               'line-color': ['get', 'color'],
               'line-width': [
@@ -1765,6 +1769,43 @@ const Map = ({
                 3,
                 2
               ]
+            }}
+          />
+          {/* External polygons - dashed outline, hatched fill */}
+          <Layer
+            id="polygon-external-fill"
+            type="fill"
+            filter={['==', ['get', 'external'], true]}
+            paint={{
+              'fill-color': ['get', 'color'],
+              'fill-opacity': 0.12
+            }}
+          />
+          <Layer
+            id="polygon-external-outline"
+            type="line"
+            filter={['==', ['get', 'external'], true]}
+            paint={{
+              'line-color': ['get', 'color'],
+              'line-width': 2.5,
+              'line-dasharray': [6, 3]
+            }}
+          />
+          {/* External polygon label */}
+          <Layer
+            id="polygon-external-label"
+            type="symbol"
+            filter={['==', ['get', 'external'], true]}
+            layout={{
+              'text-field': ['get', 'name'],
+              'text-size': 12,
+              'text-anchor': 'center',
+              'text-allow-overlap': false
+            }}
+            paint={{
+              'text-color': '#FF8800',
+              'text-halo-color': 'rgba(0,0,0,0.7)',
+              'text-halo-width': 1.5
             }}
           />
         </Source>

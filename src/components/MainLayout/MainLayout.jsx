@@ -1124,6 +1124,13 @@ function MainLayout() {
     showNotification(`サンプルデータを読み込みました（${examplePolygons.length}ポリゴン、${exampleWaypoints.length}ウェイポイント）`)
   }, [setPolygons, setWaypoints, showNotification])
 
+  // Handle reset all data
+  const handleResetAll = useCallback(() => {
+    setPolygons([])
+    setWaypoints([])
+    showNotification('すべてのデータをリセットしました')
+  }, [setPolygons, setWaypoints, showNotification])
+
   // Handle map click - no auto waypoint addition
   // Waypoints should be added explicitly via polygon generation or Shift+click
   const handleMapClick = useCallback((latlng, e) => {
@@ -1406,6 +1413,7 @@ function MainLayout() {
                     onGenerateWaypoints={handleGenerateWaypoints}
                     onGenerateAllWaypoints={handleGenerateAllWaypoints}
                     onLoadExampleData={handleLoadExampleData}
+                    onResetAll={handleResetAll}
                   />
                 ) : (
                   <WaypointList
