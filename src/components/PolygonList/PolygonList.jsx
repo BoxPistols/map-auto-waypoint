@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Grid3X3, Pencil, Trash2, PenTool, Link2, Unlink2, Database, Radio, RotateCcw } from 'lucide-react'
+import { MapPin, Grid3X3, Pencil, Trash2, PenTool, Link2, Unlink2, Database, Radio, RotateCcw, AlertTriangle } from 'lucide-react'
 import { calculatePolygonArea, calculatePolygonPerimeter, formatArea, formatDistance } from '../../services/waypointGenerator'
 import ConfirmDialog from '../ConfirmDialog/ConfirmDialog'
 import { useConfirmDialog } from '../../hooks/useConfirmDialog'

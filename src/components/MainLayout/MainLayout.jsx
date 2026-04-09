@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
 import { getSetting, isDIDAvoidanceModeEnabled, getWaypointNumberingMode } from '../../services/settingsService'
 import { getDetailedCollisionResults, getDetailedCollisionResultsWithRestrictionSurfaces, checkWaypointsRestrictionSurfaces, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
@@ -17,6 +17,7 @@ import { polygonToWaypoints, generateAllWaypoints, getPolygonCenter, generateGri
 import { createPolygonFromSearchResult } from '../../services/polygonGenerator'
 import { generateExamplePolygons, generateExampleWaypoints } from '../../services/exampleData'
 import { addElevationToWaypoints } from '../../services/elevation'
+import * as turf from '@turf/turf'
 import FlightAssistant from '../FlightAssistant'
 import ApiSettings from '../ApiSettings'
 import FlightRequirements from '../FlightRequirements'
@@ -492,6 +493,41 @@ function MainLayout() {
     }, 500)
 
     return () => clearTimeout(timeoutId)
+  }, [polygons])
+
+  // Compute per-polygon conflict info (own vs external overlap)
+  const polygonConflicts = useMemo(() => {
+    const ownPolygons = polygons.filter(p => !p.external)
+    const externalPolygons = polygons.filter(p => p.external)
+    if (ownPolygons.length === 0 || externalPolygons.length === 0) return {}
+
+    const conflicts = {}
+    for (const own of ownPolygons) {
+      const hits = []
+      for (const ext of externalPolygons) {
+        try {
+          const ownFeature = turf.polygon(own.geometry.coordinates)
+          const extFeature = turf.polygon(ext.geometry.coordinates)
+          if (!turf.booleanIntersects(ownFeature, extFeature)) continue
+          const intersection = turf.intersect(turf.featureCollection([ownFeature, extFeature]))
+          if (intersection) {
+            const overlapArea = turf.area(intersection)
+            const ownArea = turf.area(ownFeature)
+            hits.push({
+              externalName: ext.name,
+              operator: ext.operator,
+              overlapRatio: Math.round((overlapArea / ownArea) * 100)
+            })
+          }
+        } catch {
+          // skip invalid geometry
+        }
+      }
+      if (hits.length > 0) {
+        conflicts[own.id] = hits
+      }
+    }
+    return conflicts
   }, [polygons])
 
   // Toggle sidebar collapsed state
@@ -1414,6 +1450,7 @@ function MainLayout() {
                     onGenerateAllWaypoints={handleGenerateAllWaypoints}
                     onLoadExampleData={handleLoadExampleData}
                     onResetAll={handleResetAll}
+                    polygonConflicts={polygonConflicts}
                   />
                 ) : (
                   <WaypointList

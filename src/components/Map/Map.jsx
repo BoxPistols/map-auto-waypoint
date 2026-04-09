@@ -1386,6 +1386,47 @@ const Map = ({
       }))
   }
 
+  // Compute conflict zones: intersection between own and external polygons
+  const conflictGeoJSON = useMemo(() => {
+    const ownPolygons = polygons.filter(p => !p.external && (!editingPolygon || p.id !== editingPolygon.id))
+    const externalPolygons = polygons.filter(p => p.external)
+    if (ownPolygons.length === 0 || externalPolygons.length === 0) return null
+
+    const features = []
+    for (const own of ownPolygons) {
+      for (const ext of externalPolygons) {
+        try {
+          const ownFeature = turf.polygon(own.geometry.coordinates)
+          const extFeature = turf.polygon(ext.geometry.coordinates)
+          if (!turf.booleanIntersects(ownFeature, extFeature)) continue
+          const intersection = turf.intersect(turf.featureCollection([ownFeature, extFeature]))
+          if (intersection) {
+            const overlapArea = turf.area(intersection)
+            const ownArea = turf.area(ownFeature)
+            const overlapRatio = ownArea > 0 ? overlapArea / ownArea : 0
+            features.push({
+              type: 'Feature',
+              properties: {
+                ownId: own.id,
+                ownName: own.name,
+                externalId: ext.id,
+                externalName: ext.name,
+                overlapArea: Math.round(overlapArea),
+                overlapRatio: Math.round(overlapRatio * 100),
+                severity: overlapRatio > 0.2 ? 'DANGER' : 'WARNING'
+              },
+              geometry: intersection.geometry
+            })
+          }
+        } catch {
+          // Invalid geometry - skip
+        }
+      }
+    }
+    if (features.length === 0) return null
+    return { type: 'FeatureCollection', features }
+  }, [polygons, editingPolygon])
+
   const interactiveLayerIds = [
     'polygon-fill',
     'nuclear-plants-fill',
@@ -1771,24 +1812,15 @@ const Map = ({
               ]
             }}
           />
-          {/* External polygons - dashed outline, hatched fill */}
-          <Layer
-            id="polygon-external-fill"
-            type="fill"
-            filter={['==', ['get', 'external'], true]}
-            paint={{
-              'fill-color': ['get', 'color'],
-              'fill-opacity': 0.12
-            }}
-          />
+          {/* External polygons - outline only (no fill to reduce layer clutter) */}
           <Layer
             id="polygon-external-outline"
             type="line"
             filter={['==', ['get', 'external'], true]}
             paint={{
-              'line-color': ['get', 'color'],
-              'line-width': 2.5,
-              'line-dasharray': [6, 3]
+              'line-color': '#FF8800',
+              'line-width': 3,
+              'line-dasharray': [5, 3]
             }}
           />
           {/* External polygon label */}
@@ -1798,17 +1830,74 @@ const Map = ({
             filter={['==', ['get', 'external'], true]}
             layout={{
               'text-field': ['get', 'name'],
-              'text-size': 12,
+              'text-size': 11,
+              'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
               'text-anchor': 'center',
               'text-allow-overlap': false
             }}
             paint={{
               'text-color': '#FF8800',
-              'text-halo-color': 'rgba(0,0,0,0.7)',
+              'text-halo-color': 'rgba(255,255,255,0.9)',
               'text-halo-width': 1.5
             }}
           />
         </Source>
+
+        {/* Conflict zones - intersection between own and external polygons */}
+        {conflictGeoJSON && (
+          <Source id="conflict-zones" type="geojson" data={conflictGeoJSON}>
+            <Layer
+              id="conflict-zone-fill"
+              type="fill"
+              paint={{
+                'fill-color': [
+                  'case',
+                  ['==', ['get', 'severity'], 'DANGER'], '#FF0044',
+                  '#FF8800'
+                ],
+                'fill-opacity': 0.35
+              }}
+            />
+            <Layer
+              id="conflict-zone-outline"
+              type="line"
+              paint={{
+                'line-color': [
+                  'case',
+                  ['==', ['get', 'severity'], 'DANGER'], '#FF0044',
+                  '#FF8800'
+                ],
+                'line-width': 2,
+                'line-dasharray': [3, 2]
+              }}
+            />
+            <Layer
+              id="conflict-zone-label"
+              type="symbol"
+              layout={{
+                'text-field': [
+                  'concat',
+                  '⚠ 競合 ',
+                  ['get', 'overlapRatio'],
+                  '%'
+                ],
+                'text-size': 12,
+                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                'text-anchor': 'center',
+                'text-allow-overlap': true
+              }}
+              paint={{
+                'text-color': '#FFFFFF',
+                'text-halo-color': [
+                  'case',
+                  ['==', ['get', 'severity'], 'DANGER'], '#FF0044',
+                  '#FF8800'
+                ],
+                'text-halo-width': 2
+              }}
+            />
+          </Source>
+        )}
 
         {/* Display optimized route lines */}
         {optimizedRouteGeoJSON && (
