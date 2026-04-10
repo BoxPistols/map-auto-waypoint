@@ -2,7 +2,11 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { MapPin, Plane, X, Square, Circle, ChevronDown } from 'lucide-react'
 import { searchAddress, debounce } from '../../services/geocoding'
 import { POLYGON_SIZE_OPTIONS, POLYGON_SHAPE_OPTIONS } from '../../services/polygonGenerator'
+import { formatShortcut, isModKey } from '../../utils/platform'
 import styles from './SearchForm.module.scss'
+
+// OSに応じたショートカット表記（ハードコード回避）
+const SEARCH_SHORTCUT = formatShortcut(['mod', 'K'])
 
 const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const [query, setQuery] = useState('')
@@ -57,7 +61,10 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    // IME変換中の場合は何もしない（日本語入力の候補確定を尊重）
     if (isComposing) return
+    // e.nativeEvent.isComposing もチェック（一部ブラウザで compositionend 前に Enter が発火するため）
+    if (e.nativeEvent?.isComposing) return
 
     if (selectedIndex >= 0 && suggestions[selectedIndex]) {
       handleSelect(suggestions[selectedIndex])
@@ -68,6 +75,12 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   }
 
   const handleKeyDown = (e) => {
+    // IME変換中は Enter での確定を submit として扱わない
+    // (React の onCompositionEnd が遅延する環境への二重ガード)
+    if (e.nativeEvent?.isComposing || isComposing) {
+      return
+    }
+
     if (!showSuggestions) return
 
     switch (e.key) {
@@ -110,7 +123,8 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
 
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      // OS依存のモディファイアキー判定（Mac: ⌘ / Win: Ctrl）
+      if (isModKey(e, 'k')) {
         e.preventDefault()
         inputRef.current?.focus()
         inputRef.current?.select()
@@ -149,9 +163,14 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
             onCompositionStart={() => setIsComposing(true)}
             onCompositionEnd={() => setIsComposing(false)}
             onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-            placeholder="住所・建物名を検索"
+            placeholder={`住所・建物名を検索 (${SEARCH_SHORTCUT})`}
+            aria-label="住所・建物名検索"
+            aria-keyshortcuts={SEARCH_SHORTCUT}
             className={styles.input}
             autoComplete="off"
+            // 日本語IME対応: 変換確定のEnterでSubmitが走らないよう
+            // handleSubmit/handleKeyDown で isComposing を多重ガード
+            enterKeyHint="search"
           />
           {isLoading && <span className={styles.spinner} />}
           {query && !isLoading && (

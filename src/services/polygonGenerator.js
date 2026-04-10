@@ -101,13 +101,31 @@ export const POLYGON_SHAPE_OPTIONS = [
   { value: 'circle', label: '円形' }
 ]
 
+/**
+ * 検索結果からポリゴンを生成
+ *
+ * サイズの決定ロジック（優先度順）:
+ * 1. カスタムサイズ指定時: `customRadius` を使用
+ * 2. それ以外: `sizePreset` (small/medium/large/xlarge) に対応する半径を使用
+ *
+ * 注: boundingBox はポリゴンの中心座標としては使わず、ユーザーが選択した
+ * サイズを必ず尊重する。以前はboundingBoxで自動フィットしていたが、
+ * 「500mを選んだのに町全体が生成される」等の混乱を招いたため廃止。
+ *
+ * @param {Object} searchResult - 検索結果（lat, lng, displayName, boundingBox?）
+ * @param {Object} options - 生成オプション
+ * @param {'rectangle'|'circle'} [options.shape='rectangle']
+ * @param {'small'|'medium'|'large'|'xlarge'} [options.size='medium']
+ * @param {boolean} [options.useCustomSize=false]
+ * @param {number} [options.customRadius] - カスタム半径（メートル）
+ * @returns {Object | null} ポリゴンオブジェクト
+ */
 export const createPolygonFromSearchResult = (searchResult, options = {}) => {
   if (!searchResult) return null
   const shape = options.shape || 'rectangle'
   const sizePreset = options.size || 'medium'
   const useCustomSize = options.useCustomSize || false
   const customRadius = options.customRadius
-  const padding = options.padding || 0
 
   const lat = parseFloat(searchResult.lat)
   const lng = parseFloat(searchResult.lng)
@@ -116,16 +134,10 @@ export const createPolygonFromSearchResult = (searchResult, options = {}) => {
     ? (typeof customRadius === 'number' ? customRadius : SIZE_PRESETS.medium)
     : (SIZE_PRESETS[sizePreset] || SIZE_PRESETS.medium)
 
-  let geometry = null
-  if (searchResult.boundingBox && !useCustomSize) {
-    geometry = generateFromBoundingBox(searchResult.boundingBox, padding)
-  }
-
-  if (!geometry) {
-    geometry = shape === 'circle'
-      ? generateCirclePolygon(lat, lng, radius)
-      : generateRectanglePolygon(lat, lng, radius)
-  }
+  // ユーザーが選択したサイズで生成（boundingBoxでは上書きしない）
+  const geometry = shape === 'circle'
+    ? generateCirclePolygon(lat, lng, radius)
+    : generateRectanglePolygon(lat, lng, radius)
 
   return {
     id: crypto.randomUUID(),
