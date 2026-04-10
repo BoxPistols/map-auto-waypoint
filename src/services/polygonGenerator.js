@@ -116,8 +116,10 @@ export const createPolygonFromSearchResult = (searchResult, options = {}) => {
     ? (typeof customRadius === 'number' ? customRadius : SIZE_PRESETS.medium)
     : (SIZE_PRESETS[sizePreset] || SIZE_PRESETS.medium)
 
+  // 円形指定時はboundingBoxを使わず、中心点から円形ポリゴンを生成
+  // （boundingBoxは矩形のみに適用）
   let geometry = null
-  if (searchResult.boundingBox && !useCustomSize) {
+  if (shape === 'rectangle' && searchResult.boundingBox && !useCustomSize) {
     geometry = generateFromBoundingBox(searchResult.boundingBox, padding)
   }
 
