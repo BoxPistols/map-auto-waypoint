@@ -19,9 +19,15 @@ import styles from './MapTooltip.module.scss'
  */
 export const MapTooltip = ({ isVisible, position, data, type, onClose }) => {
   const tooltipRef = useRef(null)
-  const [adjustedPosition, setAdjustedPosition] = useState(position)
-  const [arrowDir, setArrowDir] = useState('none')
-  const [isPositioned, setIsPositioned] = useState(false)
+  // 配置計算結果を1つの state にまとめることで setState カスケードを回避
+  const [layout, setLayout] = useState({
+    position: position || { x: 0, y: 0 },
+    arrowDir: 'none',
+    isPositioned: false,
+  })
+  const adjustedPosition = layout.position
+  const arrowDir = layout.arrowDir
+  const isPositioned = layout.isPositioned
 
   // ESCキーで閉じる
   useEffect(() => {
@@ -80,9 +86,13 @@ export const MapTooltip = ({ isVisible, position, data, type, onClose }) => {
         y = window.innerHeight - panelHeight - MARGIN
       }
 
-      setArrowDir(dir)
-      setAdjustedPosition({ x, y })
-      setIsPositioned(true)
+      // DOM計測後の位置確定のため useLayoutEffect + setState は canonical パターン
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setLayout({
+        position: { x, y },
+        arrowDir: dir,
+        isPositioned: true,
+      })
     }
   }, [position, isVisible])
 

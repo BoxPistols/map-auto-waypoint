@@ -117,8 +117,6 @@ const Map = ({
     setIsMapReady,
     mapStyleId,
     setMapStyleId,
-    showStylePicker,
-    setShowStylePicker,
     mobileControlsExpanded,
     setMobileControlsExpanded,
     rainCloudSource,
