@@ -152,6 +152,31 @@ function MainLayout() {
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
   const [panelHeight, setPanelHeight] = useState(null) // null = auto
   const [isSearchExpanded, setIsSearchExpanded] = useState(true)
+  const [isMapQuickControlsExpanded, setIsMapQuickControlsExpanded] = useState(true)
+
+  // Map quick controls state (sidebar に表示、デフォルトOFF)
+  const [showDIDTooltip, setShowDIDTooltip] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('ui-settings') || '{}')
+      return saved.showDIDTooltip ?? false
+    } catch { return false }
+  })
+  const [didTooltipAutoFade, setDidTooltipAutoFade] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('ui-settings') || '{}')
+      return saved.didTooltipAutoFade ?? true
+    } catch { return true }
+  })
+
+  // localStorage永続化
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('ui-settings') || '{}')
+      saved.showDIDTooltip = showDIDTooltip
+      saved.didTooltipAutoFade = didTooltipAutoFade
+      localStorage.setItem('ui-settings', JSON.stringify(saved))
+    } catch { /* ignore */ }
+  }, [showDIDTooltip, didTooltipAutoFade])
   // Mobile detection
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
   const [fullMapMode, setFullMapMode] = useState(false)
@@ -1384,6 +1409,53 @@ function MainLayout() {
                 )}
               </div>
 
+              {/* Map Quick Controls - 地図操作のミニマムコントローラー */}
+              <div className={`map-quick-controls ${!isMapQuickControlsExpanded ? 'collapsed' : ''}`}>
+                <div
+                  className="map-quick-controls-header"
+                  onClick={() => setIsMapQuickControlsExpanded(!isMapQuickControlsExpanded)}
+                >
+                  <div className="map-quick-controls-title">
+                    <MapIcon size={14} />
+                    <span>地図操作</span>
+                  </div>
+                  <ChevronDown
+                    size={16}
+                    className={`map-quick-controls-chevron ${isMapQuickControlsExpanded ? 'expanded' : ''}`}
+                  />
+                </div>
+                {isMapQuickControlsExpanded && (
+                  <div className="map-quick-controls-content">
+                    <label
+                      className="map-quick-control-item"
+                      data-tooltip="ホバーで施設情報を表示 [T]"
+                      data-tooltip-pos="right"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={showDIDTooltip}
+                        onChange={(e) => setShowDIDTooltip(e.target.checked)}
+                      />
+                      <span>ツールチップ</span>
+                      <kbd>T</kbd>
+                    </label>
+                    <label
+                      className="map-quick-control-item"
+                      data-tooltip="オフにするとマウスを離すまで表示し続けます"
+                      data-tooltip-pos="right"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={didTooltipAutoFade}
+                        onChange={(e) => setDidTooltipAutoFade(e.target.checked)}
+                        disabled={!showDIDTooltip}
+                      />
+                      <span>自動で消える</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+
               <div className="panel-tabs">
                 <button
                   className={`tab ${activePanel === 'polygons' ? 'active' : ''}`}
@@ -1475,6 +1547,10 @@ function MainLayout() {
             selectedPolygonId={selectedPolygonId}
             editingPolygon={editingPolygon}
             drawMode={drawMode}
+            showDIDTooltip={showDIDTooltip}
+            onShowDIDTooltipChange={setShowDIDTooltip}
+            didTooltipAutoFade={didTooltipAutoFade}
+            onDidTooltipAutoFadeChange={setDidTooltipAutoFade}
           />
 
           {/* Draw mode hint */}

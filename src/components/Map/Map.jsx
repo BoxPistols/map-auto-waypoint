@@ -91,7 +91,11 @@ const Map = ({
   onWaypointsBulkDelete,
   selectedPolygonId,
   editingPolygon = null,
-  drawMode = false
+  drawMode = false,
+  showDIDTooltip: externalShowDIDTooltip,
+  onShowDIDTooltipChange,
+  didTooltipAutoFade: externalDidTooltipAutoFade,
+  onDidTooltipAutoFadeChange
 }) => {
   const mapRef = useRef(null)
 
@@ -210,19 +214,11 @@ const Map = ({
 
   // ========================================
   // DIDツールチップ（DIDinJapan準拠）
+  // 状態はMainLayoutから props として受け取る
   // ========================================
-  const [showDIDTooltip, setShowDIDTooltip] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('ui-settings') || '{}')
-      return saved.showDIDTooltip ?? true
-    } catch { return true }
-  })
-  const [didTooltipAutoFade, setDidTooltipAutoFade] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('ui-settings') || '{}')
-      return saved.didTooltipAutoFade ?? true
-    } catch { return true }
-  })
+  const showDIDTooltip = externalShowDIDTooltip ?? false
+  const didTooltipAutoFade = externalDidTooltipAutoFade ?? true
+  const setShowDIDTooltip = onShowDIDTooltipChange || (() => {})
   const showDIDTooltipRef = useRef(showDIDTooltip)
   const didTooltipAutoFadeRef = useRef(didTooltipAutoFade)
   const didPopupRef = useRef(null)
@@ -233,16 +229,6 @@ const Map = ({
   // Ref同期
   useEffect(() => { showDIDTooltipRef.current = showDIDTooltip }, [showDIDTooltip])
   useEffect(() => { didTooltipAutoFadeRef.current = didTooltipAutoFade }, [didTooltipAutoFade])
-
-  // localStorage永続化
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('ui-settings') || '{}')
-      saved.showDIDTooltip = showDIDTooltip
-      saved.didTooltipAutoFade = didTooltipAutoFade
-      localStorage.setItem('ui-settings', JSON.stringify(saved))
-    } catch { /* ignore */ }
-  }, [showDIDTooltip, didTooltipAutoFade])
 
   // Popup初期化（maplibre-glは react-map-gl 経由で既にロード済み）
   useEffect(() => {
@@ -2450,10 +2436,6 @@ const Map = ({
           setCrosshairClickMode={setCrosshairClickMode}
           coordinateFormat={coordinateFormat}
           setCoordinateFormat={setCoordinateFormat}
-          showDIDTooltip={showDIDTooltip}
-          setShowDIDTooltip={setShowDIDTooltip}
-          didTooltipAutoFade={didTooltipAutoFade}
-          setDidTooltipAutoFade={setDidTooltipAutoFade}
           mapStyleId={mapStyleId}
           setMapStyleId={setMapStyleId}
           isMobile={isMobile}
@@ -2473,35 +2455,6 @@ const Map = ({
             <span>Waypoint: ドラッグ=移動 / 右クリック=メニュー</span>
           </>
         )}
-      </div>
-
-      {/* ツールチップ ON/OFF インジケーター */}
-      <div className={styles.tooltipIndicator}>
-        <label
-          className={`${styles.tooltipToggle} ${showDIDTooltip ? styles.active : ''}`}
-          data-tooltip="オフにするとマウスを離すまで表示し続けます"
-          data-tooltip-pos="top"
-        >
-          <input
-            type="checkbox"
-            checked={showDIDTooltip}
-            onChange={(e) => setShowDIDTooltip(e.target.checked)}
-          />
-          <span>ツールチップ [T]</span>
-        </label>
-        <label
-          className={`${styles.tooltipToggle} ${didTooltipAutoFade ? styles.active : ''}`}
-          data-tooltip="オフにするとマウスを離すまで表示し続けます"
-          data-tooltip-pos="top"
-        >
-          <input
-            type="checkbox"
-            checked={didTooltipAutoFade}
-            onChange={(e) => setDidTooltipAutoFade(e.target.checked)}
-            disabled={!showDIDTooltip}
-          />
-          <span>自動で消える</span>
-        </label>
       </div>
 
       {/* Waypoint Context Menu */}
