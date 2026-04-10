@@ -261,12 +261,25 @@ const Map = ({
     }
   }, [])
 
-  // DIDツールチップ無効時にPopup削除
+  // DIDツールチップ無効化／描画モード遷移時にPopup削除
   useEffect(() => {
-    if (!showDIDTooltip) {
+    if (!showDIDTooltip || drawMode || editingPolygon) {
       didPopupRef.current?.remove()
+      // 進行中のデバウンスタイマーもキャンセル
+      if (didDebounceTimerRef.current) {
+        clearTimeout(didDebounceTimerRef.current)
+        didDebounceTimerRef.current = null
+      }
     }
-  }, [showDIDTooltip])
+  }, [showDIDTooltip, drawMode, editingPolygon])
+
+  // HTMLエスケープヘルパー（XSS対策）
+  // GeoJSON propertiesは外部由来の可能性があるため必須
+  const escapeHTML = useCallback((s) => {
+    return String(s ?? '').replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]))
+  }, [])
 
   // 施設レイヤーのツールチップHTML生成
   const buildFacilityTooltipHTML = useCallback((props) => {
@@ -286,25 +299,25 @@ const Map = ({
       decommissioning: '廃炉作業中', decommissioned: '廃炉完了',
     }
 
-    const name = props.name || '不明'
-    const type = typeLabels[props.type] || props.type || ''
-    const zone = zoneLabels[props.zone] || ''
+    const name = escapeHTML(props.name || '不明')
+    const type = escapeHTML(typeLabels[props.type] || props.type || '')
+    const zone = zoneLabels[props.zone] || '' // 内部マップ由来なのでエスケープ不要
     const radiusKm = props.radiusKm ? Number(props.radiusKm) : null
-    const status = statusLabels[props.operationalStatus] || ''
+    const status = statusLabels[props.operationalStatus] || '' // 内部マップ由来
 
     let rows = ''
     if (type) rows += `<div class="did-popup-row"><span>種類</span><strong>${type}</strong></div>`
     if (zone) rows += `<div class="did-popup-row"><span>区分</span><strong>${zone}</strong></div>`
     if (radiusKm) rows += `<div class="did-popup-row"><span>半径</span><strong>${(radiusKm * 1000).toFixed(0)}m</strong></div>`
     if (status) rows += `<div class="did-popup-row"><span>稼働</span><strong>${status}</strong></div>`
-    if (props.operator) rows += `<div class="did-popup-row"><span>事業者</span><strong>${props.operator}</strong></div>`
-    if (props.description) rows += `<div class="did-popup-row"><span>備考</span><strong>${props.description}</strong></div>`
+    if (props.operator) rows += `<div class="did-popup-row"><span>事業者</span><strong>${escapeHTML(props.operator)}</strong></div>`
+    if (props.description) rows += `<div class="did-popup-row"><span>備考</span><strong>${escapeHTML(props.description)}</strong></div>`
 
     return `<div class="did-popup">
   <div class="did-popup-header">${name}</div>
   <div class="did-popup-stats">${rows}</div>
 </div>`
-  }, [])
+  }, [escapeHTML])
 
   // 全レイヤー統合ホバーツールチップハンドラ
   const handleMapHoverTooltip = useCallback((e) => {
@@ -321,9 +334,12 @@ const Map = ({
     didRafRef.current = requestAnimationFrame(() => {
       didRafRef.current = null
 
-      // 300msデバウンス
+      // 300msデバウンス（前回のタイマーをクリア）
       if (didDebounceTimerRef.current) clearTimeout(didDebounceTimerRef.current)
       didDebounceTimerRef.current = setTimeout(async () => {
+        didDebounceTimerRef.current = null
+        // タイマー発火時に再度トグル状態を確認（OFFされていたらスキップ）
+        if (!showDIDTooltipRef.current) return
         const map = mapRef.current?.getMap()
         if (!map) return
         const { lng, lat } = e.lngLat
@@ -362,14 +378,20 @@ const Map = ({
         // 2. 施設にヒットしなければDIDチェック（非同期）
         if (!content) {
           const result = await checkDIDArea(lat, lng)
+          // await解決後に再度トグル状態を確認（OFFされていたら描画スキップ）
+          if (!showDIDTooltipRef.current || !didPopupRef.current) return
           if (result?.isDID) {
+            const prefName = escapeHTML(result.prefectureName || '')
+            const area = escapeHTML(result.area || '')
+            const kenCode = escapeHTML(result.kenCode || '')
+            const cityCode = escapeHTML(result.cityCode || '')
             content = `<div class="did-popup">
-  <div class="did-popup-header">${result.prefectureName ? `<span class="did-popup-pref">${result.prefectureName}</span>` : ''}${result.area}</div>
+  <div class="did-popup-header">${prefName ? `<span class="did-popup-pref">${prefName}</span>` : ''}${area}</div>
   <div class="did-popup-stats">
     <div class="did-popup-row"><span>人口</span><strong>${result.population.toLocaleString()}人</strong></div>
     <div class="did-popup-row"><span>面積</span><strong>${result.menseki.toFixed(2)}km²</strong></div>
     <div class="did-popup-row"><span>人口密度</span><strong>${result.density.toFixed(1)}人/km²</strong></div>
-    <div class="did-popup-row"><span>コード</span><strong>${result.kenCode}-${result.cityCode}</strong></div>
+    <div class="did-popup-row"><span>コード</span><strong>${kenCode}-${cityCode}</strong></div>
   </div>
 </div>`
           }
@@ -390,6 +412,7 @@ const Map = ({
           if (didTooltipAutoFadeRef.current) {
             didPopupTimerRef.current = setTimeout(() => {
               didPopupRef.current?.remove()
+              didPopupTimerRef.current = null
             }, 2000)
           }
         } else {
@@ -397,7 +420,7 @@ const Map = ({
         }
       }, 300)
     })
-  }, [drawMode, editingPolygon, buildFacilityTooltipHTML])
+  }, [drawMode, editingPolygon, buildFacilityTooltipHTML, escapeHTML])
 
   // キーボードショートカット
   useMapKeyboardShortcuts({

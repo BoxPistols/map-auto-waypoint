@@ -21,6 +21,10 @@ const DEFAULT_SETTINGS = {
   prohibitedAvoidanceMargin: 300,
   // Waypoint番号体系: 'global'(全体連番) | 'perPolygon'(ポリゴンごと1から)
   waypointNumberingMode: 'global',
+  // 地図ホバーツールチップ表示（DID/施設レイヤー）
+  showMapHoverTooltip: false,
+  // ツールチップ自動消去（オフならホバー継続中は表示し続ける）
+  mapHoverTooltipAutoFade: true,
 };
 
 /**

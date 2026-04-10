@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
-import { getSetting, isDIDAvoidanceModeEnabled, getWaypointNumberingMode } from '../../services/settingsService'
+import { getSetting, setSetting, isDIDAvoidanceModeEnabled, getWaypointNumberingMode } from '../../services/settingsService'
 import { getDetailedCollisionResults, getDetailedCollisionResultsWithRestrictionSurfaces, checkWaypointsRestrictionSurfaces, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
 import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
 import MapComponent from '../Map/Map'
@@ -155,28 +155,17 @@ function MainLayout() {
   const [isMapQuickControlsExpanded, setIsMapQuickControlsExpanded] = useState(true)
 
   // Map quick controls state (sidebar に表示、デフォルトOFF)
-  const [showDIDTooltip, setShowDIDTooltip] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('ui-settings') || '{}')
-      return saved.showDIDTooltip ?? false
-    } catch { return false }
-  })
-  const [didTooltipAutoFade, setDidTooltipAutoFade] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('ui-settings') || '{}')
-      return saved.didTooltipAutoFade ?? true
-    } catch { return true }
-  })
+  // settingsService 経由で永続化
+  const [showDIDTooltip, setShowDIDTooltip] = useState(() => getSetting('showMapHoverTooltip') ?? false)
+  const [didTooltipAutoFade, setDidTooltipAutoFade] = useState(() => getSetting('mapHoverTooltipAutoFade') ?? true)
 
-  // localStorage永続化
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('ui-settings') || '{}')
-      saved.showDIDTooltip = showDIDTooltip
-      saved.didTooltipAutoFade = didTooltipAutoFade
-      localStorage.setItem('ui-settings', JSON.stringify(saved))
-    } catch { /* ignore */ }
-  }, [showDIDTooltip, didTooltipAutoFade])
+    setSetting('showMapHoverTooltip', showDIDTooltip)
+  }, [showDIDTooltip])
+
+  useEffect(() => {
+    setSetting('mapHoverTooltipAutoFade', didTooltipAutoFade)
+  }, [didTooltipAutoFade])
   // Mobile detection
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
   const [fullMapMode, setFullMapMode] = useState(false)
@@ -1411,9 +1400,12 @@ function MainLayout() {
 
               {/* Map Quick Controls - 地図操作のミニマムコントローラー */}
               <div className={`map-quick-controls ${!isMapQuickControlsExpanded ? 'collapsed' : ''}`}>
-                <div
+                <button
+                  type="button"
                   className="map-quick-controls-header"
-                  onClick={() => setIsMapQuickControlsExpanded(!isMapQuickControlsExpanded)}
+                  onClick={() => setIsMapQuickControlsExpanded(v => !v)}
+                  aria-expanded={isMapQuickControlsExpanded}
+                  aria-controls="map-quick-controls-content"
                 >
                   <div className="map-quick-controls-title">
                     <MapIcon size={14} />
@@ -1423,9 +1415,9 @@ function MainLayout() {
                     size={16}
                     className={`map-quick-controls-chevron ${isMapQuickControlsExpanded ? 'expanded' : ''}`}
                   />
-                </div>
+                </button>
                 {isMapQuickControlsExpanded && (
-                  <div className="map-quick-controls-content">
+                  <div id="map-quick-controls-content" className="map-quick-controls-content">
                     <label
                       className="map-quick-control-item"
                       data-tooltip="ホバーで施設情報を表示 [T]"

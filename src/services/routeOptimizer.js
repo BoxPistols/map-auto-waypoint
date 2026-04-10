@@ -438,6 +438,18 @@ export const optimizeRoute = async (waypoints, options = {}) => {
   // 全クラスタのorderedWaypointsをフラット化
   const orderedWaypoints = clusterResults.flatMap((c) => c.waypoints)
 
+  // クラスタ単位でoriginal/optimized距離を集計（improvement計算用）
+  // 全体距離行列で計算するとクラスタ間ジャンプが含まれてしまうため、
+  // 各クラスタ内で個別に計算して合算する
+  let originalDistanceSum = 0
+  let optimizedDistanceSum = 0
+  for (const cluster of clusterResults) {
+    const baseIndices = cluster.waypoints.map((_, i) => i)
+    // 元順序: クラスタ内Waypointの元配列順序（クラスタリング前の順を保持）
+    originalDistanceSum += calculateRouteDistance(baseIndices, cluster.distanceMatrix)
+    optimizedDistanceSum += calculateRouteDistance(cluster.indices, cluster.distanceMatrix)
+  }
+
   // 6. バッテリー制約でルート分割
   // 複数クラスタの場合、各クラスタを独立したフライトとして扱う
   let flights = []
@@ -472,11 +484,10 @@ export const optimizeRoute = async (waypoints, options = {}) => {
     flights.push(...clusterFlights)
   }
 
-  // 代表距離行列（全体サマリー計算用）
-  const distanceMatrix = buildDistanceMatrix(waypoints)
-  const routeIndices = orderedWaypoints.map((wp) =>
-    waypoints.findIndex((orig) => orig.id === wp.id)
-  )
+  // routeIndices: orderedWaypoints の元waypoints配列内インデックス
+  // O(n) で構築（findIndex の O(n²) を回避）
+  const idToIndex = new Map(waypoints.map((wp, i) => [wp.id, i]))
+  const routeIndices = orderedWaypoints.map((wp) => idToIndex.get(wp.id) ?? -1)
 
   // 7. 各フライトに追加情報を付与
   const processedFlights = flights.map((flight, idx) => ({
@@ -506,14 +517,9 @@ export const optimizeRoute = async (waypoints, options = {}) => {
   const totalDistance = processedFlights.reduce((sum, f) => sum + f.totalDistance, 0);
   const totalTime = processedFlights.reduce((sum, f) => sum + f.estimatedTime, 0);
 
-  // 改善率を計算（元のインデックス順との比較）
-  const originalDistance = calculateRouteDistance(
-    waypoints.map((_, i) => i),
-    distanceMatrix
-  );
-  const optimizedDistance = calculateRouteDistance(routeIndices, distanceMatrix);
-  const improvement = originalDistance > 0
-    ? Math.round((1 - optimizedDistance / originalDistance) * 100)
+  // 改善率を計算（クラスタ内の合算で算出 — 複数クラスタでも正確な値）
+  const improvement = originalDistanceSum > 0
+    ? Math.round((1 - optimizedDistanceSum / originalDistanceSum) * 100)
     : 0;
 
   return {
