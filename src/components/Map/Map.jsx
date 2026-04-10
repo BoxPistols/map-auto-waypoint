@@ -95,7 +95,8 @@ const Map = ({
   showDIDTooltip: externalShowDIDTooltip,
   onShowDIDTooltipChange,
   didTooltipAutoFade: externalDidTooltipAutoFade,
-  onDidTooltipAutoFadeChange
+  onDidTooltipAutoFadeChange,
+  onMapControlsReady
 }) => {
   const mapRef = useRef(null)
 
@@ -432,6 +433,50 @@ const Map = ({
     setMapStyleId,
     setShowDIDTooltip
   })
+
+  // Map制御状態を親（MainLayout）にブリッジ
+  // sidebarの「地図操作」から3D/Crosshair/MapStyleを操作可能にする
+  const onMapControlsReadyRef = useRef(onMapControlsReady)
+  onMapControlsReadyRef.current = onMapControlsReady
+
+  // アクション（setters）は初回のみ登録（stable reference想定）
+  useEffect(() => {
+    onMapControlsReadyRef.current?.({
+      state: {
+        is3D: layerVisibility.is3D,
+        showCrosshair,
+        crosshairDesign,
+        crosshairColor,
+        crosshairClickMode,
+        coordinateFormat,
+        mapStyleId,
+      },
+      actions: {
+        toggle3D,
+        setShowCrosshair,
+        setCrosshairDesign,
+        setCrosshairColor,
+        setCrosshairClickMode,
+        setCoordinateFormat,
+        setMapStyleId,
+      }
+    })
+  }, [
+    layerVisibility.is3D,
+    showCrosshair,
+    crosshairDesign,
+    crosshairColor,
+    crosshairClickMode,
+    coordinateFormat,
+    mapStyleId,
+    toggle3D,
+    setShowCrosshair,
+    setCrosshairDesign,
+    setCrosshairColor,
+    setCrosshairClickMode,
+    setCoordinateFormat,
+    setMapStyleId,
+  ])
 
   // toggleLayer, toggleAirportOverlay, toggleGroupLayers, toggleFavoriteGroup
   // → useLayerVisibility hook から提供されるため削除
@@ -2446,25 +2491,10 @@ const Map = ({
           toggleLayer={toggleLayer}
           toggleAirportOverlay={toggleAirportOverlay}
           toggleGroupLayers={toggleGroupLayers}
-          toggle3D={toggle3D}
           favoriteGroups={favoriteGroups}
           toggleFavoriteGroup={toggleFavoriteGroup}
-          showCrosshair={showCrosshair}
-          setShowCrosshair={setShowCrosshair}
-          crosshairDesign={crosshairDesign}
-          setCrosshairDesign={setCrosshairDesign}
-          crosshairColor={crosshairColor}
-          setCrosshairColor={setCrosshairColor}
-          crosshairClickMode={crosshairClickMode}
-          setCrosshairClickMode={setCrosshairClickMode}
-          coordinateFormat={coordinateFormat}
-          setCoordinateFormat={setCoordinateFormat}
-          mapStyleId={mapStyleId}
-          setMapStyleId={setMapStyleId}
           isMobile={isMobile}
           mobileControlsExpanded={mobileControlsExpanded}
-          showStylePicker={showStylePicker}
-          setShowStylePicker={setShowStylePicker}
         />
       </div>
 
