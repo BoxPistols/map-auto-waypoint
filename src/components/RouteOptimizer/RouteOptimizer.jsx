@@ -169,6 +169,9 @@ const RouteOptimizer = ({
           <div className="route-optimizer__header-content">
             <Route size={20} />
             <h2>最適巡回ルートプランナー</h2>
+            <span className="route-optimizer__wip-badge" title="現在ベータ版・構想段階の機能です">
+              BETA · WIP
+            </span>
           </div>
           <div className="route-optimizer__header-actions">
             {step > 1 && (
@@ -210,6 +213,18 @@ const RouteOptimizer = ({
           <div className={`route-optimizer__step ${step >= 4 ? 'active' : ''}`}>
             <span className="route-optimizer__step-number">4</span>
             <span className="route-optimizer__step-label">結果</span>
+          </div>
+        </div>
+
+        {/* ベータ版の注意書き */}
+        <div className="route-optimizer__beta-notice">
+          <AlertTriangle size={16} />
+          <div>
+            <strong>ベータ版・アイデアベースの機能です</strong>
+            <p>
+              現在構想段階のため、実際の飛行計画としてそのまま使用しないでください。
+              同一エリア内の飛行のみ最適化対象となり、遠距離拠点（20km以上離れた拠点同士）は別フライトとして分離されます。
+            </p>
           </div>
         </div>
 
@@ -428,6 +443,16 @@ const RouteOptimizer = ({
                 <div className="route-optimizer__improvement">
                   <CheckCircle size={16} />
                   ルート距離を{optimizationResult.summary.improvement}%短縮しました
+                </div>
+              )}
+
+              {optimizationResult.summary.isMultiCluster && (
+                <div className="route-optimizer__cluster-notice">
+                  <AlertTriangle size={16} />
+                  <span>
+                    遠距離に分散した{optimizationResult.summary.clusterCount}つのエリアを検出しました。
+                    各エリアを独立したフライトとして最適化しています（エリア間の直線飛行は行いません）。
+                  </span>
                 </div>
               )}
 

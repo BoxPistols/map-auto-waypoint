@@ -18,6 +18,55 @@ const getDistance = (point1, point2) => {
 };
 
 /**
+ * 拠点クラスタリング（同一エリア内のWaypointをグループ化）
+ * 距離が閾値以上離れたWaypoint群は別クラスタとして分離する。
+ * これにより、例えば北海道と大阪のような遠距離拠点を一直線でつなぐ
+ * 異常なルートを防止する。
+ *
+ * @param {Array} waypoints - ウェイポイント配列
+ * @param {number} thresholdMeters - クラスタ分離の閾値（メートル、デフォルト20km）
+ * @returns {Array<Array>} クラスタごとのウェイポイント配列
+ */
+export const clusterWaypointsByProximity = (waypoints, thresholdMeters = 20000) => {
+  if (!waypoints || waypoints.length === 0) return []
+  if (waypoints.length === 1) return [waypoints]
+
+  // Union-Find でクラスタリング
+  const n = waypoints.length
+  const parent = Array(n).fill(0).map((_, i) => i)
+  const find = (x) => {
+    while (parent[x] !== x) {
+      parent[x] = parent[parent[x]]
+      x = parent[x]
+    }
+    return x
+  }
+  const union = (a, b) => {
+    const ra = find(a)
+    const rb = find(b)
+    if (ra !== rb) parent[ra] = rb
+  }
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      if (getDistance(waypoints[i], waypoints[j]) <= thresholdMeters) {
+        union(i, j)
+      }
+    }
+  }
+
+  // クラスタごとにグルーピング
+  const clusters = new Map()
+  for (let i = 0; i < n; i++) {
+    const root = find(i)
+    if (!clusters.has(root)) clusters.set(root, [])
+    clusters.get(root).push(waypoints[i])
+  }
+
+  return Array.from(clusters.values())
+}
+
+/**
  * 距離行列を構築
  * @param {Array} waypoints - ウェイポイント配列
  * @returns {Array<Array<number>>} 距離行列
@@ -348,49 +397,91 @@ export const optimizeRoute = async (waypoints, options = {}) => {
     };
   }
 
-  // 1. 最適出発点を計算
+  // 0. 拠点クラスタリング（同一エリア内のWaypointをグループ化）
+  // 遠距離拠点を一直線でつなぐ異常なルートを防止するため、
+  // 20km以上離れたWaypoint群は別クラスタとして分離する。
+  const CLUSTER_THRESHOLD_METERS = 20000
+  const clusters = clusterWaypointsByProximity(waypoints, CLUSTER_THRESHOLD_METERS)
+  const isMultiCluster = clusters.length > 1
+
+  // 1. 最適出発点を計算（全Waypoint基準、後方互換性のため）
   const optimalStart = findOptimalStartPoint(waypoints);
   const effectiveHomePoint = homePoint || {
     lat: optimalStart.lat,
     lng: optimalStart.lng,
   };
 
-  // 2. 距離行列を構築
-  const distanceMatrix = buildDistanceMatrix(waypoints);
+  // 2-5. 各クラスタごとに最適化（TSP + 順序付け）
+  let globalOrder = 0
+  const clusterResults = clusters.map((clusterWaypoints) => {
+    const clusterMatrix = buildDistanceMatrix(clusterWaypoints)
+    const clusterStart = findOptimalStartPoint(clusterWaypoints)
+    let clusterIndices = nearestNeighborTSP(clusterWaypoints, clusterStart.index, clusterMatrix)
 
-  // 3. TSPで最適順序を計算
-  let routeIndices = nearestNeighborTSP(waypoints, optimalStart.index, distanceMatrix);
+    if (algorithm === '2-opt') {
+      clusterIndices = twoOptImprove(clusterIndices, clusterMatrix)
+    }
 
-  // 4. 2-opt改善（オプション）
-  if (algorithm === '2-opt') {
-    routeIndices = twoOptImprove(routeIndices, distanceMatrix);
+    const ordered = clusterIndices.map((idx) => ({
+      ...clusterWaypoints[idx],
+      optimizedOrder: ++globalOrder,
+    }))
+
+    return {
+      waypoints: ordered,
+      distanceMatrix: clusterMatrix,
+      indices: clusterIndices,
+      startPoint: clusterStart,
+    }
+  })
+
+  // 全クラスタのorderedWaypointsをフラット化
+  const orderedWaypoints = clusterResults.flatMap((c) => c.waypoints)
+
+  // クラスタ単位でoriginal/optimized距離を集計（improvement計算用）
+  // 全体距離行列で計算するとクラスタ間ジャンプが含まれてしまうため、
+  // 各クラスタ内で個別に計算して合算する
+  let originalDistanceSum = 0
+  let optimizedDistanceSum = 0
+  for (const cluster of clusterResults) {
+    const baseIndices = cluster.waypoints.map((_, i) => i)
+    // 元順序: クラスタ内Waypointの元配列順序（クラスタリング前の順を保持）
+    originalDistanceSum += calculateRouteDistance(baseIndices, cluster.distanceMatrix)
+    optimizedDistanceSum += calculateRouteDistance(cluster.indices, cluster.distanceMatrix)
   }
 
-  // 5. インデックスからウェイポイントに変換
-  const orderedWaypoints = routeIndices.map((idx, order) => ({
-    ...waypoints[idx],
-    optimizedOrder: order + 1,
-  }));
-
   // 6. バッテリー制約でルート分割
-  let flights;
-  if (autoSplit) {
-    flights = splitRouteByBattery(orderedWaypoints, droneSpec, effectiveHomePoint);
-  } else {
-    // 分割なし（単一フライト）
-    let totalDist = 0;
-    const wps = orderedWaypoints.map((wp, idx) => {
-      const prev = idx === 0 ? effectiveHomePoint : orderedWaypoints[idx - 1];
-      const segDist = getDistance(prev, wp);
-      totalDist += segDist;
-      return { ...wp, segmentDistance: segDist };
-    });
-    const returnDist = getDistance(orderedWaypoints[orderedWaypoints.length - 1], effectiveHomePoint);
-    flights = [{
-      waypoints: wps,
-      totalDistance: totalDist + returnDist,
-      returnDistance: returnDist,
-    }];
+  // 複数クラスタの場合、各クラスタを独立したフライトとして扱う
+  let flights = []
+  for (const cluster of clusterResults) {
+    // 各クラスタ内のHome Pointは、クラスタ内の最適出発点を使用
+    const clusterHomePoint = isMultiCluster
+      ? { lat: cluster.startPoint.lat, lng: cluster.startPoint.lng }
+      : effectiveHomePoint
+
+    let clusterFlights
+    if (autoSplit) {
+      clusterFlights = splitRouteByBattery(cluster.waypoints, droneSpec, clusterHomePoint)
+    } else {
+      let totalDist = 0
+      const wps = cluster.waypoints.map((wp, idx) => {
+        const prev = idx === 0 ? clusterHomePoint : cluster.waypoints[idx - 1]
+        const segDist = getDistance(prev, wp)
+        totalDist += segDist
+        return { ...wp, segmentDistance: segDist }
+      })
+      const returnDist = getDistance(
+        cluster.waypoints[cluster.waypoints.length - 1],
+        clusterHomePoint
+      )
+      clusterFlights = [{
+        waypoints: wps,
+        totalDistance: totalDist + returnDist,
+        returnDistance: returnDist,
+        clusterHomePoint,
+      }]
+    }
+    flights.push(...clusterFlights)
   }
 
   // 7. 各フライトに追加情報を付与
@@ -421,14 +512,9 @@ export const optimizeRoute = async (waypoints, options = {}) => {
   const totalDistance = processedFlights.reduce((sum, f) => sum + f.totalDistance, 0);
   const totalTime = processedFlights.reduce((sum, f) => sum + f.estimatedTime, 0);
 
-  // 改善率を計算（元のインデックス順との比較）
-  const originalDistance = calculateRouteDistance(
-    waypoints.map((_, i) => i),
-    distanceMatrix
-  );
-  const optimizedDistance = calculateRouteDistance(routeIndices, distanceMatrix);
-  const improvement = originalDistance > 0
-    ? Math.round((1 - optimizedDistance / originalDistance) * 100)
+  // 改善率を計算（クラスタ内の合算で算出 — 複数クラスタでも正確な値）
+  const improvement = originalDistanceSum > 0
+    ? Math.round((1 - optimizedDistanceSum / originalDistanceSum) * 100)
     : 0;
 
   return {
@@ -452,6 +538,8 @@ export const optimizeRoute = async (waypoints, options = {}) => {
       batteryChanges: processedFlights.length - 1,
       warnings: restrictions.filter(r => r.severity === 'high' || r.severity === 'critical').length,
       algorithm,
+      clusterCount: clusters.length,
+      isMultiCluster,
     },
     orderedWaypoints,
   };

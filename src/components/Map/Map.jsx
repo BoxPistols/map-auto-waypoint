@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import { useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer, AttributionControl } from 'react-map-gl/maplibre'
 import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair, Signal, Zap, Building, Shield, Lock, Target, Star } from 'lucide-react'
 import * as turf from '@turf/turf'
@@ -55,6 +55,7 @@ import {
   KOKUAREA_MAX_TILES
 } from '../../lib/services/restrictionSurfaces'
 import { loadMapSettings, saveMapSettings } from '../../utils/storage'
+import { checkDIDArea } from '../../services/didService'
 import styles from './Map.module.scss'
 
 // Default center: Tokyo Tower
@@ -90,7 +91,11 @@ const Map = ({
   onWaypointsBulkDelete,
   selectedPolygonId,
   editingPolygon = null,
-  drawMode = false
+  drawMode = false,
+  showDIDTooltip: externalShowDIDTooltip,
+  onShowDIDTooltipChange,
+  didTooltipAutoFade: externalDidTooltipAutoFade,
+  onMapControlsReady
 }) => {
   const mapRef = useRef(null)
 
@@ -112,8 +117,6 @@ const Map = ({
     setIsMapReady,
     mapStyleId,
     setMapStyleId,
-    showStylePicker,
-    setShowStylePicker,
     mobileControlsExpanded,
     setMobileControlsExpanded,
     rainCloudSource,
@@ -207,6 +210,216 @@ const Map = ({
     })
   }, [setLayerVisibility, setViewState])
 
+  // ========================================
+  // DIDツールチップ（DIDinJapan準拠）
+  // 状態はMainLayoutから props として受け取る
+  // ========================================
+  const showDIDTooltip = externalShowDIDTooltip ?? false
+  const didTooltipAutoFade = externalDidTooltipAutoFade ?? true
+  const setShowDIDTooltip = onShowDIDTooltipChange || (() => {})
+  const showDIDTooltipRef = useRef(showDIDTooltip)
+  const didTooltipAutoFadeRef = useRef(didTooltipAutoFade)
+  const didPopupRef = useRef(null)
+  const didPopupTimerRef = useRef(null)
+  const didDebounceTimerRef = useRef(null)
+  const didRafRef = useRef(null)
+
+  // Ref同期
+  useEffect(() => { showDIDTooltipRef.current = showDIDTooltip }, [showDIDTooltip])
+  useEffect(() => { didTooltipAutoFadeRef.current = didTooltipAutoFade }, [didTooltipAutoFade])
+
+  // Popup初期化（maplibre-glは react-map-gl 経由で既にロード済み）
+  useEffect(() => {
+    // maplibre-glを同期的にrequire（react-map-glの依存で既にバンドルに含まれている）
+    import('maplibre-gl').then((mgl) => {
+      const Popup = mgl.Popup || mgl.default?.Popup
+      if (Popup) {
+        didPopupRef.current = new Popup({
+          closeButton: false,
+          closeOnClick: false,
+          maxWidth: '300px',
+          className: 'did-tooltip-popup'
+        })
+        if (import.meta.env.DEV) {
+          console.log('[Tooltip] Popup initialized successfully')
+        }
+      } else if (import.meta.env.DEV) {
+        console.error('[Tooltip] Popup class not found in maplibre-gl')
+      }
+    }).catch((err) => {
+      if (import.meta.env.DEV) {
+        console.error('[Tooltip] Failed to import maplibre-gl:', err)
+      }
+    })
+    return () => {
+      didPopupRef.current?.remove()
+      if (didPopupTimerRef.current) clearTimeout(didPopupTimerRef.current)
+      if (didDebounceTimerRef.current) clearTimeout(didDebounceTimerRef.current)
+      if (didRafRef.current) cancelAnimationFrame(didRafRef.current)
+    }
+  }, [])
+
+  // DIDツールチップ無効化／描画モード遷移時にPopup削除
+  useEffect(() => {
+    if (!showDIDTooltip || drawMode || editingPolygon) {
+      didPopupRef.current?.remove()
+      // 進行中のデバウンスタイマーもキャンセル
+      if (didDebounceTimerRef.current) {
+        clearTimeout(didDebounceTimerRef.current)
+        didDebounceTimerRef.current = null
+      }
+    }
+  }, [showDIDTooltip, drawMode, editingPolygon])
+
+  // HTMLエスケープヘルパー（XSS対策）
+  // GeoJSON propertiesは外部由来の可能性があるため必須
+  const escapeHTML = useCallback((s) => {
+    return String(s ?? '').replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]))
+  }, [])
+
+  // 施設レイヤーのツールチップHTML生成
+  const buildFacilityTooltipHTML = useCallback((props) => {
+    const typeLabels = {
+      government: '政府機関', imperial: '皇室関連', nuclear: '原子力施設',
+      defense: '防衛施設', foreign_mission: '外国公館', prefecture: '都道府県庁',
+      police: '警察施設', prison: '刑務所・拘置所', military_jsdf: '自衛隊施設',
+      energy: 'エネルギー施設', water: '水道施設', infrastructure: '重要インフラ',
+      airport: '空港', international: '国際空港', domestic: '国内空港',
+      military: '軍用飛行場', heliport: 'ヘリポート',
+      emergency: '緊急空域', 'remote-id': 'RemoteID区域',
+      manned_aircraft: '有人機運用区域', radio: '電波干渉区域',
+    }
+    const zoneLabels = { red: 'レッドゾーン', yellow: 'イエローゾーン' }
+    const statusLabels = {
+      operational: '運転中', stopped: '停止中',
+      decommissioning: '廃炉作業中', decommissioned: '廃炉完了',
+    }
+
+    const name = escapeHTML(props.name || '不明')
+    const type = escapeHTML(typeLabels[props.type] || props.type || '')
+    const zone = zoneLabels[props.zone] || '' // 内部マップ由来なのでエスケープ不要
+    const radiusKm = props.radiusKm ? Number(props.radiusKm) : null
+    const status = statusLabels[props.operationalStatus] || '' // 内部マップ由来
+
+    let rows = ''
+    if (type) rows += `<div class="did-popup-row"><span>種類</span><strong>${type}</strong></div>`
+    if (zone) rows += `<div class="did-popup-row"><span>区分</span><strong>${zone}</strong></div>`
+    if (radiusKm) rows += `<div class="did-popup-row"><span>半径</span><strong>${(radiusKm * 1000).toFixed(0)}m</strong></div>`
+    if (status) rows += `<div class="did-popup-row"><span>稼働</span><strong>${status}</strong></div>`
+    if (props.operator) rows += `<div class="did-popup-row"><span>事業者</span><strong>${escapeHTML(props.operator)}</strong></div>`
+    if (props.description) rows += `<div class="did-popup-row"><span>備考</span><strong>${escapeHTML(props.description)}</strong></div>`
+
+    return `<div class="did-popup">
+  <div class="did-popup-header">${name}</div>
+  <div class="did-popup-stats">${rows}</div>
+</div>`
+  }, [escapeHTML])
+
+  // 全レイヤー統合ホバーツールチップハンドラ
+  const handleMapHoverTooltip = useCallback((e) => {
+    if (!showDIDTooltipRef.current) {
+      didPopupRef.current?.remove()
+      return
+    }
+    if (!didPopupRef.current) return // Popup未初期化
+    if (!mapRef.current) return
+    if (drawMode || editingPolygon) return
+
+    // RAFスロットリング
+    if (didRafRef.current) return
+    didRafRef.current = requestAnimationFrame(() => {
+      didRafRef.current = null
+
+      // 300msデバウンス（前回のタイマーをクリア）
+      if (didDebounceTimerRef.current) clearTimeout(didDebounceTimerRef.current)
+      didDebounceTimerRef.current = setTimeout(async () => {
+        didDebounceTimerRef.current = null
+        // タイマー発火時に再度トグル状態を確認（OFFされていたらスキップ）
+        if (!showDIDTooltipRef.current) return
+        const map = mapRef.current?.getMap()
+        if (!map) return
+        const { lng, lat } = e.lngLat
+
+        // 1. 施設レイヤーのフィーチャーをチェック（即座にヒット判定可能）
+        const facilityLayerIds = [
+          'nuclear-plants-fill', 'prefectures-fill', 'police-fill',
+          'prisons-fill', 'jsdf-fill', 'red-zones-fill', 'yellow-zones-fill',
+          'airport-zones-fill', 'heliports-fill',
+          'emergency-airspace-fill', 'remote-id-zones-fill', 'manned-aircraft-zones-fill',
+        ]
+
+        // 実際にマップ上に存在するレイヤーのみクエリ
+        const existingLayers = facilityLayerIds.filter(id => map.getLayer(id))
+
+        let content = null
+        if (existingLayers.length > 0) {
+          let point = e.point
+          if (!point && e.originalEvent) {
+            const canvas = map.getCanvas()
+            const rect = canvas.getBoundingClientRect()
+            point = {
+              x: e.originalEvent.clientX - rect.left,
+              y: e.originalEvent.clientY - rect.top
+            }
+          }
+
+          if (point) {
+            const features = map.queryRenderedFeatures(point, { layers: existingLayers })
+            if (features && features.length > 0) {
+              content = buildFacilityTooltipHTML(features[0].properties)
+            }
+          }
+        }
+
+        // 2. 施設にヒットしなければDIDチェック（非同期）
+        if (!content) {
+          const result = await checkDIDArea(lat, lng)
+          // await解決後に再度トグル状態を確認（OFFされていたら描画スキップ）
+          if (!showDIDTooltipRef.current || !didPopupRef.current) return
+          if (result?.isDID) {
+            const prefName = escapeHTML(result.prefectureName || '')
+            const area = escapeHTML(result.area || '')
+            const kenCode = escapeHTML(result.kenCode || '')
+            const cityCode = escapeHTML(result.cityCode || '')
+            content = `<div class="did-popup">
+  <div class="did-popup-header">${prefName ? `<span class="did-popup-pref">${prefName}</span>` : ''}${area}</div>
+  <div class="did-popup-stats">
+    <div class="did-popup-row"><span>人口</span><strong>${result.population.toLocaleString()}人</strong></div>
+    <div class="did-popup-row"><span>面積</span><strong>${result.menseki.toFixed(2)}km²</strong></div>
+    <div class="did-popup-row"><span>人口密度</span><strong>${result.density.toFixed(1)}人/km²</strong></div>
+    <div class="did-popup-row"><span>コード</span><strong>${kenCode}-${cityCode}</strong></div>
+  </div>
+</div>`
+          }
+        }
+
+        // 3. ツールチップ表示/非表示
+        if (content && didPopupRef.current) {
+          if (didPopupTimerRef.current) {
+            clearTimeout(didPopupTimerRef.current)
+            didPopupTimerRef.current = null
+          }
+
+          didPopupRef.current
+            .setLngLat([lng, lat])
+            .setHTML(content)
+            .addTo(map)
+
+          if (didTooltipAutoFadeRef.current) {
+            didPopupTimerRef.current = setTimeout(() => {
+              didPopupRef.current?.remove()
+              didPopupTimerRef.current = null
+            }, 2000)
+          }
+        } else {
+          didPopupRef.current?.remove()
+        }
+      }, 300)
+    })
+  }, [drawMode, editingPolygon, buildFacilityTooltipHTML, escapeHTML])
+
   // キーボードショートカット
   useMapKeyboardShortcuts({
     toggle3D,
@@ -214,8 +427,53 @@ const Map = ({
     toggleAirportOverlay,
     setShowCrosshair,
     mapStyleId,
-    setMapStyleId
+    setMapStyleId,
+    setShowDIDTooltip
   })
+
+  // Map制御状態を親（MainLayout）にブリッジ
+  // sidebarの「地図操作」から3D/Crosshair/MapStyleを操作可能にする
+  const onMapControlsReadyRef = useRef(onMapControlsReady)
+  onMapControlsReadyRef.current = onMapControlsReady
+
+  // アクション（setters）は初回のみ登録（stable reference想定）
+  useEffect(() => {
+    onMapControlsReadyRef.current?.({
+      state: {
+        is3D: layerVisibility.is3D,
+        showCrosshair,
+        crosshairDesign,
+        crosshairColor,
+        crosshairClickMode,
+        coordinateFormat,
+        mapStyleId,
+      },
+      actions: {
+        toggle3D,
+        setShowCrosshair,
+        setCrosshairDesign,
+        setCrosshairColor,
+        setCrosshairClickMode,
+        setCoordinateFormat,
+        setMapStyleId,
+      }
+    })
+  }, [
+    layerVisibility.is3D,
+    showCrosshair,
+    crosshairDesign,
+    crosshairColor,
+    crosshairClickMode,
+    coordinateFormat,
+    mapStyleId,
+    toggle3D,
+    setShowCrosshair,
+    setCrosshairDesign,
+    setCrosshairColor,
+    setCrosshairClickMode,
+    setCoordinateFormat,
+    setMapStyleId,
+  ])
 
   // toggleLayer, toggleAirportOverlay, toggleGroupLayers, toggleFavoriteGroup
   // → useLayerVisibility hook から提供されるため削除
@@ -834,7 +1092,20 @@ const Map = ({
     }
 
     if (polygonFeature) {
-      onPolygonSelect?.(polygonFeature.properties.id)
+      const polygonId = polygonFeature.properties.id
+      onPolygonSelect?.(polygonId)
+      // クリックでポリゴンツールチップを即時表示
+      const polygon = polygons.find(p => p.id === polygonId)
+      if (polygon) {
+        const area = turf.area(polygon.geometry)
+        const waypointCount = waypoints.filter(wp => wp.polygonId === polygon.id).length
+        setTooltip({
+          isVisible: true,
+          position: { x: e.originalEvent.clientX, y: e.originalEvent.clientY },
+          data: { ...polygon, area, waypointCount },
+          type: 'polygon'
+        })
+      }
       return
     }
 
@@ -1592,6 +1863,8 @@ const Map = ({
           if (!isSelecting) {
             handlePolygonHover(e)
           }
+          // 全レイヤーツールチップ（DID + 施設）
+          handleMapHoverTooltip(e)
         }}
         onMouseUp={selectionHandlers.onMouseUp}
         onMouseLeave={handlePolygonHoverEnd}
@@ -2136,6 +2409,16 @@ const Map = ({
                         if (editingPolygon) return
                         e.originalEvent.stopPropagation()
                         onWaypointClick?.(wp)
+                        // クリックでツールチップを即時表示
+                        if (!drawMode) {
+                          const restrictions = getWaypointAirspaceRestrictions(wp)
+                          setTooltip({
+                            isVisible: true,
+                            position: { x: e.originalEvent.clientX, y: e.originalEvent.clientY },
+                            data: { ...wp, airspaceRestrictions: restrictions },
+                            type: 'waypoint'
+                          })
+                        }
                     }}
                 >
                     <div
@@ -2205,25 +2488,10 @@ const Map = ({
           toggleLayer={toggleLayer}
           toggleAirportOverlay={toggleAirportOverlay}
           toggleGroupLayers={toggleGroupLayers}
-          toggle3D={toggle3D}
           favoriteGroups={favoriteGroups}
           toggleFavoriteGroup={toggleFavoriteGroup}
-          showCrosshair={showCrosshair}
-          setShowCrosshair={setShowCrosshair}
-          crosshairDesign={crosshairDesign}
-          setCrosshairDesign={setCrosshairDesign}
-          crosshairColor={crosshairColor}
-          setCrosshairColor={setCrosshairColor}
-          crosshairClickMode={crosshairClickMode}
-          setCrosshairClickMode={setCrosshairClickMode}
-          coordinateFormat={coordinateFormat}
-          setCoordinateFormat={setCoordinateFormat}
-          mapStyleId={mapStyleId}
-          setMapStyleId={setMapStyleId}
           isMobile={isMobile}
           mobileControlsExpanded={mobileControlsExpanded}
-          showStylePicker={showStylePicker}
-          setShowStylePicker={setShowStylePicker}
         />
       </div>
 

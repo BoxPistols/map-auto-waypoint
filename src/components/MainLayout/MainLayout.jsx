@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download } from 'lucide-react'
-import { getSetting, isDIDAvoidanceModeEnabled, getWaypointNumberingMode } from '../../services/settingsService'
+import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download, Box, Rotate3D, Crosshair, Satellite } from 'lucide-react'
+import { getSetting, setSetting, isDIDAvoidanceModeEnabled, getWaypointNumberingMode } from '../../services/settingsService'
+import { MAP_STYLES, CROSSHAIR_DESIGNS, CROSSHAIR_COLORS, COORDINATE_FORMATS } from '../Map/mapConstants'
 import { getDetailedCollisionResults, getDetailedCollisionResultsWithRestrictionSurfaces, checkWaypointsRestrictionSurfaces, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
 import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
 import MapComponent from '../Map/Map'
@@ -152,6 +153,45 @@ function MainLayout() {
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
   const [panelHeight, setPanelHeight] = useState(null) // null = auto
   const [isSearchExpanded, setIsSearchExpanded] = useState(true)
+  const [isMapQuickControlsExpanded, setIsMapQuickControlsExpanded] = useState(true)
+
+  // Map quick controls state (sidebar に表示、デフォルトOFF)
+  // settingsService 経由で永続化
+  const [showDIDTooltip, setShowDIDTooltip] = useState(() => getSetting('showMapHoverTooltip') ?? false)
+  const [didTooltipAutoFade, setDidTooltipAutoFade] = useState(() => getSetting('mapHoverTooltipAutoFade') ?? true)
+
+  useEffect(() => {
+    setSetting('showMapHoverTooltip', showDIDTooltip)
+  }, [showDIDTooltip])
+
+  useEffect(() => {
+    setSetting('mapHoverTooltipAutoFade', didTooltipAutoFade)
+  }, [didTooltipAutoFade])
+
+  // Map側から同期される制御API（3D、Crosshair、MapStyle）
+  // Map.jsx内部のhook状態をsidebarから操作するためのブリッジ
+  const [mapControlsState, setMapControlsState] = useState({
+    is3D: false,
+    showCrosshair: false,
+    crosshairDesign: 'square',
+    crosshairColor: '#e53935',
+    crosshairClickMode: true,
+    coordinateFormat: 'dms',
+    mapStyleId: 'osm',
+  })
+  const mapControlsActionsRef = useRef({
+    toggle3D: () => {},
+    setShowCrosshair: () => {},
+    setCrosshairDesign: () => {},
+    setCrosshairColor: () => {},
+    setCrosshairClickMode: () => {},
+    setCoordinateFormat: () => {},
+    setMapStyleId: () => {},
+  })
+  const handleMapControlsReady = useCallback((api) => {
+    mapControlsActionsRef.current = api.actions
+    setMapControlsState(api.state)
+  }, [])
   // Mobile detection
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
   const [fullMapMode, setFullMapMode] = useState(false)
@@ -1384,6 +1424,169 @@ function MainLayout() {
                 )}
               </div>
 
+              {/* Map Quick Controls - 地図操作のミニマムコントローラー */}
+              <div className={`map-quick-controls ${!isMapQuickControlsExpanded ? 'collapsed' : ''}`}>
+                <button
+                  type="button"
+                  className="map-quick-controls-header"
+                  onClick={() => setIsMapQuickControlsExpanded(v => !v)}
+                  aria-expanded={isMapQuickControlsExpanded}
+                  aria-controls="map-quick-controls-content"
+                >
+                  <div className="map-quick-controls-title">
+                    <MapIcon size={14} />
+                    <span>地図操作</span>
+                  </div>
+                  <ChevronDown
+                    size={16}
+                    className={`map-quick-controls-chevron ${isMapQuickControlsExpanded ? 'expanded' : ''}`}
+                  />
+                </button>
+                {isMapQuickControlsExpanded && (
+                  <div id="map-quick-controls-content" className="map-quick-controls-content">
+                    {/* ツールチップセクション */}
+                    <div className="map-quick-controls-section">
+                      <div className="map-quick-controls-section-label">情報表示</div>
+                      <label
+                        className="map-quick-control-item"
+                        data-tooltip="ホバーで施設情報を表示 [T]"
+                        data-tooltip-pos="right"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={showDIDTooltip}
+                          onChange={(e) => setShowDIDTooltip(e.target.checked)}
+                        />
+                        <span>ツールチップ</span>
+                        <kbd>T</kbd>
+                      </label>
+                      <label
+                        className="map-quick-control-item"
+                        data-tooltip="オフにするとマウスを離すまで表示し続けます"
+                        data-tooltip-pos="right"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={didTooltipAutoFade}
+                          onChange={(e) => setDidTooltipAutoFade(e.target.checked)}
+                          disabled={!showDIDTooltip}
+                        />
+                        <span>自動で消える</span>
+                      </label>
+                      <p className="map-quick-controls-desc-note">
+                        対象：危険・制限エリア（DID／空港／禁止区域 等）のみ
+                      </p>
+                    </div>
+
+                    {/* ビューセクション */}
+                    <div className="map-quick-controls-section">
+                      <div className="map-quick-controls-section-label">ビュー</div>
+                      <button
+                        type="button"
+                        className={`map-quick-control-button ${mapControlsState.is3D ? 'active' : ''}`}
+                        onClick={() => mapControlsActionsRef.current.toggle3D()}
+                        data-tooltip={mapControlsState.is3D ? '平面表示に切り替え [3]' : '立体表示に切り替え [3]'}
+                        data-tooltip-pos="right"
+                      >
+                        {mapControlsState.is3D ? <Box size={14} /> : <Rotate3D size={14} />}
+                        <span>{mapControlsState.is3D ? '3D 表示中' : '3D'}</span>
+                        <kbd>3</kbd>
+                      </button>
+                    </div>
+
+                    {/* 中心十字セクション */}
+                    <div className="map-quick-controls-section">
+                      <div className="map-quick-controls-section-label">中心十字</div>
+                      <label
+                        className="map-quick-control-item"
+                        data-tooltip="地図中心に十字線を表示 [X]"
+                        data-tooltip-pos="right"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={mapControlsState.showCrosshair}
+                          onChange={(e) => mapControlsActionsRef.current.setShowCrosshair(e.target.checked)}
+                        />
+                        <span>表示</span>
+                        <kbd>X</kbd>
+                      </label>
+                      {mapControlsState.showCrosshair && (
+                        <>
+                          <div className="map-quick-controls-row">
+                            <select
+                              className="map-quick-controls-select"
+                              value={mapControlsState.crosshairDesign}
+                              onChange={(e) => mapControlsActionsRef.current.setCrosshairDesign(e.target.value)}
+                            >
+                              {CROSSHAIR_DESIGNS.map(d => (
+                                <option key={d.id} value={d.id}>{d.icon} {d.label}</option>
+                              ))}
+                            </select>
+                            <select
+                              className="map-quick-controls-select"
+                              value={mapControlsState.crosshairColor}
+                              onChange={(e) => mapControlsActionsRef.current.setCrosshairColor(e.target.value)}
+                            >
+                              {CROSSHAIR_COLORS.map(c => (
+                                <option key={c.id} value={c.id}>{c.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <label className="map-quick-control-item">
+                            <input
+                              type="checkbox"
+                              checked={mapControlsState.crosshairClickMode}
+                              onChange={(e) => mapControlsActionsRef.current.setCrosshairClickMode(e.target.checked)}
+                            />
+                            <span>クリックで座標</span>
+                          </label>
+                          <div className="map-quick-controls-row">
+                            <select
+                              className="map-quick-controls-select full-width"
+                              value={mapControlsState.coordinateFormat}
+                              onChange={(e) => mapControlsActionsRef.current.setCoordinateFormat(e.target.value)}
+                              disabled={!mapControlsState.crosshairClickMode}
+                            >
+                              {COORDINATE_FORMATS.map(f => (
+                                <option key={f.id} value={f.id}>座標形式: {f.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* 地図スタイルセクション */}
+                    <div className="map-quick-controls-section">
+                      <div className="map-quick-controls-section-label">
+                        <span>地図スタイル</span>
+                        <kbd data-tooltip="Mで次へ / Shift+Mで前へ" data-tooltip-pos="top">M</kbd>
+                      </div>
+                      <div className="map-quick-controls-style-grid">
+                        {Object.keys(MAP_STYLES).map(key => {
+                          const style = MAP_STYLES[key]
+                          const isActive = mapControlsState.mapStyleId === key
+                          return (
+                            <button
+                              key={key}
+                              type="button"
+                              className={`map-quick-controls-style-btn ${isActive ? 'active' : ''}`}
+                              onClick={() => mapControlsActionsRef.current.setMapStyleId(key)}
+                              data-tooltip={style.name}
+                              data-tooltip-pos="top"
+                            >
+                              {key === 'gsi_photo' && <Satellite size={12} />}
+                              {key !== 'gsi_photo' && <MapIcon size={12} />}
+                              <span>{style.shortName}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="panel-tabs">
                 <button
                   className={`tab ${activePanel === 'polygons' ? 'active' : ''}`}
@@ -1475,6 +1678,10 @@ function MainLayout() {
             selectedPolygonId={selectedPolygonId}
             editingPolygon={editingPolygon}
             drawMode={drawMode}
+            showDIDTooltip={showDIDTooltip}
+            onShowDIDTooltipChange={setShowDIDTooltip}
+            didTooltipAutoFade={didTooltipAutoFade}
+            onMapControlsReady={handleMapControlsReady}
           />
 
           {/* Draw mode hint */}

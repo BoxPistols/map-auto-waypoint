@@ -142,7 +142,7 @@ const WaypointList = ({
             className={`${styles.iconButton} ${styles.routeButton}`}
             onClick={onOpenRouteOptimizer}
             disabled={waypoints.length < 2}
-            data-tooltip="ルート最適化"
+            data-tooltip="ルート最適化 (ベータ版)"
             data-tooltip-pos="bottom"
           >
             <Route size={16} />

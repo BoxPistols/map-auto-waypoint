@@ -351,6 +351,307 @@ body {
   transition: opacity 0.2s ease;
 }
 
+// Map Quick Controls - サイドバー内の地図クイックコントローラー
+.map-quick-controls {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+
+  &-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    user-select: none;
+    text-align: left;
+    transition: background-color 0.15s;
+
+    &:hover {
+      background: var(--color-bg-tertiary);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: -2px;
+    }
+  }
+
+  &-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &-chevron {
+    color: var(--color-text-tertiary);
+    transition: transform 0.2s;
+
+    &.expanded {
+      transform: rotate(180deg);
+    }
+  }
+
+  &-content {
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px 10px;
+  }
+
+  &-section {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 0;
+
+    & + & {
+      border-top: 1px solid var(--color-border);
+    }
+
+    &:first-child {
+      padding-top: 4px;
+    }
+
+    &:last-child {
+      padding-bottom: 2px;
+    }
+  }
+
+  &-section-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+    padding: 0 2px;
+
+    kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      font-size: 10px;
+      font-weight: 600;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--color-text-secondary);
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 3px;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: 0;
+      cursor: help;
+    }
+  }
+
+  &-desc-note {
+    margin: 4px 2px 0;
+    font-size: 10.5px;
+    line-height: 1.5;
+    color: var(--color-text-tertiary);
+
+    &::before {
+      content: '— ';
+      opacity: 0.6;
+    }
+  }
+
+  &-row {
+    display: flex;
+    gap: 4px;
+    padding: 2px;
+  }
+
+  &-select {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 6px;
+    font-size: 11px;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &.full-width {
+      width: 100%;
+    }
+  }
+
+  &-style-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 2px;
+  }
+
+  &-style-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 4px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 10px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover {
+      border-color: var(--color-primary);
+      color: var(--color-text);
+    }
+
+    &.active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: #fff;
+    }
+
+    svg {
+      opacity: 0.8;
+    }
+  }
+}
+
+.map-quick-control-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
+
+  &:hover {
+    background: var(--color-bg-tertiary);
+    border-color: var(--color-primary);
+  }
+
+  &.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+
+    kbd {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  svg {
+    flex-shrink: 0;
+  }
+
+  span {
+    flex: 1;
+  }
+
+  kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--color-text-secondary);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    line-height: 1;
+  }
+}
+
+.map-quick-control-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  user-select: none;
+
+  &:hover:not(:has(input:disabled)) {
+    background: var(--color-bg-tertiary);
+  }
+
+  input[type='checkbox'] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--color-primary);
+    flex-shrink: 0;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  &:has(input:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  span {
+    flex: 1;
+  }
+
+  kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--color-text-secondary);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    line-height: 1;
+  }
+}
+
 .panel-tabs {
   display: flex;
   border-bottom: 1px solid var(--color-border);
@@ -1304,6 +1605,105 @@ body {
 
     span {
       font-size: 12px;
+    }
+  }
+}
+
+// ========================================
+// DIDツールチップPopupスタイル（DIDinJapan準拠）
+// maplibregl.Popup はReactの外なのでグローバルCSSで定義
+// ========================================
+.did-tooltip-popup {
+  .maplibregl-popup-content {
+    background: rgba(20, 20, 30, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+    color: #fff;
+    font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 13px;
+  }
+
+  .maplibregl-popup-tip {
+    border-top-color: rgba(20, 20, 30, 0.95);
+  }
+}
+
+.did-popup {
+  padding: 10px 14px;
+}
+
+.did-popup-header {
+  font-size: 15px;
+  font-weight: 700;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.did-popup-pref {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+
+.did-popup-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.did-popup-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  line-height: 1.6;
+
+  span {
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+  }
+
+  strong {
+    color: #fff;
+    font-weight: 600;
+    text-align: right;
+  }
+}
+
+// ライトテーマ対応
+:root[data-theme='light'] {
+  .did-tooltip-popup {
+    .maplibregl-popup-content {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(0, 0, 0, 0.1);
+      color: #1a1a1a;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .maplibregl-popup-tip {
+      border-top-color: rgba(255, 255, 255, 0.95);
+    }
+  }
+
+  .did-popup-header {
+    color: #1a1a1a;
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .did-popup-row {
+    span {
+      color: rgba(0, 0, 0, 0.6);
+    }
+
+    strong {
+      color: #1a1a1a;
     }
   }
 }
