@@ -188,7 +188,7 @@
 
 .groups {
   flex: 1;
-  overflow-y: auto;
+  // overflow-y は親 .panel-content で管理（ダブルスクロール回避）
 }
 
 .group {

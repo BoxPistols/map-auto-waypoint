@@ -305,6 +305,7 @@ body {
 }
 
 .search-section {
+  flex-shrink: 0;
   border-bottom: 1px solid var(--color-border);
 
   &.collapsed {
@@ -353,6 +354,7 @@ body {
 
 // Map Quick Controls - サイドバー内の地図クイックコントローラー
 .map-quick-controls {
+  flex-shrink: 0;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
 
@@ -653,6 +655,7 @@ body {
 }
 
 .panel-tabs {
+  flex-shrink: 0;
   display: flex;
   border-bottom: 1px solid var(--color-border);
 }
