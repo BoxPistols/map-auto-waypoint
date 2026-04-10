@@ -152,8 +152,21 @@ function MainLayout() {
   const [drawMode, setDrawMode] = useState(false)
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
   const [panelHeight, setPanelHeight] = useState(null) // null = auto
-  const [isSearchExpanded, setIsSearchExpanded] = useState(true)
-  const [isMapQuickControlsExpanded, setIsMapQuickControlsExpanded] = useState(true)
+  // サイドバーセクションの開閉状態を localStorage に永続化
+  const [isSearchExpanded, setIsSearchExpanded] = useState(
+    () => getSetting('sidebarSearchExpanded') ?? true
+  )
+  const [isMapQuickControlsExpanded, setIsMapQuickControlsExpanded] = useState(
+    () => getSetting('sidebarMapControlsExpanded') ?? true
+  )
+
+  useEffect(() => {
+    setSetting('sidebarSearchExpanded', isSearchExpanded)
+  }, [isSearchExpanded])
+
+  useEffect(() => {
+    setSetting('sidebarMapControlsExpanded', isMapQuickControlsExpanded)
+  }, [isMapQuickControlsExpanded])
 
   // Map quick controls state (sidebar に表示、デフォルトOFF)
   // settingsService 経由で永続化

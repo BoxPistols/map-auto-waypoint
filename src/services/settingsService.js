@@ -25,6 +25,10 @@ const DEFAULT_SETTINGS = {
   showMapHoverTooltip: false,
   // ツールチップ自動消去（オフならホバー継続中は表示し続ける）
   mapHoverTooltipAutoFade: true,
+  // サイドバー「住所検索」セクションの開閉状態（永続化）
+  sidebarSearchExpanded: true,
+  // サイドバー「地図操作」セクションの開閉状態（永続化）
+  sidebarMapControlsExpanded: true,
 };
 
 /**
