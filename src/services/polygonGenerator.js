@@ -101,6 +101,31 @@ export const POLYGON_SHAPE_OPTIONS = [
   { value: 'circle', label: '円形' }
 ]
 
+/**
+ * boundingBoxから中心座標と包含円半径を計算
+ * 円形ポリゴン生成時に、boundingBox全体を包含する円を作るためのヘルパー
+ *
+ * @param {Array<number>} boundingBox - [south, north, west, east]
+ * @returns {{ centerLat: number, centerLng: number, radiusMeters: number } | null}
+ */
+const computeCircleFromBoundingBox = (boundingBox) => {
+  if (!boundingBox || boundingBox.length !== 4) return null
+
+  const [south, north, west, east] = boundingBox.map(Number)
+  if ([south, north, west, east].some(Number.isNaN)) return null
+
+  const centerLat = (south + north) / 2
+  const centerLng = (west + east) / 2
+
+  // 中心からbboxの隅までの距離（=対角線の半分）を半径にすることで、
+  // 矩形全体を包含する円になる
+  const center = turf.point([centerLng, centerLat])
+  const corner = turf.point([east, north])
+  const radiusMeters = turf.distance(center, corner, { units: 'meters' })
+
+  return { centerLat, centerLng, radiusMeters }
+}
+
 export const createPolygonFromSearchResult = (searchResult, options = {}) => {
   if (!searchResult) return null
   const shape = options.shape || 'rectangle'
@@ -116,11 +141,26 @@ export const createPolygonFromSearchResult = (searchResult, options = {}) => {
     ? (typeof customRadius === 'number' ? customRadius : SIZE_PRESETS.medium)
     : (SIZE_PRESETS[sizePreset] || SIZE_PRESETS.medium)
 
-  // 円形指定時はboundingBoxを使わず、中心点から円形ポリゴンを生成
-  // （boundingBoxは矩形のみに適用）
+  // boundingBoxが利用可能な場合の矩形/円形サイズ計算
+  // - 矩形: boundingBox全体を使用（従来通り）
+  // - 円形: boundingBoxを包含する円を生成（以前の矩形サイズと同等）
+  // カスタムサイズ指定時は常に指定半径を使用
   let geometry = null
-  if (shape === 'rectangle' && searchResult.boundingBox && !useCustomSize) {
-    geometry = generateFromBoundingBox(searchResult.boundingBox, padding)
+  if (searchResult.boundingBox && !useCustomSize) {
+    if (shape === 'rectangle') {
+      geometry = generateFromBoundingBox(searchResult.boundingBox, padding)
+    } else if (shape === 'circle') {
+      const circleParams = computeCircleFromBoundingBox(searchResult.boundingBox)
+      if (circleParams) {
+        // bboxが極端に小さい場合（単一座標等）はプリセット半径にフォールバック
+        const effectiveRadius = Math.max(circleParams.radiusMeters, radius)
+        geometry = generateCirclePolygon(
+          circleParams.centerLat,
+          circleParams.centerLng,
+          effectiveRadius
+        )
+      }
+    }
   }
 
   if (!geometry) {
