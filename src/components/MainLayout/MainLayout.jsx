@@ -1678,7 +1678,6 @@ function MainLayout() {
             showDIDTooltip={showDIDTooltip}
             onShowDIDTooltipChange={setShowDIDTooltip}
             didTooltipAutoFade={didTooltipAutoFade}
-            onDidTooltipAutoFadeChange={setDidTooltipAutoFade}
             onMapControlsReady={handleMapControlsReady}
           />
 

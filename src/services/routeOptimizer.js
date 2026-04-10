@@ -484,11 +484,6 @@ export const optimizeRoute = async (waypoints, options = {}) => {
     flights.push(...clusterFlights)
   }
 
-  // routeIndices: orderedWaypoints の元waypoints配列内インデックス
-  // O(n) で構築（findIndex の O(n²) を回避）
-  const idToIndex = new Map(waypoints.map((wp, i) => [wp.id, i]))
-  const routeIndices = orderedWaypoints.map((wp) => idToIndex.get(wp.id) ?? -1)
-
   // 7. 各フライトに追加情報を付与
   const processedFlights = flights.map((flight, idx) => ({
     flightNumber: idx + 1,

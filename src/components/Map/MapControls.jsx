@@ -4,7 +4,7 @@
  * 地図レイヤーコントロールパネル
  */
 
-import { Layers, Users, ShieldAlert, Plane, CloudRain, Signal, Building2, Zap, Building, Shield, Lock, Target, Landmark, AlertTriangle, Radio, MapPinned, Wind, Wifi } from 'lucide-react'
+import { Layers, Users, ShieldAlert, Plane, CloudRain, Signal, Building2, Zap, Building, Shield, Lock, Target, Landmark, AlertTriangle, Radio, MapPinned, Map as MapIcon, Wind, Wifi } from 'lucide-react'
 import ControlGroup from './ControlGroup'
 import styles from './Map.module.scss'
 

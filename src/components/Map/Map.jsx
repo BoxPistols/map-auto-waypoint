@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import { useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer, AttributionControl } from 'react-map-gl/maplibre'
 import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair, Signal, Zap, Building, Shield, Lock, Target, Star } from 'lucide-react'
 import * as turf from '@turf/turf'
@@ -95,7 +95,6 @@ const Map = ({
   showDIDTooltip: externalShowDIDTooltip,
   onShowDIDTooltipChange,
   didTooltipAutoFade: externalDidTooltipAutoFade,
-  onDidTooltipAutoFadeChange,
   onMapControlsReady
 }) => {
   const mapRef = useRef(null)
