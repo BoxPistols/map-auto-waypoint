@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { ChevronDown, Search, Undo2, Redo2, Map as MapIcon, Layers, Settings, Sun, Moon, Menu, Route, Maximize2, Minimize2, X, Download, Box, Rotate3D, Crosshair, Satellite } from 'lucide-react'
-import { getSetting, setSetting, isDIDAvoidanceModeEnabled, getWaypointNumberingMode } from '../../services/settingsService'
+import { getSetting, saveSettings, isDIDAvoidanceModeEnabled, getWaypointNumberingMode } from '../../services/settingsService'
 import { MAP_STYLES, CROSSHAIR_DESIGNS, CROSSHAIR_COLORS, COORDINATE_FORMATS } from '../Map/mapConstants'
 import { getDetailedCollisionResults, getDetailedCollisionResultsWithRestrictionSurfaces, checkWaypointsRestrictionSurfaces, checkAllWaypointsDID, checkAllPolygonsCollision } from '../../services/riskService'
 import { preloadDIDDataForCoordinates, isAllDIDCacheReady } from '../../services/didService'
@@ -153,33 +153,47 @@ function MainLayout() {
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
   const [panelHeight, setPanelHeight] = useState(null) // null = auto
   // サイドバーセクションの開閉状態を localStorage に永続化
+  // デフォルト値は settingsService.js の DEFAULT_SETTINGS で管理
   const [isSearchExpanded, setIsSearchExpanded] = useState(
-    () => getSetting('sidebarSearchExpanded') ?? true
+    () => getSetting('sidebarSearchExpanded')
   )
   const [isMapQuickControlsExpanded, setIsMapQuickControlsExpanded] = useState(
-    () => getSetting('sidebarMapControlsExpanded') ?? true
+    () => getSetting('sidebarMapControlsExpanded')
   )
 
+  // 初回マウント時の不要な書き込みを回避するためのフラグ
+  const sidebarSettingsInitializedRef = useRef(false)
   useEffect(() => {
-    setSetting('sidebarSearchExpanded', isSearchExpanded)
-  }, [isSearchExpanded])
-
-  useEffect(() => {
-    setSetting('sidebarMapControlsExpanded', isMapQuickControlsExpanded)
-  }, [isMapQuickControlsExpanded])
+    // 初回レンダリング時は state を localStorage から読み込んだ直後なので
+    // 書き戻し不要（I/O 削減）
+    if (!sidebarSettingsInitializedRef.current) {
+      sidebarSettingsInitializedRef.current = true
+      return
+    }
+    // 両方の設定をまとめて保存（個別に保存するとそれぞれで全体書き込みが発生するため）
+    saveSettings({
+      sidebarSearchExpanded: isSearchExpanded,
+      sidebarMapControlsExpanded: isMapQuickControlsExpanded,
+    })
+  }, [isSearchExpanded, isMapQuickControlsExpanded])
 
   // Map quick controls state (sidebar に表示、デフォルトOFF)
   // settingsService 経由で永続化
   const [showDIDTooltip, setShowDIDTooltip] = useState(() => getSetting('showMapHoverTooltip') ?? false)
   const [didTooltipAutoFade, setDidTooltipAutoFade] = useState(() => getSetting('mapHoverTooltipAutoFade') ?? true)
 
+  // ツールチップ設定もまとめて保存 + 初回スキップで不要な I/O 回避
+  const tooltipSettingsInitializedRef = useRef(false)
   useEffect(() => {
-    setSetting('showMapHoverTooltip', showDIDTooltip)
-  }, [showDIDTooltip])
-
-  useEffect(() => {
-    setSetting('mapHoverTooltipAutoFade', didTooltipAutoFade)
-  }, [didTooltipAutoFade])
+    if (!tooltipSettingsInitializedRef.current) {
+      tooltipSettingsInitializedRef.current = true
+      return
+    }
+    saveSettings({
+      showMapHoverTooltip: showDIDTooltip,
+      mapHoverTooltipAutoFade: didTooltipAutoFade,
+    })
+  }, [showDIDTooltip, didTooltipAutoFade])
 
   // Map側から同期される制御API（3D、Crosshair、MapStyle）
   // Map.jsx内部のhook状態をsidebarから操作するためのブリッジ
