@@ -1418,6 +1418,13 @@ function MainLayout() {
                 </button>
                 {isMapQuickControlsExpanded && (
                   <div id="map-quick-controls-content" className="map-quick-controls-content">
+                    <p className="map-quick-controls-desc">
+                      飛行制限エリア（DID・空港・禁止区域など）上にマウスを乗せると、施設情報をポップアップ表示します。
+                      <br />
+                      <span className="map-quick-controls-note">
+                        ※ 危険・制限エリアのみ対象
+                      </span>
+                    </p>
                     <label
                       className="map-quick-control-item"
                       data-tooltip="ホバーで施設情報を表示 [T]"

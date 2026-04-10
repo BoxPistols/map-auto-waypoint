@@ -407,6 +407,24 @@ body {
     gap: 6px;
     padding: 4px 16px 12px;
   }
+
+  &-desc {
+    margin: 0 0 6px;
+    padding: 8px 10px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+    background: var(--color-bg);
+    border-radius: 6px;
+    border-left: 2px solid var(--color-primary);
+  }
+
+  &-note {
+    display: inline-block;
+    margin-top: 4px;
+    color: var(--color-warning, #f59e0b);
+    font-weight: 500;
+  }
 }
 
 .map-quick-control-item {
