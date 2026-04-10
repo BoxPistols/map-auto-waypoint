@@ -105,6 +105,38 @@
     }
   }
 
+  &__blocked-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    margin: 0 0 16px;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    color: var(--text-primary, #1f2937);
+
+    svg {
+      flex-shrink: 0;
+      color: #ef4444;
+      margin-top: 1px;
+    }
+
+    strong {
+      display: block;
+      font-size: 13px;
+      color: #dc2626;
+      margin-bottom: 4px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--text-secondary, #6b7280);
+    }
+  }
+
   &__cluster-notice {
     display: flex;
     align-items: flex-start;

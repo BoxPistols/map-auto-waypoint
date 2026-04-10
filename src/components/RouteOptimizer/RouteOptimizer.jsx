@@ -143,12 +143,22 @@ const RouteOptimizer = ({
     }
   }, [selectedDroneId, waypoints, homePointMode, customHomePoint, options]);
 
+  // FIXME: ルート最適化の結果適用は現在無効化中
+  // TODO: 以下の既知バグを修正後に再度有効化する
+  //   1. 遠距離拠点（北海道↔本州等）のクラスタリング閾値調整
+  //   2. 既存Waypointの順序上書き時のUndo対応
+  //   3. フライト分割時の実際のルート経路可視化
+  // 詳細: PR #64 のレビューコメント / issue 参照
+  // 現時点ではダイアログの進行のみ可能で、「適用」ボタンは無効化されている
   const handleApply = useCallback(() => {
-    if (optimizationResult && onApplyRoute) {
-      onApplyRoute(optimizationResult);
-      onClose();
+    // 実装を意図的にブロック — ユーザーがこの機能に誤った期待を持たないようにするため
+    // onApplyRoute(optimizationResult) は呼ばない
+    if (import.meta.env.DEV) {
+      console.warn('[RouteOptimizer] 適用機能は現在無効化されています (WIP)', {
+        optimizationResult,
+      })
     }
-  }, [optimizationResult, onApplyRoute, onClose]);
+  }, [optimizationResult]);
 
   const handleReset = useCallback(() => {
     setStep(1);
@@ -397,7 +407,19 @@ const RouteOptimizer = ({
           {/* Step 4: 結果表示 */}
           {step === 4 && optimizationResult && (
             <div className="route-optimizer__step-content">
-              <h3>最適化結果</h3>
+              <h3>最適化結果（プレビュー）</h3>
+
+              {/* 適用ブロック告知 */}
+              <div className="route-optimizer__blocked-notice">
+                <AlertTriangle size={18} />
+                <div>
+                  <strong>この結果はまだ反映されません</strong>
+                  <p>
+                    本機能は構想段階のため、「ルートを適用」ボタンは現在無効化されています。
+                    計算結果のプレビューのみ表示され、Waypoint や Polygon には影響しません。
+                  </p>
+                </div>
+              </div>
 
               {/* サマリー */}
               <div className="route-optimizer__summary">
@@ -608,8 +630,10 @@ const RouteOptimizer = ({
               <button
                 className="route-optimizer__btn route-optimizer__btn--primary"
                 onClick={handleApply}
+                disabled
+                title="現在このボタンは無効化されています（構想段階のため）"
               >
-                <CheckCircle size={16} /> ルートを適用
+                <CheckCircle size={16} /> ルートを適用（準備中）
               </button>
             </>
           )}
