@@ -408,9 +408,12 @@ function MainLayout() {
 
           const sortedWaypoints = [...polygonWaypoints].sort((a, b) => a.index - b.index)
 
-          for (let i = 0; i < sortedWaypoints.length - 1; i++) {
+          // ポリゴン由来のWaypointは閉じたループを形成するため、
+          // 最後のWP→最初のWPのセグメントも含める（modulo で巻き戻し）
+          const n = sortedWaypoints.length
+          for (let i = 0; i < n; i++) {
             const wpFrom = sortedWaypoints[i]
-            const wpTo = sortedWaypoints[i + 1]
+            const wpTo = sortedWaypoints[(i + 1) % n]
             const flagsFrom = newFlags[wpFrom.id] || {}
             const flagsTo = newFlags[wpTo.id] || {}
 
