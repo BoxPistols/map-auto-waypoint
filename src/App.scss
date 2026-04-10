@@ -704,9 +704,16 @@ body {
 
 .panel-content {
   flex: 1;
+  min-width: 0; // flex子要素が内容で膨張するのを防ぐ
+  min-height: 100px;
+  // overflow-x: clip で横方向のはみ出しを封じ込める。
+  // ツールチップ(::before)は position: absolute で min-width: 120px を持つため
+  // 28pxのアクションボタンから両側にはみ出し、overflow-y: auto のみだと
+  // 横スクロールバーが発生していた。clip は hidden と違い overflow-y: auto と
+  // 併用しても auto に退行しないのでこの用途に最適。
+  overflow-x: clip;
   overflow-y: auto;
   position: relative;
-  min-height: 100px;
 }
 
 .resize-handle {
@@ -1061,6 +1068,7 @@ body {
     .panel-content {
       flex: 1;
       max-height: none;
+      overflow-x: clip;
       overflow-y: auto;
       padding-bottom: 80px; // 閉じるボタンのスペース
     }
