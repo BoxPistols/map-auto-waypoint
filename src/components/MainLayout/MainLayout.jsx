@@ -1558,7 +1558,10 @@ function MainLayout() {
 
                     {/* 地図スタイルセクション */}
                     <div className="map-quick-controls-section">
-                      <div className="map-quick-controls-section-label">地図スタイル</div>
+                      <div className="map-quick-controls-section-label">
+                        <span>地図スタイル</span>
+                        <kbd data-tooltip="Mで次へ / Shift+Mで前へ" data-tooltip-pos="top">M</kbd>
+                      </div>
                       <div className="map-quick-controls-style-grid">
                         {Object.keys(MAP_STYLES).map(key => {
                           const style = MAP_STYLES[key]
