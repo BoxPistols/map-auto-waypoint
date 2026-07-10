@@ -36,7 +36,7 @@
 
 他3モジュール（legal / risk / openai）と同じパターンを踏襲する:
 
-```
+```text
 src/services/route-planner/
 ├── _constants.js      # METERS_PER_DEGREE 等の定数
 ├── useCases.js         # USE_CASES, getUseCaseById
