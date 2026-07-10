@@ -53,14 +53,18 @@ map-auto-waypoint/
 │   │   ├── ExportPanel/     # Export functionality (JSON/CSV/NOTAM)
 │   │   ├── FacilityPopup/   # Facility details popup
 │   │   ├── FileImport/      # GeoJSON/KML import
-│   │   ├── FlightAssistant/ # AI chat assistant sidebar (1,367 lines)
+│   │   ├── FlightAssistant/ # AI chat assistant sidebar (1,367 lines) 🟡
 │   │   ├── FlightPlanner/   # Flight planning interface
 │   │   ├── FlightRequirements/ # Flight requirement checker
 │   │   ├── FocusCrosshair/  # Map center crosshair
 │   │   ├── GridSettingsDialog/ # Grid waypoint generation settings
 │   │   ├── HelpModal/       # Keyboard shortcuts help
-│   │   ├── MainLayout/      # Main layout wrapper (1,807 lines) ⚠️
-│   │   ├── Map/             # MapLibre map component (3,018 lines) 🔴
+│   │   ├── MainLayout/      # Main layout wrapper (495 lines, refactored ✅)
+│   │   │   ├── MainLayout.jsx           # Orchestrator component
+│   │   │   ├── components/              # AppHeader, AppSidebar, AppModals, MobileMapControls, NotificationBanner, DrawHints
+│   │   │   ├── hooks/                   # useWaypointOperations, usePolygonOperations, useCollisionDetection, useKeyboardShortcuts, etc.
+│   │   │   └── utils/                   # constants, mapZoom
+│   │   ├── Map/             # MapLibre map component (2,051 lines) 🔴 Phase 4 (描画ロジック分離)未実施
 │   │   │   ├── Map.jsx                  # Main map component
 │   │   │   ├── DrawControl.jsx          # Drawing controls
 │   │   │   ├── ControlGroup.jsx         # Layer control grouping
@@ -81,8 +85,14 @@ map-auto-waypoint/
 │   │   ├── elevation.js     # GSI elevation API integration
 │   │   ├── flightAnalyzer.js # Flight plan analysis (risk, optimization)
 │   │   ├── geocoding.js     # Nominatim address search
+│   │   ├── legalRequirements.js # 後方互換ファサード → legal/ に分割
+│   │   ├── legal/           # aviationLaw, smallUASLaw, landManager, procedures, externalLinks, integratedCheck
 │   │   ├── mcpClient.js     # MCP integration (mock implementation ready)
-│   │   ├── openaiService.js # OpenAI API wrapper (GPT-4.1/5 compatible)
+│   │   ├── openaiService.js # 後方互換ファサード → openai/ に分割
+│   │   ├── openai/          # client, prompts, models, config
+│   │   ├── riskService.js   # 後方互換ファサード → risk/ に分割
+│   │   ├── risk/            # airspaceCheck, didCheck, pathCollision, collisionDetails, analysis
+│   │   ├── routePlanner.js  # ルート生成（分割未着手、docs/ROUTE_PLANNER_REFACTORING_PLAN.md 参照）
 │   │   ├── weatherService.js # Weather data integration
 │   │   ├── polygonGenerator.js # Polygon creation from search results
 │   │   ├── settingsService.js # App settings management
@@ -100,6 +110,7 @@ map-auto-waypoint/
 ├── docs/                    # Additional documentation
 │   ├── MCP_INTEGRATION_VISION.md
 │   ├── OPENAI_GPT4_1_GPT5_INTEGRATION.md
+│   ├── ROUTE_PLANNER_REFACTORING_PLAN.md # routePlanner.js 分割計画（未着手）
 │   └── UTM_U_SPACE_DESIGN_PATTERNS.md
 │
 ├── public/                  # Static assets
@@ -422,11 +433,13 @@ Base URL: `/`
 ### Performance
 
 - ✅ `App.jsx` has been refactored (71 lines, lightweight)
-- 🔴 **`Map.jsx` is large (3,018 lines)** - priority refactoring candidate
-  - Consider splitting into: LayerControl, EventHandlers, RestrictionLayers, hooks
+- 🔴 **`Map.jsx` is large (2,051 lines, down from 3,018)** - Phase 1/2/3/5 complete, Phase 4（描画ロジック分離）未実施、priority refactoring candidate
+  - Consider splitting remaining draw logic into: `utils/mapDataTransformers.js`, `hooks/useMapOverlays.js`（詳細は `docs/MAP_REFACTORING_PLAN.md`）
   - Use Serena MCP tools for efficient symbol-level refactoring
-- 🟡 `MainLayout.jsx` is substantial (1,807 lines) - monitor for future splitting
-- 🟡 `FlightAssistant.jsx` is growing (1,367 lines) - consider modularization
+- ✅ `MainLayout.jsx` has been refactored (495 lines, down from 1,807) - split into `components/`, `hooks/`, `utils/`
+- 🟡 `FlightAssistant.jsx` is growing (1,367 lines) - consider modularization（次の分割候補）
+- 🟡 `routePlanner.js`（491 lines）- 分割着手も未完成、`docs/ROUTE_PLANNER_REFACTORING_PLAN.md` 参照
+- ✅ `legalRequirements.js` / `riskService.js` / `openaiService.js` は `legal/` / `risk/` / `openai/` にそれぞれ分割済み（後方互換ファサード）
 - Map operations can be expensive - use `useCallback` for handlers
 - Avoid unnecessary re-renders with proper memoization
 
@@ -462,5 +475,7 @@ Base URL: `/`
 - `docs/OPENAI_GPT4_GPT5_GENERAL_INTEGRATION.md` - General OpenAI integration notes
 - `docs/UTM_U_SPACE_DESIGN_PATTERNS.md` - UTM integration patterns (EU U-space)
 - `docs/RENDERING_PERFORMANCE.md` - Performance optimization strategies
+- `docs/MAP_REFACTORING_PLAN.md` - Map.jsx 分割計画（Phase 4 未実施）
+- `docs/ROUTE_PLANNER_REFACTORING_PLAN.md` - routePlanner.js 分割計画（未着手）
 - `.serena/project.yml` - Serena MCP configuration
 - Storybook: https://boxpistols.github.io/map-auto-waypoint/storybook/
