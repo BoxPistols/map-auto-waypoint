@@ -24,6 +24,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const [isPanelExpanded, setIsPanelExpanded] = useState(true)
   const inputRef = useRef(null)
   const suggestionsRef = useRef(null)
+  const isGeneratingRef = useRef(false)
 
   const debouncedSearch = useMemo(
     () =>
@@ -108,12 +109,19 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   }
 
   const handleGeneratePolygon = () => {
-    if (lastSearchResult && onGeneratePolygon) {
-      const options = useCustomSize
-        ? { customRadius, shape: selectedShape, waypointCount }
-        : { size: selectedSize, shape: selectedShape, waypointCount }
-      onGeneratePolygon(lastSearchResult, options)
-    }
+    if (!lastSearchResult || !onGeneratePolygon) return
+    if (isGeneratingRef.current) return
+    isGeneratingRef.current = true
+    const options = useCustomSize
+      ? { useCustomSize: true, customRadius, shape: selectedShape, waypointCount }
+      : { size: selectedSize, shape: selectedShape, waypointCount }
+    onGeneratePolygon(lastSearchResult, options)
+    // 生成完了後はパネルを閉じて検索欄もクリアする。
+    // 開いたままだと「押しても見た目が変わらない」ため、
+    // ユーザーが連打して意図せず複数生成してしまう誤操作を誘発していた。
+    setQuery('')
+    setLastSearchResult(null)
+    isGeneratingRef.current = false
   }
 
   const handleRadiusChange = (e) => {
@@ -266,6 +274,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
                       <button
                         key={option.value}
                         type="button"
+                        disabled={useCustomSize}
                         className={`${styles.shapeButton} ${
                           !useCustomSize && selectedSize === option.value
                             ? styles.active
@@ -294,7 +303,11 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
                   カスタムサイズを使用
                 </label>
                 <div className={styles.customSizeFields}>
-                  <div className={styles.customRadius}>
+                  <div
+                    className={`${styles.customRadius} ${
+                      !useCustomSize ? styles.disabledField : ''
+                    }`}
+                  >
                     <label>半径: {customRadius}m</label>
                     <input
                       type="range"
@@ -302,6 +315,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
                       max="300"
                       step="10"
                       value={customRadius}
+                      disabled={!useCustomSize}
                       onChange={handleRadiusChange}
                     />
                   </div>

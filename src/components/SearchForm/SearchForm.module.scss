@@ -137,6 +137,11 @@
     border-color: var(--color-primary);
     color: #fff;
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
 .customSizeControls {
@@ -164,6 +169,14 @@
   input[type='number'] {
     width: 70px;
     padding: 4px;
+  }
+}
+
+.disabledField {
+  opacity: 0.4;
+
+  input[type='range'] {
+    cursor: not-allowed;
   }
 }
 
