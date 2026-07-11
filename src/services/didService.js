@@ -176,13 +176,24 @@ const checkPointInDIDGeoJSON = (geojson, lat, lng) => {
         console.log(`[DID] DETECTED: lat=${lat.toFixed(6)}, lng=${lng.toFixed(6)} -> ${areaName}`);
       }
 
+      const props = feature.properties || {};
+      const population = props.JINKO || 0;
+      const menseki = props.MENSEKI || 0;
+      const density = menseki > 0 ? population / menseki : 0;
+
       return {
         isDID: true,
         area: areaName,
         certainty: 'confirmed',
         source: 'local/R02',
         description: `${areaName}のDID内`,
-        centroid
+        centroid,
+        // ツールチップ用詳細データ
+        population,
+        menseki,
+        density,
+        kenCode: props.KEN || '',
+        cityCode: props.CITY || '',
       };
     }
   }
@@ -219,7 +230,8 @@ export const checkDIDArea = async (lat, lng) => {
       if (geojson) {
         const result = checkPointInDIDGeoJSON(geojson, lat, lng);
         if (result) {
-          // Found in DID - return immediately
+          // Found in DID - return immediately with prefecture name
+          result.prefectureName = prefecture.nameJa;
           if (import.meta.env.DEV) {
             console.log(`[DID] ✓ DID検出: ${result.area} (${prefecture.nameJa})`);
           }

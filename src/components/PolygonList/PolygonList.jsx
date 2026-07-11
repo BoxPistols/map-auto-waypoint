@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Grid3X3, Pencil, Trash2, PenTool, Link2, Unlink2 } from 'lucide-react'
+import { MapPin, Grid3X3, Pencil, Trash2, PenTool, Link2, Unlink2, Database, Radio, RotateCcw, AlertTriangle } from 'lucide-react'
 import { calculatePolygonArea, calculatePolygonPerimeter, formatArea, formatDistance } from '../../services/waypointGenerator'
 import ConfirmDialog from '../ConfirmDialog/ConfirmDialog'
 import { useConfirmDialog } from '../../hooks/useConfirmDialog'
@@ -14,7 +14,10 @@ const PolygonList = ({
   onEditShape,
   onToggleWaypointLink,
   onGenerateWaypoints,
-  onGenerateAllWaypoints
+  onGenerateAllWaypoints,
+  onLoadExampleData,
+  onResetAll,
+  polygonConflicts = {}
 }) => {
   const [editingId, setEditingId] = useState(null)
   const [editingName, setEditingName] = useState('')
@@ -54,22 +57,59 @@ const PolygonList = ({
           描画モードを有効にして地図上でポリゴンを描画するか、<br />
           GeoJSON/KMLファイルをインポートしてください
         </p>
+        {onLoadExampleData && (
+          <button
+            className={styles.exampleButton}
+            onClick={onLoadExampleData}
+          >
+            <Database size={16} />
+            サンプルデータを読み込む
+          </button>
+        )}
       </div>
     )
   }
 
+  const ownCount = polygons.filter(p => !p.external).length
+  const externalCount = polygons.filter(p => p.external).length
+
   return (
     <div className={styles.polygonList}>
       <div className={styles.header}>
-        <span className={styles.count}>{polygons.length} エリア</span>
-        {polygons.length > 0 && (
-          <button
-            className={styles.generateAllButton}
-            onClick={() => onGenerateAllWaypoints?.()}
-          >
-            全てWaypoint生成
-          </button>
-        )}
+        <span className={styles.count}>
+          {ownCount} エリア{externalCount > 0 && <span className={styles.externalCount}> + {externalCount} 外部</span>}
+        </span>
+        <div className={styles.headerActions}>
+          {polygons.length > 0 && (
+            <button
+              className={styles.generateAllButton}
+              onClick={() => onGenerateAllWaypoints?.()}
+            >
+              全てWaypoint生成
+            </button>
+          )}
+          {polygons.length > 0 && onResetAll && (
+            <button
+              className={styles.resetButton}
+              onClick={async () => {
+                const confirmed = await showConfirm({
+                  title: 'すべてリセット',
+                  message: 'すべてのポリゴンとウェイポイントを削除しますか？',
+                  confirmText: 'リセット',
+                  cancelText: 'キャンセル',
+                  variant: 'danger'
+                })
+                if (confirmed) {
+                  onResetAll()
+                }
+              }}
+              data-tooltip="すべてリセット"
+              data-tooltip-pos="bottom"
+            >
+              <RotateCcw size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       <ul className={styles.list}>
@@ -82,74 +122,80 @@ const PolygonList = ({
           return (
             <li
               key={polygon.id}
-              className={`${styles.item} ${isSelected ? styles.selected : ''} ${isEditing ? styles.editing : ''}`}
+              className={`${styles.item} ${isSelected ? styles.selected : ''} ${isEditing ? styles.editing : ''} ${polygon.external ? styles.external : ''}`}
               onClick={() => !isEditing && onSelect?.(polygon)}
             >
               {/* Top row: color indicator + action buttons */}
               <div className={styles.topRow}>
-                <div className={styles.colorIndicator} style={{ backgroundColor: polygon.color }} />
+                <div className={styles.colorIndicator} style={{ backgroundColor: polygon.color }}>
+                  {polygon.external && <Radio size={10} />}
+                </div>
                 <div className={styles.actions}>
-                  <button
-                    className={styles.actionButton}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onEditShape?.(polygon)
-                    }}
-                    data-tooltip="形状を編集"
-                    data-tooltip-pos="bottom"
-                  >
-                    <PenTool size={14} />
-                  </button>
-                  <button
-                    className={`${styles.actionButton} ${polygon.waypointLinked !== false ? styles.linkedButton : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onToggleWaypointLink?.(polygon.id)
-                    }}
-                    data-tooltip={polygon.waypointLinked !== false ? 'Waypoint同期: ON' : 'Waypoint同期: OFF'}
-                    data-tooltip-pos="bottom"
-                  >
-                    {polygon.waypointLinked !== false ? <Link2 size={14} /> : <Unlink2 size={14} />}
-                  </button>
-                  <button
-                    className={styles.actionButton}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onGenerateWaypoints?.(polygon)
-                    }}
-                    data-tooltip="頂点Waypoint生成"
-                    data-tooltip-pos="bottom"
-                  >
-                    <MapPin size={14} />
-                  </button>
-                  <button
-                    className={styles.actionButton}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onGenerateWaypoints?.(polygon, { includeGrid: true })
-                    }}
-                    data-tooltip="グリッドWaypoint生成"
-                    data-tooltip-pos="bottom"
-                  >
-                    <Grid3X3 size={14} />
-                  </button>
-                  <button
-                    className={styles.actionButton}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleStartEdit(polygon)
-                    }}
-                    data-tooltip="名前を編集"
-                    data-tooltip-pos="bottom"
-                  >
-                    <Pencil size={14} />
-                  </button>
+                  {!polygon.external && (
+                    <>
+                      <button
+                        className={styles.actionButton}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEditShape?.(polygon)
+                        }}
+                        data-tooltip="形状を編集"
+                        data-tooltip-pos="bottom"
+                      >
+                        <PenTool size={14} />
+                      </button>
+                      <button
+                        className={`${styles.actionButton} ${polygon.waypointLinked !== false ? styles.linkedButton : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onToggleWaypointLink?.(polygon.id)
+                        }}
+                        data-tooltip={polygon.waypointLinked !== false ? 'Waypoint同期: ON' : 'Waypoint同期: OFF'}
+                        data-tooltip-pos="bottom"
+                      >
+                        {polygon.waypointLinked !== false ? <Link2 size={14} /> : <Unlink2 size={14} />}
+                      </button>
+                      <button
+                        className={styles.actionButton}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onGenerateWaypoints?.(polygon)
+                        }}
+                        data-tooltip="頂点Waypoint生成"
+                        data-tooltip-pos="bottom"
+                      >
+                        <MapPin size={14} />
+                      </button>
+                      <button
+                        className={styles.actionButton}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onGenerateWaypoints?.(polygon, { includeGrid: true })
+                        }}
+                        data-tooltip="グリッドWaypoint生成"
+                        data-tooltip-pos="bottom"
+                      >
+                        <Grid3X3 size={14} />
+                      </button>
+                      <button
+                        className={styles.actionButton}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleStartEdit(polygon)
+                        }}
+                        data-tooltip="名前を編集"
+                        data-tooltip-pos="bottom"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                    </>
+                  )}
                   <button
                     className={`${styles.actionButton} ${styles.deleteButton}`}
                     onClick={async (e) => {
                       e.stopPropagation()
                       const confirmed = await showConfirm({
-                        title: 'ポリゴンの削除',
+                        title: polygon.external ? '外部飛行計画の削除' : 'ポリゴンの削除',
                         message: `「${polygon.name}」を削除しますか？`,
                         confirmText: '削除',
                         cancelText: 'キャンセル',
@@ -166,6 +212,14 @@ const PolygonList = ({
                   </button>
                 </div>
               </div>
+
+              {/* External badge */}
+              {polygon.external && (
+                <div className={styles.externalBadge}>
+                  <Radio size={12} />
+                  他者の飛行計画{polygon.operator ? `（${polygon.operator}）` : ''}
+                </div>
+              )}
 
               {/* Content: name + stats */}
               <div className={styles.content}>
@@ -200,6 +254,24 @@ const PolygonList = ({
                   <span>周長: {formatDistance(perimeter)}</span>
                   <span>頂点: {polygon.geometry.coordinates[0].length - 1}</span>
                 </div>
+
+                {/* Conflict warning */}
+                {!polygon.external && polygonConflicts[polygon.id] && (
+                  <div className={`${styles.conflictWarning} ${polygonConflicts[polygon.id].some(h => h.severity === 'DANGER') ? styles.conflictDanger : ''}`}>
+                    <AlertTriangle size={13} />
+                    <div className={styles.conflictDetails}>
+                      <span className={styles.conflictTitle}>
+                        飛行エリア競合（{polygonConflicts[polygon.id].length}件）
+                      </span>
+                      {polygonConflicts[polygon.id].map((hit, i) => (
+                        <span key={i} className={styles.conflictItem}>
+                          {hit.severity === 'DANGER' ? '🔴' : '🟡'} {hit.operator || hit.externalName}：重複{hit.overlapRatio}%
+                          {hit.timeOverlap && ' ⏰時間重複'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </li>
           )

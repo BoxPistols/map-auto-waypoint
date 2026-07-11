@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import { useCallback, useRef, useEffect, useMemo } from 'react'
 import MapGL, { NavigationControl, ScaleControl, Marker, Source, Layer, AttributionControl } from 'react-map-gl/maplibre'
 import { Box, Rotate3D, Plane, ShieldAlert, Users, Map as MapIcon, Layers, Building2, Landmark, Satellite, Settings2, X, AlertTriangle, Radio, MapPinned, CloudRain, Wind, Wifi, Crosshair, Signal, Zap, Building, Shield, Lock, Target, Star } from 'lucide-react'
 import * as turf from '@turf/turf'
@@ -55,6 +55,7 @@ import {
   KOKUAREA_MAX_TILES
 } from '../../lib/services/restrictionSurfaces'
 import { loadMapSettings, saveMapSettings } from '../../utils/storage'
+import { checkDIDArea } from '../../services/didService'
 import styles from './Map.module.scss'
 
 // Default center: Tokyo Tower
@@ -90,7 +91,11 @@ const Map = ({
   onWaypointsBulkDelete,
   selectedPolygonId,
   editingPolygon = null,
-  drawMode = false
+  drawMode = false,
+  showDIDTooltip: externalShowDIDTooltip,
+  onShowDIDTooltipChange,
+  didTooltipAutoFade: externalDidTooltipAutoFade,
+  onMapControlsReady
 }) => {
   const mapRef = useRef(null)
 
@@ -112,8 +117,6 @@ const Map = ({
     setIsMapReady,
     mapStyleId,
     setMapStyleId,
-    showStylePicker,
-    setShowStylePicker,
     mobileControlsExpanded,
     setMobileControlsExpanded,
     rainCloudSource,
@@ -207,6 +210,216 @@ const Map = ({
     })
   }, [setLayerVisibility, setViewState])
 
+  // ========================================
+  // DIDツールチップ（DIDinJapan準拠）
+  // 状態はMainLayoutから props として受け取る
+  // ========================================
+  const showDIDTooltip = externalShowDIDTooltip ?? false
+  const didTooltipAutoFade = externalDidTooltipAutoFade ?? true
+  const setShowDIDTooltip = onShowDIDTooltipChange || (() => {})
+  const showDIDTooltipRef = useRef(showDIDTooltip)
+  const didTooltipAutoFadeRef = useRef(didTooltipAutoFade)
+  const didPopupRef = useRef(null)
+  const didPopupTimerRef = useRef(null)
+  const didDebounceTimerRef = useRef(null)
+  const didRafRef = useRef(null)
+
+  // Ref同期
+  useEffect(() => { showDIDTooltipRef.current = showDIDTooltip }, [showDIDTooltip])
+  useEffect(() => { didTooltipAutoFadeRef.current = didTooltipAutoFade }, [didTooltipAutoFade])
+
+  // Popup初期化（maplibre-glは react-map-gl 経由で既にロード済み）
+  useEffect(() => {
+    // maplibre-glを同期的にrequire（react-map-glの依存で既にバンドルに含まれている）
+    import('maplibre-gl').then((mgl) => {
+      const Popup = mgl.Popup || mgl.default?.Popup
+      if (Popup) {
+        didPopupRef.current = new Popup({
+          closeButton: false,
+          closeOnClick: false,
+          maxWidth: '300px',
+          className: 'did-tooltip-popup'
+        })
+        if (import.meta.env.DEV) {
+          console.log('[Tooltip] Popup initialized successfully')
+        }
+      } else if (import.meta.env.DEV) {
+        console.error('[Tooltip] Popup class not found in maplibre-gl')
+      }
+    }).catch((err) => {
+      if (import.meta.env.DEV) {
+        console.error('[Tooltip] Failed to import maplibre-gl:', err)
+      }
+    })
+    return () => {
+      didPopupRef.current?.remove()
+      if (didPopupTimerRef.current) clearTimeout(didPopupTimerRef.current)
+      if (didDebounceTimerRef.current) clearTimeout(didDebounceTimerRef.current)
+      if (didRafRef.current) cancelAnimationFrame(didRafRef.current)
+    }
+  }, [])
+
+  // DIDツールチップ無効化／描画モード遷移時にPopup削除
+  useEffect(() => {
+    if (!showDIDTooltip || drawMode || editingPolygon) {
+      didPopupRef.current?.remove()
+      // 進行中のデバウンスタイマーもキャンセル
+      if (didDebounceTimerRef.current) {
+        clearTimeout(didDebounceTimerRef.current)
+        didDebounceTimerRef.current = null
+      }
+    }
+  }, [showDIDTooltip, drawMode, editingPolygon])
+
+  // HTMLエスケープヘルパー（XSS対策）
+  // GeoJSON propertiesは外部由来の可能性があるため必須
+  const escapeHTML = useCallback((s) => {
+    return String(s ?? '').replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]))
+  }, [])
+
+  // 施設レイヤーのツールチップHTML生成
+  const buildFacilityTooltipHTML = useCallback((props) => {
+    const typeLabels = {
+      government: '政府機関', imperial: '皇室関連', nuclear: '原子力施設',
+      defense: '防衛施設', foreign_mission: '外国公館', prefecture: '都道府県庁',
+      police: '警察施設', prison: '刑務所・拘置所', military_jsdf: '自衛隊施設',
+      energy: 'エネルギー施設', water: '水道施設', infrastructure: '重要インフラ',
+      airport: '空港', international: '国際空港', domestic: '国内空港',
+      military: '軍用飛行場', heliport: 'ヘリポート',
+      emergency: '緊急空域', 'remote-id': 'RemoteID区域',
+      manned_aircraft: '有人機運用区域', radio: '電波干渉区域',
+    }
+    const zoneLabels = { red: 'レッドゾーン', yellow: 'イエローゾーン' }
+    const statusLabels = {
+      operational: '運転中', stopped: '停止中',
+      decommissioning: '廃炉作業中', decommissioned: '廃炉完了',
+    }
+
+    const name = escapeHTML(props.name || '不明')
+    const type = escapeHTML(typeLabels[props.type] || props.type || '')
+    const zone = zoneLabels[props.zone] || '' // 内部マップ由来なのでエスケープ不要
+    const radiusKm = props.radiusKm ? Number(props.radiusKm) : null
+    const status = statusLabels[props.operationalStatus] || '' // 内部マップ由来
+
+    let rows = ''
+    if (type) rows += `<div class="did-popup-row"><span>種類</span><strong>${type}</strong></div>`
+    if (zone) rows += `<div class="did-popup-row"><span>区分</span><strong>${zone}</strong></div>`
+    if (radiusKm) rows += `<div class="did-popup-row"><span>半径</span><strong>${(radiusKm * 1000).toFixed(0)}m</strong></div>`
+    if (status) rows += `<div class="did-popup-row"><span>稼働</span><strong>${status}</strong></div>`
+    if (props.operator) rows += `<div class="did-popup-row"><span>事業者</span><strong>${escapeHTML(props.operator)}</strong></div>`
+    if (props.description) rows += `<div class="did-popup-row"><span>備考</span><strong>${escapeHTML(props.description)}</strong></div>`
+
+    return `<div class="did-popup">
+  <div class="did-popup-header">${name}</div>
+  <div class="did-popup-stats">${rows}</div>
+</div>`
+  }, [escapeHTML])
+
+  // 全レイヤー統合ホバーツールチップハンドラ
+  const handleMapHoverTooltip = useCallback((e) => {
+    if (!showDIDTooltipRef.current) {
+      didPopupRef.current?.remove()
+      return
+    }
+    if (!didPopupRef.current) return // Popup未初期化
+    if (!mapRef.current) return
+    if (drawMode || editingPolygon) return
+
+    // RAFスロットリング
+    if (didRafRef.current) return
+    didRafRef.current = requestAnimationFrame(() => {
+      didRafRef.current = null
+
+      // 300msデバウンス（前回のタイマーをクリア）
+      if (didDebounceTimerRef.current) clearTimeout(didDebounceTimerRef.current)
+      didDebounceTimerRef.current = setTimeout(async () => {
+        didDebounceTimerRef.current = null
+        // タイマー発火時に再度トグル状態を確認（OFFされていたらスキップ）
+        if (!showDIDTooltipRef.current) return
+        const map = mapRef.current?.getMap()
+        if (!map) return
+        const { lng, lat } = e.lngLat
+
+        // 1. 施設レイヤーのフィーチャーをチェック（即座にヒット判定可能）
+        const facilityLayerIds = [
+          'nuclear-plants-fill', 'prefectures-fill', 'police-fill',
+          'prisons-fill', 'jsdf-fill', 'red-zones-fill', 'yellow-zones-fill',
+          'airport-zones-fill', 'heliports-fill',
+          'emergency-airspace-fill', 'remote-id-zones-fill', 'manned-aircraft-zones-fill',
+        ]
+
+        // 実際にマップ上に存在するレイヤーのみクエリ
+        const existingLayers = facilityLayerIds.filter(id => map.getLayer(id))
+
+        let content = null
+        if (existingLayers.length > 0) {
+          let point = e.point
+          if (!point && e.originalEvent) {
+            const canvas = map.getCanvas()
+            const rect = canvas.getBoundingClientRect()
+            point = {
+              x: e.originalEvent.clientX - rect.left,
+              y: e.originalEvent.clientY - rect.top
+            }
+          }
+
+          if (point) {
+            const features = map.queryRenderedFeatures(point, { layers: existingLayers })
+            if (features && features.length > 0) {
+              content = buildFacilityTooltipHTML(features[0].properties)
+            }
+          }
+        }
+
+        // 2. 施設にヒットしなければDIDチェック（非同期）
+        if (!content) {
+          const result = await checkDIDArea(lat, lng)
+          // await解決後に再度トグル状態を確認（OFFされていたら描画スキップ）
+          if (!showDIDTooltipRef.current || !didPopupRef.current) return
+          if (result?.isDID) {
+            const prefName = escapeHTML(result.prefectureName || '')
+            const area = escapeHTML(result.area || '')
+            const kenCode = escapeHTML(result.kenCode || '')
+            const cityCode = escapeHTML(result.cityCode || '')
+            content = `<div class="did-popup">
+  <div class="did-popup-header">${prefName ? `<span class="did-popup-pref">${prefName}</span>` : ''}${area}</div>
+  <div class="did-popup-stats">
+    <div class="did-popup-row"><span>人口</span><strong>${result.population.toLocaleString()}人</strong></div>
+    <div class="did-popup-row"><span>面積</span><strong>${result.menseki.toFixed(2)}km²</strong></div>
+    <div class="did-popup-row"><span>人口密度</span><strong>${result.density.toFixed(1)}人/km²</strong></div>
+    <div class="did-popup-row"><span>コード</span><strong>${kenCode}-${cityCode}</strong></div>
+  </div>
+</div>`
+          }
+        }
+
+        // 3. ツールチップ表示/非表示
+        if (content && didPopupRef.current) {
+          if (didPopupTimerRef.current) {
+            clearTimeout(didPopupTimerRef.current)
+            didPopupTimerRef.current = null
+          }
+
+          didPopupRef.current
+            .setLngLat([lng, lat])
+            .setHTML(content)
+            .addTo(map)
+
+          if (didTooltipAutoFadeRef.current) {
+            didPopupTimerRef.current = setTimeout(() => {
+              didPopupRef.current?.remove()
+              didPopupTimerRef.current = null
+            }, 2000)
+          }
+        } else {
+          didPopupRef.current?.remove()
+        }
+      }, 300)
+    })
+  }, [drawMode, editingPolygon, buildFacilityTooltipHTML, escapeHTML])
+
   // キーボードショートカット
   useMapKeyboardShortcuts({
     toggle3D,
@@ -214,8 +427,53 @@ const Map = ({
     toggleAirportOverlay,
     setShowCrosshair,
     mapStyleId,
-    setMapStyleId
+    setMapStyleId,
+    setShowDIDTooltip
   })
+
+  // Map制御状態を親（MainLayout）にブリッジ
+  // sidebarの「地図操作」から3D/Crosshair/MapStyleを操作可能にする
+  const onMapControlsReadyRef = useRef(onMapControlsReady)
+  onMapControlsReadyRef.current = onMapControlsReady
+
+  // アクション（setters）は初回のみ登録（stable reference想定）
+  useEffect(() => {
+    onMapControlsReadyRef.current?.({
+      state: {
+        is3D: layerVisibility.is3D,
+        showCrosshair,
+        crosshairDesign,
+        crosshairColor,
+        crosshairClickMode,
+        coordinateFormat,
+        mapStyleId,
+      },
+      actions: {
+        toggle3D,
+        setShowCrosshair,
+        setCrosshairDesign,
+        setCrosshairColor,
+        setCrosshairClickMode,
+        setCoordinateFormat,
+        setMapStyleId,
+      }
+    })
+  }, [
+    layerVisibility.is3D,
+    showCrosshair,
+    crosshairDesign,
+    crosshairColor,
+    crosshairClickMode,
+    coordinateFormat,
+    mapStyleId,
+    toggle3D,
+    setShowCrosshair,
+    setCrosshairDesign,
+    setCrosshairColor,
+    setCrosshairClickMode,
+    setCoordinateFormat,
+    setMapStyleId,
+  ])
 
   // toggleLayer, toggleAirportOverlay, toggleGroupLayers, toggleFavoriteGroup
   // → useLayerVisibility hook から提供されるため削除
@@ -834,7 +1092,20 @@ const Map = ({
     }
 
     if (polygonFeature) {
-      onPolygonSelect?.(polygonFeature.properties.id)
+      const polygonId = polygonFeature.properties.id
+      onPolygonSelect?.(polygonId)
+      // クリックでポリゴンツールチップを即時表示
+      const polygon = polygons.find(p => p.id === polygonId)
+      if (polygon) {
+        const area = turf.area(polygon.geometry)
+        const waypointCount = waypoints.filter(wp => wp.polygonId === polygon.id).length
+        setTooltip({
+          isVisible: true,
+          position: { x: e.originalEvent.clientX, y: e.originalEvent.clientY },
+          data: { ...polygon, area, waypointCount },
+          type: 'polygon'
+        })
+      }
       return
     }
 
@@ -1297,24 +1568,198 @@ const Map = ({
     }
   }, [polygonContextMenu, onPolygonDelete, onPolygonEditStart, waypoints])
 
+  // Compute conflict zones: intersection between own and external polygons
+  const conflictGeoJSON = useMemo(() => {
+    const ownPolygons = polygons.filter(p => !p.external && (!editingPolygon || p.id !== editingPolygon.id))
+    const externalPolygons = polygons.filter(p => p.external)
+    if (ownPolygons.length === 0 || externalPolygons.length === 0) return null
+
+    const features = []
+    for (const own of ownPolygons) {
+      for (const ext of externalPolygons) {
+        try {
+          const ownFeature = turf.polygon(own.geometry.coordinates)
+          const extFeature = turf.polygon(ext.geometry.coordinates)
+          if (!turf.booleanIntersects(ownFeature, extFeature)) continue
+          const intersection = turf.intersect(turf.featureCollection([ownFeature, extFeature]))
+          if (intersection) {
+            const overlapArea = turf.area(intersection)
+            const ownArea = turf.area(ownFeature)
+            const overlapRatio = ownArea > 0 ? overlapArea / ownArea : 0
+            features.push({
+              type: 'Feature',
+              properties: {
+                ownId: own.id,
+                ownName: own.name,
+                externalId: ext.id,
+                externalName: ext.name,
+                overlapArea: Math.round(overlapArea),
+                overlapRatio: Math.round(overlapRatio * 100),
+                severity: overlapRatio > 0.2 ? 'DANGER' : 'WARNING'
+              },
+              geometry: intersection.geometry
+            })
+          }
+        } catch {
+          // Invalid geometry - skip
+        }
+      }
+    }
+    if (features.length === 0) return null
+    return { type: 'FeatureCollection', features }
+  }, [polygons, editingPolygon])
+
   // Build context menu items for polygon
   const polygonContextMenuItems = useMemo(() => {
     if (!polygonContextMenu?.polygon) return []
     const polygon = polygonContextMenu.polygon
-    
+
     // Get waypoints for this polygon
     const polygonWaypoints = waypoints.filter(wp => wp.polygonId === polygon.id)
-    
+
     const items = [
       { id: 'header', type: 'header', label: `【${polygon.name}】` }
     ]
-    
+
+    // Flight info section
+    if (polygon.flightInfo) {
+      const fi = polygon.flightInfo
+      const infoLines = [
+        fi.date && `📅 ${fi.date}`,
+        (fi.timeStart && fi.timeEnd) && `🕐 ${fi.timeStart}〜${fi.timeEnd}`,
+        fi.purpose && `📋 ${fi.purpose}`,
+        fi.altitude && `📐 高度 ${fi.altitude}m`,
+        fi.aircraft && `✈️ ${fi.aircraft}`,
+        fi.pilotName && `👤 ${fi.pilotName}`,
+        fi.dipsNumber && `📄 ${fi.dipsNumber}`,
+        fi.notes && `💡 ${fi.notes}`
+      ].filter(Boolean)
+
+      items.push({
+        id: 'flight-info',
+        type: 'info',
+        label: '飛行計画詳細',
+        content: (
+          <div style={{ fontSize: '12px', lineHeight: '1.8' }}>
+            {infoLines.map((line, i) => <div key={i}>{line}</div>)}
+          </div>
+        )
+      })
+    }
+
+    // Conflict info for own polygons
+    if (!polygon.external && conflictGeoJSON) {
+      const conflicts = conflictGeoJSON.features.filter(f => f.properties.ownId === polygon.id)
+      if (conflicts.length > 0) {
+        // Find external polygons for time overlap check
+        const externalPolygonsMap = {}
+        for (const p of polygons) {
+          if (p.external) externalPolygonsMap[p.id] = p
+        }
+
+        items.push({
+          id: 'conflict-header',
+          type: 'info',
+          label: `⚠ 飛行エリア競合検出（${conflicts.length}件）`,
+          content: (
+            <div style={{ fontSize: '12px', lineHeight: '1.6' }}>
+              {conflicts.map((c, i) => {
+                const extPolygon = externalPolygonsMap[c.properties.externalId]
+                const extFlight = extPolygon?.flightInfo
+                const ownFlight = polygon.flightInfo
+
+                // Check time overlap
+                let timeOverlap = false
+                let timeWarning = ''
+                if (ownFlight && extFlight && ownFlight.date === extFlight.date) {
+                  const ownStart = ownFlight.timeStart?.replace(':', '') || '0'
+                  const ownEnd = ownFlight.timeEnd?.replace(':', '') || '0'
+                  const extStart = extFlight.timeStart?.replace(':', '') || '0'
+                  const extEnd = extFlight.timeEnd?.replace(':', '') || '0'
+                  timeOverlap = ownStart < extEnd && extStart < ownEnd
+                  timeWarning = timeOverlap
+                    ? `⏰ 時間帯重複: ${extFlight.timeStart}〜${extFlight.timeEnd}`
+                    : `✅ 時間帯分離: ${extFlight.timeStart}〜${extFlight.timeEnd}`
+                }
+
+                const isDanger = c.properties.overlapRatio > 20 || timeOverlap
+                const recommendations = []
+                if (c.properties.overlapRatio > 20) {
+                  recommendations.push('飛行エリアを縮小するか位置をずらしてください')
+                }
+                if (timeOverlap) {
+                  recommendations.push('飛行時間帯をずらすことで安全に運航できます')
+                }
+                if (extFlight?.purpose) {
+                  recommendations.push(`相手の業務「${extFlight.purpose}」に影響しない計画に調整してください`)
+                }
+                if (!timeOverlap && c.properties.overlapRatio <= 20) {
+                  recommendations.push('エリアの一部が重複していますが、飛行前に相手オペレーターへ連絡・調整すれば問題ありません')
+                }
+
+                return (
+                  <div key={i} style={{ marginBottom: i < conflicts.length - 1 ? '10px' : 0, paddingBottom: i < conflicts.length - 1 ? '10px' : 0, borderBottom: i < conflicts.length - 1 ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
+                    <div style={{ color: isDanger ? '#FF4466' : '#FF8800', fontWeight: 600 }}>
+                      {isDanger ? '🔴 高リスク' : '🟡 注意'} — {c.properties.externalName}
+                    </div>
+                    <div style={{ marginTop: '2px' }}>重複: {c.properties.overlapArea.toLocaleString()} m²（{c.properties.overlapRatio}%）</div>
+                    {timeWarning && (
+                      <div style={{ color: timeOverlap ? '#FF4466' : '#4ECDC4', marginTop: '2px' }}>{timeWarning}</div>
+                    )}
+                    {extFlight && (
+                      <div style={{ color: 'var(--color-text-secondary)', marginTop: '2px', fontSize: '11px' }}>
+                        {extFlight.purpose && <span>{extFlight.purpose}</span>}
+                        {extFlight.aircraft && <span> / {extFlight.aircraft}</span>}
+                        {extFlight.altitude && <span> / 高度{extFlight.altitude}m</span>}
+                      </div>
+                    )}
+                    <div style={{ color: 'var(--color-text-tertiary)', marginTop: '4px', fontSize: '11px', borderLeft: `2px solid ${isDanger ? '#FF4466' : '#FF8800'}`, paddingLeft: '6px' }}>
+                      💡 {recommendations[0]}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })
+        items.push({ id: 'conflict-divider', divider: true })
+      }
+    }
+
+    // External polygon info
+    if (polygon.external) {
+      const overlappingOwn = conflictGeoJSON?.features.filter(f => f.properties.externalId === polygon.id) || []
+      const fi = polygon.flightInfo
+      items.push({
+        id: 'external-info',
+        type: 'info',
+        label: '他者の飛行計画',
+        content: (
+          <div style={{ fontSize: '12px', lineHeight: '1.6' }}>
+            <div>オペレーター: {polygon.operator || '不明'}</div>
+            {fi?.dipsNumber && <div>DIPS番号: {fi.dipsNumber}</div>}
+            {overlappingOwn.length > 0 && (
+              <div style={{ color: '#FF4466', marginTop: '4px', fontWeight: 600 }}>
+                ⚠ 自分の {overlappingOwn.length} エリアと競合中
+              </div>
+            )}
+            {fi?.notes && (
+              <div style={{ color: 'var(--color-text-tertiary)', marginTop: '4px', borderLeft: '2px solid #FF8800', paddingLeft: '6px' }}>
+                📝 {fi.notes}
+              </div>
+            )}
+          </div>
+        )
+      })
+      items.push({ id: 'external-divider', divider: true })
+    }
+
     // Add waypoint list if available
     if (polygonWaypoints.length > 0) {
       const waypointListDecimal = polygonWaypoints
         .map(wp => `WP${wp.index}: ${formatDecimalCoordinate(wp.lat, wp.lng)}`)
         .join('\n')
-      
+
       items.push({
         id: 'info-waypoints',
         type: 'info',
@@ -1322,7 +1767,7 @@ const Map = ({
         content: <pre style={{ fontSize: '12px', lineHeight: '1.5' }}>{waypointListDecimal}</pre>
       })
     }
-    
+
     // Add area if available
     const area = turf.area(polygon.geometry)
     if (area) {
@@ -1333,7 +1778,7 @@ const Map = ({
         content: `${area.toFixed(2)} m²`
       })
     }
-    
+
     // Add creation date if available
     if (polygon.createdAt) {
       items.push({
@@ -1343,9 +1788,9 @@ const Map = ({
         content: formatDateToJST(polygon.createdAt)
       })
     }
-    
+
     items.push({ id: 'divider1', divider: true })
-    
+
     // Add copy actions if waypoints exist
     if (polygonWaypoints.length > 0) {
       items.push(
@@ -1357,15 +1802,19 @@ const Map = ({
         { id: 'divider2', divider: true }
       )
     }
-    
+
+    if (!polygon.external) {
+      items.push(
+        { id: 'edit', icon: '✏️', label: '形状を編集', action: 'edit' },
+        { id: 'divider3', divider: true }
+      )
+    }
     items.push(
-      { id: 'edit', icon: '✏️', label: '形状を編集', action: 'edit' },
-      { id: 'divider3', divider: true },
       { id: 'delete', icon: '🗑️', label: '削除', action: 'delete', danger: true }
     )
-    
+
     return items
-  }, [polygonContextMenu, waypoints])
+  }, [polygonContextMenu, waypoints, conflictGeoJSON])
 
   // Convert polygons to GeoJSON for display (exclude polygon being edited)
   const polygonsGeoJSON = {
@@ -1379,7 +1828,8 @@ const Map = ({
           id: p.id,
           name: p.name,
           color: p.color,
-          selected: p.id === selectedPolygonId
+          selected: p.id === selectedPolygonId,
+          external: !!p.external
         },
         geometry: p.geometry
       }))
@@ -1413,6 +1863,8 @@ const Map = ({
           if (!isSelecting) {
             handlePolygonHover(e)
           }
+          // 全レイヤーツールチップ（DID + 施設）
+          handleMapHoverTooltip(e)
         }}
         onMouseUp={selectionHandlers.onMouseUp}
         onMouseLeave={handlePolygonHoverEnd}
@@ -1741,9 +2193,11 @@ const Map = ({
 
         {/* Display saved polygons */}
         <Source id="polygons" type="geojson" data={polygonsGeoJSON}>
+          {/* Own polygons - solid fill */}
           <Layer
             id="polygon-fill"
             type="fill"
+            filter={['!=', ['get', 'external'], true]}
             paint={{
               'fill-color': ['get', 'color'],
               'fill-opacity': [
@@ -1757,6 +2211,7 @@ const Map = ({
           <Layer
             id="polygon-outline"
             type="line"
+            filter={['!=', ['get', 'external'], true]}
             paint={{
               'line-color': ['get', 'color'],
               'line-width': [
@@ -1767,7 +2222,92 @@ const Map = ({
               ]
             }}
           />
+          {/* External polygons - outline only (no fill to reduce layer clutter) */}
+          <Layer
+            id="polygon-external-outline"
+            type="line"
+            filter={['==', ['get', 'external'], true]}
+            paint={{
+              'line-color': '#FF8800',
+              'line-width': 3,
+              'line-dasharray': [5, 3]
+            }}
+          />
+          {/* External polygon label */}
+          <Layer
+            id="polygon-external-label"
+            type="symbol"
+            filter={['==', ['get', 'external'], true]}
+            layout={{
+              'text-field': ['get', 'name'],
+              'text-size': 11,
+              'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+              'text-anchor': 'center',
+              'text-allow-overlap': false
+            }}
+            paint={{
+              'text-color': '#FF8800',
+              'text-halo-color': 'rgba(255,255,255,0.9)',
+              'text-halo-width': 1.5
+            }}
+          />
         </Source>
+
+        {/* Conflict zones - intersection between own and external polygons */}
+        {conflictGeoJSON && (
+          <Source id="conflict-zones" type="geojson" data={conflictGeoJSON}>
+            <Layer
+              id="conflict-zone-fill"
+              type="fill"
+              paint={{
+                'fill-color': [
+                  'case',
+                  ['==', ['get', 'severity'], 'DANGER'], '#FF0044',
+                  '#FF8800'
+                ],
+                'fill-opacity': 0.35
+              }}
+            />
+            <Layer
+              id="conflict-zone-outline"
+              type="line"
+              paint={{
+                'line-color': [
+                  'case',
+                  ['==', ['get', 'severity'], 'DANGER'], '#FF0044',
+                  '#FF8800'
+                ],
+                'line-width': 2,
+                'line-dasharray': [3, 2]
+              }}
+            />
+            <Layer
+              id="conflict-zone-label"
+              type="symbol"
+              layout={{
+                'text-field': [
+                  'concat',
+                  '⚠ 競合 ',
+                  ['get', 'overlapRatio'],
+                  '%'
+                ],
+                'text-size': 12,
+                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                'text-anchor': 'center',
+                'text-allow-overlap': true
+              }}
+              paint={{
+                'text-color': '#FFFFFF',
+                'text-halo-color': [
+                  'case',
+                  ['==', ['get', 'severity'], 'DANGER'], '#FF0044',
+                  '#FF8800'
+                ],
+                'text-halo-width': 2
+              }}
+            />
+          </Source>
+        )}
 
         {/* Display optimized route lines */}
         {optimizedRouteGeoJSON && (
@@ -1869,6 +2409,16 @@ const Map = ({
                         if (editingPolygon) return
                         e.originalEvent.stopPropagation()
                         onWaypointClick?.(wp)
+                        // クリックでツールチップを即時表示
+                        if (!drawMode) {
+                          const restrictions = getWaypointAirspaceRestrictions(wp)
+                          setTooltip({
+                            isVisible: true,
+                            position: { x: e.originalEvent.clientX, y: e.originalEvent.clientY },
+                            data: { ...wp, airspaceRestrictions: restrictions },
+                            type: 'waypoint'
+                          })
+                        }
                     }}
                 >
                     <div
@@ -1938,25 +2488,10 @@ const Map = ({
           toggleLayer={toggleLayer}
           toggleAirportOverlay={toggleAirportOverlay}
           toggleGroupLayers={toggleGroupLayers}
-          toggle3D={toggle3D}
           favoriteGroups={favoriteGroups}
           toggleFavoriteGroup={toggleFavoriteGroup}
-          showCrosshair={showCrosshair}
-          setShowCrosshair={setShowCrosshair}
-          crosshairDesign={crosshairDesign}
-          setCrosshairDesign={setCrosshairDesign}
-          crosshairColor={crosshairColor}
-          setCrosshairColor={setCrosshairColor}
-          crosshairClickMode={crosshairClickMode}
-          setCrosshairClickMode={setCrosshairClickMode}
-          coordinateFormat={coordinateFormat}
-          setCoordinateFormat={setCoordinateFormat}
-          mapStyleId={mapStyleId}
-          setMapStyleId={setMapStyleId}
           isMobile={isMobile}
           mobileControlsExpanded={mobileControlsExpanded}
-          showStylePicker={showStylePicker}
-          setShowStylePicker={setShowStylePicker}
         />
       </div>
 

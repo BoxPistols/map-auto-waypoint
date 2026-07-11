@@ -15,6 +15,7 @@ import { MAP_STYLES } from '../mapConstants'
  * @param {Function} params.setShowCrosshair - Set crosshair visibility
  * @param {string} params.mapStyleId - Current map style ID
  * @param {Function} params.setMapStyleId - Set map style ID
+ * @param {Function} params.setShowDIDTooltip - Toggle DID tooltip
  */
 export const useMapKeyboardShortcuts = ({
   toggle3D,
@@ -22,7 +23,8 @@ export const useMapKeyboardShortcuts = ({
   toggleAirportOverlay,
   setShowCrosshair,
   mapStyleId,
-  setMapStyleId
+  setMapStyleId,
+  setShowDIDTooltip
 }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -96,9 +98,9 @@ export const useMapKeyboardShortcuts = ({
           break
         // 'o' key is reserved for Weather Forecast panel (MainLayout.jsx)
         // Wind toggle will be re-enabled when the feature is implemented
-        case 't': // Radio zones (LTE) toggle
+        case 't': // DIDツールチップ表示切り替え
           e.preventDefault()
-          toggleLayer('showRadioZones')
+          setShowDIDTooltip(prev => !prev)
           break
         case 'l': // Network coverage (LTE/5G) toggle
           e.preventDefault()
@@ -136,5 +138,5 @@ export const useMapKeyboardShortcuts = ({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggle3D, toggleLayer, toggleAirportOverlay, mapStyleId, setMapStyleId, setShowCrosshair])
+  }, [toggle3D, toggleLayer, toggleAirportOverlay, mapStyleId, setMapStyleId, setShowCrosshair, setShowDIDTooltip])
 }

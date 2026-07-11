@@ -77,6 +77,21 @@ export const useMapSelection = ({
     setSelectionBox(null)
   }, [selectionBox, waypoints, mapRef])
 
+  // フェイルセーフ: Shift+ドラッグ中にマウスがcanvas外に出た状態でボタンを
+  // 離すと、canvas要素にのみ紐づく onMouseUp が発火せず isSelecting が
+  // true のまま固着し、dragPan（!isSelecting）が永久に無効化されてしまう。
+  // isSelecting 中は window レベルでも mouseup を監視し、確実に解除する。
+  useEffect(() => {
+    if (!isSelecting) return
+
+    const handleGlobalMouseUp = () => {
+      handleSelectionEnd()
+    }
+
+    window.addEventListener('mouseup', handleGlobalMouseUp)
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp)
+  }, [isSelecting, handleSelectionEnd])
+
   // Keyboard handler for bulk delete (Delete/Backspace) and clear selection (Escape)
   useEffect(() => {
     const handleKeyDown = (e) => {

@@ -143,12 +143,22 @@ const RouteOptimizer = ({
     }
   }, [selectedDroneId, waypoints, homePointMode, customHomePoint, options]);
 
+  // FIXME: ルート最適化の結果適用は現在無効化中
+  // TODO: 以下の既知バグを修正後に再度有効化する
+  //   1. 遠距離拠点（北海道↔本州等）のクラスタリング閾値調整
+  //   2. 既存Waypointの順序上書き時のUndo対応
+  //   3. フライト分割時の実際のルート経路可視化
+  // 詳細: PR #64 のレビューコメント / issue 参照
+  // 現時点ではダイアログの進行のみ可能で、「適用」ボタンは無効化されている
   const handleApply = useCallback(() => {
-    if (optimizationResult && onApplyRoute) {
-      onApplyRoute(optimizationResult);
-      onClose();
+    // 実装を意図的にブロック — ユーザーがこの機能に誤った期待を持たないようにするため
+    // onApplyRoute(optimizationResult) は呼ばない
+    if (import.meta.env.DEV) {
+      console.warn('[RouteOptimizer] 適用機能は現在無効化されています (WIP)', {
+        optimizationResult,
+      })
     }
-  }, [optimizationResult, onApplyRoute, onClose]);
+  }, [optimizationResult]);
 
   const handleReset = useCallback(() => {
     setStep(1);
@@ -169,6 +179,9 @@ const RouteOptimizer = ({
           <div className="route-optimizer__header-content">
             <Route size={20} />
             <h2>最適巡回ルートプランナー</h2>
+            <span className="route-optimizer__wip-badge" title="現在ベータ版・構想段階の機能です">
+              BETA · WIP
+            </span>
           </div>
           <div className="route-optimizer__header-actions">
             {step > 1 && (
@@ -210,6 +223,18 @@ const RouteOptimizer = ({
           <div className={`route-optimizer__step ${step >= 4 ? 'active' : ''}`}>
             <span className="route-optimizer__step-number">4</span>
             <span className="route-optimizer__step-label">結果</span>
+          </div>
+        </div>
+
+        {/* ベータ版の注意書き */}
+        <div className="route-optimizer__beta-notice">
+          <AlertTriangle size={16} />
+          <div>
+            <strong>ベータ版・アイデアベースの機能です</strong>
+            <p>
+              現在構想段階のため、実際の飛行計画としてそのまま使用しないでください。
+              同一エリア内の飛行のみ最適化対象となり、遠距離拠点（20km以上離れた拠点同士）は別フライトとして分離されます。
+            </p>
           </div>
         </div>
 
@@ -382,7 +407,19 @@ const RouteOptimizer = ({
           {/* Step 4: 結果表示 */}
           {step === 4 && optimizationResult && (
             <div className="route-optimizer__step-content">
-              <h3>最適化結果</h3>
+              <h3>最適化結果（プレビュー）</h3>
+
+              {/* 適用ブロック告知 */}
+              <div className="route-optimizer__blocked-notice">
+                <AlertTriangle size={18} />
+                <div>
+                  <strong>この結果はまだ反映されません</strong>
+                  <p>
+                    本機能は構想段階のため、「ルートを適用」ボタンは現在無効化されています。
+                    計算結果のプレビューのみ表示され、Waypoint や Polygon には影響しません。
+                  </p>
+                </div>
+              </div>
 
               {/* サマリー */}
               <div className="route-optimizer__summary">
@@ -428,6 +465,16 @@ const RouteOptimizer = ({
                 <div className="route-optimizer__improvement">
                   <CheckCircle size={16} />
                   ルート距離を{optimizationResult.summary.improvement}%短縮しました
+                </div>
+              )}
+
+              {optimizationResult.summary.isMultiCluster && (
+                <div className="route-optimizer__cluster-notice">
+                  <AlertTriangle size={16} />
+                  <span>
+                    遠距離に分散した{optimizationResult.summary.clusterCount}つのエリアを検出しました。
+                    各エリアを独立したフライトとして最適化しています（エリア間の直線飛行は行いません）。
+                  </span>
                 </div>
               )}
 
@@ -583,8 +630,10 @@ const RouteOptimizer = ({
               <button
                 className="route-optimizer__btn route-optimizer__btn--primary"
                 onClick={handleApply}
+                disabled
+                title="現在このボタンは無効化されています（構想段階のため）"
               >
-                <CheckCircle size={16} /> ルートを適用
+                <CheckCircle size={16} /> ルートを適用（準備中）
               </button>
             </>
           )}

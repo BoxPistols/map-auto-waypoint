@@ -2,7 +2,11 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { MapPin, Plane, X, Square, Circle, ChevronDown } from 'lucide-react'
 import { searchAddress, debounce } from '../../services/geocoding'
 import { POLYGON_SIZE_OPTIONS, POLYGON_SHAPE_OPTIONS } from '../../services/polygonGenerator'
+import { formatShortcut, isModKey } from '../../utils/platform'
 import styles from './SearchForm.module.scss'
+
+// OSに応じたショートカット表記（ハードコード回避）
+const SEARCH_SHORTCUT = formatShortcut(['mod', 'K'])
 
 const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const [query, setQuery] = useState('')
@@ -20,6 +24,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   const [isPanelExpanded, setIsPanelExpanded] = useState(true)
   const inputRef = useRef(null)
   const suggestionsRef = useRef(null)
+  const isGeneratingRef = useRef(false)
 
   const debouncedSearch = useMemo(
     () =>
@@ -55,19 +60,46 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
     onSelect?.(suggestion)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    // IME変換中の場合は何もしない（日本語入力の候補確定を尊重）
     if (isComposing) return
+    // e.nativeEvent.isComposing もチェック（一部ブラウザで compositionend 前に Enter が発火するため）
+    if (e.nativeEvent?.isComposing) return
 
+    // 矢印キーで候補を選択済みならそれを確定
     if (selectedIndex >= 0 && suggestions[selectedIndex]) {
       handleSelect(suggestions[selectedIndex])
-    } else if (query.trim()) {
+      return
+    }
+    if (!query.trim()) return
+
+    setShowSuggestions(false)
+    // Enterでの検索でも「エリアを生成」パネルまで到達できるようにする。
+    // 以前は onSearch でカメラ移動のみ行われ、SearchFormローカルの
+    // lastSearchResult が設定されずパネルが出なかった。
+    // 候補が既に表示されていれば先頭を、まだ無ければ即時検索して先頭を
+    // 選択し、候補クリック時と同じ経路（handleSelect）に揃える。
+    if (suggestions.length > 0) {
+      handleSelect(suggestions[0])
+      return
+    }
+    const results = await searchAddress(query.trim())
+    if (results.length > 0) {
+      handleSelect(results[0])
+    } else {
+      // 結果なし時は親に委ねる（「見つかりませんでした」通知は親が表示）
       onSearch?.(query.trim())
-      setShowSuggestions(false)
     }
   }
 
   const handleKeyDown = (e) => {
+    // IME変換中は Enter での確定を submit として扱わない
+    // (React の onCompositionEnd が遅延する環境への二重ガード)
+    if (e.nativeEvent?.isComposing || isComposing) {
+      return
+    }
+
     if (!showSuggestions) return
 
     switch (e.key) {
@@ -95,12 +127,19 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
   }
 
   const handleGeneratePolygon = () => {
-    if (lastSearchResult && onGeneratePolygon) {
-      const options = useCustomSize
-        ? { customRadius, shape: selectedShape, waypointCount }
-        : { size: selectedSize, shape: selectedShape, waypointCount }
-      onGeneratePolygon(lastSearchResult, options)
-    }
+    if (!lastSearchResult || !onGeneratePolygon) return
+    if (isGeneratingRef.current) return
+    isGeneratingRef.current = true
+    const options = useCustomSize
+      ? { useCustomSize: true, customRadius, shape: selectedShape, waypointCount }
+      : { size: selectedSize, shape: selectedShape, waypointCount }
+    onGeneratePolygon(lastSearchResult, options)
+    // 生成完了後はパネルを閉じて検索欄もクリアする。
+    // 開いたままだと「押しても見た目が変わらない」ため、
+    // ユーザーが連打して意図せず複数生成してしまう誤操作を誘発していた。
+    setQuery('')
+    setLastSearchResult(null)
+    isGeneratingRef.current = false
   }
 
   const handleRadiusChange = (e) => {
@@ -110,7 +149,8 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
 
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      // OS依存のモディファイアキー判定（Mac: ⌘ / Win: Ctrl）
+      if (isModKey(e, 'k')) {
         e.preventDefault()
         inputRef.current?.focus()
         inputRef.current?.select()
@@ -149,9 +189,14 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
             onCompositionStart={() => setIsComposing(true)}
             onCompositionEnd={() => setIsComposing(false)}
             onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-            placeholder="住所・建物名を検索"
+            placeholder={`住所・建物名を検索 (${SEARCH_SHORTCUT})`}
+            aria-label="住所・建物名検索"
+            aria-keyshortcuts={SEARCH_SHORTCUT}
             className={styles.input}
             autoComplete="off"
+            // 日本語IME対応: 変換確定のEnterでSubmitが走らないよう
+            // handleSubmit/handleKeyDown で isComposing を多重ガード
+            enterKeyHint="search"
           />
           {isLoading && <span className={styles.spinner} />}
           {query && !isLoading && (
@@ -247,6 +292,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
                       <button
                         key={option.value}
                         type="button"
+                        disabled={useCustomSize}
                         className={`${styles.shapeButton} ${
                           !useCustomSize && selectedSize === option.value
                             ? styles.active
@@ -275,7 +321,11 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
                   カスタムサイズを使用
                 </label>
                 <div className={styles.customSizeFields}>
-                  <div className={styles.customRadius}>
+                  <div
+                    className={`${styles.customRadius} ${
+                      !useCustomSize ? styles.disabledField : ''
+                    }`}
+                  >
                     <label>半径: {customRadius}m</label>
                     <input
                       type="range"
@@ -283,6 +333,7 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
                       max="300"
                       step="10"
                       value={customRadius}
+                      disabled={!useCustomSize}
                       onChange={handleRadiusChange}
                     />
                   </div>

@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react'
 import {
   X, Map, PenTool, MapPin, Grid3X3, FileUp, Download,
-  Search, Mountain, Trash2, Link2, Pencil, Keyboard,
-  Plane, Eye, ChevronRight, Info, Layers
+  Mountain, Trash2, Link2, Pencil, Keyboard,
+  Plane, ChevronRight, Info, Layers,
+  MousePointer2, Hand, Sparkles, Route
 } from 'lucide-react'
 import styles from './HelpModal.module.scss'
 
 const sections = [
   { id: 'overview', label: '概要', icon: Info },
+  { id: 'quickstart', label: 'クイックスタート', icon: Sparkles },
   { id: 'polygon', label: 'ポリゴン作成', icon: PenTool },
   { id: 'waypoint', label: 'Waypoint生成', icon: MapPin },
-  { id: 'map', label: 'マップ操作', icon: Map },
+  { id: 'interactions', label: 'マウス操作', icon: MousePointer2 },
+  { id: 'map', label: 'マップ＆レイヤー', icon: Map },
+  { id: 'tooltip', label: 'ツールチップ', icon: Info },
+  { id: 'routeplanner', label: 'ルート最適化', icon: Route },
   { id: 'export', label: 'エクスポート', icon: Download },
   { id: 'shortcuts', label: 'ショートカット', icon: Keyboard },
 ]
@@ -93,57 +98,168 @@ const HelpModal = ({ onClose }) => {
           </div>
         )
 
+      case 'quickstart':
+        return (
+          <div className={styles.section}>
+            <h2>クイックスタート</h2>
+            <p className={styles.lead}>
+              初めて使う方向けに、最短でWaypointを作るステップをまとめました。
+            </p>
+
+            <div className={styles.cardGrid}>
+              <div className={styles.card}>
+                <div className={styles.cardNumber}>1</div>
+                <h3>エリアを表示</h3>
+                <p>左上の住所検索で地名や住所を入力。候補から選ぶと地図がジャンプします。</p>
+                <div className={styles.cardHint}>
+                  💡 住所検索の下にある「地図操作」で地図スタイル・3D・ツールチップをまとめて切り替えられます。
+                </div>
+              </div>
+
+              <div className={styles.card}>
+                <div className={styles.cardNumber}>2</div>
+                <h3>ポリゴンを描く</h3>
+                <p>ヘッダーの「描画モード」をクリック → 地図上で頂点を順にクリック → 最後の点をダブルクリックで完了。</p>
+                <div className={styles.cardHint}>
+                  💡 検索結果から直接「矩形」または「円形」でエリア生成することもできます。
+                </div>
+              </div>
+
+              <div className={styles.card}>
+                <div className={styles.cardNumber}>3</div>
+                <h3>Waypointを生成</h3>
+                <p>サイドバーのポリゴン一覧から <MapPin size={12} /> ボタンで頂点に、<Grid3X3 size={12} /> ボタンでグリッド状にWaypointを生成。</p>
+                <div className={styles.cardHint}>
+                  💡 一括で全ポリゴンから生成する「全てWaypoint生成」ボタンもあります。
+                </div>
+              </div>
+
+              <div className={styles.card}>
+                <div className={styles.cardNumber}>4</div>
+                <h3>安全チェック</h3>
+                <p>右側のレイヤーコントロールでDID・空港・禁止区域を表示。Waypointが制限エリアに入っていないか確認。</p>
+                <div className={styles.cardHint}>
+                  💡 「ツールチップ [T]」をONにすると、制限エリアにホバーするだけで詳細情報が見られます。
+                </div>
+              </div>
+
+              <div className={styles.card}>
+                <div className={styles.cardNumber}>5</div>
+                <h3>標高取得</h3>
+                <p>Waypointパネルの 🏔 ボタンで国土地理院APIから各地点の標高を取得します。</p>
+              </div>
+
+              <div className={styles.card}>
+                <div className={styles.cardNumber}>6</div>
+                <h3>エクスポート</h3>
+                <p>ヘッダーの「エクスポート」からDMS・CSV・JSON・GeoJSON・KMLで出力。DIPS 2.0 申請にも利用可能。</p>
+              </div>
+            </div>
+          </div>
+        )
+
       case 'polygon':
         return (
           <div className={styles.section}>
             <h2>ポリゴン作成</h2>
 
-            <h3>手動で描画する</h3>
-            <ol className={styles.stepList}>
-              <li>ヘッダーの「描画モード」ボタンをクリック</li>
-              <li>地図上でクリックして頂点を追加</li>
-              <li>最後の点をダブルクリックで描画完了</li>
-            </ol>
+            <h3>作成方法（3通り）</h3>
+            <div className={styles.methodGrid}>
+              <div className={styles.methodCard}>
+                <PenTool size={20} />
+                <h4>手動描画</h4>
+                <ol>
+                  <li>ヘッダーの「描画モード」をON</li>
+                  <li>地図をクリックして頂点を追加</li>
+                  <li>最後の頂点をダブルクリックで完了</li>
+                </ol>
+              </div>
 
-            <h3>ファイルからインポート</h3>
-            <ol className={styles.stepList}>
-              <li>「インポート」ボタンをクリック</li>
-              <li>GeoJSON または KML ファイルをドラッグ＆ドロップ</li>
-              <li>複数ポリゴンも一括でインポート可能</li>
-            </ol>
+              <div className={styles.methodCard}>
+                <FileUp size={20} />
+                <h4>ファイル取り込み</h4>
+                <ol>
+                  <li>「インポート」ボタンをクリック</li>
+                  <li>GeoJSON または KML をドロップ</li>
+                  <li>複数ポリゴンも一括取り込み可能</li>
+                </ol>
+              </div>
 
-            <h3>住所検索から生成</h3>
-            <ol className={styles.stepList}>
-              <li>住所検索フォームに住所を入力</li>
-              <li>候補から選択して「エリア生成」をクリック</li>
-              <li>建物の境界ボックス（BoundingBox）からポリゴンを自動生成</li>
-            </ol>
+              <div className={styles.methodCard}>
+                <Map size={20} />
+                <h4>住所検索から生成</h4>
+                <ol>
+                  <li>住所を入力 → 候補から選択</li>
+                  <li>「矩形 / 円形」と「サイズ」を選択</li>
+                  <li>「エリア生成」をクリック</li>
+                </ol>
+              </div>
+            </div>
 
-            <h3>ポリゴンの操作</h3>
+            <h3>ポリゴンの再編集</h3>
+            <p className={styles.lead}>
+              作成後のポリゴンは <strong>いつでも再編集</strong> できます。以下の方法で編集モードに入れます：
+            </p>
             <table className={styles.table}>
               <tbody>
                 <tr>
-                  <td><PenTool size={14} /></td>
-                  <td>形状を編集</td>
-                  <td>サイドバーのアイコン、または地図上でダブルクリック・右クリックメニューから編集開始</td>
+                  <td className={styles.labelCell}>📍 地図上でダブルクリック</td>
+                  <td>ポリゴン上をダブルクリックで編集モード開始。頂点をドラッグで位置調整、中点クリックで頂点追加。</td>
                 </tr>
+                <tr>
+                  <td className={styles.labelCell}>🖱 右クリック</td>
+                  <td>ポリゴン上で右クリック → メニューから「編集」を選択</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>✏️ サイドバーのペンアイコン</td>
+                  <td>ポリゴン一覧の <Pencil size={12} /> アイコンで編集モードへ</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>⌨️ キーボード [V]</td>
+                  <td>選択中のポリゴンを編集モードにする</td>
+                </tr>
+              </tbody>
+            </table>
+            <div className={styles.hint}>
+              編集を終了するには、ポリゴン外の地図エリアをクリック、または <kbd>Escape</kbd> でキャンセルできます。
+            </div>
+
+            <h3>ポリゴン一覧の操作</h3>
+            <table className={styles.table}>
+              <tbody>
                 <tr>
                   <td><Pencil size={14} /></td>
                   <td>名前を編集</td>
-                  <td>クリックまたはダブルクリックで名前変更</td>
+                  <td>名前部分をダブルクリックで直接編集</td>
                 </tr>
                 <tr>
                   <td><Link2 size={14} /></td>
                   <td>Waypoint同期</td>
-                  <td>ONの場合、形状変更時にWaypointも再生成</td>
+                  <td>ONの場合、形状変更時にWaypointが自動で再生成される</td>
+                </tr>
+                <tr>
+                  <td><MapPin size={14} /></td>
+                  <td>頂点Waypoint</td>
+                  <td>ポリゴン頂点にWaypointを生成</td>
+                </tr>
+                <tr>
+                  <td><Grid3X3 size={14} /></td>
+                  <td>グリッドWaypoint</td>
+                  <td>ポリゴン内部に格子状にWaypointを生成</td>
                 </tr>
                 <tr>
                   <td><Trash2 size={14} /></td>
                   <td>削除</td>
-                  <td>サイドバーのアイコン、または地図上で右クリックメニューから削除</td>
+                  <td>ポリゴンと関連Waypointを削除</td>
                 </tr>
               </tbody>
             </table>
+
+            <h3>競合検出</h3>
+            <p>
+              複数のポリゴンを作成すると、重なりや時間帯の重複を自動検出し、
+              <strong>「飛行エリア競合」</strong> としてサイドバーに警告が表示されます。
+            </p>
           </div>
         )
 
@@ -191,6 +307,211 @@ const HelpModal = ({ onClose }) => {
               🏔 ボタンで国土地理院APIから標高を取得します。
               プログレスバーで進捗を確認でき、取得後は各Waypointに標高が表示されます。
             </p>
+          </div>
+        )
+
+      case 'interactions':
+        return (
+          <div className={styles.section}>
+            <h2>マウス＆タッチ操作</h2>
+            <p className={styles.lead}>
+              地図・ポリゴン・Waypoint ごとに対応する操作が異なります。用途別に整理しました。
+            </p>
+
+            <h3><Hand size={16} /> 地図の移動・ズーム</h3>
+            <table className={styles.table}>
+              <tbody>
+                <tr>
+                  <td className={styles.labelCell}>ドラッグ</td>
+                  <td>地図をパン（移動）</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>スクロール / ピンチ</td>
+                  <td>ズームイン・アウト</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>右ドラッグ</td>
+                  <td>地図を回転（2本指回転も可）</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>Ctrl + ドラッグ</td>
+                  <td>地図を傾斜（3D視点）</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>ダブルクリック</td>
+                  <td>ズームイン（ポリゴン上では編集開始）</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3><PenTool size={16} /> ポリゴンの操作</h3>
+            <table className={styles.table}>
+              <tbody>
+                <tr>
+                  <td className={styles.labelCell}>クリック</td>
+                  <td>ポリゴンを選択（サイドバーでハイライト表示）</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>ダブルクリック</td>
+                  <td><strong>編集モード開始</strong>（頂点ドラッグで形状変更可能に）</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>右クリック</td>
+                  <td>コンテキストメニュー（編集・削除・頂点リスト等）</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>3秒ホバー</td>
+                  <td>ポリゴン詳細（名前・面積・WP数）をツールチップ表示</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div className={styles.hint}>
+              <strong>編集モード中の操作:</strong>
+              <ul>
+                <li>頂点（○）をドラッグ: 頂点の位置を移動</li>
+                <li>中点（半透明●）をクリック: 新しい頂点を追加</li>
+                <li>ポリゴン外をクリック: 編集完了</li>
+                <li><kbd>Escape</kbd>: 編集キャンセル</li>
+              </ul>
+            </div>
+
+            <h3><MapPin size={16} /> Waypointの操作</h3>
+            <table className={styles.table}>
+              <tbody>
+                <tr>
+                  <td className={styles.labelCell}>ドラッグ</td>
+                  <td>Waypointの位置を移動</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>クリック</td>
+                  <td>サイドバーで該当Waypointにフォーカス</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>右クリック</td>
+                  <td>コンテキストメニュー（削除・座標コピー・フォーカス）</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>3秒ホバー</td>
+                  <td>WP番号・座標・標高・制限区域情報をツールチップ表示</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>Shift + クリック</td>
+                  <td>地図上に新しいWaypointを追加</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>Shift + ドラッグ</td>
+                  <td>範囲選択で複数Waypointを選択</td>
+                </tr>
+                <tr>
+                  <td className={styles.labelCell}>選択後 Delete/Backspace</td>
+                  <td>選択したWaypointを一括削除</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3>サイドバーでの編集</h3>
+            <ul>
+              <li><strong>Waypoint番号をダブルクリック:</strong> 番号を直接編集</li>
+              <li><strong>緯度・経度をダブルクリック:</strong> 座標を直接入力（DMS / 10進数対応）</li>
+              <li><strong>ポリゴン名をダブルクリック:</strong> 名前を変更</li>
+              <li><strong>Enter:</strong> 編集確定</li>
+              <li><strong>Escape:</strong> 編集キャンセル</li>
+            </ul>
+          </div>
+        )
+
+      case 'tooltip':
+        return (
+          <div className={styles.section}>
+            <h2>情報ツールチップ</h2>
+            <p className={styles.lead}>
+              制限エリアや施設にマウスを乗せるだけで、詳細情報をPopupで表示します。
+              安全チェックを素早く行うための機能です。
+            </p>
+
+            <h3>有効化方法</h3>
+            <ol className={styles.stepList}>
+              <li>左サイドバー「地図操作」の「ツールチップ」にチェック</li>
+              <li>または <kbd>T</kbd> キーでON/OFFを切り替え</li>
+              <li>対象レイヤー（DID・空港・禁止区域など）を表示</li>
+              <li>地図上でマウスを対象エリアに乗せる</li>
+            </ol>
+
+            <h3>対象エリア</h3>
+            <ul className={styles.featureList}>
+              <li>
+                <div>
+                  <strong>DID（人口集中地区）</strong>
+                  <span>市区町村名・人口・面積・人口密度・コード</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>空港 / ヘリポート</strong>
+                  <span>施設名・種別・制限半径</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>禁止区域（レッド／イエロー）</strong>
+                  <span>施設名・区分・半径・稼働状況（原発のみ）</span>
+                </div>
+              </li>
+              <li>
+                <div>
+                  <strong>緊急空域 / RemoteID / 有人機</strong>
+                  <span>UTM関連レイヤーの名称と説明</span>
+                </div>
+              </li>
+            </ul>
+
+            <h3>「自動で消える」オプション</h3>
+            <p>
+              ON（デフォルト）: 2秒後にツールチップが自動で消えます。<br />
+              OFF: マウスを離すまでツールチップが表示され続けます。情報を読み込みたい時に便利です。
+            </p>
+
+            <div className={styles.hint}>
+              💡 ツールチップはホバー後 300ms のデバウンスで表示されます。マウスを素早く動かしている間は表示されません（パフォーマンス最適化）。
+            </div>
+          </div>
+        )
+
+      case 'routeplanner':
+        return (
+          <div className={styles.section}>
+            <h2>最適巡回ルートプランナー <span className={styles.betaBadge}>BETA · WIP</span></h2>
+            <div className={styles.warning}>
+              ⚠️ <strong>構想段階の機能です</strong>：現在「ルートを適用」ボタンは無効化されています。
+              計算結果のプレビューのみ確認できます。実際のWaypointやPolygonには影響しません。
+            </div>
+
+            <h3>機能概要</h3>
+            <p>
+              ドローンの仕様（バッテリー容量・巡航速度）と飛行目的に応じて、
+              Waypointを効率的に巡回する順序を計算します。TSP（巡回セールスマン問題）ベースのアルゴリズムを使用。
+            </p>
+
+            <h3>使い方</h3>
+            <ol className={styles.stepList}>
+              <li>Waypointパネルの <Route size={12} /> アイコンをクリック</li>
+              <li>飛行目的を選択（緊急医療輸送・インフラ点検・測量など）</li>
+              <li>使用するドローン機種を選択</li>
+              <li>オプション設定（バッテリー分割・安全マージン）</li>
+              <li>結果プレビューを確認</li>
+            </ol>
+
+            <h3>既知の制限</h3>
+            <ul>
+              <li>遠距離拠点（20km以上離れた拠点同士）は別フライトとして分離されます</li>
+              <li>実際のドローンフライトではなく、あくまで理論上の最適化プレビューです</li>
+              <li>制限区域の迂回ルートは未対応</li>
+            </ul>
+
+            <div className={styles.hint}>
+              本機能は構想段階です。製品版でのリリースに向けて改善中です。
+            </div>
           </div>
         )
 
@@ -488,7 +809,7 @@ const HelpModal = ({ onClose }) => {
                 </tr>
                 <tr>
                   <td><kbd>T</kbd></td>
-                  <td>電波種(LTE) ON/OFF</td>
+                  <td>地図ツールチップ ON/OFF（制限エリアのホバー情報）</td>
                 </tr>
                 <tr>
                   <td><kbd>3</kbd></td>

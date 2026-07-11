@@ -2,6 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-width: 0;
 }
 
 .emptyState {
@@ -188,7 +189,7 @@
 
 .groups {
   flex: 1;
-  overflow-y: auto;
+  // overflow-y は親 .panel-content で管理（ダブルスクロール回避）
 }
 
 .group {

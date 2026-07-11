@@ -21,6 +21,14 @@ const DEFAULT_SETTINGS = {
   prohibitedAvoidanceMargin: 300,
   // Waypoint番号体系: 'global'(全体連番) | 'perPolygon'(ポリゴンごと1から)
   waypointNumberingMode: 'global',
+  // 地図ホバーツールチップ表示（DID/施設レイヤー）
+  showMapHoverTooltip: false,
+  // ツールチップ自動消去（オフならホバー継続中は表示し続ける）
+  mapHoverTooltipAutoFade: true,
+  // サイドバー「住所検索」セクションの開閉状態（永続化）
+  sidebarSearchExpanded: true,
+  // サイドバー「地図操作」セクションの開閉状態（永続化）
+  sidebarMapControlsExpanded: true,
 };
 
 /**

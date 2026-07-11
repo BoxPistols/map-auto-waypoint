@@ -13,6 +13,50 @@
   font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+// Arrow styles (CoordinateDisplay準拠)
+.arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 8px solid transparent;
+
+  // 矢印がパネル左側 → ホバー位置は左にある
+  &.left {
+    left: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-right-color: var(--tooltip-bg, rgba(30, 30, 30, 0.85));
+    border-left-width: 0;
+  }
+
+  // 矢印がパネル右側 → ホバー位置は右にある
+  &.right {
+    right: -16px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left-color: var(--tooltip-bg, rgba(30, 30, 30, 0.85));
+    border-right-width: 0;
+  }
+
+  // 矢印がパネル上側 → ホバー位置は上にある
+  &.top {
+    top: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-bottom-color: var(--tooltip-bg, rgba(30, 30, 30, 0.85));
+    border-top-width: 0;
+  }
+
+  // 矢印がパネル下側 → ホバー位置は下にある
+  &.bottom {
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-top-color: var(--tooltip-bg, rgba(30, 30, 30, 0.85));
+    border-bottom-width: 0;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

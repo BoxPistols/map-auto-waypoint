@@ -4,9 +4,8 @@
  * 地図レイヤーコントロールパネル
  */
 
-import { Layers, Users, ShieldAlert, Plane, CloudRain, Signal, Settings2, Building2, Zap, Building, Shield, Lock, Target, Landmark, AlertTriangle, Radio, MapPinned, Map as MapIcon, Wind, Wifi, Box, Rotate3D, Crosshair, Satellite } from 'lucide-react'
+import { Layers, Users, ShieldAlert, Plane, CloudRain, Signal, Building2, Zap, Building, Shield, Lock, Target, Landmark, AlertTriangle, Radio, MapPinned, Map as MapIcon, Wind, Wifi } from 'lucide-react'
 import ControlGroup from './ControlGroup'
-import { CROSSHAIR_DESIGNS, CROSSHAIR_COLORS, COORDINATE_FORMATS, MAP_STYLES } from './mapConstants'
 import styles from './Map.module.scss'
 
 const MapControls = ({
@@ -15,25 +14,10 @@ const MapControls = ({
   toggleLayer,
   toggleAirportOverlay,
   toggleGroupLayers,
-  toggle3D,
   favoriteGroups,
   toggleFavoriteGroup,
-  showCrosshair,
-  setShowCrosshair,
-  crosshairDesign,
-  setCrosshairDesign,
-  crosshairColor,
-  setCrosshairColor,
-  crosshairClickMode,
-  setCrosshairClickMode,
-  coordinateFormat,
-  setCoordinateFormat,
-  mapStyleId,
-  setMapStyleId,
   isMobile,
   mobileControlsExpanded,
-  showStylePicker,
-  setShowStylePicker
 }) => {
   return (
         <div className={`${styles.controlsGroup} ${isMobile && !mobileControlsExpanded ? styles.hidden : ''}`}>
@@ -437,7 +421,7 @@ const MapControls = ({
             <button
               className={`${styles.toggleButton} ${layerVisibility.showRadioZones ? styles.activeRadioZones : ''}`}
               onClick={() => toggleLayer('showRadioZones')}
-              data-tooltip="電波利用に注意が必要な区域 [T]"
+              data-tooltip="電波利用に注意が必要な区域"
               data-tooltip-pos="left"
             >
               <Wifi size={18} />
@@ -454,115 +438,7 @@ const MapControls = ({
             </button>
           </ControlGroup>
 
-          {/* グループ5: Map設定 */}
-          <ControlGroup
-            id="map-settings"
-            icon={<Settings2 size={18} />}
-            label="Map設定"
-            tooltip="地図表示の各種設定"
-            defaultExpanded={false}
-            favoritable={true}
-            isFavorite={favoriteGroups.has('map-settings')}
-            onFavoriteToggle={() => toggleFavoriteGroup('map-settings')}
-          >
-            <button
-              className={`${styles.toggleButton} ${layerVisibility.is3D ? styles.active : ''}`}
-              onClick={toggle3D}
-              data-tooltip={layerVisibility.is3D ? '地形を平面で表示 [3]' : '地形を立体で表示 [3]'}
-              data-tooltip-pos="left"
-            >
-              {layerVisibility.is3D ? <Box size={18} /> : <Rotate3D size={18} />}
-              <span className={styles.buttonLabel}>{layerVisibility.is3D ? '2D' : '3D'}</span>
-            </button>
-            {/* クロスヘア設定 */}
-            <ControlGroup
-              id="crosshair"
-              icon={<Crosshair size={18} />}
-              label="中心十字"
-              tooltip="地図中心の十字線を表示 [X]"
-              groupToggle={true}
-              groupEnabled={showCrosshair}
-              onGroupToggle={setShowCrosshair}
-              defaultExpanded={false}
-            >
-              <div className={styles.crosshairSettings}>
-                <div className={styles.crosshairRow}>
-                  <span className={styles.crosshairLabel}>表示</span>
-                  <select
-                    className={styles.crosshairSelect}
-                    value={crosshairDesign}
-                    onChange={(e) => setCrosshairDesign(e.target.value)}
-                  >
-                    {CROSSHAIR_DESIGNS.map(d => (
-                      <option key={d.id} value={d.id}>{d.icon} {d.label}</option>
-                    ))}
-                  </select>
-                  <select
-                    className={styles.crosshairColorSelect}
-                    value={crosshairColor}
-                    onChange={(e) => setCrosshairColor(e.target.value)}
-                    style={{ '--selected-color': crosshairColor }}
-                  >
-                    {CROSSHAIR_COLORS.map(c => (
-                      <option key={c.id} value={c.id}>{c.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className={styles.crosshairRow}>
-                  <label className={styles.crosshairCheckbox}>
-                    <input
-                      type="checkbox"
-                      checked={crosshairClickMode}
-                      onChange={(e) => setCrosshairClickMode(e.target.checked)}
-                    />
-                    <span>クリックで座標</span>
-                  </label>
-                  <select
-                    className={styles.crosshairSelect}
-                    value={coordinateFormat}
-                    onChange={(e) => setCoordinateFormat(e.target.value)}
-                    disabled={!crosshairClickMode}
-                  >
-                    {COORDINATE_FORMATS.map(f => (
-                      <option key={f.id} value={f.id}>{f.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </ControlGroup>
-
-            {/* 地図スタイル切り替え */}
-            <div className={styles.stylePickerContainer}>
-              <button
-                className={`${styles.toggleButton} ${showStylePicker ? styles.active : ''}`}
-                onClick={() => setShowStylePicker(!showStylePicker)}
-                data-tooltip="地図の表示スタイルを切り替え [M: 次へ / Shift+M: 前へ]"
-                data-tooltip-pos="left"
-              >
-                <Layers size={18} />
-                <span className={styles.buttonLabel}>スタイル</span>
-              </button>
-              {showStylePicker && (
-                <div className={styles.stylePicker}>
-                  {Object.values(MAP_STYLES).map(styleOption => (
-                    <button
-                      key={styleOption.id}
-                      className={`${styles.styleOption} ${mapStyleId === styleOption.id ? styles.activeStyle : ''}`}
-                      onClick={() => {
-                        setMapStyleId(styleOption.id)
-                        setShowStylePicker(false)
-                      }}
-                    >
-                      <span className={styles.styleIcon}>
-                        {styleOption.id === 'gsi_photo' ? <Satellite size={16} /> : <MapIcon size={16} />}
-                      </span>
-                      <span className={styles.styleName}>{styleOption.shortName}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </ControlGroup>
+          {/* Map設定 (3D/中心十字/スタイル) はサイドバー「地図操作」に移動済み */}
         </div>
   )
 }
