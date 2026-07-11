@@ -60,18 +60,36 @@ const SearchForm = ({ onSearch, onSelect, onGeneratePolygon }) => {
     onSelect?.(suggestion)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     // IME変換中の場合は何もしない（日本語入力の候補確定を尊重）
     if (isComposing) return
     // e.nativeEvent.isComposing もチェック（一部ブラウザで compositionend 前に Enter が発火するため）
     if (e.nativeEvent?.isComposing) return
 
+    // 矢印キーで候補を選択済みならそれを確定
     if (selectedIndex >= 0 && suggestions[selectedIndex]) {
       handleSelect(suggestions[selectedIndex])
-    } else if (query.trim()) {
+      return
+    }
+    if (!query.trim()) return
+
+    setShowSuggestions(false)
+    // Enterでの検索でも「エリアを生成」パネルまで到達できるようにする。
+    // 以前は onSearch でカメラ移動のみ行われ、SearchFormローカルの
+    // lastSearchResult が設定されずパネルが出なかった。
+    // 候補が既に表示されていれば先頭を、まだ無ければ即時検索して先頭を
+    // 選択し、候補クリック時と同じ経路（handleSelect）に揃える。
+    if (suggestions.length > 0) {
+      handleSelect(suggestions[0])
+      return
+    }
+    const results = await searchAddress(query.trim())
+    if (results.length > 0) {
+      handleSelect(results[0])
+    } else {
+      // 結果なし時は親に委ねる（「見つかりませんでした」通知は親が表示）
       onSearch?.(query.trim())
-      setShowSuggestions(false)
     }
   }
 
