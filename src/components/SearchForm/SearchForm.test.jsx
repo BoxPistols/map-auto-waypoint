@@ -107,4 +107,49 @@ describe('SearchForm', () => {
       expect.objectContaining({ useCustomSize: true, customRadius: 100 })
     )
   })
+
+  it('候補表示中にEnterで検索すると先頭候補が選ばれ「エリアを生成」パネルが開く', async () => {
+    const onSelect = vi.fn()
+    render(<SearchForm onGeneratePolygon={vi.fn()} onSelect={onSelect} onSearch={vi.fn()} />)
+
+    searchAddress.mockResolvedValue([mockSuggestion])
+    const input = screen.getByPlaceholderText(/住所・建物名を検索/)
+    fireEvent.change(input, { target: { value: '中川' } })
+    await waitFor(() => expect(screen.getByText('中川')).toBeInTheDocument())
+
+    // 候補をクリックせずEnter（矢印選択もしていない状態）
+    fireEvent.submit(input.closest('form'))
+
+    await waitFor(() => expect(screen.getByText('エリアを生成')).toBeInTheDocument())
+    expect(onSelect).toHaveBeenCalledWith(mockSuggestion)
+  })
+
+  it('候補未表示でEnter検索した場合も即時検索して先頭候補でパネルが開く', async () => {
+    const onSelect = vi.fn()
+    const onSearch = vi.fn()
+    render(<SearchForm onGeneratePolygon={vi.fn()} onSelect={onSelect} onSearch={onSearch} />)
+
+    // debounce前にEnterするケースを模し、候補が未表示の状態で直接submit
+    searchAddress.mockResolvedValue([mockSuggestion])
+    const input = screen.getByPlaceholderText(/住所・建物名を検索/)
+    // 候補を表示させずにqueryだけ設定するため、changeで値を入れた直後にsubmitを呼ぶ
+    fireEvent.change(input, { target: { value: '中川' } })
+    fireEvent.submit(input.closest('form'))
+
+    await waitFor(() => expect(screen.getByText('エリアを生成')).toBeInTheDocument())
+    expect(onSelect).toHaveBeenCalledWith(mockSuggestion)
+  })
+
+  it('検索結果が0件のEnter時はonSearchにフォールバックする', async () => {
+    const onSearch = vi.fn()
+    render(<SearchForm onGeneratePolygon={vi.fn()} onSearch={onSearch} />)
+
+    searchAddress.mockResolvedValue([])
+    const input = screen.getByPlaceholderText(/住所・建物名を検索/)
+    fireEvent.change(input, { target: { value: '存在しない場所' } })
+    fireEvent.submit(input.closest('form'))
+
+    await waitFor(() => expect(onSearch).toHaveBeenCalledWith('存在しない場所'))
+    expect(screen.queryByText('エリアを生成')).not.toBeInTheDocument()
+  })
 })
