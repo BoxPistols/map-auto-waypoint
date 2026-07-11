@@ -144,9 +144,11 @@ export function useCollisionDetection({ waypoints, polygons, didDataReady }) {
 
           const sortedWaypoints = [...polygonWaypoints].sort((a, b) => a.index - b.index)
 
-          for (let i = 0; i < sortedWaypoints.length - 1; i++) {
+          // 閉ループ: 最後のWPから最初のWPへのセグメントも含める（(i+1)%n）
+          const n = sortedWaypoints.length
+          for (let i = 0; i < n; i++) {
             const wpFrom = sortedWaypoints[i]
-            const wpTo = sortedWaypoints[i + 1]
+            const wpTo = sortedWaypoints[(i + 1) % n]
             const flagsFrom = newFlags[wpFrom.id] || {}
             const flagsTo = newFlags[wpTo.id] || {}
 

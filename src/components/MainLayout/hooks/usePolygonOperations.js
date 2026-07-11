@@ -8,6 +8,7 @@ import {
   reindexWaypoints,
 } from '../../../services/waypointGenerator'
 import { getWaypointNumberingMode } from '../../../services/settingsService'
+import { generateExamplePolygons, generateExampleWaypoints } from '../../../services/exampleData'
 import { calculateZoomForBounds } from '../utils/mapZoom'
 
 /**
@@ -250,6 +251,22 @@ export function usePolygonOperations({
     }
   }, [polygons, setWaypoints, showNotification, setActivePanel, setShowRouteOptimizer])
 
+  // サンプルデータ読み込み
+  const handleLoadExampleData = useCallback(() => {
+    const examplePolygons = generateExamplePolygons()
+    const exampleWaypoints = generateExampleWaypoints(examplePolygons)
+    setPolygons(prev => [...prev, ...examplePolygons])
+    setWaypoints(prev => [...prev, ...exampleWaypoints])
+    showNotification(`サンプルデータを読み込みました（${examplePolygons.length}ポリゴン、${exampleWaypoints.length}ウェイポイント）`)
+  }, [setPolygons, setWaypoints, showNotification])
+
+  // 全データリセット
+  const handleResetAll = useCallback(() => {
+    setPolygons([])
+    setWaypoints([])
+    showNotification('すべてのデータをリセットしました')
+  }, [setPolygons, setWaypoints, showNotification])
+
   return {
     editingPolygon,
     setEditingPolygon,
@@ -268,5 +285,7 @@ export function usePolygonOperations({
     handleGenerateWaypoints,
     handleGridSettingsConfirm,
     handleGenerateAllWaypoints,
+    handleLoadExampleData,
+    handleResetAll,
   }
 }

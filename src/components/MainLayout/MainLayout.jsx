@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import MapComponent from '../Map/Map'
 import { isFirstVisit } from '../../utils/storage'
 import FlightAssistant from '../FlightAssistant'
@@ -15,7 +15,8 @@ import { useCustomLayers } from '../../hooks/useCustomLayers'
 import { useConfirmDialog } from '../../hooks/useConfirmDialog'
 import ConfirmDialog from '../ConfirmDialog/ConfirmDialog'
 import { reindexWaypoints } from '../../services/waypointGenerator'
-import { getWaypointNumberingMode } from '../../services/settingsService'
+import { getWaypointNumberingMode, getSetting, saveSettings } from '../../services/settingsService'
+import { computePolygonConflicts } from '../../services/conflictService'
 import '../../App.scss'
 
 // 分離した hooks
@@ -68,7 +69,69 @@ function MainLayout() {
   // ============================================
   const [drawMode, setDrawMode] = useState(false)
   const [activePanel, setActivePanel] = useState('polygons') // 'polygons' | 'waypoints'
-  const [isSearchExpanded, setIsSearchExpanded] = useState(true)
+  // サイドバーセクションの開閉状態を localStorage に永続化
+  // デフォルト値は settingsService.js の DEFAULT_SETTINGS で管理
+  const [isSearchExpanded, setIsSearchExpanded] = useState(
+    () => getSetting('sidebarSearchExpanded')
+  )
+  const [isMapQuickControlsExpanded, setIsMapQuickControlsExpanded] = useState(
+    () => getSetting('sidebarMapControlsExpanded')
+  )
+
+  // 初回マウント時の不要な書き込みを回避するためのフラグ
+  const sidebarSettingsInitializedRef = useRef(false)
+  useEffect(() => {
+    if (!sidebarSettingsInitializedRef.current) {
+      sidebarSettingsInitializedRef.current = true
+      return
+    }
+    // 両方の設定をまとめて保存（個別保存だと毎回全体書き込みが発生するため）
+    saveSettings({
+      sidebarSearchExpanded: isSearchExpanded,
+      sidebarMapControlsExpanded: isMapQuickControlsExpanded,
+    })
+  }, [isSearchExpanded, isMapQuickControlsExpanded])
+
+  // Map quick controls 表示設定（sidebar に表示、デフォルトOFF）— settingsService 経由で永続化
+  const [showDIDTooltip, setShowDIDTooltip] = useState(() => getSetting('showMapHoverTooltip') ?? false)
+  const [didTooltipAutoFade, setDidTooltipAutoFade] = useState(() => getSetting('mapHoverTooltipAutoFade') ?? true)
+
+  const tooltipSettingsInitializedRef = useRef(false)
+  useEffect(() => {
+    if (!tooltipSettingsInitializedRef.current) {
+      tooltipSettingsInitializedRef.current = true
+      return
+    }
+    saveSettings({
+      showMapHoverTooltip: showDIDTooltip,
+      mapHoverTooltipAutoFade: didTooltipAutoFade,
+    })
+  }, [showDIDTooltip, didTooltipAutoFade])
+
+  // Map側から同期される制御API（3D / Crosshair / MapStyle）のブリッジ
+  // Map.jsx内部のhook状態をsidebarから操作するためのブリッジ
+  const [mapControlsState, setMapControlsState] = useState({
+    is3D: false,
+    showCrosshair: false,
+    crosshairDesign: 'square',
+    crosshairColor: '#e53935',
+    crosshairClickMode: true,
+    coordinateFormat: 'dms',
+    mapStyleId: 'osm',
+  })
+  const mapControlsActionsRef = useRef({
+    toggle3D: () => {},
+    setShowCrosshair: () => {},
+    setCrosshairDesign: () => {},
+    setCrosshairColor: () => {},
+    setCrosshairClickMode: () => {},
+    setCoordinateFormat: () => {},
+    setMapStyleId: () => {},
+  })
+  const handleMapControlsReady = useCallback((api) => {
+    mapControlsActionsRef.current = api.actions
+    setMapControlsState(api.state)
+  }, [])
   const [showImport, setShowImport] = useState(false)
   const [showExport, setShowExport] = useState(false)
   const [showHelp, setShowHelp] = useState(isFirstVisit())
@@ -133,6 +196,9 @@ function MainLayout() {
     polygonCollisionResult,
   } = useCollisionDetection({ waypoints, polygons, didDataReady })
 
+  // 自ポリゴンと外部ポリゴンの競合ゾーン検出（PolygonListの競合バッジ用）
+  const polygonConflicts = useMemo(() => computePolygonConflicts(polygons), [polygons])
+
   // ============================================
   // Undo/Redo (with toast)
   // ============================================
@@ -173,6 +239,8 @@ function MainLayout() {
     handleGenerateWaypoints,
     handleGridSettingsConfirm,
     handleGenerateAllWaypoints,
+    handleLoadExampleData,
+    handleResetAll,
   } = usePolygonOperations({
     polygons,
     setPolygons,
@@ -328,6 +396,17 @@ function MainLayout() {
           handleToggleWaypointLink={handleToggleWaypointLink}
           handleGenerateWaypoints={handleGenerateWaypoints}
           handleGenerateAllWaypoints={handleGenerateAllWaypoints}
+          handleLoadExampleData={handleLoadExampleData}
+          handleResetAll={handleResetAll}
+          polygonConflicts={polygonConflicts}
+          isMapQuickControlsExpanded={isMapQuickControlsExpanded}
+          setIsMapQuickControlsExpanded={setIsMapQuickControlsExpanded}
+          showDIDTooltip={showDIDTooltip}
+          setShowDIDTooltip={setShowDIDTooltip}
+          didTooltipAutoFade={didTooltipAutoFade}
+          setDidTooltipAutoFade={setDidTooltipAutoFade}
+          mapControlsState={mapControlsState}
+          mapControlsActionsRef={mapControlsActionsRef}
           handleWaypointSelect={handleWaypointSelect}
           handleWaypointDelete={handleWaypointDelete}
           handleWaypointUpdate={handleWaypointUpdate}
@@ -375,6 +454,10 @@ function MainLayout() {
             selectedPolygonId={selectedPolygonId}
             editingPolygon={editingPolygon}
             drawMode={drawMode}
+            showDIDTooltip={showDIDTooltip}
+            onShowDIDTooltipChange={setShowDIDTooltip}
+            didTooltipAutoFade={didTooltipAutoFade}
+            onMapControlsReady={handleMapControlsReady}
           />
 
           <DrawHints drawMode={drawMode} editingPolygon={editingPolygon} />
