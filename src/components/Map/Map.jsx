@@ -1093,19 +1093,8 @@ const Map = ({
 
     if (polygonFeature) {
       const polygonId = polygonFeature.properties.id
+      // クリックは選択のみ（ツールチップはホバー時に表示する仕様。MouseEvents.mdx参照）
       onPolygonSelect?.(polygonId)
-      // クリックでポリゴンツールチップを即時表示
-      const polygon = polygons.find(p => p.id === polygonId)
-      if (polygon) {
-        const area = turf.area(polygon.geometry)
-        const waypointCount = waypoints.filter(wp => wp.polygonId === polygon.id).length
-        setTooltip({
-          isVisible: true,
-          position: { x: e.originalEvent.clientX, y: e.originalEvent.clientY },
-          data: { ...polygon, area, waypointCount },
-          type: 'polygon'
-        })
-      }
       return
     }
 
